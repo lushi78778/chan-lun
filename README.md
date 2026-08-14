@@ -6,7 +6,7 @@
 纯 Python 实现,**不依赖任何行情接口**:输入标准化 bar 序列,输出结构对象与信号。
 只依赖 numpy(背驰计算)与 pandas(bars 归一化辅助)。
 
-- 发行名:**chan-lun**(PyPI 上 `chan` 已被一个 Python 2 时代的库占用)
+- 发行名:**chan-lun-core**(PyPI 上 `chan` 已被占用, `chan-lun` 与现有 `chanlun` 冲突, 故加 `-core` 后缀)
 - import 名:`chan`
 - 许可证:MIT
 
@@ -15,13 +15,13 @@
 从 PyPI 安装(打 `v*` tag 后 CI 自动发布):
 
 ```bash
-pip install chan-lun
+pip install chan-lun-core
 ```
 
 从 GitHub Release 安装(同样由 CI 自动构建):
 
 ```bash
-pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.3/chan_lun-0.1.3-py3-none-any.whl
+pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.4/chan_lun_core-0.1.4-py3-none-any.whl
 ```
 
 或源码安装:

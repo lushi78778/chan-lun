@@ -48,7 +48,8 @@ jobs:
           generate_release_notes: true
 
   publish-pypi:
-    # 打 v* tag 且测试通过后, 发布到 PyPI(https://pypi.org/project/chan-lun/)
+    # 打 v* tag 且测试通过后, 发布到 PyPI(https://pypi.org/project/chan-lun-core/)
+    # 发行名 chan-lun-core: `chan-lun` 被 PyPI 拒(与现有 chanlun 过于相似)。
     # 前置配置(用户侧一次性):
     #   1. PyPI 注册账号(需开启 2FA)并创建 API token:
     #      首次上传建议"整个账号"作用域 token(chan-lun 项目不存在时,

@@ -1,13 +1,15 @@
-# chan-lun 发布配置(仓库根 = src/chan, 标准 src-layout, 见 PyPA 官方教程)
-# 发行名 chan-lun(PyPI 上 `chan` 已被一个 Python 2 时代的库占用),import 名仍是 chan。
+# chan-lun-core 发布配置(仓库根 = src/chan, 标准 src-layout, 见 PyPA 官方教程)
+# 发行名 chan-lun-core(import 名仍是 chan): PyPI 拒绝 `chan-lun`(与现有
+# `chanlun` 过于相似); chan-lun-core 已按 PyPI ultranormalize 规则
+# (去 ._- / l,i->1 / o->0)逐变体验证无冲突。
 # 注意: version 与 src/chan/__init__.py 的 __version__ 需保持一致。
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chan-lun"
-version = "0.1.3"
+name = "chan-lun-core"
+version = "0.1.4"
 description = "缠论(缠中说禅理论)量化核心库: 分型/笔/线段/中枢/背驰/买卖点 + 30 分钟跨级别共振确认, 纯 Python 实现, 仅依赖 numpy/pandas"
 readme = "README.md"
 requires-python = ">=3.6"

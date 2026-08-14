@@ -11,9 +11,9 @@
     bs      - 三类买卖点信号
     cross30 - 日线买卖点 -> 30 分钟跨级别共振确认(区间套)
 
-发布: 发行名 chan-lun(import 名 chan), 仓库根 = src/chan(标准 src-layout,
-      本包位于仓库根的 src/chan/ 子目录, 见仓库根 pyproject.toml)。
+发布: 发行名 chan-lun-core(import 名 chan), 仓库根 = src/chan(标准
+      src-layout, 本包位于仓库根的 src/chan/ 子目录, 见仓库根 pyproject.toml)。
      注意: __version__ 与 pyproject.toml 的 [project] version 需保持一致。
 """
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
