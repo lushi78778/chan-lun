@@ -15,7 +15,7 @@
 从 GitHub Release 安装(推荐;每次打 `v*` tag,CI 自动构建并发布 wheel):
 
 ```bash
-pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.1/chan_lun-0.1.1-py3-none-any.whl
+pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.2/chan_lun-0.1.2-py3-none-any.whl
 ```
 
 或源码安装:

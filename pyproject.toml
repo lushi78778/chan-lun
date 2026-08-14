@@ -1,14 +1,13 @@
-# chan-lun 发布配置(发行文件与本包同目录: src/chan 即仓库根)
+# chan-lun 发布配置(仓库根 = src/chan, 标准 src-layout, 见 PyPA 官方教程)
 # 发行名 chan-lun(PyPI 上 `chan` 已被一个 Python 2 时代的库占用),import 名仍是 chan。
-# 平铺布局: 包目录即仓库根(package-dir 把 chan 映射到当前目录), 不再有 src/ 包装层。
-# 注意: version 与同目录 __init__.py 的 __version__ 需保持一致。
+# 注意: version 与 src/chan/__init__.py 的 __version__ 需保持一致。
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "chan-lun"
-version = "0.1.1"
+version = "0.1.2"
 description = "缠论(缠中说禅理论)量化核心库: 分型/笔/线段/中枢/背驰/买卖点 + 30 分钟跨级别共振确认, 纯 Python 实现, 仅依赖 numpy/pandas"
 readme = "README.md"
 requires-python = ">=3.6"
@@ -48,6 +47,7 @@ Homepage = "https://github.com/lushi78778/chan-lun"
 Repository = "https://github.com/lushi78778/chan-lun"
 
 [tool.setuptools]
-# 平铺布局: chan 包即仓库根目录(src/chan), 没有 src/ 包装层
-package-dir = {chan = "."}
-packages = ["chan"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
