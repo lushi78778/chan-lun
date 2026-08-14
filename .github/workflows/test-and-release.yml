@@ -1,4 +1,4 @@
-# chan-lun: 测试(push/PR)+ 打 tag 自动构建并发布 GitHub Release
+# chan-lun: 测试(push/PR)+ 打 tag 自动构建、发布 GitHub Release、发布 PyPI
 name: test-and-release
 
 on:
@@ -46,3 +46,28 @@ jobs:
             dist/*.whl
             dist/*.tar.gz
           generate_release_notes: true
+
+  publish-pypi:
+    # 打 v* tag 且测试通过后, 发布到 PyPI(https://pypi.org/project/chan-lun/)
+    # 前置配置(用户侧一次性):
+    #   1. PyPI 注册账号(需开启 2FA)并创建 API token:
+    #      首次上传建议"整个账号"作用域 token(chan-lun 项目不存在时,
+    #      项目级 token 无法创建; 账号级 token 首次上传会自动建项目);
+    #      项目已存在后建议改用只限 chan-lun 的项目级 token。
+    #   2. GitHub 仓库 Settings -> Secrets and variables -> Actions ->
+    #      Repository secrets -> 新增名为 PYPI_API_TOKEN 的机密。
+    # 注: 也可改用 Trusted Publishing(OIDC, 无需 token), 在 PyPI
+    #     发布设置里登记本仓库/workflow 即可; 此流程按 API token 方式实现。
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build sdist + wheel
+        run: uv build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # 默认 username 即 __token__, 直接给 API token
+          password: ${{ secrets.PYPI_API_TOKEN }}

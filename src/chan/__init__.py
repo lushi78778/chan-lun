@@ -16,4 +16,4 @@
      注意: __version__ 与 pyproject.toml 的 [project] version 需保持一致。
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"

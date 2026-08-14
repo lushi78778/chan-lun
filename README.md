@@ -12,10 +12,16 @@
 
 ## 安装
 
-从 GitHub Release 安装(推荐;每次打 `v*` tag,CI 自动构建并发布 wheel):
+从 PyPI 安装(打 `v*` tag 后 CI 自动发布):
 
 ```bash
-pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.2/chan_lun-0.1.2-py3-none-any.whl
+pip install chan-lun
+```
+
+从 GitHub Release 安装(同样由 CI 自动构建):
+
+```bash
+pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.3/chan_lun-0.1.3-py3-none-any.whl
 ```
 
 或源码安装:
