@@ -1,0 +1,7 @@
+# ---- 构建产物 ----
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.DS_Store
