@@ -1,0 +1,22 @@
+# ---- 环境与构建产物 ----
+.venv/
+.uvcache/
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# ---- 本地研究项目文件(不进公开包仓库;本地保留)----
+/AGENTS.md
+/doc/
+/tools/
+/report/
+/chan_signals/
+/src/jq_*.py
+/src/README.md
+/tests/test_jq08_flow.py
+/tests/test_jq09_flow.py
+/tests/test_index_board_flow.py
+/*.html

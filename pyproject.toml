@@ -1,0 +1,53 @@
+# chan-lun 发布配置
+# 发行名 chan-lun(PyPI 上 `chan` 已被一个 Python 2 时代的库占用),import 名仍是 chan。
+# 注意: version 与 src/chan/__init__.py 的 __version__ 需保持一致。
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chan-lun"
+version = "0.1.0"
+description = "缠论(缠中说禅理论)量化核心库: 分型/笔/线段/中枢/背驰/买卖点 + 30 分钟跨级别共振确认, 纯 Python 实现, 仅依赖 numpy/pandas"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {file = "LICENSE"}
+authors = [{name = "Chan Contributors"}]
+keywords = [
+    "chan", "chanlun", "缠论", "缠中说禅",
+    "technical-analysis", "quant", "stock", "kline", "trading",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Chinese (Simplified)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+dependencies = [
+    # 与聚宽研究环境(3.6.7 / numpy 1.14.6 / pandas 0.23.4)对齐的下限;
+    # 新版 numpy/pandas 同样兼容。
+    "numpy>=1.14",
+    "pandas>=0.23",
+]
+
+[project.urls]
+Homepage = "https://github.com/lushi78778/chan-lun"
+Repository = "https://github.com/lushi78778/chan-lun"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
