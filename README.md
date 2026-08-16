@@ -31,7 +31,7 @@ pip install chan-lun-core
 从 GitHub Release 安装(由 CI 自动构建):
 
 ```bash
-pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.6/chan_lun_core-0.1.6-py3-none-any.whl
+pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.7/chan_lun_core-0.1.7-py3-none-any.whl
 ```
 
 或源码安装:
@@ -41,6 +41,18 @@ pip install git+https://github.com/lushi78778/chan-lun.git
 ```
 
 ## 快速开始
+
+全部公开 API 已在包顶层重新导出,既可按模块导入,也可直接从 `chan`
+导入(两者等价):
+
+```python
+from chan import (normalize_bars, chan_fx_bi, chan_bis_xds, find_zs,
+                  macd_series, find_buy_points, find_sell_points,
+                  confirm_buy3_30m)
+# 等价于 from chan.bars import ... / from chan.bi import ... 等
+```
+
+完整管线:
 
 ```python
 from chan.bars import normalize_bars
@@ -146,6 +158,7 @@ bis = find_bis(new_bars, fxs)           # 或分步调用
 ```
 
 - 成笔条件(课 77/81):一顶一底交替、顶必须高于底、两个分型中间 K 线之间至少 `MIN_K_GAP=3` 根独立 K 线(无包含序列索引差 >= 4);
+- `find_bis(new_bars, fxs, min_k_gap=3)`:`min_k_gap` 可参数化——调小(如 2)笔更灵敏、数量更多,调大更稳健,用于不同级别/流动性适配;默认即课 81 标准;
 - 同向连续分型取极端(顶取更高、底取更低),并同步延伸上一笔终点;
 - `BI` 对象:`direction`(`up`/`down`)、`start_dt/end_dt`、`start_value/end_value`、`high/low` 属性、`start_index/end_index`、`to_dict()`。
 
@@ -167,8 +180,13 @@ xds = find_xds(bis)        # 或从笔列表出发
 from chan.zs import find_zs, classify_trend, ZS
 
 zss = find_zs(xds)            # 传 XD 列表; 也可传 BI 列表做笔级中枢
-trends = classify_trend(zss)  # [{'type': '盘整'|'趋势', 'zs_count', 'start_dt', 'end_dt', 'zd', 'zg'}, ...]
+trends = classify_trend(zss)  # [{'type': '盘整'|'趋势', 'zs_count', 'start_dt', 'end_dt', 'zd', 'zg', 'zs_list'}, ...]
 ```
+
+- `classify_trend` 每个分组除 `type/zs_count/start_dt/end_dt` 外,新增
+  **`zs_list`**:组内全部中枢的明细(各自的 zd/zg/gg/dd/start_dt/end_dt/
+  xd_count/extended_9),需要"第 k 个中枢边界"时不再只能拿到第一个;
+  顶层 `zd/zg` 字段保留(组内首个中枢,向后兼容)。
 
 - 中枢 = 至少三个连续次级别走势(线段)重叠区间:`ZD = max(三个低点)`,`ZG = min(三个高点)`;另记录 `GG/DD`(构成线段的最高/最低点);
 - 后续线段与 `[ZD, ZG]` 重叠 → 中枢延伸(更新 GG/DD、结束时间);不重叠 → 中枢完成、新生;
@@ -260,14 +278,18 @@ stale / no_data,附带 `fx_dt/low30/dist_b1`。
 
 - Python 3.6+ 语法(无 walrus / dataclasses / f-string 自描述等 3.7+ 特性);
 - pandas 0.23+ API(无 `to_numpy` / `to_markdown` 等新 API);
-- 依赖:`numpy>=1.14`、`pandas>=0.23`。
+- 依赖:`numpy>=1.14`、`pandas>=0.23`;
+- 全模块带 3.6 兼容的 typing 注解(`typing.List/Dict/Optional/...`),
+  docstring 含参数逐条说明、返回结构与规则边界,`chan.__all__` 列出
+  全部顶层导出。
 
 ## 测试
 
-仓库自带测试(58 个):`chan.bars/fx/bi/xd/zs/bc/bs` 与 `chan.cross30` 的
-单元测试,覆盖合成行情的分型边界、成笔间隔、中枢延伸/新生、背驰判定、
-三类买卖点字段与力度过滤参数、三买三卖/二买 30m 确认的
-confirmed/broke/stale 等路径:
+仓库自带测试(62 个):`chan.bars/fx/bi/xd/zs/bc/bs` 与 `chan.cross30` 的
+单元测试,覆盖合成行情的分型边界、成笔间隔(含 min_k_gap 参数)、
+中枢延伸/新生、背驰判定、三类买卖点字段与力度过滤参数、
+三买三卖/二买 30m 确认的 confirmed/broke/stale 等路径,以及
+顶层 API 导出完整性:
 
 ```bash
 pip install . && python -m unittest discover -s tests -p 'test_*.py'
@@ -278,7 +300,12 @@ CI(GitHub Actions)在 Python 3.10 / 3.13 双版本运行同一套测试,打 `v*`
 
 ## 版本历史
 
-- **0.1.6**(当前 PyPI 版):新增二买 30m 轻量确认 `confirm_buy2_30m`、
+- **0.1.7**(当前 PyPI 版):通用完善——`chan` 顶层导出全部公开 API
+  (`__all__`, `from chan import find_zs` 可用);全模块补 3.6 兼容
+  typing 注解与详细 docstring(参数/返回结构/规则边界逐条说明);
+  `find_bis` 新增 `min_k_gap` 参数(默认行为不变);`classify_trend`
+  新增 `zs_list`(组内全部中枢明细,旧字段保留);
+- **0.1.6**:新增二买 30m 轻量确认 `confirm_buy2_30m`、
   三买/三卖事件桥接 `confirm_buy3_event_30m` / `confirm_sell3_event_30m`、
   二买/二卖事件补 `b1_price`/`s1_price` 字段、三买/三卖力度过滤
   参数化 `min_power_ratio`(默认行为不变,向后兼容);

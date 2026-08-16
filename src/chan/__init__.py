@@ -11,9 +11,51 @@
     bs      - 三类买卖点信号
     cross30 - 日线买卖点 -> 30 分钟跨级别共振确认(区间套)
 
+顶层 API: 本模块重新导出各子模块的公开入口, 因此:
+    from chan import find_zs, confirm_buy3_30m
+等价于:
+    from chan.zs import find_zs
+    from chan.cross30 import confirm_buy3_30m
+完整导出清单见 __all__; 私有函数(下划线开头)与内部实现不在此列。
+
 发布: 发行名 chan-lun-core(import 名 chan), 仓库根 = src/chan(标准
       src-layout, 本包位于仓库根的 src/chan/ 子目录, 见仓库根 pyproject.toml)。
      注意: __version__ 与 pyproject.toml 的 [project] version 需保持一致。
 """
 
-__version__ = "0.1.6"
+from chan.bars import BAR_KEYS, bars_to_df, normalize_bars
+from chan.fx import FX, NewBar, find_fxs, remove_includes
+from chan.bi import BI, MIN_K_GAP, chan_fx_bi, find_bis
+from chan.xd import XD, chan_bis_xds, find_xds
+from chan.zs import ZS, classify_trend, find_zs
+from chan.bc import (ema, find_pan_bc, find_trend_bc, macd_series,
+                     segment_area)
+from chan.bs import find_buy_points, find_sell_points
+from chan.cross30 import (confirm_buy2_30m, confirm_buy3_30m,
+                          confirm_buy3_event_30m, confirm_sell3_30m,
+                          confirm_sell3_event_30m, find_run_exhaustion)
+
+__version__ = "0.1.7"
+
+__all__ = [
+    # chan.bars 行情归一化
+    "BAR_KEYS", "normalize_bars", "bars_to_df",
+    # chan.fx 包含处理 + 分型
+    "NewBar", "FX", "remove_includes", "find_fxs",
+    # chan.bi 笔
+    "BI", "MIN_K_GAP", "find_bis", "chan_fx_bi",
+    # chan.xd 线段
+    "XD", "find_xds", "chan_bis_xds",
+    # chan.zs 中枢与走势类型
+    "ZS", "find_zs", "classify_trend",
+    # chan.bc 背驰(MACD 辅助)
+    "ema", "macd_series", "segment_area", "find_trend_bc", "find_pan_bc",
+    # chan.bs 三类买卖点
+    "find_buy_points", "find_sell_points",
+    # chan.cross30 30m 跨级别共振确认
+    "find_run_exhaustion", "confirm_buy3_30m", "confirm_sell3_30m",
+    "confirm_buy2_30m", "confirm_buy3_event_30m",
+    "confirm_sell3_event_30m",
+    # 版本号
+    "__version__",
+]

@@ -15,20 +15,41 @@ chan.xd —— 线段的识别(特征序列两种标准)
       开始的向下一笔开始的序列的特征序列(向上笔序列)出现底分型",
       线段才在该顶分型高点处结束(第二序列的分型不分一、二种情况)。
 
+XD.mode 标记线段结束方式: 1 = 第一种情况(无缺口), 2 = 第二种情况
+(缺口 + 第二特征序列确认); 序列末尾未完成的线段 mode=1 且无确认终点。
+
 兼容: Python 3.6。
 """
 
 from __future__ import print_function
 
+from typing import Any, Dict, List, Optional, Tuple
+
+from chan.bi import BI
+
 
 class XD(object):
-    """线段对象"""
+    """线段对象
+
+    属性:
+        direction: 'up' / 'down'。
+        start_dt / start_value / start_index: 起点(时间/价格/笔索引)。
+        end_dt / end_value / end_index: 终点(时间/价格/笔索引)。
+        mode: 1 = 第一种情况(特征序列分型直接确认),
+              2 = 第二种情况(缺口, 由第二特征序列分型确认)。
+              序列末尾未完成线段的 mode 恒为 1。
+        gg / dd: 线段内部高低极值(所有构成笔的范围),
+            中枢重叠计算用 high/low 属性即返回它们。
+    """
 
     __slots__ = ["direction", "start_dt", "end_dt", "start_value",
                  "end_value", "start_index", "end_index", "mode",
                  "gg", "dd"]
 
-    def __init__(self, direction, start, end, mode, gg=None, dd=None):
+    def __init__(self, direction: str,
+                 start: Tuple[Any, float, int], end: Tuple[Any, float, int],
+                 mode: int, gg: Optional[float] = None,
+                 dd: Optional[float] = None):
         self.direction = direction    # 'up' / 'down'
         self.start_dt, self.start_value, self.start_index = start
         self.end_dt, self.end_value, self.end_index = end
@@ -42,16 +63,17 @@ class XD(object):
         self.dd = dd
 
     @property
-    def high(self):
+    def high(self) -> float:
         """线段内部最高点"""
         return self.gg
 
     @property
-    def low(self):
+    def low(self) -> float:
         """线段内部最低点"""
         return self.dd
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
+        """转 dict(测试/存档用), dt 统一转字符串"""
         return {"direction": self.direction,
                 "start": [str(self.start_dt), self.start_value],
                 "end": [str(self.end_dt), self.end_value],
@@ -59,12 +81,17 @@ class XD(object):
                 "mode": self.mode}
 
 
-def _merge_feats(feats):
+def _merge_feats(feats: List[Tuple[float, float, BI]]) -> List[Tuple[float, float, BI]]:
     """特征序列包含处理(元素 = (low, high, bi))
 
-    方向判定同 K 线包含规则:
-      向上(后元素高点 >= 前元素高点): 新元素 = [max(low), max(high)]
-      向下: 新元素 = [min(low), min(high)]
+    参数:
+        feats: 特征序列元素列表, 每项 (low, high, 对应笔对象)。
+
+    返回:
+        合并后的特征序列(顺序原则, 同K线包含规则):
+        向上(后元素高点 >= 前元素高点): 新元素 = [max(low), max(high)];
+        向下: 新元素 = [min(low), min(high)];
+        合并时保留高点更高(向上)或低点更低(向下)一侧的笔引用。
     """
     out = [feats[0]]
     for e in feats[1:]:
@@ -91,10 +118,17 @@ def _merge_feats(feats):
     return out
 
 
-def _has_fx(feats, kind):
+def _has_fx(feats: List[Tuple[float, float, BI]], kind: str) -> Optional[int]:
     """检查末尾三元素是否构成分型; 返回起始索引或 None
 
-    kind: 'top' 顶分型 / 'bottom' 底分型
+    参数:
+        feats: 已合并的标准特征序列。
+        kind: 'top' 顶分型 / 'bottom' 底分型。
+
+    返回:
+        构成分型的第一个元素在 feats 中的下标; 不构成返回 None。
+        (分型判定只看区间: 顶分型 = 中间元素 high/low 均三者最高;
+         底分型 = 中间元素 low/high 均三者最低。)
     """
     if len(feats) < 3:
         return None
@@ -108,13 +142,23 @@ def _has_fx(feats, kind):
     return None
 
 
-def find_xds(bis):
+def find_xds(bis: List[BI]) -> List[XD]:
     """识别线段(增量状态机, 支持第二种情况的缺口确认)
 
     参数:
-        bis: find_bis 输出的笔列表(顶底交替、首尾衔接)
+        bis: find_bis 输出的笔列表(顶底交替、首尾衔接)。
 
-    返回: list of XD(最后一个可能为未完成线段, mode=1 且无确认终点)
+    返回:
+        list of XD, 按时间顺序; 最后一个可能为未完成线段
+        (mode=1 且终点未获特征序列分型确认, 属正常现象)。
+
+    算法要点:
+        - 同向笔延伸当前线段端点, 同时把笔区间并入 gg/dd;
+        - 反向笔构成第一特征序列: 合并后检查顶/底分型;
+          无缺口(第一种情况) -> 线段结束于分型极值点;
+          有缺口(第二种情况) -> 记录待确认终点(pending),
+          等待第二特征序列(与线段同向的笔)出现对应分型才确认;
+        - 线段结束后, 方向翻转, 以确认点为新起点继续。
     """
     if not bis:
         return []
@@ -202,8 +246,19 @@ def find_xds(bis):
     return xds
 
 
-def chan_bis_xds(bars):
-    """完整入口: 原始bars -> (无包含序列, 分型, 笔, 线段)"""
+def chan_bis_xds(bars: List[Dict[str, Any]]) -> Tuple[List[Any], List[Any], List[BI], List[XD]]:
+    """完整入口: 原始 bars -> (无包含序列, 分型, 笔, 线段)
+
+    参数:
+        bars: 标准 bar 列表(chan.bars.normalize_bars 产出)。
+
+    返回:
+        四元组 (new_bars, fxs, bis, xds):
+            new_bars: 无包含K线序列(NewBar 列表);
+            fxs: 分型列表(FX 列表);
+            bis: 笔列表(BI 列表);
+            xds: 线段列表(XD 列表, 末个可能未完成)。
+    """
     from chan.fx import remove_includes, find_fxs
     from chan.bi import find_bis
     new_bars = remove_includes(bars)

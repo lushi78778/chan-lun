@@ -8,27 +8,43 @@ chan.bi —— 笔的识别
   精化标准(课77/81):
     - 顶分型极值 > 底分型极值(顶必须高于底);
     - 顶最高K线与底最低K线之间(不考虑包含)至少 3 根独立K线,
-      即无包含序列中两个分型中间K线的索引差 >= 4;
+      即无包含序列中两个分型中间K线的索引差 >= 4(中间隔 3 根);
     - 同向连续分型取极端者(顶取更高、底取更低)。
+
+本模块是管线第二层: 无包含序列 + 分型 -> 笔(BI)。
+成笔间隔 MIN_K_GAP 为模块级常量, 亦可经参数按标的流动性/级别微调。
 
 兼容: Python 3.6。
 """
 
 from __future__ import print_function
 
-from chan.fx import remove_includes, find_fxs
+from typing import Any, Dict, List, Optional, Tuple
 
-# 成笔的最小独立K线间隔数(课81: 至少3根)
+from chan.fx import FX, NewBar, find_fxs, remove_includes
+
+# 成笔的最小独立K线间隔数(课81: 至少3根, 即索引差 >= 4)
 MIN_K_GAP = 3
 
 
 class BI(object):
-    """笔对象"""
+    """笔对象
+
+    属性:
+        direction: 'up' 向上笔 / 'down' 向下笔。
+        start_dt / end_dt: 起点/终点分型的 dt。
+        start_value / end_value: 起点/终点分型极值(笔的端点价格)。
+        start_index / end_index: 两端分型中间K线在无包含序列中的索引
+            (线段/中枢的区间计算用)。
+        fx_a / fx_b: 起点/终点 FX 对象(可回溯分型的完整信息)。
+        high / low: 属性, 笔区间高低点 = max/min(两端点值)。
+    """
 
     __slots__ = ["direction", "start_dt", "end_dt", "start_value",
                  "end_value", "start_index", "end_index", "fx_a", "fx_b"]
 
-    def __init__(self, direction, fx_a, fx_b, start_index, end_index):
+    def __init__(self, direction: str, fx_a: FX, fx_b: FX,
+                 start_index: int, end_index: int):
         self.direction = direction      # 'up' 向上笔 / 'down' 向下笔
         self.fx_a = fx_a                # 起点分型
         self.fx_b = fx_b                # 终点分型
@@ -40,14 +56,17 @@ class BI(object):
         self.end_index = end_index      # 无包含序列索引(终点分型中间K线)
 
     @property
-    def high(self):
+    def high(self) -> float:
+        """笔区间高点(中枢重叠计算用)"""
         return max(self.start_value, self.end_value)
 
     @property
-    def low(self):
+    def low(self) -> float:
+        """笔区间低点(中枢重叠计算用)"""
         return min(self.start_value, self.end_value)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
+        """转 dict(测试/存档用), dt 统一转字符串"""
         return {"direction": self.direction,
                 "start_dt": str(self.start_dt), "end_dt": str(self.end_dt),
                 "start": self.start_value, "end": self.end_value,
@@ -55,21 +74,29 @@ class BI(object):
                 "start_index": self.start_index, "end_index": self.end_index}
 
 
-def find_bis(new_bars, fxs=None):
+def find_bis(new_bars: List[NewBar],
+             fxs: Optional[List[FX]] = None,
+             min_k_gap: int = MIN_K_GAP) -> List[BI]:
     """识别笔
 
     参数:
-        new_bars: remove_includes 的输出(无包含K线序列)
-        fxs: 分型列表(默认用 find_fxs 计算)
+        new_bars: remove_includes 的输出(无包含K线序列)。
+        fxs: 分型列表; None = 用 find_fxs(new_bars) 现算。
+        min_k_gap: 成笔的最小独立K线间隔数(课81 标准为 3)。
+            调小(如 2)会得到更灵敏、数量更多的笔, 调大则笔更稳健;
+            仅用于不同级别/流动性的适配, 默认即标准。
 
-    返回: list of BI(按时间顺序)
+    返回:
+        list of BI, 按时间顺序, 顶底交替。
 
     规则要点:
-        - 反向分型满足成笔条件(间隔>=3根独立K线 且 顶高于底) -> 新笔;
+        - 反向分型满足成笔条件(中间独立K线数 >= min_k_gap 且
+          顶高于底 / 底低于顶) -> 确认新笔, last 指针移到该分型;
         - 同向分型取极端(顶取更高、底取更低): 替换 last 指针, 同时
-          **更新最后一笔的终点**(若 last 是最后一笔终点)——
+          **更新最后一笔的终点**(若该分型是最后一笔终点)——
           顶分型后未出有效底分型而继续新高, 上一笔终点应随新顶延伸;
-        - 反向分型不满足成笔条件 -> 忽略, 继续向后。
+          反之新低同理;
+        - 反向分型不满足成笔条件 -> 忽略该分型, 继续向后找。
     """
     if fxs is None:
         fxs = find_fxs(new_bars)
@@ -104,7 +131,7 @@ def find_bis(new_bars, fxs=None):
         else:
             cond_value = fx.high > last.low
             direction = "up"
-        if gap >= MIN_K_GAP and cond_value:
+        if gap >= min_k_gap and cond_value:
             a, b = (last, fx) if last.bar_index < fx.bar_index else (fx, last)
             bis.append(BI(direction, a, b,
                           min(last.bar_index, fx.bar_index),
@@ -114,9 +141,21 @@ def find_bis(new_bars, fxs=None):
     return bis
 
 
-def chan_fx_bi(bars):
-    """完整入口: 原始bars -> (无包含序列, 分型列表, 笔列表)"""
+def chan_fx_bi(bars: List[Dict[str, Any]],
+               min_k_gap: int = MIN_K_GAP) -> Tuple[List[NewBar], List[FX], List[BI]]:
+    """完整入口: 原始 bars -> (无包含序列, 分型列表, 笔列表)
+
+    参数:
+        bars: 标准 bar 列表(chan.bars.normalize_bars 产出)。
+        min_k_gap: 透传给 find_bis 的成笔间隔(默认 MIN_K_GAP=3)。
+
+    返回:
+        三元组 (new_bars, fxs, bis):
+            new_bars: 包含处理后的无包含K线序列;
+            fxs: 分型列表;
+            bis: 笔列表(按时间顺序)。
+    """
     new_bars = remove_includes(bars)
     fxs = find_fxs(new_bars)
-    bis = find_bis(new_bars, fxs)
+    bis = find_bis(new_bars, fxs, min_k_gap=min_k_gap)
     return new_bars, fxs, bis

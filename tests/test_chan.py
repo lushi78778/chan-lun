@@ -582,3 +582,69 @@ class TestBuySellPoints(unittest.TestCase):
         # 门槛 3.5: 3.87 >= 3.5 -> 出信号
         res = find_buy_points(bis, [zs], min_power_ratio=3.5)
         self.assertEqual(len([r for r in res if r["type"] == 3]), 1)
+
+
+class TestMinKGapParam(unittest.TestCase):
+    def test_min_k_gap_param(self):
+        """min_k_gap 参数化: 默认 3 不成笔的间隔 2, 放宽到 2 成笔"""
+        from chan.fx import FX
+        fxs = [
+            FX("top", "d2", 11.0, 9.0, 2, [1, 2, 3]),
+            FX("bottom", "d5", 9.5, 8.0, 5, [4, 5, 6]),
+        ]
+        nb = [NewBar("d%d" % i, 0, 10.0, 9.0, 0, 0, [i]) for i in range(8)]
+        # 间隔 2 根独立K线: 默认 MIN_K_GAP=3 -> 不成笔
+        self.assertEqual(len(find_bis(nb, fxs)), 0)
+        # 放宽到 2 -> 成一笔(down: 11.0 -> 8.0)
+        bis = find_bis(nb, fxs, min_k_gap=2)
+        self.assertEqual(len(bis), 1)
+        self.assertEqual(bis[0].direction, "down")
+        self.assertEqual(bis[0].start_value, 11.0)
+        self.assertEqual(bis[0].end_value, 8.0)
+
+
+class TestClassifyTrendDetail(unittest.TestCase):
+    def test_zs_list_detail(self):
+        """classify_trend: 新增 zs_list 含组内全部中枢明细, 旧字段保留"""
+        from chan.zs import ZS, classify_trend
+        zs1 = ZS(10.0, 12.0, 12.5, 9.5, "d1", "d5", "up", 3)
+        zs2 = ZS(13.0, 15.0, 15.5, 12.5, "d7", "d11", "up", 3)   # 与 zs1 不重叠
+        zs3 = ZS(12.5, 14.0, 14.3, 12.2, "d13", "d16", "up", 3)  # 与 zs2 重叠
+        res = classify_trend([zs1, zs2, zs3])
+        self.assertEqual(len(res), 2)
+        # 第一组: zs1+zs2 不重叠 -> 趋势
+        self.assertEqual(res[0]["type"], "趋势")
+        self.assertEqual(res[0]["zs_count"], 2)
+        self.assertEqual(len(res[0]["zs_list"]), 2)
+        self.assertEqual(res[0]["zs_list"][0]["zd"], 10.0)
+        self.assertEqual(res[0]["zs_list"][1]["zd"], 13.0)
+        self.assertEqual(res[0]["zs_list"][1]["zg"], 15.0)
+        self.assertIn("gg", res[0]["zs_list"][0])
+        self.assertIn("extended_9", res[0]["zs_list"][0])
+        # 旧字段(组内首个中枢边界)保留
+        self.assertEqual(res[0]["zd"], 10.0)
+        self.assertEqual(res[0]["zg"], 12.0)
+        # 第二组: zs3 与 zs2 区间重叠 -> 新组(盘整)
+        self.assertEqual(res[1]["type"], "盘整")
+        self.assertEqual(len(res[1]["zs_list"]), 1)
+
+
+class TestPackageExports(unittest.TestCase):
+    def test_top_level_api(self):
+        """chan 顶层导出全部公开 API, from chan import xxx 可用"""
+        import chan
+        for name in chan.__all__:
+            self.assertTrue(hasattr(chan, name), "缺少导出: %s" % name)
+        from chan import (find_zs, normalize_bars, confirm_buy2_30m,
+                          find_buy_points, classify_trend)
+        self.assertTrue(callable(find_zs))
+        self.assertTrue(callable(normalize_bars))
+        self.assertTrue(callable(confirm_buy2_30m))
+        self.assertTrue(callable(find_buy_points))
+        self.assertTrue(callable(classify_trend))
+
+    def test_version_exported(self):
+        import chan
+        self.assertIn("__version__", chan.__all__)
+        self.assertTrue(len(chan.__version__) >= 5)
+        self.assertEqual(chan.__version__.count("."), 2)

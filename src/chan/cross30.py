@@ -31,23 +31,25 @@ from __future__ import print_function
 
 import datetime
 
+from typing import Any, Dict, List, Optional
+
 from chan.bi import chan_fx_bi
 from chan.zs import find_zs
 from chan.bc import macd_series, segment_area, _dt_index
 
 
-def _date_of(dt):
+def _date_of(dt: Any) -> str:
     return str(dt)[:10]
 
 
-def _days_diff(dt_a, dt_b):
+def _days_diff(dt_a: Any, dt_b: Any) -> int:
     """两个时间点相差的自然日天数(dt_a - dt_b)"""
     da = datetime.datetime.strptime(_date_of(dt_a), "%Y-%m-%d")
     db = datetime.datetime.strptime(_date_of(dt_b), "%Y-%m-%d")
     return (da - db).days
 
 
-def _group_runs(bis):
+def _group_runs(bis: List[Any]) -> List[Any]:
     """把笔列表按方向合并成连续同向段(run)
 
     返回: list of (direction, [bi, ...]), 时间有序
@@ -61,8 +63,9 @@ def _group_runs(bis):
     return runs
 
 
-def find_run_exhaustion(bis30, bars30, run_dir, end_dt, stale_days=1,
-                        min_prev_swing_ratio=None):
+def find_run_exhaustion(bis30: List[Any], bars30: List[Dict[str, Any]],
+                        run_dir: str, end_dt: Any, stale_days: int = 1,
+                        min_prev_swing_ratio: Optional[float] = None) -> Dict[str, Any]:
     """找最后一段同向 run 并判断其末端背驰
 
     参数:
@@ -204,9 +207,11 @@ def find_run_exhaustion(bis30, bars30, run_dir, end_dt, stale_days=1,
     return out
 
 
-def confirm_buy3_30m(bars30, zd, zg, signal_dt,
-                     zg_tol=0.01, weak_tol=0.02, stale_days=1,
-                     min_prev_swing_ratio=None):
+def confirm_buy3_30m(bars30: List[Dict[str, Any]], zd: float, zg: float,
+                     signal_dt: Any,
+                     zg_tol: float = 0.01, weak_tol: float = 0.02,
+                     stale_days: int = 1,
+                     min_prev_swing_ratio: Optional[float] = None) -> Dict[str, Any]:
     """日线三买 -> 30 分钟跨级别确认
 
     参数:
@@ -270,9 +275,11 @@ def confirm_buy3_30m(bars30, zd, zg, signal_dt,
     return out
 
 
-def confirm_sell3_30m(bars30, zd, zg, signal_dt,
-                      zd_tol=0.01, weak_tol=0.02, stale_days=1,
-                      min_prev_swing_ratio=None):
+def confirm_sell3_30m(bars30: List[Dict[str, Any]], zd: float, zg: float,
+                      signal_dt: Any,
+                      zd_tol: float = 0.01, weak_tol: float = 0.02,
+                      stale_days: int = 1,
+                      min_prev_swing_ratio: Optional[float] = None) -> Dict[str, Any]:
     """日线三卖 -> 30 分钟跨级别确认(镜像)
 
     反弹笔内部 30m 出现顶背驰, 且 30m 高点不升破 ZD(允许轻微刺破)。
@@ -328,8 +335,9 @@ def confirm_sell3_30m(bars30, zd, zg, signal_dt,
     return out
 
 
-def confirm_buy2_30m(bars30, buy1_price, signal_dt, stale_days=1,
-                     pierce_tol=0.0):
+def confirm_buy2_30m(bars30: List[Dict[str, Any]], buy1_price: float,
+                     signal_dt: Any, stale_days: int = 1,
+                     pierce_tol: float = 0.0) -> Dict[str, Any]:
     """二买轻量 30m 确认: 30m 底分型 + 回调低点不破一买低点
 
     二买没有"离开中枢"结构, 不套用三买的区间套背驰判定, 改用
@@ -396,7 +404,8 @@ def confirm_buy2_30m(bars30, buy1_price, signal_dt, stale_days=1,
     return out
 
 
-def confirm_buy3_event_30m(evt, bars30, **kw):
+def confirm_buy3_event_30m(evt: Dict[str, Any], bars30: List[Dict[str, Any]],
+                           **kw: Any) -> Dict[str, Any]:
     """从 bs 模块的三买事件 dict 直接做 30m 跨级别确认(便捷桥接)
 
     参数:
@@ -412,7 +421,8 @@ def confirm_buy3_event_30m(evt, bars30, **kw):
         signal_dt=evt.get("pull_end_dt") or evt.get("dt"), **kw)
 
 
-def confirm_sell3_event_30m(evt, bars30, **kw):
+def confirm_sell3_event_30m(evt: Dict[str, Any], bars30: List[Dict[str, Any]],
+                            **kw: Any) -> Dict[str, Any]:
     """从 bs 模块的三卖事件 dict 直接做 30m 跨级别确认(镜像桥接)"""
     if evt.get("zs_zd") is None or evt.get("zs_zg") is None:
         return {"status": "no_data", "note": "事件缺少中枢边界字段 zs_zd/zs_zg"}
