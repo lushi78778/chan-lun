@@ -648,3 +648,42 @@ class TestPackageExports(unittest.TestCase):
         self.assertIn("__version__", chan.__all__)
         self.assertTrue(len(chan.__version__) >= 5)
         self.assertEqual(chan.__version__.count("."), 2)
+
+
+class TestRobustness(unittest.TestCase):
+    def test_ema_empty(self):
+        """空序列: ema/macd_series 返回空数组, 不抛异常"""
+        from chan.bc import ema, macd_series
+        out = ema([], 12)
+        self.assertEqual(len(out), 0)
+        dif, dea, hist = macd_series([])
+        self.assertEqual(len(dif), 0)
+        self.assertEqual(len(dea), 0)
+        self.assertEqual(len(hist), 0)
+
+    def test_trend_bc_empty_bis(self):
+        """无笔/无中枢: find_trend_bc/find_pan_bc 返回 [], 不抛异常"""
+        from chan.bc import find_trend_bc, find_pan_bc
+        self.assertEqual(find_trend_bc([], [], []), [])
+        self.assertEqual(find_pan_bc([], [], []), [])
+        # 有中枢但无笔: 返回 []
+        zs = type("ZS", (), {"zd": 10.0, "zg": 12.0, "dd": 9.0, "gg": 13.0,
+                             "start_dt": "d0", "end_dt": "d16"})()
+        self.assertEqual(find_trend_bc([], [zs], []), [])
+
+
+class TestClassifyTrendDirection(unittest.TestCase):
+    def test_direction_consistency(self):
+        """方向不一致的中枢即使区间不重叠, 也不并入同一趋势"""
+        from chan.zs import ZS, classify_trend
+        zs1 = ZS(10.0, 12.0, 12.5, 9.5, "d1", "d5", "up", 3)
+        zs2 = ZS(13.0, 15.0, 15.5, 12.5, "d7", "d11", "down", 3)  # 反向
+        res = classify_trend([zs1, zs2])
+        self.assertEqual(len(res), 2)
+        self.assertEqual(res[0]["type"], "盘整")
+        self.assertEqual(res[1]["type"], "盘整")
+        # 同向不重叠 -> 仍合并为趋势(回归)
+        zs2_up = ZS(13.0, 15.0, 15.5, 12.5, "d7", "d11", "up", 3)
+        res2 = classify_trend([zs1, zs2_up])
+        self.assertEqual(len(res2), 1)
+        self.assertEqual(res2[0]["type"], "趋势")

@@ -31,7 +31,7 @@ pip install chan-lun-core
 从 GitHub Release 安装(由 CI 自动构建):
 
 ```bash
-pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.7/chan_lun_core-0.1.7-py3-none-any.whl
+pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.8/chan_lun_core-0.1.8-py3-none-any.whl
 ```
 
 或源码安装:
@@ -285,7 +285,7 @@ stale / no_data,附带 `fx_dt/low30/dist_b1`。
 
 ## 测试
 
-仓库自带测试(62 个):`chan.bars/fx/bi/xd/zs/bc/bs` 与 `chan.cross30` 的
+仓库自带测试(65 个):`chan.bars/fx/bi/xd/zs/bc/bs` 与 `chan.cross30` 的
 单元测试,覆盖合成行情的分型边界、成笔间隔(含 min_k_gap 参数)、
 中枢延伸/新生、背驰判定、三类买卖点字段与力度过滤参数、
 三买三卖/二买 30m 确认的 confirmed/broke/stale 等路径,以及
@@ -300,7 +300,8 @@ CI(GitHub Actions)在 Python 3.10 / 3.13 双版本运行同一套测试,打 `v*`
 
 ## 版本历史
 
-- **0.1.7**(当前 PyPI 版):通用完善——`chan` 顶层导出全部公开 API
+- **0.1.8**(当前 PyPI 版):正确性/健壮性——`classify_trend` 补方向一致性判定(反向中枢不再误并趋势); `bc.ema`/`macd_series`/`find_trend_bc` 空输入防护; `confirm_buy3/3_30m` 的 zg_tol/zd_tol 标注为保留参数(文档如实化); stale_days 文档与默认值表述澄清;
+- **0.1.7**:通用完善——`chan` 顶层导出全部公开 API
   (`__all__`, `from chan import find_zs` 可用);全模块补 3.6 兼容
   typing 注解与详细 docstring(参数/返回结构/规则边界逐条说明);
   `find_bis` 新增 `min_k_gap` 参数(默认行为不变);`classify_trend`

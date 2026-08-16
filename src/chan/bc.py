@@ -32,8 +32,11 @@ def ema(values: Any, n: int) -> Any:
 
     返回:
         numpy 数组, 与输入等长。递推实现, 无 TA-Lib 依赖。
+        空输入返回空数组(不抛异常)。
     """
     values = np.asarray(values, dtype=float)
+    if len(values) == 0:
+        return np.empty(0)
     out = np.empty(len(values))
     k = 2.0 / (n + 1)
     out[0] = values[0]
@@ -121,13 +124,13 @@ def find_trend_bc(bis: List[Any], zss: List[Any],
         - 离开段 MACD 面积 < 前一连接段面积, 且柱为正(红柱)。
       向下趋势镜像 -> 底背驰候选。
       注: 至少两个中枢才可能产生趋势背驰; 离开段用"最后中枢 end_dt ->
-      最后一笔终点"近似(简化)。
+      最后一笔终点"近似(简化)。边界: bis/zss 为空时返回 []。
     """
     if hist is None:
         _, _, hist = macd_series(bars)
     dt_map = _dt_index(bars)
     out = []
-    if len(zss) < 2:
+    if len(zss) < 2 or not bis:
         return out
 
     for k in range(1, len(zss)):

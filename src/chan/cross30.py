@@ -218,7 +218,8 @@ def confirm_buy3_30m(bars30: List[Dict[str, Any]], zd: float, zg: float,
         bars30: 30m bars(升序, 拉到信号日为止)
         zd/zg: 日线中枢下/上沿(与 30m 同一前复权基准)
         signal_dt: 日线三买信号日(str 或 date)
-        zg_tol: 贴近 ZG 的比例(>= zg 即强确认)
+        zg_tol: 保留参数(历史兼容, 当前判定不使用); "强确认"口径固定为
+            30m 低点不破 ZG(low30 >= zg), 不设贴近容忍。
         weak_tol: 允许 30m 低点跌破 ZG 的比例(zg*(1-weak_tol) 以内算弱确认)
         stale_days: 30m 回抽段终点允许早于信号日的自然日数
         min_prev_swing_ratio: 前一对照段 DIF 摆动最小幅度(占价格中位数比例,
@@ -284,6 +285,9 @@ def confirm_sell3_30m(bars30: List[Dict[str, Any]], zd: float, zg: float,
 
     反弹笔内部 30m 出现顶背驰, 且 30m 高点不升破 ZD(允许轻微刺破)。
 
+    参数: 同 confirm_buy3_30m 镜像; zd_tol 为保留参数(历史兼容,
+    当前判定不使用), "强确认"口径固定为 30m 高点不升破 ZD。
+
     返回 dict:
         status: confirmed(强共振) / weak / no_exhaustion /
                 broke(30m 升破 ZD, 三卖存疑) / stale / no_data
@@ -348,9 +352,9 @@ def confirm_buy2_30m(bars30: List[Dict[str, Any]], buy1_price: float,
         bars30: 30m bars(升序, 拉到信号日为止)
         buy1_price: 日线一买(趋势底背驰)低点价格
         signal_dt: 日线二买信号日(str 或 date)
-        stale_days: 底分型 dt 允许早于信号日的自然日数
-            (分型需后一根K线确认, 且合并K线取后一根 dt, 故底分型
-            终点通常早于信号日 1-3 天, 个股层实测默认 3)
+        stale_days: 底分型 dt 允许早于信号日的自然日数, 默认 1
+            (30m 序列通常当日即可确认底分型; 个股日线级场景因合并K线
+            取后一根 dt 的伪影, 实测建议放宽到 3)
         pierce_tol: 允许 30m 低点跌破一买低点的比例
             (默认 0 = 严格不破; 0.02 = 刺破 2% 以内算 weak)
 

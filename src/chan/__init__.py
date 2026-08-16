@@ -35,7 +35,7 @@ from chan.cross30 import (confirm_buy2_30m, confirm_buy3_30m,
                           confirm_buy3_event_30m, confirm_sell3_30m,
                           confirm_sell3_event_30m, find_run_exhaustion)
 
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 
 __all__ = [
     # chan.bars 行情归一化

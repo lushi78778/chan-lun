@@ -149,9 +149,11 @@ def classify_trend(zss: List[ZS]) -> List[Dict[str, Any]]:
                 需要"第 k 个中枢边界"的调用方不再只能拿到第一个。
 
     简化规则:
-        相邻两中枢区间不重叠(zs.zg < prev.zd 或 zs.zd > prev.zg)
-        且方向一致 -> 视为同一趋势延续, 归入同组;
-        区间重叠 -> 更大级别盘整, 归为新组(第一版简化处理)。
+        相邻两中枢满足"区间不重叠(zs.zg < prev.zd 或 zs.zd > prev.zg)
+        **且方向一致(zs.direction == prev.direction)**"时, 视为同一
+        趋势的延续, 归入同组;
+        区间重叠或方向不一致 -> 归为新组(盘整或趋势转折, 第一版
+        简化处理, 不做方向反转的细分)。
     """
     if not zss:
         return []
@@ -161,11 +163,12 @@ def classify_trend(zss: List[ZS]) -> List[Dict[str, Any]]:
             groups.append([zs])
             continue
         prev = groups[-1][-1]
-        # 相邻中枢区间不重叠 -> 同向趋势延续
-        if zs.zg < prev.zd or zs.zd > prev.zg:
+        # 相邻中枢区间不重叠且方向一致 -> 同向趋势延续
+        if (zs.zg < prev.zd or zs.zd > prev.zg) \
+                and zs.direction == prev.direction:
             groups[-1].append(zs)
         else:
-            # 重叠 -> 更大级别盘整, 归为新组(第一版简化处理)
+            # 重叠或方向不一致 -> 归为新组(第一版简化处理)
             groups.append([zs])
     out = []
     for g in groups:
