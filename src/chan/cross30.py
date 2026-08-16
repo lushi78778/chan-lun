@@ -326,3 +326,97 @@ def confirm_sell3_30m(bars30, zd, zg, signal_dt,
             out["note"] = "30m 高点升破 ZD 超 %.2f%%, 且无背驰" % (
                 weak_tol * 100.0)
     return out
+
+
+def confirm_buy2_30m(bars30, buy1_price, signal_dt, stale_days=1,
+                     pierce_tol=0.0):
+    """二买轻量 30m 确认: 30m 底分型 + 回调低点不破一买低点
+
+    二买没有"离开中枢"结构, 不套用三买的区间套背驰判定, 改用
+    两条轻量确认: ①信号日窗口内 30m 出现底分型; ②该底分型低点
+    (回调低点)不破日线一买低点(允许轻微刺破, 见 pierce_tol)。
+
+    参数:
+        bars30: 30m bars(升序, 拉到信号日为止)
+        buy1_price: 日线一买(趋势底背驰)低点价格
+        signal_dt: 日线二买信号日(str 或 date)
+        stale_days: 底分型 dt 允许早于信号日的自然日数
+            (分型需后一根K线确认, 且合并K线取后一根 dt, 故底分型
+            终点通常早于信号日 1-3 天, 个股层实测默认 3)
+        pierce_tol: 允许 30m 低点跌破一买低点的比例
+            (默认 0 = 严格不破; 0.02 = 刺破 2% 以内算 weak)
+
+    返回 dict:
+        status: confirmed(底分型确认且不破一买低点) /
+                weak(轻微刺破, pierce_tol 内) /
+                broke(跌破一买低点超 pierce_tol, 二买结构失效) /
+                stale(窗口内无底分型) / no_data
+        + fx_dt / low30 / dist_b1(低点距一买低点的百分比) / note
+    """
+    out = {"status": "no_data", "note": "", "fx_dt": None,
+           "low30": None, "dist_b1": None}
+    if not bars30 or buy1_price is None:
+        return out
+    _, fxs30, _ = chan_fx_bi(bars30)
+    if len(fxs30) < 1:
+        out["note"] = "30m 分型不足, 无结构"
+        return out
+
+    # 窗口 [signal_dt - stale_days, signal_dt] 内最近一个底分型
+    cand = None
+    for fx in fxs30:
+        if fx.kind != "bottom":
+            continue
+        diff = _days_diff(signal_dt, fx.dt)
+        if 0 <= diff <= stale_days:
+            if cand is None or str(fx.dt) >= str(cand.dt):
+                cand = fx
+    if cand is None:
+        out["status"] = "stale"
+        out["note"] = "信号日前 {0} 个自然日内无 30m 底分型, 未跟上".format(
+            stale_days)
+        return out
+
+    low30 = cand.low
+    out["fx_dt"] = str(cand.dt)
+    out["low30"] = round(low30, 4)
+    out["dist_b1"] = round((low30 - buy1_price) / buy1_price * 100.0, 3)
+
+    if low30 >= buy1_price:
+        out["status"] = "confirmed"
+        out["note"] = "30m 底分型确认, 回调低点不破一买低点"
+    elif low30 >= buy1_price * (1.0 - pierce_tol):
+        out["status"] = "weak"
+        out["note"] = "30m 底分型确认, 盘中轻微刺破一买低点({0:.2f}% 以内)".format(
+            pierce_tol * 100.0)
+    else:
+        out["status"] = "broke"
+        out["note"] = "30m 低点跌破一买低点超 {0:.2f}%, 二买结构失效".format(
+            pierce_tol * 100.0)
+    return out
+
+
+def confirm_buy3_event_30m(evt, bars30, **kw):
+    """从 bs 模块的三买事件 dict 直接做 30m 跨级别确认(便捷桥接)
+
+    参数:
+        evt: chan.bs.find_buy_points 输出的 type=3 事件
+             (读取 zs_zd/zs_zg/dt 字段)
+        bars30 与其余参数同 confirm_buy3_30m。
+    """
+    if evt.get("zs_zd") is None or evt.get("zs_zg") is None:
+        return {"status": "no_data", "note": "事件缺少中枢边界字段 zs_zd/zs_zg"}
+    return confirm_buy3_30m(
+        bars30,
+        zd=evt.get("zs_zd"), zg=evt.get("zs_zg"),
+        signal_dt=evt.get("pull_end_dt") or evt.get("dt"), **kw)
+
+
+def confirm_sell3_event_30m(evt, bars30, **kw):
+    """从 bs 模块的三卖事件 dict 直接做 30m 跨级别确认(镜像桥接)"""
+    if evt.get("zs_zd") is None or evt.get("zs_zg") is None:
+        return {"status": "no_data", "note": "事件缺少中枢边界字段 zs_zd/zs_zg"}
+    return confirm_sell3_30m(
+        bars30,
+        zd=evt.get("zs_zd"), zg=evt.get("zs_zg"),
+        signal_dt=evt.get("pull_end_dt") or evt.get("dt"), **kw)

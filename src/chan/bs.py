@@ -15,15 +15,19 @@ chan.bs —— 三类买卖点信号(基于笔级中枢)
 from __future__ import print_function
 
 
-def find_buy_points(bis, zss, trend_bc=None):
+def find_buy_points(bis, zss, trend_bc=None, min_power_ratio=None):
     """三类买点识别(基于笔列表与笔级中枢)
 
     参数:
         bis: 笔列表
         zss: 中枢列表(通常由 find_zs(bis) 生成)
         trend_bc: 趋势底背驰候选列表(可选, 来自 bc.find_trend_bc)
+        min_power_ratio: 三买力度过滤下限(离开笔涨幅 / 回抽笔跌幅)。
+            None = 保持默认行为(比值必须 > 1.0, 即回拉力度小于离开力度);
+            传入数值 n = 比值必须 >= n(回测敏感性测试用, 如 1.5/2.0)。
 
-    返回: list of dict {type: 1/2/3, dt, price, basis, power_ratio}
+    返回: list of dict {type: 1/2/3, dt, price, basis, power_ratio};
+    第二类买点事件额外携带 b1_price(对应一买低点, 供 30m 轻量确认)。
 
     v2 增强: 第三类买卖点增加力度过滤(课73/76/78/79/83):
       回拉力度没有离开力度大, 第三类买点才可能形成。
@@ -49,7 +53,9 @@ def find_buy_points(bis, zss, trend_bc=None):
                     leave_power = leave_bi.end_value / leave_bi.start_value - 1.0
                     pull_power = abs(bi.end_value / bi.start_value - 1.0)
                     ratio = round(leave_power / pull_power, 2) if pull_power > 0 else None
-                    if leave_power > pull_power:
+                    ok_power = (ratio > 1.0) if min_power_ratio is None \
+                        else (ratio is not None and ratio >= min_power_ratio)
+                    if ok_power:
                         # v3 增强: 附带中枢上下沿与回抽笔端点, 供跨级别(30m)确认
                         out.append({"type": 3, "dt": str(bi.end_dt),
                                     "price": bi.end_value,
@@ -94,15 +100,21 @@ def find_buy_points(bis, zss, trend_bc=None):
                     out.append({"type": 2, "dt": str(bi.end_dt),
                                 "price": bi.end_value,
                                 "basis": "一买后第一次回调不破前低",
-                                "zs_idx": buy1.get("zs_idx")})
+                                "zs_idx": buy1.get("zs_idx"),
+                                "b1_price": round(b1_price, 4)})
                     found = True
                 state = 0
 
     return out
 
 
-def find_sell_points(bis, zss, trend_bc=None):
-    """三类卖点识别(镜像)"""
+def find_sell_points(bis, zss, trend_bc=None, min_power_ratio=None):
+    """三类卖点识别(镜像)
+
+    参数同 find_buy_points; min_power_ratio 为三卖力度过滤下限
+    (离开笔跌幅 / 回抽笔涨幅)。第二类卖点事件额外携带 s1_price
+    (对应一卖高点, 供 30m 轻量确认)。
+    """
     out = []
 
     # 第三类卖点: 向下离开中枢, 回抽笔高点不升破 ZD(力度过滤 + 只取第一次)
@@ -123,7 +135,9 @@ def find_sell_points(bis, zss, trend_bc=None):
                     leave_power = abs(leave_bi.end_value / leave_bi.start_value - 1.0)
                     pull_power = bi.end_value / bi.start_value - 1.0
                     ratio = round(leave_power / pull_power, 2) if pull_power > 0 else None
-                    if leave_power > pull_power:
+                    ok_power = (ratio > 1.0) if min_power_ratio is None \
+                        else (ratio is not None and ratio >= min_power_ratio)
+                    if ok_power:
                         # v3 增强: 附带中枢上下沿与回抽笔端点, 供跨级别(30m)确认
                         out.append({"type": 3, "dt": str(bi.end_dt),
                                     "price": bi.end_value,
@@ -168,7 +182,8 @@ def find_sell_points(bis, zss, trend_bc=None):
                     out.append({"type": 2, "dt": str(bi.end_dt),
                                 "price": bi.end_value,
                                 "basis": "一卖后第一次反弹不破前高",
-                                "zs_idx": sell1.get("zs_idx")})
+                                "zs_idx": sell1.get("zs_idx"),
+                                "s1_price": round(s1_price, 4)})
                     found = True
                 state = 0
 

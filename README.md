@@ -31,7 +31,7 @@ pip install chan-lun-core
 从 GitHub Release 安装(由 CI 自动构建):
 
 ```bash
-pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.4/chan_lun_core-0.1.4-py3-none-any.whl
+pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.6/chan_lun_core-0.1.6-py3-none-any.whl
 ```
 
 或源码安装:
@@ -209,10 +209,19 @@ sells = find_sell_points(bis, zss, trend_bc)
 第三类信号额外附带 `zs_zd/zs_zg/pull_start_dt/pull_end_dt/pull_start/pull_end`,
 供 30 分钟跨级别确认使用。
 
+- `find_buy_points(bis, zss, trend_bc=None, min_power_ratio=None)`:
+  `min_power_ratio` 为三买力度过滤下限——`None` 保持默认行为(离开力度
+  必须大于回拉力度),传入数值 `n` 则要求比值 `>= n`(回测敏感性测试用,
+  如 1.5/2.0);卖点镜像同参数;
+- 第二类买点事件附带 **`b1_price`**(对应一买低点),第二类卖点事件附带
+  **`s1_price`**(对应一卖高点),供 30m 轻量确认(`chan.cross30.confirm_buy2_30m`)。
+
 ### chan.cross30 —— 30m 跨级别共振确认(区间套)
 
 ```python
-from chan.cross30 import confirm_buy3_30m, confirm_sell3_30m, find_run_exhaustion
+from chan.cross30 import (confirm_buy3_30m, confirm_sell3_30m,
+                          confirm_buy2_30m, confirm_buy3_event_30m,
+                          confirm_sell3_event_30m, find_run_exhaustion)
 
 r = confirm_buy3_30m(bars30, zd, zg, signal_dt,
                      zg_tol=0.01, weak_tol=0.02, stale_days=1,
@@ -235,6 +244,18 @@ r = confirm_buy3_30m(bars30, zd, zg, signal_dt,
 | `area_last/area_prev/area_ratio` | MACD 柱面积及比值(参考) |
 | `zs_count` | 与回抽段区间重叠的 30m 中枢个数 |
 
+**二买轻量确认** `confirm_buy2_30m(bars30, buy1_price, signal_dt,
+stale_days=1, pierce_tol=0.0)`:二买没有"离开中枢"结构,不套用区间套
+背驰判定,改为两条轻量确认——信号日窗口内 30m 出现**底分型**,且该
+底分型低点(回调低点)**不破一买低点**(允许轻微刺破,`pierce_tol` 内
+算 weak)。状态:confirmed / weak / broke(破一买低点,二买结构失效)/
+stale / no_data,附带 `fx_dt/low30/dist_b1`。
+
+**事件桥接**:`confirm_buy3_event_30m(evt, bars30, ...)` 与
+`confirm_sell3_event_30m(evt, bars30, ...)` 直接接收 `chan.bs` 模块
+输出的买卖点事件 dict(自动取 `zs_zd/zs_zg/dt` 字段),省去手工拆字段
+的胶水代码。
+
 ## 兼容性
 
 - Python 3.6+ 语法(无 walrus / dataclasses / f-string 自描述等 3.7+ 特性);
@@ -243,9 +264,10 @@ r = confirm_buy3_30m(bars30, zd, zg, signal_dt,
 
 ## 测试
 
-仓库自带测试(47 个):`chan.bars/fx/bi/xd/zs/bc/bs` 与 `chan.cross30` 的
+仓库自带测试(58 个):`chan.bars/fx/bi/xd/zs/bc/bs` 与 `chan.cross30` 的
 单元测试,覆盖合成行情的分型边界、成笔间隔、中枢延伸/新生、背驰判定、
-三买三卖确认的 confirmed/broke/stale 等路径:
+三类买卖点字段与力度过滤参数、三买三卖/二买 30m 确认的
+confirmed/broke/stale 等路径:
 
 ```bash
 pip install . && python -m unittest discover -s tests -p 'test_*.py'
@@ -256,7 +278,12 @@ CI(GitHub Actions)在 Python 3.10 / 3.13 双版本运行同一套测试,打 `v*`
 
 ## 版本历史
 
-- **0.1.4**(当前 PyPI 版):发行名 `chan-lun-core`(PyPI 拒绝 `chan-lun`:
+- **0.1.6**(当前 PyPI 版):新增二买 30m 轻量确认 `confirm_buy2_30m`、
+  三买/三卖事件桥接 `confirm_buy3_event_30m` / `confirm_sell3_event_30m`、
+  二买/二卖事件补 `b1_price`/`s1_price` 字段、三买/三卖力度过滤
+  参数化 `min_power_ratio`(默认行为不变,向后兼容);
+- **0.1.5**:详细版 README(全模块 API/数据约定/防未来函数/状态表);
+- **0.1.4**:发行名 `chan-lun-core`(PyPI 拒绝 `chan-lun`:
   与现有 `chanlun` 名称过于相似),GitHub Release + PyPI 双发布打通;
 - 0.1.3:首次 PyPI 发布尝试,因发行名冲突被 PyPI 拒绝(GitHub Release 保留);
 - 0.1.2:仓库改为标准 src-layout(PyPA 官方布局);

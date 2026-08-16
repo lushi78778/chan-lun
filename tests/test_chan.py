@@ -511,3 +511,74 @@ class TestBuySellPoints(unittest.TestCase):
         res = find_sell_points(bis, [zs])
         types = [r["type"] for r in res]
         self.assertIn(3, types)
+
+    def test_buy2_carries_b1_price(self):
+        """二买事件携带一买低点 b1_price(供 30m 轻量确认)"""
+        from chan.bs import find_buy_points
+        from chan.fx import FX
+        from chan.bi import BI
+        bis = []
+        def mk_bi(d, s, e, si, ei):
+            fx_a = FX("bottom" if d == "up" else "top", "d%d" % si, max(s, e), min(s, e), si, [si])
+            fx_b = FX("top" if d == "up" else "bottom", "d%d" % ei, max(s, e), min(s, e), ei, [ei])
+            bis.append(BI(d, fx_a, fx_b, si, ei))
+        mk_bi("down", 12, 9, 0, 4)        # 一买笔: 终点 d4, 低点 9.0
+        mk_bi("up", 9, 10.5, 4, 8)
+        mk_bi("down", 10.5, 9.8, 8, 12)   # 二买: 回调不破 9.0
+        trend_bc = [{"direction": "down", "dt": "d4", "price": 9.0,
+                     "zs_idx": 0, "note": "底背驰"}]
+        zs = type("ZS", (), {"zd": 8.5, "zg": 11.0, "dd": 8.5, "gg": 11.0,
+                             "start_dt": "d0", "end_dt": "d12"})()
+        res = find_buy_points(bis, [zs], trend_bc)
+        r2 = [r for r in res if r["type"] == 2]
+        self.assertEqual(len(r2), 1, res)
+        self.assertAlmostEqual(r2[0]["b1_price"], 9.0)
+        self.assertAlmostEqual(r2[0]["price"], 9.8)
+
+    def test_sell2_carries_s1_price(self):
+        """二卖事件携带一卖高点 s1_price(镜像)"""
+        from chan.bs import find_sell_points
+        from chan.fx import FX
+        from chan.bi import BI
+        bis = []
+        def mk_bi(d, s, e, si, ei):
+            fx_a = FX("bottom" if d == "up" else "top", "d%d" % si, max(s, e), min(s, e), si, [si])
+            fx_b = FX("top" if d == "up" else "bottom", "d%d" % ei, max(s, e), min(s, e), ei, [ei])
+            bis.append(BI(d, fx_a, fx_b, si, ei))
+        mk_bi("up", 9, 12, 0, 4)          # 一卖笔: 终点 d4, 高点 12.0
+        mk_bi("down", 12, 11, 4, 8)
+        mk_bi("up", 11, 11.5, 8, 12)      # 二卖: 反弹不破 12.0
+        trend_bc = [{"direction": "up", "dt": "d4", "price": 12.0,
+                     "zs_idx": 0, "note": "顶背驰"}]
+        zs = type("ZS", (), {"zd": 8.5, "zg": 11.0, "dd": 8.5, "gg": 11.0,
+                             "start_dt": "d0", "end_dt": "d12"})()
+        res = find_sell_points(bis, [zs], trend_bc)
+        r2 = [r for r in res if r["type"] == 2]
+        self.assertEqual(len(r2), 1, res)
+        self.assertAlmostEqual(r2[0]["s1_price"], 12.0)
+
+    def test_buy3_min_power_ratio(self):
+        """三买力度过滤参数化: None=默认(>1.0), 数值=比值下限"""
+        from chan.bs import find_buy_points
+        from chan.fx import FX
+        from chan.bi import BI
+        bis = []
+        def mk_bi(d, s, e, si, ei):
+            fx_a = FX("bottom" if d == "up" else "top", "d%d" % si, max(s, e), min(s, e), si, [si])
+            fx_b = FX("top" if d == "up" else "bottom", "d%d" % ei, max(s, e), min(s, e), ei, [ei])
+            bis.append(BI(d, fx_a, fx_b, si, ei))
+        mk_bi("up", 10, 12, 0, 4)
+        mk_bi("down", 12, 10.5, 4, 8)
+        mk_bi("up", 10.5, 13, 8, 12)      # 离开 +23.8%
+        mk_bi("down", 13, 12.2, 12, 16)   # 回抽 -6.2% -> 比值 ≈3.87
+        zs = type("ZS", (), {"zd": 10.0, "zg": 12.0, "dd": 10.0, "gg": 13.0,
+                             "start_dt": "d0", "end_dt": "d16"})()
+        # 默认(None): 比值 3.87 > 1.0 -> 出信号
+        res = find_buy_points(bis, [zs])
+        self.assertEqual(len([r for r in res if r["type"] == 3]), 1)
+        # 门槛 4.0: 3.87 < 4.0 -> 过滤
+        res = find_buy_points(bis, [zs], min_power_ratio=4.0)
+        self.assertEqual(len([r for r in res if r["type"] == 3]), 0)
+        # 门槛 3.5: 3.87 >= 3.5 -> 出信号
+        res = find_buy_points(bis, [zs], min_power_ratio=3.5)
+        self.assertEqual(len([r for r in res if r["type"] == 3]), 1)

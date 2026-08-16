@@ -14,7 +14,9 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "src"))
 
-from chan.cross30 import confirm_buy3_30m, confirm_sell3_30m  # noqa: E402
+from chan.cross30 import (confirm_buy3_30m, confirm_sell3_30m,  # noqa: E402
+                          confirm_buy2_30m, confirm_buy3_event_30m,
+                          confirm_sell3_event_30m)
 
 
 def make_run_bars(runs, base_dt=None, step_min=30, end_bar_date=None):
@@ -235,6 +237,91 @@ class TestSell3Confirm30m(unittest.TestCase):
         sig_dt = bars[-1]["dt"]
         r = confirm_sell3_30m(bars, 12.75, 13.5, sig_dt)  # 12.93 ≤ 12.75*1.02
         self.assertEqual(r["status"], "weak", r)
+
+
+class TestBuy2Confirm30m(unittest.TestCase):
+    def mk_buy2_bars(self):
+        """以底分型收尾的 30m 序列: up -> down(缓跌至 10.5) -> 小反弹
+
+        下行段末根 close=10.5, low=10.29; 其后反弹确认底分型。
+        """
+        runs = [
+            ("up", 10.0, 12.0, 8),
+            ("down", 12.0, 10.5, 8),
+            ("up", 10.5, 11.0, 4),
+        ]
+        return make_run_bars(runs)
+
+    def test_confirmed(self):
+        """30m 底分型 + 低点(≈10.29)不破一买低点 10.0 -> confirmed"""
+        bars = self.mk_buy2_bars()
+        sig_dt = bars[-1]["dt"]
+        r = confirm_buy2_30m(bars, buy1_price=10.0, signal_dt=sig_dt)
+        self.assertEqual(r["status"], "confirmed", r)
+        self.assertGreaterEqual(r["dist_b1"], 0)
+
+    def test_broke(self):
+        """低点 ≈10.29 < 一买低点 10.6 -> broke(默认 pierce_tol=0)"""
+        bars = self.mk_buy2_bars()
+        sig_dt = bars[-1]["dt"]
+        r = confirm_buy2_30m(bars, buy1_price=10.6, signal_dt=sig_dt)
+        self.assertEqual(r["status"], "broke", r)
+
+    def test_weak_with_pierce_tol(self):
+        """刺破 1.9% 在 5% 容忍内 -> weak"""
+        bars = self.mk_buy2_bars()
+        sig_dt = bars[-1]["dt"]
+        r = confirm_buy2_30m(bars, buy1_price=10.6, signal_dt=sig_dt,
+                             pierce_tol=0.05)
+        self.assertEqual(r["status"], "weak", r)
+
+    def test_stale(self):
+        """信号日 5 天后 -> 窗口内无底分型 -> stale"""
+        bars = self.mk_buy2_bars()
+        sig_dt = bars[-1]["dt"] + datetime.timedelta(days=5)
+        r = confirm_buy2_30m(bars, buy1_price=10.0, signal_dt=sig_dt)
+        self.assertEqual(r["status"], "stale", r)
+
+    def test_no_data(self):
+        r = confirm_buy2_30m([], buy1_price=10.0, signal_dt="2026-08-14")
+        self.assertEqual(r["status"], "no_data")
+
+
+class TestEventBridges(unittest.TestCase):
+    def test_buy3_bridge_matches_direct(self):
+        """事件桥接结果与直接调用一致"""
+        bars = mk_buy3_bars(b_end=11.6)
+        sig_dt = bars[-1]["dt"]
+        evt = {"zs_zd": 10.0, "zs_zg": 11.2,
+               "pull_end_dt": sig_dt, "dt": sig_dt}
+        direct = confirm_buy3_30m(bars, 10.0, 11.2, sig_dt)
+        bridged = confirm_buy3_event_30m(evt, bars)
+        self.assertEqual(bridged["status"], direct["status"])
+        self.assertEqual(bridged["status"], "confirmed")
+
+    def test_sell3_bridge_matches_direct(self):
+        """卖点桥接镜像"""
+        runs = [
+            ("down", 12.0, 9.0, 8),
+            ("up", 9.0, 12.6, 8),
+            ("down", 12.6, 11.0, 8),
+            ("up", 11.0, 12.8, 8),
+            ("down", 12.8, 12.5, 4),
+        ]
+        bars = make_run_bars(runs)
+        sig_dt = bars[-1]["dt"]
+        evt = {"zs_zd": 13.2, "zs_zg": 14.0,
+               "pull_end_dt": sig_dt, "dt": sig_dt}
+        direct = confirm_sell3_30m(bars, 13.2, 14.0, sig_dt)
+        bridged = confirm_sell3_event_30m(evt, bars)
+        self.assertEqual(bridged["status"], direct["status"])
+
+    def test_bridge_missing_fields(self):
+        """事件缺中枢字段 -> no_data"""
+        r = confirm_buy3_event_30m({}, [])
+        self.assertEqual(r["status"], "no_data")
+        r = confirm_sell3_event_30m({"zs_zd": 10.0}, [])
+        self.assertEqual(r["status"], "no_data")
 
 
 if __name__ == "__main__":
