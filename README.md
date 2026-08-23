@@ -300,7 +300,7 @@ CI(GitHub Actions)在 Python 3.10 / 3.13 双版本运行同一套测试,打 `v*`
 
 ## 版本历史
 
-- **0.1.9**(当前 PyPI 版):发布元数据维护——Author 改为 lushi78778(不公开邮箱, 用户拍板); license 改 PEP 639 SPDX 表达式 MIT(pip show 显示 License: MIT 而非内联全文), LICENSE 文件仍随包分发; Home-page 为 PEP 621 旧字段, 现代规范用 Project-URL Homepage(已指向 GitHub 仓库, PyPI 页面可见);
+- **0.1.9**(当前 PyPI 版):发布元数据维护; license 改 PEP 639 SPDX 表达式 MIT(pip show 显示 License: MIT 而非内联全文), LICENSE 文件仍随包分发; Home-page 为 PEP 621 旧字段, 现代规范用 Project-URL Homepage(已指向 GitHub 仓库, PyPI 页面可见);
 - **0.1.8**:正确性/健壮性——`classify_trend` 补方向一致性判定(反向中枢不再误并趋势); `bc.ema`/`macd_series`/`find_trend_bc` 空输入防护; `confirm_buy3/3_30m` 的 zg_tol/zd_tol 标注为保留参数(文档如实化); stale_days 文档与默认值表述澄清;
 - **0.1.7**:通用完善——`chan` 顶层导出全部公开 API
   (`__all__`, `from chan import find_zs` 可用);全模块补 3.6 兼容
