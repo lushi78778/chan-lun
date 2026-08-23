@@ -4,17 +4,21 @@
 # (去 ._- / l,i->1 / o->0)逐变体验证无冲突。
 # 注意: version 与 src/chan/__init__.py 的 __version__ 需保持一致。
 [build-system]
-requires = ["setuptools>=61"]
+# >=77 支持 PEP 639 的 license = "MIT" 字符串形式(生成 License-Expression)
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "chan-lun-core"
-version = "0.1.8"
+version = "0.1.9"
 description = "缠论(缠中说禅理论)量化核心库: 分型/笔/线段/中枢/背驰/买卖点 + 30 分钟跨级别共振确认, 纯 Python 实现, 仅依赖 numpy/pandas"
 readme = "README.md"
 requires-python = ">=3.6"
-license = {file = "LICENSE"}
-authors = [{name = "Chan Contributors"}]
+# PEP 639: SPDX 表达式, pip show 显示为 "License: MIT"(不再内联全文)
+license = "MIT"
+# 作者身份为发布时静态写入的稳定字符串(GitHub 改名不会同步);
+# 用户拍板不公开邮箱(隐私优先)
+authors = [{name = "lushi78778"}]
 keywords = [
     "chan", "chanlun", "缠论", "缠中说禅",
     "technical-analysis", "quant", "stock", "kline", "trading",
@@ -23,7 +27,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    # License classifier 已被 PEP 639 的 license = "MIT" 表达式取代
     "Natural Language :: Chinese (Simplified)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
@@ -50,6 +54,8 @@ Repository = "https://github.com/lushi78778/chan-lun"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+# 继续把 LICENSE 文件随包分发(PEP 639 下不再自动内联)
+license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
