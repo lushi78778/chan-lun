@@ -52,8 +52,10 @@ from chan.biaoli import (BI_TRANSITIONS, SEVERITY_RANKS, bi_state,
 from chan.levels import (MAX_LEVELS_DEFAULT, MIN_UNITS_FOR_NEXT,
                          LevelDecomposition, change_starts_low,
                          decompose_levels, level_reading)
+from chan.strength import (MaArea, MaStrengthState, avg_strength_state,
+                           find_ma_bc, ma_areas, sma_series)
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -92,6 +94,9 @@ __all__ = [
     # chan.levels 多级唯一分解——记数法(课 102)
     "LevelDecomposition", "decompose_levels", "level_reading",
     "change_starts_low", "MAX_LEVELS_DEFAULT", "MIN_UNITS_FOR_NEXT",
+    # chan.strength 趋势力度与平均力度(课 15)
+    "sma_series", "MaArea", "ma_areas", "find_ma_bc",
+    "MaStrengthState", "avg_strength_state",
     # 版本号
     "__version__",
 ]

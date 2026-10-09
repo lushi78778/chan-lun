@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chan-lun-core"
-version = "0.3.0"
+version = "0.3.1"
 description = "缠论(缠中说禅理论)量化核心库: 分型/笔/线段/中枢/背驰/买卖点 + 30 分钟跨级别共振确认, 纯 Python 实现, 仅依赖 numpy/pandas"
 readme = "README.md"
 requires-python = ">=3.6"
