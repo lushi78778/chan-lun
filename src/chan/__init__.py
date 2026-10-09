@@ -7,6 +7,7 @@
     bi      - 笔识别
     xd      - 线段识别(特征序列两种标准)
     zs      - 中枢识别、走势类型与中枢状态机(课 20/69/70)
+    decompose - 同级别分解: 走势类型序列(课 38/39)
     bc      - 背驰识别(MACD 辅助: 趋势背驰/盘整背驰)
     bs      - 三类买卖点信号
     cross30 - 日线买卖点 -> 30 分钟跨级别共振确认(区间套)
@@ -37,8 +38,9 @@ from chan.cross30 import (confirm_buy2_30m, confirm_buy3_30m,
                           confirm_buy3_event_30m, confirm_sell3_30m,
                           confirm_sell3_event_30m, find_run_exhaustion)
 from chan.gap import Gap, classify_gap, find_gaps
+from chan.decompose import MoveType, same_level_decompose
 
-__version__ = "0.1.12"
+__version__ = "0.1.13"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -62,6 +64,8 @@ __all__ = [
     "confirm_sell3_event_30m",
     # chan.gap 缺口识别与力度三分类(课 77)
     "Gap", "find_gaps", "classify_gap",
+    # chan.decompose 同级别分解(课 38/39)
+    "MoveType", "same_level_decompose",
     # 版本号
     "__version__",
 ]
