@@ -60,8 +60,11 @@ from chan.turn import (TURN_BREAK, TURN_CANDIDATES, TURN_EXPANSION,
 from chan.minor_turn import (STAGE_BREAKOUT, STAGE_STRONG, STAGE_SUB_BS3,
                              STAGE_WITHIN, classify_minor_turn)
 from chan.nest import (BcNestInput, BcNestLevel, NestBcState, nested_bc)
+from chan.kiss import (ALIGN_DOWN, ALIGN_UP, KISS_FLY, KISS_LIP, KISS_WET,
+                       KissEvent, alignment_series, classify_kiss,
+                       find_kisses)
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -111,6 +114,9 @@ __all__ = [
     "classify_minor_turn",
     # chan.nest 多级区间套定位(课 61/37)
     "BcNestInput", "BcNestLevel", "NestBcState", "nested_bc",
+    # chan.kiss 均线吻系统(课 11/12)
+    "KISS_FLY", "KISS_LIP", "KISS_WET", "ALIGN_UP", "ALIGN_DOWN",
+    "KissEvent", "alignment_series", "find_kisses", "classify_kiss",
     # 版本号
     "__version__",
 ]
