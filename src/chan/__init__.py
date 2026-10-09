@@ -59,8 +59,9 @@ from chan.turn import (TURN_BREAK, TURN_CANDIDATES, TURN_EXPANSION,
                        guaranteed_rebound_gap)
 from chan.minor_turn import (STAGE_BREAKOUT, STAGE_STRONG, STAGE_SUB_BS3,
                              STAGE_WITHIN, classify_minor_turn)
+from chan.nest import (BcNestInput, BcNestLevel, NestBcState, nested_bc)
 
-__version__ = "0.3.3"
+__version__ = "0.4.0"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -108,6 +109,8 @@ __all__ = [
     # chan.minor_turn 小级别背驰引发大级别转折(课 44/53)
     "STAGE_WITHIN", "STAGE_STRONG", "STAGE_SUB_BS3", "STAGE_BREAKOUT",
     "classify_minor_turn",
+    # chan.nest 多级区间套定位(课 61/37)
+    "BcNestInput", "BcNestLevel", "NestBcState", "nested_bc",
     # 版本号
     "__version__",
 ]
