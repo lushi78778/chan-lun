@@ -42,8 +42,10 @@ from chan.cross30 import (confirm_buy2_30m, confirm_buy3_30m,
 from chan.gap import Gap, classify_gap, find_gaps
 from chan.decompose import MoveType, same_level_decompose
 from chan.recurse import level_up
+from chan.zhongyin import (ZhongYinResult, boll_bands, boll_bs1_hints,
+                           boll_events, boll_state, track_zhongyin)
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -71,6 +73,9 @@ __all__ = [
     "MoveType", "same_level_decompose",
     # chan.recurse 级别递归 f2(课 35/63/84/102)
     "level_up",
+    # chan.zhongyin 中阴阶段 + 布林通道辅助判断(课 89/90)
+    "ZhongYinResult", "track_zhongyin", "boll_bands", "boll_state",
+    "boll_events", "boll_bs1_hints",
     # 版本号
     "__version__",
 ]
