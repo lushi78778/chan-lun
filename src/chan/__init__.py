@@ -46,8 +46,11 @@ from chan.zhongyin import (ZhongYinResult, boll_bands, boll_bs1_hints,
                            boll_events, boll_state, track_zhongyin)
 from chan.osc import (OscReport, osc_strength, oscillation_monitor,
                       zn_next_estimate)
+from chan.biaoli import (BI_TRANSITIONS, SEVERITY_RANKS, bi_state,
+                         bi_transition_valid, disease_stage,
+                         followup_quality, zhongyin_health)
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -80,6 +83,9 @@ __all__ = [
     "boll_events", "boll_bs1_hints",
     # chan.osc 中枢震荡监视器(课 92)
     "OscReport", "oscillation_monitor", "osc_strength", "zn_next_estimate",
+    # chan.biaoli 走势结构的两重表里关系(课 91/93/99)
+    "bi_state", "BI_TRANSITIONS", "bi_transition_valid", "disease_stage",
+    "SEVERITY_RANKS", "followup_quality", "zhongyin_health",
     # 版本号
     "__version__",
 ]
