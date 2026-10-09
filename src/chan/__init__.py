@@ -49,8 +49,11 @@ from chan.osc import (OscReport, osc_strength, oscillation_monitor,
 from chan.biaoli import (BI_TRANSITIONS, SEVERITY_RANKS, bi_state,
                          bi_transition_valid, disease_stage,
                          followup_quality, zhongyin_health)
+from chan.levels import (MAX_LEVELS_DEFAULT, MIN_UNITS_FOR_NEXT,
+                         LevelDecomposition, change_starts_low,
+                         decompose_levels, level_reading)
 
-__version__ = "0.2.3"
+__version__ = "0.3.0"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -86,6 +89,9 @@ __all__ = [
     # chan.biaoli 走势结构的两重表里关系(课 91/93/99)
     "bi_state", "BI_TRANSITIONS", "bi_transition_valid", "disease_stage",
     "SEVERITY_RANKS", "followup_quality", "zhongyin_health",
+    # chan.levels 多级唯一分解——记数法(课 102)
+    "LevelDecomposition", "decompose_levels", "level_reading",
+    "change_starts_low", "MAX_LEVELS_DEFAULT", "MIN_UNITS_FOR_NEXT",
     # 版本号
     "__version__",
 ]
