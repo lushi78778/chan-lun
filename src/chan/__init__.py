@@ -10,6 +10,7 @@
     bc      - 背驰识别(MACD 辅助: 趋势背驰/盘整背驰)
     bs      - 三类买卖点信号
     cross30 - 日线买卖点 -> 30 分钟跨级别共振确认(区间套)
+    gap     - 缺口识别与力度三分类(课 77)
 
 顶层 API: 本模块重新导出各子模块的公开入口, 因此:
     from chan import find_zs, confirm_buy3_30m
@@ -34,8 +35,9 @@ from chan.bs import find_buy_points, find_sell_points
 from chan.cross30 import (confirm_buy2_30m, confirm_buy3_30m,
                           confirm_buy3_event_30m, confirm_sell3_30m,
                           confirm_sell3_event_30m, find_run_exhaustion)
+from chan.gap import Gap, classify_gap, find_gaps
 
-__version__ = "0.1.10"
+__version__ = "0.1.11"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -56,6 +58,8 @@ __all__ = [
     "find_run_exhaustion", "confirm_buy3_30m", "confirm_sell3_30m",
     "confirm_buy2_30m", "confirm_buy3_event_30m",
     "confirm_sell3_event_30m",
+    # chan.gap 缺口识别与力度三分类(课 77)
+    "Gap", "find_gaps", "classify_gap",
     # 版本号
     "__version__",
 ]
