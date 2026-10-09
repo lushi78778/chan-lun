@@ -6,7 +6,7 @@
     fx      - 包含处理 + 分型识别
     bi      - 笔识别
     xd      - 线段识别(特征序列两种标准)
-    zs      - 中枢识别与走势类型
+    zs      - 中枢识别、走势类型与中枢状态机(课 20/69/70)
     bc      - 背驰识别(MACD 辅助: 趋势背驰/盘整背驰)
     bs      - 三类买卖点信号
     cross30 - 日线买卖点 -> 30 分钟跨级别共振确认(区间套)
@@ -28,7 +28,8 @@ from chan.bars import BAR_KEYS, bars_to_df, normalize_bars
 from chan.fx import FX, NewBar, find_fxs, remove_includes
 from chan.bi import BI, MIN_K_GAP, chan_fx_bi, find_bis
 from chan.xd import XD, chan_bis_xds, find_xds
-from chan.zs import ZS, classify_trend, find_zs
+from chan.zs import (ZS, ZsEvent, build_expanded_zs, classify_trend,
+                     find_zs, track_zs, zs_relation)
 from chan.bc import (ema, find_pan_bc, find_trend_bc, macd_series,
                      segment_area)
 from chan.bs import find_buy_points, find_sell_points
@@ -37,7 +38,7 @@ from chan.cross30 import (confirm_buy2_30m, confirm_buy3_30m,
                           confirm_sell3_event_30m, find_run_exhaustion)
 from chan.gap import Gap, classify_gap, find_gaps
 
-__version__ = "0.1.11"
+__version__ = "0.1.12"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -48,8 +49,9 @@ __all__ = [
     "BI", "MIN_K_GAP", "find_bis", "chan_fx_bi",
     # chan.xd 线段
     "XD", "find_xds", "chan_bis_xds",
-    # chan.zs 中枢与走势类型
-    "ZS", "find_zs", "classify_trend",
+    # chan.zs 中枢与走势类型 + 中枢状态机(课 20/69/70)
+    "ZS", "ZsEvent", "find_zs", "track_zs", "zs_relation",
+    "build_expanded_zs", "classify_trend",
     # chan.bc 背驰(MACD 辅助)
     "ema", "macd_series", "segment_area", "find_trend_bc", "find_pan_bc",
     # chan.bs 三类买卖点
