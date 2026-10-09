@@ -54,8 +54,11 @@ from chan.levels import (MAX_LEVELS_DEFAULT, MIN_UNITS_FOR_NEXT,
                          decompose_levels, level_reading)
 from chan.strength import (MaArea, MaStrengthState, avg_strength_state,
                            find_ma_bc, ma_areas, sma_series)
+from chan.turn import (TURN_BREAK, TURN_CANDIDATES, TURN_EXPANSION,
+                       TURN_SUB_FLOOR, classify_bc_turn,
+                       guaranteed_rebound_gap)
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -97,6 +100,9 @@ __all__ = [
     # chan.strength 趋势力度与平均力度(课 15)
     "sma_series", "MaArea", "ma_areas", "find_ma_bc",
     "MaStrengthState", "avg_strength_state",
+    # chan.turn 背驰-转折定理三分类(课 29)
+    "TURN_EXPANSION", "TURN_BREAK", "TURN_SUB_FLOOR", "TURN_CANDIDATES",
+    "classify_bc_turn", "guaranteed_rebound_gap",
     # 版本号
     "__version__",
 ]
