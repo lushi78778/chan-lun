@@ -44,8 +44,10 @@ from chan.decompose import MoveType, same_level_decompose
 from chan.recurse import level_up
 from chan.zhongyin import (ZhongYinResult, boll_bands, boll_bs1_hints,
                            boll_events, boll_state, track_zhongyin)
+from chan.osc import (OscReport, osc_strength, oscillation_monitor,
+                      zn_next_estimate)
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -76,6 +78,8 @@ __all__ = [
     # chan.zhongyin 中阴阶段 + 布林通道辅助判断(课 89/90)
     "ZhongYinResult", "track_zhongyin", "boll_bands", "boll_state",
     "boll_events", "boll_bs1_hints",
+    # chan.osc 中枢震荡监视器(课 92)
+    "OscReport", "oscillation_monitor", "osc_strength", "zn_next_estimate",
     # 版本号
     "__version__",
 ]
