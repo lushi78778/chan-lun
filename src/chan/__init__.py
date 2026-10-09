@@ -57,8 +57,10 @@ from chan.strength import (MaArea, MaStrengthState, avg_strength_state,
 from chan.turn import (TURN_BREAK, TURN_CANDIDATES, TURN_EXPANSION,
                        TURN_SUB_FLOOR, classify_bc_turn,
                        guaranteed_rebound_gap)
+from chan.minor_turn import (STAGE_BREAKOUT, STAGE_STRONG, STAGE_SUB_BS3,
+                             STAGE_WITHIN, classify_minor_turn)
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -103,6 +105,9 @@ __all__ = [
     # chan.turn 背驰-转折定理三分类(课 29)
     "TURN_EXPANSION", "TURN_BREAK", "TURN_SUB_FLOOR", "TURN_CANDIDATES",
     "classify_bc_turn", "guaranteed_rebound_gap",
+    # chan.minor_turn 小级别背驰引发大级别转折(课 44/53)
+    "STAGE_WITHIN", "STAGE_STRONG", "STAGE_SUB_BS3", "STAGE_BREAKOUT",
+    "classify_minor_turn",
     # 版本号
     "__version__",
 ]
