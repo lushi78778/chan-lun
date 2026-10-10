@@ -285,11 +285,11 @@ class TestFindXD(unittest.TestCase):
         self.assertEqual(xds[0].mode, 2)
 
     def test_less_than_3_bis(self):
+        """课62/67至少三笔构成线段; 0.6.1起不再输出一笔伪线段。"""
         from chan.xd import find_xds
         rows = [("up", 0, 10, 0, 4)]
         xds = find_xds(self.mk_bis(rows))
-        self.assertEqual(len(xds), 1)
-        self.assertEqual(xds[0].end_value, 10)
+        self.assertEqual(xds, [])
 
     def test_down_case1(self):
         """向下线段第一种情况"""

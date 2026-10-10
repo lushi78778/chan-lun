@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.6.0`。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.6.1`。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -51,7 +51,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.6.0'
+python -m pip install 'chan-lun-core==0.6.1'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -65,16 +65,16 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.6.0 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==0.6.1 --no-cache-dir
 ```
 
-如果当前镜像尚未提供 `0.6.0`，可继续使用已经安装并可导入的 `0.4.0`。
+如果当前镜像尚未提供 `0.6.1`，可继续使用已经安装并可导入的 `0.4.0`。
 镜像同步时间不由本库控制；版本不可获取时不要把安装失败当成算法错误。
 如能访问 GitHub Release，也可安装指定 wheel：
 
 ```python
 import sys
-!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.6.0/chan_lun_core-0.6.0-py3-none-any.whl
+!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.6.1/chan_lun_core-0.6.1-py3-none-any.whl
 ```
 
 离线时，先下载该 wheel 并上传到 Notebook 能读取的目录，再用当前解释器
@@ -96,7 +96,7 @@ print("has find_bis:", hasattr(chan, "find_bis"))
 `0.4.0` 可以使用其已有基础链与理论模块；`analyze_bars`、行情校验和
 分型力度从 `0.4.2` 起可用，106课笔标准从 `0.4.3` 起可用，MACD 防狼从
 `0.4.4` 起可用，底/顶构造从 `0.4.5` 起可用，板块强弱从 `0.5.0` 起可用。
-下面的完整示例按 `0.6.0` 编写。冻结研究脚本的原有版本要求另行保留。
+下面的完整示例按 `0.6.1` 编写。冻结研究脚本的原有版本要求另行保留。
 
 ### `chan.__version__` 不存在时
 
@@ -664,7 +664,7 @@ python -m unittest discover -s tests -p 'test_contracts.py'
 ```bash
 python -m pip install build
 python -m build
-python -m pip install --force-reinstall --no-deps dist/chan_lun_core-0.6.0-py3-none-any.whl
+python -m pip install --force-reinstall --no-deps dist/chan_lun_core-0.6.1-py3-none-any.whl
 python -I tools/verify_installed.py
 ```
 
@@ -681,7 +681,7 @@ CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Rel
 聚宽已确认 `0.4.0` 可安装并导入，但这不代替全部新增算法在该环境的实跑。
 新的辅助结果不会自动接入冻结研究脚本或改变策略参数。
 
-0.6.0本地验收包含463项包测试（完整外层工程814项）、wheel/sdist及
+0.6.1本地验收包含463项包测试（完整外层工程814项）、wheel/sdist及
 隔离安装。真实行情使用ETF历史数据集 `v2026-07-31-r2` 的十只代表ETF：
 26,727根日线与2026年30m；核验读取文件SHA-256，按观察日锚定复权。
 2026年1,390个逐交易日观察点通过未来价格扰动和MACD比例前缀检查。
@@ -700,7 +700,7 @@ CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Rel
 
 ## 版本历史
 
-- **0.6.0**: 观察时点与二类点条件接口阶段版；含0.5.1/0.5.2能力，
+- **0.6.1**: 观察时点与二类点条件接口阶段版；含0.5.1/0.5.2能力，
   完整测试、真实ETF逐日防未来验收及安装产物检查见外层验证记录。
   自动走势完成/因果中枢识别、线段原图审计与均线版买卖组合继续独立推进。
 
@@ -758,3 +758,15 @@ CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Rel
 ## 许可证
 
 MIT,见 [LICENSE](LICENSE)。
+
+## 0.6.1 线段边界修正
+
+`find_xds` 不足三笔返回空列表；首三笔须重叠，不能把一笔当未完成线段。
+`XD.complete` 表示给定笔序列下破坏定义成立；`mode` 只区分两种破坏方式。
+`evidence_dt/evidence_end_index` 为最后证据笔的端点，不等于实际行情确认时间。
+完成段的 `gg/dd` 仅覆盖自身构成笔，后续确认笔另记证据；缺口的第二序列
+从假设转折点完整收集，未成立时新极值使旧假设撤销。分界前后不跨界包含。
+这一修正会改变线段及线段级中枢结果；已发布版本和冻结脚本不自动升级。
+
+包测试 `fixtures/xd_originals.json` 用相对价位保留课67/71/81原图不等式，
+不声称恢复原图的真实行情。原图完整覆盖仍在正式计划登记。

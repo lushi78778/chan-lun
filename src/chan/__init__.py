@@ -82,7 +82,7 @@ from chan.bottom import FormationEvent, FormationState, formation_state
 from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 
 __all__ = [
     # chan.bars 行情归一化

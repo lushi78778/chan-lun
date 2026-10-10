@@ -2,7 +2,7 @@
 """
 chan.xd —— 线段的识别(特征序列两种标准)
 
-理论依据: doc/缠论知识库/02-走势分解基础-分型笔线段.md §2.4
+理论依据: 课67定义、课71分界包含、课78延续与极值、课81图例更正。
 
   线段由至少三笔构成, 前三笔必须有重叠。
   以向上线段为例(向下对称):
@@ -16,7 +16,7 @@ chan.xd —— 线段的识别(特征序列两种标准)
       线段才在该顶分型高点处结束(第二序列的分型不分一、二种情况)。
 
 XD.mode 标记线段结束方式: 1 = 第一种情况(无缺口), 2 = 第二种情况
-(缺口 + 第二特征序列确认); 序列末尾未完成的线段 mode=1 且无确认终点。
+(缺口 + 第二特征序列确认); complete区分完成与尾部, mode不作完成标志。
 
 兼容: Python 3.6。
 """
@@ -24,6 +24,7 @@ XD.mode 标记线段结束方式: 1 = 第一种情况(无缺口), 2 = 第二种�
 from __future__ import print_function
 
 from typing import Any, Dict, List, Optional, Tuple
+import math
 
 from chan.bi import BI
 
@@ -38,23 +39,29 @@ class XD(object):
         mode: 1 = 第一种情况(特征序列分型直接确认),
               2 = 第二种情况(缺口, 由第二特征序列分型确认)。
               序列末尾未完成线段的 mode 恒为 1。
+        complete: 给定笔前缀下是否已满足线段破坏定义。
+        evidence_dt/evidence_end_index: 最后一笔证据端点(不等于行情确认时间)。
         gg / dd: 线段内部高低极值(所有构成笔的范围),
             中枢重叠计算用 high/low 属性即返回它们。
     """
 
     __slots__ = ["direction", "start_dt", "end_dt", "start_value",
                  "end_value", "start_index", "end_index", "mode",
-                 "gg", "dd"]
+                 "gg", "dd", "complete", "evidence_end_index", "evidence_dt"]
 
     def __init__(self, direction: str,
                  start: Tuple[Any, float, int], end: Tuple[Any, float, int],
                  mode: int, gg: Optional[float] = None,
-                 dd: Optional[float] = None):
+                 dd: Optional[float] = None, complete: bool = False,
+                 evidence_end_index: Optional[int] = None, evidence_dt: Any = None):
         self.direction = direction    # 'up' / 'down'
         self.start_dt, self.start_value, self.start_index = start
         self.end_dt, self.end_value, self.end_index = end
         self.mode = mode              # 1 第一种情况 / 2 第二种情况(缺口确认)
-        # 线段内部高低极值(所有构成笔的范围), 中枢重叠计算用
+        self.complete = complete
+        self.evidence_end_index = evidence_end_index
+        self.evidence_dt = evidence_dt
+        # 只计算线段组成笔的范围, 确认用的后续笔另记证据。
         if gg is None:
             gg = max(self.start_value, self.end_value)
         if dd is None:
@@ -78,44 +85,9 @@ class XD(object):
                 "start": [str(self.start_dt), self.start_value],
                 "end": [str(self.end_dt), self.end_value],
                 "gg": self.gg, "dd": self.dd,
-                "mode": self.mode}
-
-
-def _merge_feats(feats: List[Tuple[float, float, BI]]) -> List[Tuple[float, float, BI]]:
-    """特征序列包含处理(元素 = (low, high, bi))
-
-    参数:
-        feats: 特征序列元素列表, 每项 (low, high, 对应笔对象)。
-
-    返回:
-        合并后的特征序列(顺序原则, 同K线包含规则):
-        向上(后元素高点 >= 前元素高点): 新元素 = [max(low), max(high)];
-        向下: 新元素 = [min(low), min(high)];
-        合并时保留高点更高(向上)或低点更低(向下)一侧的笔引用。
-    """
-    out = [feats[0]]
-    for e in feats[1:]:
-        last = out[-1]
-        # 包含关系: 一元素区间全在另一元素区间内
-        last_contains_e = (last[0] <= e[0] and last[1] >= e[1])
-        e_contains_last = (e[0] <= last[0] and e[1] >= last[1])
-        if not (last_contains_e or e_contains_last):
-            out.append(e)
-            continue
-        if len(out) >= 2:
-            direction_up = (last[1] >= out[-2][1])
-        else:
-            direction_up = (e[1] >= last[1])
-        if direction_up:
-            nl = max(last[0], e[0])
-            nh = max(last[1], e[1])
-            bi = e[2] if e[1] >= last[1] else last[2]
-        else:
-            nl = min(last[0], e[0])
-            nh = min(last[1], e[1])
-            bi = e[2] if e[0] <= last[0] else last[2]
-        out[-1] = (nl, nh, bi)
-    return out
+                "mode": self.mode, "complete": self.complete,
+                "evidence_end_index": self.evidence_end_index,
+                "evidence_dt": None if self.evidence_dt is None else str(self.evidence_dt)}
 
 
 def _has_fx(feats: List[Tuple[float, float, BI]], kind: str) -> Optional[int]:
@@ -142,108 +114,137 @@ def _has_fx(feats: List[Tuple[float, float, BI]], kind: str) -> Optional[int]:
     return None
 
 
-def find_xds(bis: List[BI]) -> List[XD]:
-    """识别线段(增量状态机, 支持第二种情况的缺口确认)
+def _feature_append(out, elem, direction_up):
+    """同一特征序列顺序包含; 初始方向由假设转折后的走势给定。"""
+    if not out:
+        return [elem]
+    last = out[-1]
+    contained = (last[0] <= elem[0] and last[1] >= elem[1] or
+                 elem[0] <= last[0] and elem[1] >= last[1])
+    if not contained:
+        return out + [elem]
+    if len(out) > 1:
+        direction_up = last[1] > out[-2][1]
+    low = max(last[0], elem[0]) if direction_up else min(last[0], elem[0])
+    high = max(last[1], elem[1]) if direction_up else min(last[1], elem[1])
+    ref = (elem[2] if (elem[1] > last[1] if direction_up else elem[0] < last[0])
+           else last[2])
+    return out[:-1] + [(low, high, ref)]
 
-    参数:
-        bis: find_bis 输出的笔列表(顶底交替、首尾衔接)。
 
-    返回:
-        list of XD, 按时间顺序; 最后一个可能为未完成线段
-        (mode=1 且终点未获特征序列分型确认, 属正常现象)。
+def _segment_end(bis, start):
+    """从一个已给定起点找最早确认的分界(课67/71/78/81)。
 
-    算法要点:
-        - 同向笔延伸当前线段端点, 同时把笔区间并入 gg/dd;
-        - 反向笔构成第一特征序列: 合并后检查顶/底分型;
-          无缺口(第一种情况) -> 线段结束于分型极值点;
-          有缺口(第二种情况) -> 记录待确认终点(pending),
-          等待第二特征序列(与线段同向的笔)出现对应分型才确认;
-        - 线段结束后, 方向翻转, 以确认点为新起点继续。
+    分界前的最后特征元素和分界开始的一笔不合并; 分界后同类元素
+    可以合并。第二特征序列从分界开始完整收集, 不从发现分型以后
+    才收集。第二分型尚未成立而原方向新极值出现时, 假设分界撤销。
     """
-    if not bis:
-        return []
-    if len(bis) < 3:
-        # 不足三笔无法构成线段(或直接以一笔为未完成线段)
-        b = bis[0]
-        return [XD(bis[0].direction,
-                   (b.start_dt, b.start_value, b.start_index),
-                   (b.end_dt, b.end_value, b.end_index), 1)]
-
-    xds = []
-    direction = bis[0].direction
-    start = (bis[0].start_dt, bis[0].start_value, bis[0].start_index)
-    cur_end = (bis[0].end_dt, bis[0].end_value, bis[0].end_index)
-    cur_gg = max(bis[0].start_value, bis[0].end_value)
-    cur_dd = min(bis[0].start_value, bis[0].end_value)
-    feats = []       # 第一特征序列(与线段反向的笔)
-    pending = None   # 第二种情况待确认终点 (dt, value, index)
-    second = []      # 第二特征序列(缺口后, 与线段同向的笔)
-
-    def flip(d):
-        return "down" if d == "up" else "up"
-
-    for bi in bis:
-        # 无论同向反向, 笔区间都纳入线段内部极值
-        cur_gg = max(cur_gg, bi.high)
-        cur_dd = min(cur_dd, bi.low)
-        if bi.direction == direction:
-            # 同向笔: 更新线段当前端点
-            cur_end = (bi.end_dt, bi.end_value, bi.end_index)
-            if pending is not None:
-                # 第二种情况: 第二特征序列收集同向笔
-                second.append((bi.low, bi.high, bi))
-                second = _merge_feats(second)
-                kind2 = "bottom" if direction == "up" else "top"
-                if _has_fx(second, kind2) is not None:
-                    xds.append(XD(direction, start, pending, 2,
-                                  gg=cur_gg, dd=cur_dd))
-                    direction = flip(direction)
-                    start = pending
-                    pending = None
-                    second = []
-                    feats = []
-                    cur_end = (bi.end_dt, bi.end_value, bi.end_index)
-                    cur_gg = bi.high
-                    cur_dd = bi.low
+    up = bis[start].direction == "up"
+    counter = "down" if up else "up"
+    candidate, left, right, second = None, None, [], []
+    features = []
+    extreme = bis[start].start_value
+    for i in range(start, len(bis)):
+        bi = bis[i]
+        if bi.direction != counter:
+            if candidate is not None:
+                second = _feature_append(second, (bi.low, bi.high, bi), not up)
+                # 第二序列至少三元素; 不再分缺口的两种情况(课67)。
+                if left is not None and len(right) >= 2:
+                    a, b = left, right[0]
+                    gap = a[1] < b[0] if up else a[0] > b[1]
+                    kind = "bottom" if up else "top"
+                    if gap and _has_fx(second, kind) is not None:
+                        return candidate, i, 2
+                if bi.end_value > extreme if up else bi.end_value < extreme:
+                    candidate, right, second = None, [], []
             continue
-        # 反向笔: 第一特征序列元素
-        elem = (bi.low, bi.high, bi)
-        feats.append(elem)
-        feats = _merge_feats(feats)
-        if pending is not None:
-            # 第二种情况确认期间: 只等第二特征序列分型, 不再检查第一序列
+        price = bi.start_value
+        new_extreme = price > extreme if up else price < extreme
+        if new_extreme:
+            # 课78: 未确认前直接新高/新低, A+B+C只能算原方向一段。
+            left = features[-1] if features else None
+            candidate, extreme = i, price
+            right, second = [(bi.low, bi.high, bi)], []
+            features = _feature_append(features, (bi.low, bi.high, bi), up)
             continue
-        kind = "top" if direction == "up" else "bottom"
-        idx = _has_fx(feats, kind)
-        if idx is None:
+        if candidate is None:
             continue
-        a, b, c = feats[idx], feats[idx + 1], feats[idx + 2]
-        if direction == "up":
-            # 顶分型; 缺口: 第一元素高点 < 第二元素低点(无重叠)
-            gap = (a[1] < b[0])
-            point = (b[2].start_dt, b[1], b[2].start_index)
-        else:
-            # 底分型; 缺口: 第一元素低点 > 第二元素高点
-            gap = (a[0] > b[1])
-            point = (b[2].start_dt, b[0], b[2].start_index)
+        right = _feature_append(right, (bi.low, bi.high, bi), not up)
+        if left is None or len(right) < 2:
+            continue
+        a, b, c = left, right[0], right[1]
+        gap = a[1] < b[0] if up else a[0] > b[1]
+        lower_right = (c[1] < b[1] and c[0] < b[0] if up else
+                       c[0] > b[0] and c[1] > b[1])
+        if not lower_right:
+            continue
         if not gap:
-            # 第一种情况: 线段结束
-            xds.append(XD(direction, start, point, 1,
-                          gg=cur_gg, dd=cur_dd))
-            direction = flip(direction)
-            start = point
-            feats = []
-            cur_end = (bi.end_dt, bi.end_value, bi.end_index)
-            cur_gg = bi.high
-            cur_dd = bi.low
-        else:
-            # 第二种情况: 记录待确认终点, 第二特征序列从下一同向笔开始收集
-            pending = point
-            second = []
+            # 课71: 首笔破坏的中间地带不可跨分界包含, 包括b包含a。
+            return candidate, i, 1
+        # 第二种情况的第一分型已成立, 第二序列可能更早已收集。
+        kind = "bottom" if up else "top"
+        if _has_fx(second, kind) is not None:
+            return candidate, i, 2
+    return None
 
-    # 末尾未完成线段
-    xds.append(XD(direction, start, cur_end, 1, gg=cur_gg, dd=cur_dd))
-    return xds
+
+def find_xds(bis: List[BI]) -> List[XD]:
+    """课67/71/78/81线段: 至少三笔、前三笔闭区间重叠。
+
+    输入是按顺序首尾衔接的交替笔; 仅消费给定前缀。不足三笔或
+    首三笔无重叠不输出伪线段; 若窗口从趋势中间开始, 向后寻找最早
+    三笔重叠起点, 不保证覆盖前面的残笔。末段complete=False。
+    complete=True只表示给定笔序列已满足线段破坏定义, 不证明输入
+    笔在该端点日已经最终确认。evidence_dt是最后证据笔的端点,
+    不是原始行情的实际可用时间; 回放仍须逐原始行情前缀计算。
+
+    完成段的gg/dd只含起点至终点的笔, 不把确认用的后续笔纳入。
+    分界后从终点重新处理全部已读取笔, 不丢弃新段前部。构造器
+    XD(...,mode)默认complete=False, 手工对象需显式提供完成证据。
+    """
+    if not isinstance(bis, (list, tuple)):
+        raise TypeError("bis须为list或tuple")
+    for i, bi in enumerate(bis):
+        if not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+                   for v in (bi.start_value, bi.end_value)):
+            raise ValueError("笔端点价须为有限数值")
+        if bi.direction not in ("up", "down") or not bi.start_index < bi.end_index:
+            raise ValueError("笔须有有效方向和递增端点索引")
+        if (bi.direction == "up") != (bi.end_value > bi.start_value) or bi.end_value == bi.start_value:
+            raise ValueError("笔方向须与端点价一致")
+        if i and (bis[i-1].direction == bi.direction or
+                  bis[i-1].end_dt != bi.start_dt or
+                  bis[i-1].end_value != bi.start_value or
+                  bis[i-1].end_index != bi.start_index):
+            raise ValueError("笔须交替且时间、价格、索引首尾衔接")
+    out, start = [], 0
+    while start + 2 < len(bis):
+        first = bis[start:start+3]
+        if max(b.low for b in first) > min(b.high for b in first):
+            start += 1
+            continue
+        ending = _segment_end(bis, start)
+        if ending is None:
+            # 线段只结束于同向笔; 未成笔的反向运行不伪造线段端点。
+            end = len(bis)-1
+            if bis[end].direction != bis[start].direction:
+                end -= 1
+            stop, evidence, mode, complete = end+1, None, 1, False
+        else:
+            stop, evidence, mode = ending
+            complete = True
+        units = bis[start:stop]
+        a, b = units[0], units[-1]
+        out.append(XD(a.direction, (a.start_dt, a.start_value, a.start_index),
+                      (b.end_dt, b.end_value, b.end_index), mode,
+                      max(u.high for u in units), min(u.low for u in units),
+                      complete, None if evidence is None else bis[evidence].end_index,
+                      None if evidence is None else bis[evidence].end_dt))
+        if ending is None:
+            break
+        start = stop  # 完整重放分界后已消耗的笔, 不直接跳到证据末尾。
+    return out
 
 
 def chan_bis_xds(bars: List[Dict[str, Any]], standard: str = "81") -> Tuple[List[Any], List[Any], List[BI], List[XD]]:
