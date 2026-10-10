@@ -25,6 +25,7 @@ from __future__ import print_function
 
 from typing import Any, Dict, List, Optional, Tuple
 import math
+from numbers import Real
 
 from chan.bi import BI
 
@@ -206,7 +207,7 @@ def find_xds(bis: List[BI]) -> List[XD]:
     if not isinstance(bis, (list, tuple)):
         raise TypeError("bis须为list或tuple")
     for i, bi in enumerate(bis):
-        if not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+        if not all(isinstance(v, Real) and not isinstance(v, bool) and math.isfinite(v)
                    for v in (bi.start_value, bi.end_value)):
             raise ValueError("笔端点价须为有限数值")
         if bi.direction not in ("up", "down") or not bi.start_index < bi.end_index:
@@ -226,10 +227,18 @@ def find_xds(bis: List[BI]) -> List[XD]:
             continue
         ending = _segment_end(bis, start)
         if ending is None:
-            # 线段只结束于同向笔; 未成笔的反向运行不伪造线段端点。
-            end = len(bis)-1
-            if bis[end].direction != bis[start].direction:
-                end -= 1
+            # 未完成段保留已达到的同向极值, 不用回落后的同向笔反转方向。
+            # 最少三笔且顶须高于底(课78); 不满足的起始残笔继续向后搜索。
+            eligible = [j for j in range(start+2, len(bis), 2)
+                        if (bis[j].end_value > bis[start].start_value
+                            if bis[start].direction == "up" else
+                            bis[j].end_value < bis[start].start_value)]
+            if not eligible:
+                start += 1
+                continue
+            end = (max(eligible, key=lambda j: bis[j].end_value)
+                   if bis[start].direction == "up" else
+                   min(eligible, key=lambda j: bis[j].end_value))
             stop, evidence, mode, complete = end+1, None, 1, False
         else:
             stop, evidence, mode = ending

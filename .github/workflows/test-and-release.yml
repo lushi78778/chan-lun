@@ -13,8 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 发布元数据声明 >=3.6(聚宽 3.6 环境实测可用);
-        # GitHub 托管 runner 最低只到 3.10, 矩阵取 3.10/3.13。
+        # 现代运行时3.10/3.13构建验收; 3.6旧依赖另用legacy容器执行。
         python-version: ["3.10", "3.13"]
     steps:
       - uses: actions/checkout@v4
@@ -31,10 +30,34 @@ jobs:
           uv build --wheel
           uv pip install --system --force-reinstall --no-deps dist/*.whl
           python -I tools/verify_installed.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.python-version }}
+          path: dist/*.whl
+
+  legacy:
+    needs: test
+    runs-on: ubuntu-latest
+    container: python:3.6.15-buster
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-3.10
+          path: dist
+      - name: Install old runtime dependencies and built wheel
+        run: |
+          python -m pip install 'pip==21.3.1'
+          python -m pip install 'numpy==1.14.6' 'pandas==0.23.4' 'python-dateutil==2.8.2' 'six==1.16.0' 'pytz==2025.2'
+          python -m pip install --no-deps dist/*.whl
+      - name: Verify source tests and installed wheel on Python 3.6
+        run: |
+          python -m unittest discover -s tests -p 'test_*.py' -v
+          python -I tools/verify_installed.py
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: test
+    needs: [test, legacy]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -65,7 +88,7 @@ jobs:
     # 注: 也可改用 Trusted Publishing(OIDC, 无需 token), 在 PyPI
     #     发布设置里登记本仓库/workflow 即可; 此流程按 API token 方式实现。
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: test
+    needs: [test, legacy]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -85,7 +85,7 @@ from chan.bottom import FormationEvent, FormationState, formation_state
 from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
 
-__version__ = "0.6.3"
+__version__ = "0.7.0"
 
 __all__ = [
     "ThirdPoint", "ThirdPointContext", "find_third_points",

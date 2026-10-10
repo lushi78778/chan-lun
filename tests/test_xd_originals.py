@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import unittest
+import random
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
@@ -79,3 +80,21 @@ class TestOriginalXD(unittest.TestCase):
             current = [x.to_dict() for x in find_xds(bis[:n]) if x.complete]
             self.assertEqual(current[:len(previous)], previous)
             previous = current
+
+    def test_unfinished_tail_keeps_direction_and_minimum_three_bis(self):
+        """课78顶须高于底; 随机固定笔的每个前缀不输出反方向伪端点。"""
+        rng = random.Random(8171)
+        for sample in range(30):
+            values = [200.0]
+            for i in range(80):
+                values.append(values[-1]+(1 if i % 2 == 0 else -1)*rng.uniform(.2,5))
+            bis = strokes(values)
+            previous = []
+            for stop in range(len(bis)+1):
+                current = find_xds(bis[:stop])
+                complete = [x.to_dict() for x in current if x.complete]
+                self.assertEqual(complete[:len(previous)], previous)
+                previous = complete
+                for x in current:
+                    self.assertGreaterEqual(x.end_index-x.start_index,3)
+                    self.assertEqual(x.direction == 'up', x.end_value > x.start_value)

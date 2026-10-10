@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.6.3`。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.7.0`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -33,7 +33,7 @@
 | 行情适配与校验 | `normalize_bars`、`validate_bars` | 转换数据格式、检查原始行情契约 |
 | 结构与结果对象 | `NewBar`、`FX`、`BI`、`XD`、`ZS`、`AnalysisResult` | 表达结构、持有结果、提供具名字段 |
 | 计算函数 | `find_bis`、`find_zs`、`level_up` 等 | 接收明确输入并计算结果，不持有跨调用分析状态 |
-| 组合入口 | `analyze_bars` | 连接基础识别链，区分笔级和线段级结果 |
+| 组合入口 | `analyze_bars`、`analyze_at`、`analyze_available` | 连接基础识别链，区分笔级和线段级结果 |
 
 结构对象已有必要的面向对象表达。一个算法对应一个带 `calculate()` 的类，
 不会自动改善其职责和可测试性，因此现阶段保持函数组合。
@@ -51,7 +51,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.6.3'
+python -m pip install 'chan-lun-core==0.7.0'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -65,7 +65,7 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.6.3 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==0.7.0 --no-cache-dir
 ```
 
 如果当前镜像尚未提供 `0.6.1`，可继续使用已经安装并可导入的 `0.4.0`。
@@ -320,6 +320,90 @@ for snapshot in replay_bars(bars, observations=[row["dt"] for row in bars[-20:]]
 本入口不复权。若复权因子随观察时点变化，应分别构造各时点的行情前缀
 后调用 `analyze_at`，不能拿最终复权行情假定其当时可用。跨周期数据也
 须按同一实际观察时间截断。完整样本计算后按结构端点筛选不满足此契约。
+
+## 0.7.0 线段边界与时间确认
+
+`find_xds` 不足三笔返回空列表；首三笔须重叠，不能把一笔当未完成线段。
+`XD.complete` 表示给定笔序列下破坏定义成立；`mode` 只区分两种破坏方式。
+`evidence_dt/evidence_end_index` 为最后证据笔的端点，不等于实际行情确认时间。
+完成段的 `gg/dd` 仅覆盖自身构成笔，后续确认笔另记证据；缺口的第二序列
+从假设转折点完整收集，未成立时新极值使旧假设撤销。分界前后不跨界包含。
+这一修正会改变线段及线段级中枢结果；已发布版本和冻结脚本不自动升级。
+
+包测试 `fixtures/xd_originals.json` 用相对价位保留课67/71/81原图不等式，
+不声称恢复原图的真实行情。原图完整覆盖仍在正式计划登记。
+
+## 按收盘与到达时间观察
+
+`analyze_at` 的dt过滤适合调用方已保证全部bar收盘的离线前缀。用于盘中或
+存在数据延迟时，使用 `analyze_available`，每根原始bar增加两个字段：
+`closed_dt` 是本周期结束时间，`available_dt` 是本版本行情可用时间。
+日期标签、收盘时间和到达时间须满足 `dt <= closed_dt <= available_dt`。
+缺字段报错，不会退回日期标签；本库不推断交易日历或供应历史版本。
+
+```python
+from datetime import datetime
+from chan import analyze_available, replay_available
+
+# dt是交易日标签; 当日日线在15:05才成为这个输入版本的可用数据。
+available_bars = [dict(dt=datetime(2026, 7, 31),
+                       closed_dt=datetime(2026, 7, 31, 15),
+                       available_dt=datetime(2026, 7, 31, 15, 5),
+                       open=4.0, high=4.2, low=3.9, close=4.1, volume=1000)]
+assert analyze_available(available_bars, datetime(2026, 7, 31, 14)).as_of is None
+visible = analyze_available(available_bars, datetime(2026, 7, 31, 15, 5))
+for observed in replay_available(available_bars):
+    print(observed.observed_dt, observed.result.as_of)
+    print([item.to_dict() for item in observed.structures])
+```
+
+`replay_available` 独立重算每个实际可用前缀，保留原分型/笔/旧bs候选变更，
+并记录保守结构链：后继笔出现后固定前笔；只用这些笔确认线段；三个已确认
+线段形成线段构造层中枢。末笔和未完成线段不进入保守确认结构。
+`StructureObservation.first_seen` 是该观察网格首次确认可见时间，不是端点
+或下单时刻；中枢延伸另有修订记录。`structures` 不包含自动一类点上下文，
+也不能直接把其中一笔或一条线段转换为 `ConfirmedMove`。
+候选 `buy_points/sell_points` 仍采用旧笔级算法，保留其独立近似范围。
+
+## 已确认次级走势的三类点
+
+`find_third_points` 与 `find_second_points` 共用 `ConfirmedMove` 输入契约，
+但独立返回三类点。只消费真实完成的次级走势与当时已知中枢；不会将
+笔级候选直接升级为理论事件。整个首回试区间必须守ZG/ZD，触沿允许，
+不加旧笔级算法的力度比门槛。同一中枢只输出第一个成立的三类点。
+
+```python
+from chan import ConfirmedMove, ConfirmedCenter, ThirdPointContext, find_third_points
+third_moves = [
+    ConfirmedMove("leave", "sub", "up", "2026-01-02", "2026-01-04",
+                  11, 14, 11, 14, "2026-01-05"),
+    ConfirmedMove("return", "sub", "down", "2026-01-04", "2026-01-06",
+                  14, 12, 12, 14, "2026-01-07"),
+]
+third_context = ThirdPointContext("cycle", "main", "sub",
+    ConfirmedCenter("center", "main", 10, 12, "2026-01-01"))
+assert find_third_points(third_moves, [third_context], "2026-01-06") == []
+third_points = find_third_points(third_moves, [third_context], "2026-01-07")
+assert third_points[0].kind == "buy3"
+assert third_points[0].confirmed_dt == "2026-01-07"
+```
+
+输入须包含从该中枢形成起的完整后续走势，不能截掉首回试后把第二次
+回试冒充首次。保守口径要求中枢在离开起点前已确认可见；更晚才确认的
+中枢不会追认历史离开。次级走势的完成、级别邻接、因果中枢仍由调用方
+证明；当前尚不是从K线自动识别全部三类点的引擎。
+
+## 0.7.0 可用范围与正式1.0.0门槛
+
+0.7.0可用于离线结构研究、实际可用前缀分析、候选/确认结构账本，及调用方
+提供已确认次级走势后的二/三类点条件判定。它是beta阶段库，不是自动产生
+完整精确交易信号的策略引擎。0.6.1/0.6.2/0.6.3为本阶段概念提交，最终发版
+统一0.7.0；线段修正会改变线段级结构，升级先保存旧结果并逐前缀比较。
+
+正式1.0.0前仍需补全原图形态及真实理论分支标注、自动完成走势与级别/因果
+上下文、均线版点位组合及分型区间底顶定义，并实跑聚宽旧环境。没有确认
+依据的候选保持候选；没有实际发布历史的数据不宣称完成盘中可见性验证。
+本库没有收益承诺，结构与时间验收不代替策略研究。
 
 ## 模块与公开入口
 
@@ -674,14 +758,15 @@ python -I tools/verify_installed.py
 
 ### 验证范围与交付
 
-CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Release
+CI 在 Python 3.10/3.13 构建及验收，并增加Python3.6/旧numpy与pandas容器
+运行检查；容器通过不代替聚宽实际取数。tag 发布另有 Release
 和 PyPI 步骤。Python 3.6 语法检查、现代依赖本地运行、旧解释器旧依赖
 实跑、聚宽取数、真实行情、报告显示和研究有效性是不同层次的验证。
 
 聚宽已确认 `0.4.0` 可安装并导入，但这不代替全部新增算法在该环境的实跑。
 新的辅助结果不会自动接入冻结研究脚本或改变策略参数。
 
-0.6.1本地验收包含463项包测试（完整外层工程814项）、wheel/sdist及
+历史0.6.0本地验收包含463项包测试（完整外层工程814项）、wheel/sdist及
 隔离安装。真实行情使用ETF历史数据集 `v2026-07-31-r2` 的十只代表ETF：
 26,727根日线与2026年30m；核验读取文件SHA-256，按观察日锚定复权。
 2026年1,390个逐交易日观察点通过未来价格扰动和MACD比例前缀检查。
@@ -700,7 +785,11 @@ CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Rel
 
 ## 版本历史
 
-- **0.6.1**: 观察时点与二类点条件接口阶段版；含0.5.1/0.5.2能力，
+- **0.7.0**: 原图边界修正、线段完成/证据端点分开；实际收盘及到达
+  时间门控、保守确认结构账本；已确认次级走势的三类点条件接口。
+  旧笔级候选保持独立近似范围。验收及正式1.0缺口见上文和正式计划。
+
+- **0.6.0**: 观察时点与二类点条件接口阶段版；含0.5.1/0.5.2能力，
   完整测试、真实ETF逐日防未来验收及安装产物检查见外层验证记录。
   自动走势完成/因果中枢识别、线段原图审计与均线版买卖组合继续独立推进。
 
@@ -758,75 +847,3 @@ CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Rel
 ## 许可证
 
 MIT,见 [LICENSE](LICENSE)。
-
-## 0.6.1 线段边界修正
-
-`find_xds` 不足三笔返回空列表；首三笔须重叠，不能把一笔当未完成线段。
-`XD.complete` 表示给定笔序列下破坏定义成立；`mode` 只区分两种破坏方式。
-`evidence_dt/evidence_end_index` 为最后证据笔的端点，不等于实际行情确认时间。
-完成段的 `gg/dd` 仅覆盖自身构成笔，后续确认笔另记证据；缺口的第二序列
-从假设转折点完整收集，未成立时新极值使旧假设撤销。分界前后不跨界包含。
-这一修正会改变线段及线段级中枢结果；已发布版本和冻结脚本不自动升级。
-
-包测试 `fixtures/xd_originals.json` 用相对价位保留课67/71/81原图不等式，
-不声称恢复原图的真实行情。原图完整覆盖仍在正式计划登记。
-
-## 按收盘与到达时间观察
-
-`analyze_at` 的dt过滤适合调用方已保证全部bar收盘的离线前缀。用于盘中或
-存在数据延迟时，使用 `analyze_available`，每根原始bar增加两个字段：
-`closed_dt` 是本周期结束时间，`available_dt` 是本版本行情可用时间。
-日期标签、收盘时间和到达时间须满足 `dt <= closed_dt <= available_dt`。
-缺字段报错，不会退回日期标签；本库不推断交易日历或供应历史版本。
-
-```python
-from datetime import datetime
-from chan import analyze_available, replay_available
-
-# dt是交易日标签; 当日日线在15:05才成为这个输入版本的可用数据。
-available_bars = [dict(dt=datetime(2026, 7, 31),
-                       closed_dt=datetime(2026, 7, 31, 15),
-                       available_dt=datetime(2026, 7, 31, 15, 5),
-                       open=4.0, high=4.2, low=3.9, close=4.1, volume=1000)]
-assert analyze_available(available_bars, datetime(2026, 7, 31, 14)).as_of is None
-visible = analyze_available(available_bars, datetime(2026, 7, 31, 15, 5))
-for observed in replay_available(available_bars):
-    print(observed.observed_dt, observed.result.as_of)
-    print([item.to_dict() for item in observed.structures])
-```
-
-`replay_available` 独立重算每个实际可用前缀，保留原分型/笔/旧bs候选变更，
-并记录保守结构链：后继笔出现后固定前笔；只用这些笔确认线段；三个已确认
-线段形成线段构造层中枢。末笔和未完成线段不进入保守确认结构。
-`StructureObservation.first_seen` 是该观察网格首次确认可见时间，不是端点
-或下单时刻；中枢延伸另有修订记录。`structures` 不包含自动一类点上下文，
-也不能直接把其中一笔或一条线段转换为 `ConfirmedMove`。
-候选 `buy_points/sell_points` 仍采用旧笔级算法，保留其独立近似范围。
-
-## 已确认次级走势的三类点
-
-`find_third_points` 与 `find_second_points` 共用 `ConfirmedMove` 输入契约，
-但独立返回三类点。只消费真实完成的次级走势与当时已知中枢；不会将
-笔级候选直接升级为理论事件。整个首回试区间必须守ZG/ZD，触沿允许，
-不加旧笔级算法的力度比门槛。同一中枢只输出第一个成立的三类点。
-
-```python
-from chan import ConfirmedMove, ConfirmedCenter, ThirdPointContext, find_third_points
-third_moves = [
-    ConfirmedMove("leave", "sub", "up", "2026-01-02", "2026-01-04",
-                  11, 14, 11, 14, "2026-01-05"),
-    ConfirmedMove("return", "sub", "down", "2026-01-04", "2026-01-06",
-                  14, 12, 12, 14, "2026-01-07"),
-]
-third_context = ThirdPointContext("cycle", "main", "sub",
-    ConfirmedCenter("center", "main", 10, 12, "2026-01-01"))
-assert find_third_points(third_moves, [third_context], "2026-01-06") == []
-third_points = find_third_points(third_moves, [third_context], "2026-01-07")
-assert third_points[0].kind == "buy3"
-assert third_points[0].confirmed_dt == "2026-01-07"
-```
-
-输入须包含从该中枢形成起的完整后续走势，不能截掉首回试后把第二次
-回试冒充首次。保守口径要求中枢在离开起点前已确认可见；更晚才确认的
-中枢不会追认历史离开。次级走势的完成、级别邻接、因果中枢仍由调用方
-证明；当前尚不是从K线自动识别全部三类点的引擎。

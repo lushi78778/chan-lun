@@ -8,7 +8,14 @@
 import os
 import re
 import sys
-from importlib.metadata import version
+try:
+    from importlib.metadata import version
+except ImportError:
+    # Python3.6的安装环境由pip/setuptools提供发行元数据。
+    from pkg_resources import get_distribution
+
+    def version(name):
+        return get_distribution(name).version
 
 
 if len(sys.argv) > 1:
@@ -55,4 +62,11 @@ a = chan.ma_strength_class([10.0] * 233 + [12.0, 9.0], 233)
 b = chan.ma_strength_class([10.0] * 235, 233)
 assert (a.class_no, b.class_no) == (9, 1)
 assert chan.sector_strength({"a": a, "b": b}).mean_class == 5
+
+from datetime import datetime
+bar=dict(dt=datetime(2026,7,31),closed_dt=datetime(2026,7,31,15),
+         available_dt=datetime(2026,7,31,15,5),open=4,high=4.2,low=3.9,close=4.1,volume=1)
+assert chan.analyze_available([bar],datetime(2026,7,31,14)).as_of is None
+assert len(list(chan.replay_available([bar])))==1
+assert chan.find_third_points([],[],"2026-01-01")==[]
 print("installed wheel OK:", chan.__version__, package_path)
