@@ -102,29 +102,43 @@ def level_up(units: List[Any]) -> List[MoveType]:
         前缀的分解结果中已确认项(complete=True)在更长前缀下保持
         不变。
     """
+    return _level_up_traced(units)[0]
+
+
+def _level_up_traced(units):
+    """同一f2计算附中枢形成/延伸索引, 不复制或改变公开切分规则。"""
     n = len(units)
     out: List[MoveType] = []
+    traces = []
+    spans = []
+
+    def emit(move):
+        out.append(move)
+        traces.append(tuple(spans))
+
     if n == 0:
-        return out
+        return out, traces
     pos = 0
     while pos < n:
         # --- 阶段 A: 定位高一级别中枢(最早三单元重叠组), 前为进入段 a ---
+        spans = []
         j = _find_center(units, pos)
         if j is None:
             # 剩余单元不成中枢: 残段, 不构成走势类型
-            out.append(_build(units, pos, n - 1, [], None,
+            emit(_build(units, pos, n - 1, [], None,
                               "incomplete", False))
             break
         # 进入段 a = units[pos..j-1](课 39 a+A 模型, a 可为空/多单元)
         entry_dir = _unit_dir(units[pos]) if j > pos else None
         centers = [_range3(units, j)]
+        spans = [(j, j+2, j+2)]
         kind = "consolidation"
         k = j + 3      # 中枢后逐单元扫描位置
         leave_start: Optional[int] = None   # 离开单元索引(待确认)
         while True:
             if k >= n:
                 # 单元耗尽: 含中枢但离开后走势未确认结束
-                out.append(_build(units, pos, n - 1, centers,
+                emit(_build(units, pos, n - 1, centers,
                                   entry_dir, kind, False))
                 pos = n
                 break
@@ -135,12 +149,14 @@ def level_up(units: List[Any]) -> List[MoveType]:
                     # 与最后中枢区间重叠且未离开过: 中枢延伸
                     # (课 17/20, 与同级别分解课 38"重叠即切分"的
                     # 最大差异)——归并进当前走势类型继续生长
+                    a, b, _ = spans[-1]
+                    spans[-1] = (a, b, k)
                     k += 1
                     continue
                 # 离开后回抽进中枢区间: 课 39 A3 跌回 a 高点,
                 # A1A2A3 构成高一级别中枢情形——当前走势类型完成于
                 # 前一单元(含离开单元), 回抽单元开启下一走势类型
-                out.append(_build(units, pos, k - 1, centers,
+                emit(_build(units, pos, k - 1, centers,
                                   entry_dir, kind, True))
                 pos = k
                 break
@@ -164,7 +180,7 @@ def level_up(units: List[Any]) -> List[MoveType]:
                         (entry_dir is not None and entry_dir != new_dir):
                     # 方向相反: 当前走势类型完成于离开单元前,
                     # 离开单元归下一走势类型(作为其进入段 a 的一部分)
-                    out.append(_build(units, pos, leave_start - 1, centers,
+                    emit(_build(units, pos, leave_start - 1, centers,
                                       entry_dir, kind, True))
                     pos = leave_start
                     break
@@ -175,6 +191,7 @@ def level_up(units: List[Any]) -> List[MoveType]:
                 # 第 N 个中枢比第 N-1 个高的状态 = 上涨延续)
                 kind = new_dir
                 centers.append(z2)
+                spans.append((k-2, k, k))
                 leave_start = None
             k += 1
-    return out
+    return out, traces

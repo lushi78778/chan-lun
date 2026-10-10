@@ -76,6 +76,8 @@ from chan.availability import (AvailableSnapshot, StructureObservation,
 from chan.second import (ConfirmedCenter, ConfirmedDivergence, ConfirmedMove,
                          SecondPoint, SecondPointContext, find_second_points)
 from chan.completion import ConfirmedMoveType, confirm_level_up
+from chan.first import FirstPoint, find_first_points
+from chan.point_chain import PointContext, PointChain, first_point_contexts, analyze_point_chain
 from chan.third import ThirdPoint, ThirdPointContext, find_third_points
 from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
                           POWER_NEUTRAL, POWER_SEVERE, POWER_STRONG, POWER_WEAK,
@@ -89,9 +91,11 @@ from chan.fractal_range import (ConfirmedFractalRange, FractalRangeState,
 from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
 
-__version__ = "0.7.3"
+__version__ = "0.7.4"
 
 __all__ = [
+    "FirstPoint", "find_first_points", "PointContext", "PointChain",
+    "first_point_contexts", "analyze_point_chain",
     "ConfirmedMoveType", "confirm_level_up",
     "MaPoint", "find_ma_points",
     "ConfirmedFractalRange", "FractalRangeState", "fractal_range_state",

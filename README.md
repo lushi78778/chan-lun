@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.7.3`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.7.4`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -546,7 +546,7 @@ assert point.confirmed_dt == "2026-01-06"  # 可用时间
 力度比门槛。后续中阴结束不会删除此前成立的二类点，但结束后才确认
 的点被排除。小转大回试创新低/高时须有当时已确认的盘整背驰证据。
 
-本入口不自动识别一类点、走势完成、级别邻接或因果中枢，也不将旧
+本条件入口不自动识别一类点、走势完成、级别邻接或因果中枢；自动MACD辅助接线见末尾0.7.4入口。它也不将旧
 笔级候选直接升级为精确点。调用方需用当时前缀/存档确定这些输入；
 严禁用全样本 `complete=True` 给历史端点倒填确认时间。因此自动完整
 三类点识别仍需进一步实现，进度与边界登记在正式计划。
@@ -988,3 +988,43 @@ assert ma_candidates[0].to_dict()["last_kiss_proven"] is False
 实际到达时刻，两者不同。只截断当时已关闭并已到达的行情，再计算均线；
 调用方负责同标的、同周期、同价格基准及供应历史版本，到达时间非降序。
 当时已产生的候选是历史判定事实，后续行情不会把它改为“最终反转成功”。
+
+
+### 自动一类候选与因果点位链（0.7.4）
+
+`find_first_points(units, bars, as_of, level)` 消费与
+`confirm_level_up` 同契约的已确认次级走势，自动寻找已经完成的上涨/
+下跌，追溯最后两个中枢、连接段与离开段，输出 `FirstPoint`。
+`bars` 必须提供 `closed_dt`、`available_dt`，所有走势端点须在行情中
+精确对应。行情和结构均先按实际到达时间截断。确认晚于离开段端点时，
+返回的 `confirmed_dt` 保留这段等待时间。
+
+这是第24课的 **MACD 辅助一类候选**，`method='macd_area'`，不是严格
+背驰证明。它要求中枢周围波动区间严格分离、最后段创新极值、同向柱
+面积减弱、B双线回拉零轴。面积采用 `(start,end]`，共用端点不重复计数；
+“零轴附近”默认量化为双线幅值/收盘价不超过0.5%，可通过
+`zero_axis_ratio` 调整，原文没有该数值。单中枢盘整背驰、未完成走势、
+内部极值发生时间未知、零宽中枢等不输出。基础类型真实性、供应版本和
+复权价格坐标仍由输入负责；EMA暖机从所给历史第一根开始。
+
+```python
+# units: 连续的ConfirmedMove或ConfirmedMoveType，不是单笔/单线段
+# bars: 同坐标行情，带closed_dt和available_dt
+points = chan.find_first_points(units, bars, as_of, level='F2')
+chain = chan.analyze_point_chain(units, bars, as_of, level='F2')
+print(chain.first_points, chain.second_points, chain.third_points)
+print(chain.formations)
+```
+
+`first_point_contexts` 自动生成每轮 `SecondPointContext`，并区分两个归属：
+
+| 字段 | 用途与可见证据 |
+|---|---|
+| `previous_center` | 原趋势最后中枢；第101课二三合一只在它反转前已知时判定 |
+| `causal_center` | 一类候选锚点之后连续次级走势的首次三段重叠中枢；确认取三段实际证据和点位最晚到达时间 |
+
+形成时的中枢边界和身份冻结，尚未形成时为 `None`；零宽交集不能用
+现有三类接口表达，不跳过去改选后面的中枢。`analyze_point_chain` 是薄组合
+入口，用引发中枢的首次三类点驱动第108课底/顶构造，用原趋势中枢判
+二三合一；一类候选性质继续沿整个链传递。更大级别重组的中枢身份继承、
+严格区间套一类证明及真实基础类型人工验收仍在正式计划跟进。
