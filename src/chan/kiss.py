@@ -42,7 +42,7 @@ resumed 字段给出(同体位新极值 = 中继; 体位转化 = 转折)。
 
 from typing import Any, Dict, List, Optional
 
-from chan.strength import _diff_series
+from chan._series import _diff_series
 
 __all__ = [
     "KISS_FLY",

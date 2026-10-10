@@ -63,8 +63,9 @@ from __future__ import print_function
 
 from typing import Any, List, Optional
 
-from chan.decompose import (MoveType, _build, _find_center, _overlap3,
-                            _overlap_center, _range3)
+from chan._intervals import (_find_center, _overlap3, _overlap_center,
+                             _range3)
+from chan.decompose import MoveType, _build
 
 
 def _unit_dir(unit: Any) -> Optional[str]:

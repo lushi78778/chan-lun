@@ -16,10 +16,93 @@ bar 序列(list of dict), 供缠论管线(分型/笔/线段/中枢/背驰/买卖
 
 from __future__ import print_function
 
+import math
+import re
+from collections.abc import Mapping
+from datetime import date, datetime
+from numbers import Real
 from typing import Any, Dict, List
 
 # 标准 bar 字段(顺序即 normalize_bars 输出列序)
 BAR_KEYS = ["dt", "open", "high", "low", "close", "volume"]
+
+
+def _bar_time(dt):
+    """校验当前算法可安全按 str(dt) 比较的时间表示。"""
+    if dt is None or dt != dt:
+        raise ValueError("dt 不能为空或 NaT")
+    if isinstance(dt, datetime):
+        # 固定 UTC 偏移使字符串排序与时间先后保持一致。
+        return dt, ("datetime", dt.utcoffset())
+    if isinstance(dt, date):
+        return dt, ("date",)
+    if isinstance(dt, str):
+        match = re.fullmatch(
+            r"\d{4}-\d{2}-\d{2}(?:([ T])\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?)?", dt)
+        if match is None:
+            raise ValueError("字符串 dt 必须为 ISO 日期或带秒的 ISO 时间")
+        separator = match.group(1)
+        if separator is None:
+            return datetime.strptime(dt, "%Y-%m-%d"), ("str", "date")
+        fmt = "%Y-%m-%d" + separator + "%H:%M:%S"
+        if "." in dt:
+            fmt += ".%f"
+        return datetime.strptime(dt, fmt), ("str", separator)
+    raise ValueError("dt 必须为 date/datetime/Timestamp 或 ISO 字符串")
+
+
+def validate_bars(bars: List[Dict[str, Any]]) -> None:
+    """检查单标的、单周期的原始 OHLCV 序列, 不修改、排序或去重。
+
+    输入为 list/tuple of mapping, 每行含 BAR_KEYS。OHLC 为有限正数,
+    volume 为有限非负数, low <= open/close <= high。正价格约束对应
+    本库买卖点力度的价格比例计算, 不是所有金融工具的通用假设。
+    空序列合法; 数字字符串须先经 normalize_bars 数值化。
+
+    dt 严格递增且唯一, 同序列使用同一种时间表示。支持 date、datetime、
+    pandas Timestamp, 或 YYYY-MM-DD / YYYY-MM-DD[ T]HH:MM:SS[.微秒]
+    字符串。datetime 的 UTC 偏移须一致; 字符串时间不带时区。调用方
+    先统一时区, 以保证现有算法的 str(dt) 比较与真实时间先后相符。
+
+    数量单位、复权基准、标的、周期及 K 线是否收盘由调用方保证。
+    此校验只用于原始行情; NewBar 的包含合并区间不能按原始 OHLC 校验。
+
+    异常: TypeError = 容器类型错误; ValueError = 带行号的数据错误。
+    """
+    if not isinstance(bars, (list, tuple)):
+        raise TypeError("bars 必须为标准 bar 的 list 或 tuple")
+    previous_time = None
+    previous_kind = None
+    for index, bar in enumerate(bars):
+        try:
+            if not isinstance(bar, Mapping):
+                raise ValueError("每行必须为含 BAR_KEYS 的 mapping")
+            missing = [key for key in BAR_KEYS if key not in bar]
+            if missing:
+                raise ValueError("缺少字段: {}".format(", ".join(missing)))
+            current_time, current_kind = _bar_time(bar["dt"])
+            if previous_kind is not None:
+                if current_kind != previous_kind:
+                    raise ValueError("dt 类型、字符串格式及 UTC 偏移须一致")
+                if current_time <= previous_time:
+                    raise ValueError("dt 必须严格递增, 不能重复或乱序")
+            values = {}
+            for key in BAR_KEYS[1:]:
+                value = bar[key]
+                if isinstance(value, bool) or not isinstance(value, Real):
+                    raise ValueError("{} 必须为数值".format(key))
+                value = float(value)
+                if not math.isfinite(value):
+                    raise ValueError("{} 必须为有限数值".format(key))
+                if (key == "volume" and value < 0) or (key != "volume" and value <= 0):
+                    raise ValueError("价格须为正数, volume 须为非负数")
+                values[key] = value
+            if not (values["low"] <= values["open"] <= values["high"] and
+                    values["low"] <= values["close"] <= values["high"]):
+                raise ValueError("OHLC 须满足 low <= open/close <= high")
+            previous_time, previous_kind = current_time, current_kind
+        except (ValueError, TypeError, OverflowError) as error:
+            raise ValueError("bars[{}]: {}".format(index, error)) from error
 
 
 def normalize_bars(df: Any, dt_col: str = "date", open_col: str = "open",
@@ -70,6 +153,8 @@ def normalize_bars(df: Any, dt_col: str = "date", open_col: str = "open",
         out = df[[dt_col] + cols].copy()
         out.columns = ["dt"] + price_cols
     out.columns = BAR_KEYS
+    # 时间已成为 dt 列; 丢弃原索引避免命名索引 dt 与列 dt 排序歧义。
+    out = out.reset_index(drop=True)
     out = out.sort_values("dt")
     # 数值化
     for c in ["open", "high", "low", "close", "volume"]:

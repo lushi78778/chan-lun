@@ -17,8 +17,8 @@ MACD 指标为内置实现,唯一第三方依赖是 numpy(计算)与 pandas(数�
 - **完整理论链条**:包含处理 → 分型 → 笔 → 线段 → 中枢 → 背驰 → 三类买卖点,每层独立成模块、可单独调用;
 - **跨级别确认(区间套)**:日线三买/三卖 → 30 分钟内部背驰 + 中枢边界守位,输出 confirmed/weak/broke 等明确状态;
 - **零行情耦合**:输入只是 `list of dict` 的标准 bar,任何数据源(聚宽/米筐/本地 CSV)归一化后即可用;
-- **无未来函数**:所有信号只用信号日及之前的数据计算(见下文"防未来函数"一节);
-- **老环境友好**:Python 3.6+、numpy 1.14+、pandas 0.23+ 均可运行(实测于聚宽研究环境 3.6.7 / numpy 1.14.6 / pandas 0.23.4)。
+- **前缀计算**:可对截至观察时刻的数据计算结构; 历史回放还需处理确认延迟与尾部结构修订(见下文“防未来函数”);
+- **老环境兼容目标**:Python 3.6+、numpy 1.14+、pandas 0.23+; 历史基线曾在聚宽旧环境运行, 新版本需分别验证。
 
 ## 安装
 
@@ -28,7 +28,7 @@ MACD 指标为内置实现,唯一第三方依赖是 numpy(计算)与 pandas(数�
 pip install chan-lun-core
 ```
 
-从 GitHub Release 安装(由 CI 自动构建):
+安装冻结基线 0.1.10 的 GitHub Release(版本固定, 不代表当前源码):
 
 ```bash
 pip install https://github.com/lushi78778/chan-lun/releases/download/v0.1.10/chan_lun_core-0.1.10-py3-none-any.whl
@@ -42,6 +42,22 @@ pip install git+https://github.com/lushi78778/chan-lun.git
 
 ## 快速开始
 
+当前工作树新增的批量入口(见下方“未发布工程变更”)可直接返回命名结果:
+
+```python
+from chan import normalize_bars, analyze_bars
+
+# 单标的、单周期 DataFrame; 时间、复权基准及收盘状态由调用方确定
+result = analyze_bars(normalize_bars(df))
+print(result.as_of)
+print(result.bi_zss, result.buy_points)
+snapshot = result.to_dict()  # 独立的 JSON 可写快照
+```
+
+`bi_zss` 为笔级中枢, `xd_zss` 为线段级中枢; 背驰和买卖点使用笔级
+输入。批量入口每次完整计算输入前缀。结构对象、计算函数与组合入口
+的职责见 [架构说明](ARCHITECTURE.md)。
+
 全部公开 API 已在包顶层重新导出,既可按模块导入,也可直接从 `chan`
 导入(两者等价):
 
@@ -52,14 +68,14 @@ from chan import (normalize_bars, chan_fx_bi, chan_bis_xds, find_zs,
 # 等价于 from chan.bars import ... / from chan.bi import ... 等
 ```
 
-完整管线:
+笔级中枢、背驰与买卖点使用同一笔序列; 线段级结构另行计算:
 
 ```python
 from chan.bars import normalize_bars
 from chan.bi import chan_fx_bi
-from chan.xd import chan_bis_xds
+from chan.xd import find_xds
 from chan.zs import find_zs, classify_trend
-from chan.bc import macd_series, find_trend_bc
+from chan.bc import macd_series, find_trend_bc, find_pan_bc
 from chan.bs import find_buy_points, find_sell_points
 
 # 1. 行情 DataFrame -> 标准 bar 列表(列名可配置)
@@ -69,11 +85,13 @@ bars = normalize_bars(df)
 new_bars, fxs, bis = chan_fx_bi(bars)
 
 # 3. 线段(特征序列标准, 支持缺口确认)
-xds = chan_bis_xds(bars)
+xds = find_xds(bis)
 
-# 4. 中枢(find_zs 鸭子类型: 传笔列表得笔级中枢, 传线段列表得线段级中枢)
-zss = find_zs(xds)
+# 4. 笔级中枢供后续笔级背驰/买卖点使用
+zss = find_zs(bis)
 trends = classify_trend(zss)          # 盘整/趋势粗分类
+# 线段级中枢独立保留, 不混入下面的笔级判定
+segment_zss = find_zs(xds)
 
 # 5. MACD 与背驰
 dif, dea, hist = macd_series(bars)    # 标准参数 12/26/9
@@ -111,14 +129,23 @@ bars = [
 - `dt` 为原类型(datetime/Timestamp/str 均可,内部统一按 `str(dt)` 比较);
 - 数量单位、复权方式由调用方决定——只要同一序列内部一致即可;
 - `chan.bars.normalize_bars` 负责把 DataFrame 转成标准 bar(默认列名即聚宽 `get_price`/`get_bars` 列名,可配置映射)。
+- `validate_bars(bars)` 检查标准原始行情, `analyze_bars` 自动执行校验:
+  时间严格递增且唯一、表示/UTC 偏移一致、OHLC 有限且为正、成交量有限
+  且非负、原始 OHLC 包络有效。字符串时间使用一致的 ISO 日期或带秒的
+  时间格式; 具体格式及数据源职责见 [行情契约](ARCHITECTURE.md#行情输入契约)。
 
 ## 防未来函数(重要)
 
-本库**只做计算,不拉行情**——因此"未来函数"的风险完全在调用方的取数上:
+本库只计算输入序列。取数截止、结构确认与回放方式共同决定是否使用未来信息:
 
 1. 计算信号日 `D` 的信号时,行情序列必须以 `D` 的最后一根 bar 结束,**严禁**包含 `D` 之后的 bar;
 2. 前复权数据请把复权基准日锚定在信号日;
-3. 分型需要后一根 K 线确认,因此分型/笔的 `dt` 天然比"确认时刻"早一个周期——这是正常现象,不是未来函数。
+3. 分型/笔的端点 `dt` 是结构位置, 不是可交易的确认时刻。分型需要右邻
+   K 线确认; 若右邻为包含合并组, 确认可能晚于一个原始周期。
+4. 历史回放必须逐日前缀计算, 或另行记录当时实际可见的结构及确认时间。
+   对全样本最终结果仅按端点 `dt` 过滤, 不能保证还原当时可见状态。
+5. 未完成的笔端点与尾部结构可随新数据延伸/修订。跨级别数据也要按
+   相应观察时刻截断; 状态机“已完成项前缀一致”不代表上游尾部结构永不变化。
 
 ## 模块详解
 
@@ -167,7 +194,7 @@ bis = find_bis(new_bars, fxs)           # 或分步调用
 ```python
 from chan.xd import find_xds, chan_bis_xds, XD
 
-xds = chan_bis_xds(bars)   # bars -> 分型 -> 笔 -> 线段(完整入口)
+new_bars, fxs, bis, xds = chan_bis_xds(bars)  # 完整入口返回四元组
 xds = find_xds(bis)        # 或从笔列表出发
 ```
 
@@ -285,11 +312,9 @@ stale / no_data,附带 `fx_dt/low30/dist_b1`。
 
 ## 测试
 
-仓库自带测试(65 个):`chan.bars/fx/bi/xd/zs/bc/bs` 与 `chan.cross30` 的
-单元测试,覆盖合成行情的分型边界、成笔间隔(含 min_k_gap 参数)、
-中枢延伸/新生、背驰判定、三类买卖点字段与力度过滤参数、
-三买三卖/二买 30m 确认的 confirmed/broke/stale 等路径,以及
-顶层 API 导出完整性:
+仓库测试覆盖结构识别、各理论状态机、均线辅助系统、跨级别确认,
+以及版本一致、公开导出和 Python 3.6 语法。测试数以 discover 的
+实际输出为准, 不手工维护固定计数:
 
 ```bash
 pip install . && python -m unittest discover -s tests -p 'test_*.py'
@@ -298,9 +323,22 @@ pip install . && python -m unittest discover -s tests -p 'test_*.py'
 CI(GitHub Actions)在 Python 3.10 / 3.13 双版本运行同一套测试,打 `v*` tag
 后自动构建并发布 GitHub Release 与 PyPI。
 
+开发分层、理论核验和完整 Chan 项目的测试桥接见
+[CONTRIBUTING.md](CONTRIBUTING.md)。理论实现进度唯一维护在外层
+`doc/缠论理论逐一实现计划.md` §6; 安装后的 `chan.__version__` 为该环境的
+实际版本, 本地源码版本与已发布版本分别核验。
+
+## 未发布工程变更
+
+- 新增 `validate_bars` 输入契约与 `analyze_bars` 批量组合入口;
+  `AnalysisResult` 按级别命名结果并提供独立的 JSON 快照。
+- 修复 `normalize_bars` 的命名索引 `dt` 与时间列重名时的排序错误。
+- 采用 [架构说明](ARCHITECTURE.md) 中的数据对象、纯函数和组合分层。
+  这些变更尚未赋正式发布版本, 发版前同步元数据与运行时版本号。
+
 ## 版本历史
 
-- **0.1.10**(当前 PyPI 版): LICENSE 版权人更新为 lushi78778; 版本历史与文档措辞清理(去决策归因表述);
+- **0.1.10**(冻结基线): LICENSE 版权人更新为 lushi78778; 版本历史与文档措辞清理(去决策归因表述);
 - **0.1.9**:发布元数据维护; license 改 PEP 639 SPDX 表达式 MIT(pip show 显示 License: MIT 而非内联全文), LICENSE 文件仍随包分发; Home-page 为 PEP 621 旧字段, 现代规范用 Project-URL Homepage(已指向 GitHub 仓库, PyPI 页面可见);
 - **0.1.8**:正确性/健壮性——`classify_trend` 补方向一致性判定(反向中枢不再误并趋势); `bc.ema`/`macd_series`/`find_trend_bc` 空输入防护; `confirm_buy3/3_30m` 的 zg_tol/zd_tol 标注为保留参数(文档如实化); stale_days 文档与默认值表述澄清;
 - **0.1.7**:通用完善——`chan` 顶层导出全部公开 API

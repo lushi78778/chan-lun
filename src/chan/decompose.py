@@ -59,6 +59,9 @@ from __future__ import print_function
 
 from typing import Any, Dict, List, Optional, Tuple
 
+from chan._intervals import (_find_center, _overlap3, _overlap_center,
+                             _range3)
+
 
 class MoveType(object):
     """同级别走势类型(课 38)
@@ -108,35 +111,6 @@ class MoveType(object):
                 "seg_start": self.seg_start,
                 "seg_end": self.seg_end,
                 "centers": [[zd, zg] for zd, zg in self.centers]}
-
-
-def _overlap3(segs: List[Any], j: int) -> bool:
-    """次级别三段 segs[j..j+2] 是否有共同价格重叠(课 38 三段重合)"""
-    a, b, c = segs[j], segs[j + 1], segs[j + 2]
-    # 区间交集 [max(低点), min(高点)] 非空; 端点触及也算重叠
-    return max(a.low, b.low, c.low) <= min(a.high, b.high, c.high)
-
-
-def _range3(segs: List[Any], j: int) -> Tuple[float, float]:
-    """三段重叠区间 (zd, zg) = [max(低点), min(高点)](调用方保证重叠)"""
-    a, b, c = segs[j], segs[j + 1], segs[j + 2]
-    return (max(a.low, b.low, c.low), min(a.high, b.high, c.high))
-
-
-def _overlap_center(seg: Any, center: Tuple[float, float]) -> bool:
-    """段区间与中枢区间是否重叠(端点触及也算, 同 zs._overlap_zs)"""
-    return not (seg.high < center[0] or seg.low > center[1])
-
-
-def _find_center(segs: List[Any], start: int) -> Optional[int]:
-    """从 start 起找最早的三段重叠组首段索引; 无则 None"""
-    j = start
-    n = len(segs)
-    while j + 2 < n:
-        if _overlap3(segs, j):
-            return j
-        j += 1
-    return None
 
 
 def _build(segs: List[Any], p: int, q: int,

@@ -3,6 +3,7 @@
 
 模块:
     bars    - 行情数据归一化
+    analysis - 标准行情校验后的批量组合与命名结果
     fx      - 包含处理 + 分型识别
     bi      - 笔识别
     xd      - 线段识别(特征序列两种标准)
@@ -27,7 +28,7 @@
      注意: __version__ 与 pyproject.toml 的 [project] version 需保持一致。
 """
 
-from chan.bars import BAR_KEYS, bars_to_df, normalize_bars
+from chan.bars import BAR_KEYS, bars_to_df, normalize_bars, validate_bars
 from chan.fx import FX, NewBar, find_fxs, remove_includes
 from chan.bi import BI, MIN_K_GAP, chan_fx_bi, find_bis
 from chan.xd import XD, chan_bis_xds, find_xds
@@ -63,12 +64,15 @@ from chan.nest import (BcNestInput, BcNestLevel, NestBcState, nested_bc)
 from chan.kiss import (ALIGN_DOWN, ALIGN_UP, KISS_FLY, KISS_LIP, KISS_WET,
                        KissEvent, alignment_series, classify_kiss,
                        find_kisses)
+from chan.analysis import AnalysisResult, analyze_bars
 
 __version__ = "0.4.1"
 
 __all__ = [
     # chan.bars 行情归一化
-    "BAR_KEYS", "normalize_bars", "bars_to_df",
+    "BAR_KEYS", "normalize_bars", "bars_to_df", "validate_bars",
+    # chan.analysis 批量组合入口
+    "AnalysisResult", "analyze_bars",
     # chan.fx 包含处理 + 分型
     "NewBar", "FX", "remove_includes", "find_fxs",
     # chan.bi 笔

@@ -30,6 +30,8 @@
 
 from typing import Any, Dict, List, Optional
 
+from chan._series import _diff_series
+
 __all__ = [
     "sma_series",
     "MaArea",
@@ -102,25 +104,6 @@ class MaArea(object):
             "avg_area": self.avg_area,
             "closed": self.closed,
         }
-
-
-def _diff_series(short: Any, long: Any) -> List[Optional[float]]:
-    """两均线差值序列(短线-长线), 任一侧无效(NaN/None)处置 None"""
-    n = min(len(short), len(long))
-    out: List[Optional[float]] = []
-    for i in range(n):
-        s, l = short[i], long[i]
-        if s is None or l is None:
-            out.append(None)
-            continue
-        try:
-            if s != s or l != l:  # NaN 检查(不依赖 math)
-                out.append(None)
-            else:
-                out.append(float(s) - float(l))
-        except TypeError:
-            out.append(None)
-    return out
 
 
 def ma_areas(short: Any, long: Any) -> List[MaArea]:

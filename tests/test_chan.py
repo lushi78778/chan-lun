@@ -229,10 +229,6 @@ class TestFindBI(unittest.TestCase):
         self.assertEqual(bis[0].end_index, 10)
 
 
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
-
-
 class TestFindXD(unittest.TestCase):
     """线段识别(特征序列)"""
 
@@ -687,3 +683,7 @@ class TestClassifyTrendDirection(unittest.TestCase):
         res2 = classify_trend([zs1, zs2_up])
         self.assertEqual(len(res2), 1)
         self.assertEqual(res2[0]["type"], "趋势")
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

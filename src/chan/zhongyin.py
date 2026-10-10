@@ -49,7 +49,7 @@
 import math
 from typing import Any, Dict, List, Optional, Tuple
 
-from chan.decompose import _find_center, _overlap_center, _range3
+from chan._intervals import _find_center, _overlap_center, _range3
 
 __all__ = [
     "ZhongYinResult",
