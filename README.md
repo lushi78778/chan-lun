@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.7.1`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.7.2`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -888,3 +888,50 @@ K线的 `dt` 不是确认时间。确认时间由当时观察或存档提供；�
 乱序交付或历史修订须由调用方先形成对应版本快照。价格依据所选观察日
 可得因子，不使用最新复权箱体配旧行情。这里的分型区间与 `formation_state`
 使用一类点及因果中枢的精确走势定义分别命名，不能互换。
+
+
+### 均线版辅助候选（第11、12、15课）
+
+`find_ma_points` 从实际已到达的原始行情计算SMA、吻和封闭面积，返回
+`ma_buy1_candidate / ma_sell1_candidate / ma_buy2_candidate / ma_sell2_candidate`。
+这些名称与中枢版点位分开；结果不保证反转，也不直接用于下单。
+
+- `post_kiss_divergence`：第二次及以后已完成湿吻后的同向面积衰减，
+  同时本段价格高点和低点均顺趋势移动。封闭面积取下一根相交行情到达时确认，
+  不能按面积末端提前使用。`last_kiss_proven=False`，不回看未来挑最后一次。
+- `first_continuation`：已经观察到体位转化之后的首次已完成同体位中继；
+  接受飞吻、唇吻和湿吻，不要求先出现本模块的一类候选。窗口直接始于某体位
+  而没有转化证据时不声称“第一次”。默认前腿涨跌强度至少2%，前腿均量不超过
+  此前长均线周期均量的2倍；可配置，`max_volume_ratio=None`明确关闭量能过滤。
+
+原文未规定吻的数值边界、前腿强度和放量阈值；本接口沿用 `find_kisses`
+的量化参数并保留调整入口。第一类为保守封闭面积法，不覆盖飞吻／唇吻后的
+全部背驰或尚未结束的即时预警，后者见 `avg_strength_state`。价格趋势采用
+同向面积腿的高低区间近似，不宣称已经完成精确走势类型划分。
+
+```python
+from datetime import datetime, timedelta
+from chan import find_ma_points
+# 1/2周期仅为易核对的演示，实际参数按所研究周期选择。
+ma_point_bars = []
+closes = [500.0]
+for diff in [-10, -8, 1, -11, -10, 1, -12, -1, 0]:
+    closes.append(closes[-1] + 2*diff)
+for i, close in enumerate(closes):
+    dt = datetime(2026, 1, 1) + timedelta(days=i)
+    ma_point_bars.append(dict(dt=dt, open=close, close=close,
+                              high=close+1, low=close-1, volume=1,
+                              closed_dt=dt+timedelta(hours=15),
+                              available_dt=dt+timedelta(hours=15, minutes=5)))
+ma_candidates = find_ma_points(ma_point_bars, datetime(2026, 1, 10, 15, 5),
+                                short_period=1, long_period=2)
+assert ma_candidates[0].kind == "ma_buy1_candidate"
+assert ma_candidates[0].dt == datetime(2026, 1, 9)
+assert ma_candidates[0].confirmed_dt == datetime(2026, 1, 10, 15, 5)
+assert ma_candidates[0].to_dict()["last_kiss_proven"] is False
+```
+
+`dt / price`是证据区间内最早的最低／最高点，`confirmed_dt`是所需证据的
+实际到达时刻，两者不同。只截断当时已关闭并已到达的行情，再计算均线；
+调用方负责同标的、同周期、同价格基准及供应历史版本，到达时间非降序。
+当时已产生的候选是历史判定事实，后续行情不会把它改为“最终反转成功”。
