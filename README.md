@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.7.0`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.7.1`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -847,3 +847,44 @@ CI 在 Python 3.10/3.13 构建及验收，并增加Python3.6/旧numpy与pandas�
 ## 许可证
 
 MIT,见 [LICENSE](LICENSE)。
+
+
+### 分型区间的底部／顶部构造（第108课）
+
+`fractal_range_state` 消费已确认并冻结的 `ConfirmedFractalRange`，返回
+`waiting / constructing / testing / completed / failed`。底部盘中严格跌破
+区间最低点即失败；连续 `confirm` 根收盘严格高于上沿则成功，顶部镜像。
+默认 `confirm=2` 是“有效站住”的工程约定，原文没有规定次数。触沿不算破位，
+也不计成功次数；未确认的收盘越沿被收回后重新计数。首次终态冻结，后续反向
+价格不改写旧构造；新分型另建区间。这是辅助状态，不返回买卖信号或成笔证明。
+
+```python
+from datetime import datetime, timedelta
+from chan import ConfirmedFractalRange, fractal_range_state
+fractal_box = ConfirmedFractalRange("bottom", datetime(2026, 7, 1), 10, 12,
+                                    datetime(2026, 7, 2, 15, 5), "day")
+range_bars = []
+for day, close in [(3, 13), (4, 14)]:
+    dt = datetime(2026, 7, day)
+    range_bars.append(dict(dt=dt, open=close, high=close+1, low=11,
+                           close=close, volume=100,
+                           closed_dt=dt+timedelta(hours=15),
+                           available_dt=dt+timedelta(hours=15, minutes=5)))
+assert fractal_range_state(fractal_box, range_bars,
+                           datetime(2026, 7, 3, 15, 5)).phase == "testing"
+range_state = fractal_range_state(fractal_box, range_bars,
+                                  datetime(2026, 7, 4, 15, 5))
+assert range_state.phase == "completed"
+assert range_state.end_dt == datetime(2026, 7, 4, 15, 5)
+```
+
+区间可取当时 `FX.low / FX.high` 的三根包含处理后K线总范围，调用方应明确
+选取方式并冻结价格版本，不能从完整历史挑选最终分型回填过去。分型中间
+K线的 `dt` 不是确认时间。确认时间由当时观察或存档提供；保守做法为右邻
+合并组被后续无包含K线固定后再登记。该入口不自动判断月线分型已形成。
+
+后续行情必须同标的、同周期、同价格基准，携带收盘/到达时间；在分型确认
+之前已闭合的行不计入其后构造。状态入口要求可见行的到达时间非降序，
+乱序交付或历史修订须由调用方先形成对应版本快照。价格依据所选观察日
+可得因子，不使用最新复权箱体配旧行情。这里的分型区间与 `formation_state`
+使用一类点及因果中枢的精确走势定义分别命名，不能互换。

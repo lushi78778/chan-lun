@@ -82,12 +82,15 @@ from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
                           classify_fx_power, ma_break_state)
 from chan.macd_guard import macd_below_zero, macd_guard_series
 from chan.bottom import FormationEvent, FormationState, formation_state
+from chan.fractal_range import (ConfirmedFractalRange, FractalRangeState,
+                                fractal_range_state)
 from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
 
-__version__ = "0.7.0"
+__version__ = "0.7.1"
 
 __all__ = [
+    "ConfirmedFractalRange", "FractalRangeState", "fractal_range_state",
     "ThirdPoint", "ThirdPointContext", "find_third_points",
     "AvailableSnapshot", "StructureObservation", "analyze_available", "replay_available",
     # chan.bars 行情归一化

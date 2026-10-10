@@ -3,7 +3,7 @@
 
 不注入源码目录; 可传wheel路径或临时安装目标目录在本地验收产物。
 校验安装元数据、全部导出与主组合/辅助入口, 源码算法测试另行执行。
-此脚本在CI3.10/3.13使用, 不是旧聚宽运行时验证。
+此脚本在现代及3.6容器CI使用, 不等于旧聚宽平台运行验证。
 """
 import os
 import re
@@ -69,4 +69,5 @@ bar=dict(dt=datetime(2026,7,31),closed_dt=datetime(2026,7,31,15),
 assert chan.analyze_available([bar],datetime(2026,7,31,14)).as_of is None
 assert len(list(chan.replay_available([bar])))==1
 assert chan.find_third_points([],[],"2026-01-01")==[]
+assert chan.fractal_range_state(None, [], datetime(2026,7,31)).phase=="waiting"
 print("installed wheel OK:", chan.__version__, package_path)
