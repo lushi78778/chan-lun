@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.6.1`。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.6.2`。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -51,7 +51,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.6.1'
+python -m pip install 'chan-lun-core==0.6.2'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -65,7 +65,7 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.6.1 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==0.6.2 --no-cache-dir
 ```
 
 如果当前镜像尚未提供 `0.6.1`，可继续使用已经安装并可导入的 `0.4.0`。
@@ -770,3 +770,35 @@ MIT,见 [LICENSE](LICENSE)。
 
 包测试 `fixtures/xd_originals.json` 用相对价位保留课67/71/81原图不等式，
 不声称恢复原图的真实行情。原图完整覆盖仍在正式计划登记。
+
+## 按收盘与到达时间观察
+
+`analyze_at` 的dt过滤适合调用方已保证全部bar收盘的离线前缀。用于盘中或
+存在数据延迟时，使用 `analyze_available`，每根原始bar增加两个字段：
+`closed_dt` 是本周期结束时间，`available_dt` 是本版本行情可用时间。
+日期标签、收盘时间和到达时间须满足 `dt <= closed_dt <= available_dt`。
+缺字段报错，不会退回日期标签；本库不推断交易日历或供应历史版本。
+
+```python
+from datetime import datetime
+from chan import analyze_available, replay_available
+
+# dt是交易日标签; 当日日线在15:05才成为这个输入版本的可用数据。
+available_bars = [dict(dt=datetime(2026, 7, 31),
+                       closed_dt=datetime(2026, 7, 31, 15),
+                       available_dt=datetime(2026, 7, 31, 15, 5),
+                       open=4.0, high=4.2, low=3.9, close=4.1, volume=1000)]
+assert analyze_available(available_bars, datetime(2026, 7, 31, 14)).as_of is None
+visible = analyze_available(available_bars, datetime(2026, 7, 31, 15, 5))
+for observed in replay_available(available_bars):
+    print(observed.observed_dt, observed.result.as_of)
+    print([item.to_dict() for item in observed.structures])
+```
+
+`replay_available` 独立重算每个实际可用前缀，保留原分型/笔/旧bs候选变更，
+并记录保守结构链：后继笔出现后固定前笔；只用这些笔确认线段；三个已确认
+线段形成线段构造层中枢。末笔和未完成线段不进入保守确认结构。
+`StructureObservation.first_seen` 是该观察网格首次确认可见时间，不是端点
+或下单时刻；中枢延伸另有修订记录。`structures` 不包含自动一类点上下文，
+也不能直接把其中一笔或一条线段转换为 `ConfirmedMove`。
+候选 `buy_points/sell_points` 仍采用旧笔级算法，保留其独立近似范围。
