@@ -75,6 +75,7 @@ from chan.availability import (AvailableSnapshot, StructureObservation,
                                analyze_available, replay_available)
 from chan.second import (ConfirmedCenter, ConfirmedDivergence, ConfirmedMove,
                          SecondPoint, SecondPointContext, find_second_points)
+from chan.third import ThirdPoint, ThirdPointContext, find_third_points
 from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
                           POWER_NEUTRAL, POWER_SEVERE, POWER_STRONG, POWER_WEAK,
                           FxPowerResult, MaBreakState, classify_fx,
@@ -84,9 +85,10 @@ from chan.bottom import FormationEvent, FormationState, formation_state
 from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
 
-__version__ = "0.6.2"
+__version__ = "0.6.3"
 
 __all__ = [
+    "ThirdPoint", "ThirdPointContext", "find_third_points",
     "AvailableSnapshot", "StructureObservation", "analyze_available", "replay_available",
     # chan.bars 行情归一化
     "BAR_KEYS", "normalize_bars", "bars_to_df", "validate_bars",

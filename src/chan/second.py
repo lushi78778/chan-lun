@@ -106,30 +106,10 @@ def _visible(items, cls, cutoff, kind):
     return out
 
 
-def find_second_points(moves, contexts, as_of, centers=None, divergences=None):
-    """消费已确认的相邻次级走势, 返回全部上下文的二类点(课53/101)。
-
-    moves按每个level的start_dt严格有序且不重叠; 每个上下文只能取
-    anchor起始的第一次反向走势及紧接的第一次回试, 时间/端点价须
-    连续, 不跳过失败回试寻找下一次。回试未确认则没有结果。
-    centers是context_id->ConfirmedCenter映射; 缺省不判二三合一。
-    divergences为盘整背驰证据序列, 仅小转大创新低/高分支需要。
-
-    first上下文允许weak二买低于一买(卖点高于一卖), 不添加力度门槛。
-    minor_turn上下文须回试不创新低/高或已有同方向盘整背驰证据。
-    最强合一严格要求给定原中枢在anchor前可见, 首次反弹从中枢内/下
-    穿到ZG上方且回试全区间低点>=ZG(卖点镜像)。触沿允许, 无额外
-    工程力度比门槛。未来确认的走势/证据不参与; 空上下文返回[]。
-
-    上下文、走势完成、级别邻接和背驰真实性仍由调用方负责; 本函数
-    校验身份/时间/连续性与价格规则, 不凭字符串级别名猜周期关系。
-    """
-    cutoff, kind = _bar_time(as_of)
-    visible_moves = _visible(moves, ConfirmedMove, cutoff, kind)
-    visible_contexts = _visible(contexts, SecondPointContext, cutoff, kind)
-    evidence = _visible(divergences or [], ConfirmedDivergence, cutoff, kind)
+def _move_groups(moves, cutoff, kind):
+    """二、三类点共用的已确认走势输入校验, 不推断完成或周期关系。"""
     groups, ids = {}, set()
-    for move in visible_moves:
+    for move in _visible(moves, ConfirmedMove, cutoff, kind):
         _text(move.move_id)
         _text(move.level)
         if move.move_id in ids:
@@ -151,6 +131,31 @@ def find_second_points(moves, contexts, as_of, centers=None, divergences=None):
         if group and _time(group[-1].end_dt, kind) > start:
             raise ValueError("同级走势须有序且不重叠")
         group.append(move)
+    return groups
+
+
+def find_second_points(moves, contexts, as_of, centers=None, divergences=None):
+    """消费已确认的相邻次级走势, 返回全部上下文的二类点(课53/101)。
+
+    moves按每个level的start_dt严格有序且不重叠; 每个上下文只能取
+    anchor起始的第一次反向走势及紧接的第一次回试, 时间/端点价须
+    连续, 不跳过失败回试寻找下一次。回试未确认则没有结果。
+    centers是context_id->ConfirmedCenter映射; 缺省不判二三合一。
+    divergences为盘整背驰证据序列, 仅小转大创新低/高分支需要。
+
+    first上下文允许weak二买低于一买(卖点高于一卖), 不添加力度门槛。
+    minor_turn上下文须回试不创新低/高或已有同方向盘整背驰证据。
+    最强合一严格要求给定原中枢在anchor前可见, 首次反弹从中枢内/下
+    穿到ZG上方且回试全区间低点>=ZG(卖点镜像)。触沿允许, 无额外
+    工程力度比门槛。未来确认的走势/证据不参与; 空上下文返回[]。
+
+    上下文、走势完成、级别邻接和背驰真实性仍由调用方负责; 本函数
+    校验身份/时间/连续性与价格规则, 不凭字符串级别名猜周期关系。
+    """
+    cutoff, kind = _bar_time(as_of)
+    visible_contexts = _visible(contexts, SecondPointContext, cutoff, kind)
+    evidence = _visible(divergences or [], ConfirmedDivergence, cutoff, kind)
+    groups = _move_groups(moves, cutoff, kind)
     for item in evidence:
         _text(item.move_id)
         _text(item.level)

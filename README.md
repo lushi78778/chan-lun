@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.6.2`。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.6.3`。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -51,7 +51,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.6.2'
+python -m pip install 'chan-lun-core==0.6.3'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -65,7 +65,7 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.6.2 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==0.6.3 --no-cache-dir
 ```
 
 如果当前镜像尚未提供 `0.6.1`，可继续使用已经安装并可导入的 `0.4.0`。
@@ -802,3 +802,31 @@ for observed in replay_available(available_bars):
 或下单时刻；中枢延伸另有修订记录。`structures` 不包含自动一类点上下文，
 也不能直接把其中一笔或一条线段转换为 `ConfirmedMove`。
 候选 `buy_points/sell_points` 仍采用旧笔级算法，保留其独立近似范围。
+
+## 已确认次级走势的三类点
+
+`find_third_points` 与 `find_second_points` 共用 `ConfirmedMove` 输入契约，
+但独立返回三类点。只消费真实完成的次级走势与当时已知中枢；不会将
+笔级候选直接升级为理论事件。整个首回试区间必须守ZG/ZD，触沿允许，
+不加旧笔级算法的力度比门槛。同一中枢只输出第一个成立的三类点。
+
+```python
+from chan import ConfirmedMove, ConfirmedCenter, ThirdPointContext, find_third_points
+third_moves = [
+    ConfirmedMove("leave", "sub", "up", "2026-01-02", "2026-01-04",
+                  11, 14, 11, 14, "2026-01-05"),
+    ConfirmedMove("return", "sub", "down", "2026-01-04", "2026-01-06",
+                  14, 12, 12, 14, "2026-01-07"),
+]
+third_context = ThirdPointContext("cycle", "main", "sub",
+    ConfirmedCenter("center", "main", 10, 12, "2026-01-01"))
+assert find_third_points(third_moves, [third_context], "2026-01-06") == []
+third_points = find_third_points(third_moves, [third_context], "2026-01-07")
+assert third_points[0].kind == "buy3"
+assert third_points[0].confirmed_dt == "2026-01-07"
+```
+
+输入须包含从该中枢形成起的完整后续走势，不能截掉首回试后把第二次
+回试冒充首次。保守口径要求中枢在离开起点前已确认可见；更晚才确认的
+中枢不会追认历史离开。次级走势的完成、级别邻接、因果中枢仍由调用方
+证明；当前尚不是从K线自动识别全部三类点的引擎。
