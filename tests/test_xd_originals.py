@@ -118,3 +118,44 @@ class TestOriginalXD(unittest.TestCase):
         self.assertTrue(x.complete)
         self.assertEqual((x.start_index,x.end_index,x.end_value,x.low),(3,8,4,2))
         self.assertEqual(x.evidence_end_index,11)
+
+    def test_65_twelve_figures_strict_classification(self):
+        """课65 PDF504十二题: 不构成/恰一段/至少两段的三类计数与图面一致。
+
+        严格67/78口径、每划为一笔、图面即全部输入时, 十二图均为单一未完成
+        线段(不构成=0, 恰一段=12, 至少两段=0)。65笔破坏口径(dj<=gi, j>=i+2)
+        会判q2-q12已破坏, 但分解定理要求线段被另一线段破坏, 破坏笔未形成
+        第二线段分界; 分类以特征序列分型为准。
+        """
+        with open(os.path.join(os.path.dirname(__file__), 'fixtures', 'xd_originals.json')) as f:
+            cases = json.load(f)
+        quiz = [c for c in cases if c['id'].startswith('65-q')]
+        self.assertEqual(len(quiz), 12)
+        counts = {'none': 0, 'single': 0, 'multi': 0}
+        for case in quiz:
+            xds = find_xds(strokes(case['values']))
+            if not xds:
+                counts['none'] += 1
+            elif len(xds) == 1:
+                counts['single'] += 1
+            else:
+                counts['multi'] += 1
+        self.assertEqual(counts, {'none': 0, 'single': 12, 'multi': 0})
+
+    def test_65_two_figure_comparison_semantics(self):
+        """课65 PDF506两图比较: 同输入标准下输出本质不同。
+
+        课65回复(2007-07-19/20): 每划为笔时两图有本质区别(图A='上'一段,
+        图B教学答案'上下上'); 每划为线段时无区别。笔/线段是操作性构造,
+        与中枢/走势类型的递归存在性意义不同。严格67/78下图B为两记录
+        (段1情况一完成, 段2未完成), 教学答案登记于fixture notes。
+        """
+        with open(os.path.join(os.path.dirname(__file__), 'fixtures', 'xd_originals.json')) as f:
+            cases = {c['id']: c for c in json.load(f)}
+        first = find_xds(strokes(cases['65-compare-a']['values']))
+        second = find_xds(strokes(cases['65-compare-b']['values']))
+        self.assertEqual(len(first), 1)
+        self.assertFalse(first[0].complete)
+        self.assertEqual(len(second), 2)
+        self.assertTrue(second[0].complete)
+        self.assertFalse(second[1].complete)
