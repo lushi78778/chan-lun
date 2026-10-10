@@ -71,8 +71,9 @@ from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
                           FxPowerResult, MaBreakState, classify_fx,
                           classify_fx_power, ma_break_state)
 from chan.macd_guard import macd_below_zero, macd_guard_series
+from chan.bottom import FormationEvent, FormationState, formation_state
 
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -127,6 +128,8 @@ __all__ = [
     # chan.kiss 均线吻系统(课 11/12)
     "KISS_FLY", "KISS_LIP", "KISS_WET", "ALIGN_UP", "ALIGN_DOWN",
     "KissEvent", "alignment_series", "find_kisses", "classify_kiss",
+    # chan.bottom 精确走势的底部/顶部构造(课108)
+    "FormationEvent", "FormationState", "formation_state",
     # chan.fxpower 分型力度与破均线辅助(课79/82)
     "POWER_WEAK", "POWER_NEUTRAL", "POWER_STRONG", "POWER_SEVERE",
     "BREAK_NONE", "BREAK_TESTING", "BREAK_EFFECTIVE",

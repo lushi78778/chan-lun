@@ -338,6 +338,9 @@ CI(GitHub Actions)在 Python 3.10 / 3.13 双版本运行同一套测试,打 `v*`
 
 ## 版本历史
 
+- **0.4.5**: 底部/顶部构造状态(课108), `formation_state` 按同级同因果
+  中枢的首次三类点结束构造。`FormationEvent.confirmed_dt` 为实际确认
+  时间, 不能用全样本结构端点代替; 分型箱体辅助定义另行处理。
 - **0.4.4**: MACD零轴防狼术(课103), `macd_below_zero(dif, dea)` 与
   `macd_guard_series` 返回双线严格负区的布尔判据, 缺测为None。
   触零/跨轴不等于重新站稳, 不直接生成买入许可。
