@@ -42,7 +42,7 @@ pip install git+https://github.com/lushi78778/chan-lun.git
 
 ## 快速开始
 
-当前工作树新增的批量入口(见下方“未发布工程变更”)可直接返回命名结果:
+0.4.2 起的批量入口可直接返回命名结果(本地版本与远端发布分别核验):
 
 ```python
 from chan import normalize_bars, analyze_bars
@@ -328,16 +328,19 @@ CI(GitHub Actions)在 Python 3.10 / 3.13 双版本运行同一套测试,打 `v*`
 `doc/缠论理论逐一实现计划.md` §6; 安装后的 `chan.__version__` 为该环境的
 实际版本, 本地源码版本与已发布版本分别核验。
 
-## 未发布工程变更
+## 工程变更(0.4.2 起)
 
 - 新增 `validate_bars` 输入契约与 `analyze_bars` 批量组合入口;
   `AnalysisResult` 按级别命名结果并提供独立的 JSON 快照。
 - 修复 `normalize_bars` 的命名索引 `dt` 与时间列重名时的排序错误。
 - 采用 [架构说明](ARCHITECTURE.md) 中的数据对象、纯函数和组合分层。
-  这些变更尚未赋正式发布版本, 发版前同步元数据与运行时版本号。
+  已随本地 0.4.2 同步元数据与运行时版本号; 远端发布另行核验。
 
 ## 版本历史
 
+- **0.4.2**: 分型力度(课79/82), 三K线形态四档与底分型镜像、包含标签,
+  以及收盘对均线的历史确认状态。定性形态采用可配置工程阈值;
+  有效破均线不保证成笔。公开入口 `classify_fx_power/classify_fx/ma_break_state`。
 - **0.1.10**(冻结基线): LICENSE 版权人更新为 lushi78778; 版本历史与文档措辞清理(去决策归因表述);
 - **0.1.9**:发布元数据维护; license 改 PEP 639 SPDX 表达式 MIT(pip show 显示 License: MIT 而非内联全文), LICENSE 文件仍随包分发; Home-page 为 PEP 621 旧字段, 现代规范用 Project-URL Homepage(已指向 GitHub 仓库, PyPI 页面可见);
 - **0.1.8**:正确性/健壮性——`classify_trend` 补方向一致性判定(反向中枢不再误并趋势); `bc.ema`/`macd_series`/`find_trend_bc` 空输入防护; `confirm_buy3/3_30m` 的 zg_tol/zd_tol 标注为保留参数(文档如实化); stale_days 文档与默认值表述澄清;

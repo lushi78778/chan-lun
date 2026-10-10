@@ -65,8 +65,12 @@ from chan.kiss import (ALIGN_DOWN, ALIGN_UP, KISS_FLY, KISS_LIP, KISS_WET,
                        KissEvent, alignment_series, classify_kiss,
                        find_kisses)
 from chan.analysis import AnalysisResult, analyze_bars
+from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
+                          POWER_NEUTRAL, POWER_SEVERE, POWER_STRONG, POWER_WEAK,
+                          FxPowerResult, MaBreakState, classify_fx,
+                          classify_fx_power, ma_break_state)
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -121,6 +125,11 @@ __all__ = [
     # chan.kiss 均线吻系统(课 11/12)
     "KISS_FLY", "KISS_LIP", "KISS_WET", "ALIGN_UP", "ALIGN_DOWN",
     "KissEvent", "alignment_series", "find_kisses", "classify_kiss",
+    # chan.fxpower 分型力度与破均线辅助(课79/82)
+    "POWER_WEAK", "POWER_NEUTRAL", "POWER_STRONG", "POWER_SEVERE",
+    "BREAK_NONE", "BREAK_TESTING", "BREAK_EFFECTIVE",
+    "FxPowerResult", "MaBreakState", "classify_fx_power", "classify_fx",
+    "ma_break_state",
     # 版本号
     "__version__",
 ]

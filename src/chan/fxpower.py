@@ -48,7 +48,8 @@ chan.fxpower —— 分型力度判断: 三K线形态分类 + 有效破均线辅
        小实体 = |close - open| <= small_body x 总区间(默认 0.15);
        长上影(顶)/长下影(底) = b2 关键影线 >= shadow x 总区间
        (默认 0.25)。阈值均为参数, 可按级别/品种调整;
-    2. 分类优先级 severe > strong > weak > neutral: 原文三个案例
+    2. severe 判据应用于无相邻包含的三K线, 与课82的非包含图例一致。
+       分类优先级 severe > strong > weak > neutral: 原文三个案例
        (5/28-30、6/18-21、9/17-19)互不冲突, 但构造数据可能同时命中
        多案(如 K1 长阳而 K3 深破 K1 底), 以杀伤力最强者为准——力度
        判断取保守方向(宁可高估调整风险);
@@ -58,7 +59,8 @@ chan.fxpower —— 分型力度判断: 三K线形态分类 + 有效破均线辅
        bar_index 相邻三根), 也可以是原始 K 线(课 82 的包含关系讨论、
        课 79 的 600737 案例均为原始 K 线形态)。NewBar 的 open/close 为
        合并组近似(open 取组内首根 open, close 取末根 close, 见
-       chan.fx), 原文形态案例为原始日线, 精细形态分析建议传原始 K 线;
+       chan.fx), 原文形态案例为原始日线, 精细形态分析建议传原始 K 线。
+       合并组首开末收落在形态区间之外时, 关键影线长度下限取0;
     5. 相邻两 K 线存在包含关系时 containment=True(课 82: 犹豫/观望);
        「阳线被长阴线整个吃掉」(顶)/「阴线被长阳整个吃掉」(底)标
        bad_containment 并把力度升档为不低于 strong(课 82 六月案例:
@@ -85,6 +87,8 @@ chan.fxpower —— 分型力度判断: 三K线形态分类 + 有效破均线辅
 
 from __future__ import print_function
 
+import math
+from numbers import Integral, Real
 from typing import Any, Dict, List, Optional
 
 __all__ = [
@@ -165,10 +169,11 @@ class MaBreakState(object):
             收回(课 79 的 000938: 假突破 5 日线后继续上攻, 往往中继)。
         break_idx: 首次收盘越线的下标(从未越线为 None)。
         confirm_idx: 达成「连续 confirm 根越线」的下标(未达成为 None)。
-        streak: 序列末端尚未确认的连续越线根数(0 = 末端未越线)。
+        streak: 序列末端连续越线根数(已确认后也计数, 0 = 末端未越线)。
 
     判读(课 79, 以顶分型 + 5 日线为例):
-        state=effective -> 有效跌破, 「那就没什么大戏了」, 至少笔级调整;
+        state=effective -> 曾确认有效破位, 调整风险较高; 课79明确也可
+            时间换空间, 此辅助条件不保证成笔;
         state=none 且 recovered=False -> 从未越线, 倾向中继;
         state=none 且 recovered=True -> 假突破后收回(000938), 倾向中继;
         state=testing -> 越线未确认, 等待后续 K 线。
@@ -227,8 +232,30 @@ class _K(object):
 def _as_k(bar: Any) -> _K:
     """bar -> _K: 支持 chan.fx.NewBar(属性访问)与原始 bar dict"""
     if isinstance(bar, dict):
-        return _K(bar["open"], bar["high"], bar["low"], bar["close"])
-    return _K(bar.open, bar.high, bar.low, bar.close)
+        values = [bar[key] for key in ("open", "high", "low", "close")]
+    else:
+        values = [bar.open, bar.high, bar.low, bar.close]
+    if any(isinstance(value, bool) or not isinstance(value, Real) or
+           not math.isfinite(float(value)) for value in values):
+        raise ValueError("OHLC 必须为有限数值")
+    k = _K(*[float(value) for value in values])
+    if k.high < k.low:
+        raise ValueError("high 不能小于 low")
+    # 原始实体须在区间内; NewBar 保留的首开末收为近似, 不套此条件。
+    if isinstance(bar, dict) and not (k.low <= k.open <= k.high and
+                                      k.low <= k.close <= k.high):
+        raise ValueError("原始 OHLC 价格包络无效")
+    return k
+
+
+def _optional_number(value):
+    """序列暖机/非有限值记为缺测; 错误的数值类型明确拒绝。"""
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError("收盘与均线须为数值或 None")
+    value = float(value)
+    return value if math.isfinite(value) else None
 
 
 def classify_fx_power(b1: Any, b2: Any, b3: Any, direction: str,
@@ -249,9 +276,9 @@ def classify_fx_power(b1: Any, b2: Any, b3: Any, direction: str,
     参数:
         b1 / b2 / b3: 分型的左/中/右三根 K 线(时间升序), 需含
             open / high / low / close 属性——chan.fx.NewBar 或原始
-            bar dict 外层对象均可(鸭子类型, 取属性访问)。
-            注: 传 dict 时请先用 chan.bars.normalize_bars 归一, 或
-            自行包装属性访问; 常规流程传 NewBar(见 classify_fx)。
+            bar dict 均可。调用方提供已确认分型的上下文; 本函数只判断
+            力度, 不代替分型识别。原始 dict 的 OHLC 须在价格包络内;
+            NewBar 的首开末收为近似, 精细实体形态优先用原始行情。
         direction: "top" 顶分型 / "bottom" 底分型(与 FX.kind 同口径)。
         long_body: 长实体阈值(实体/三根K线总区间, 默认 0.35)。
         small_body: 小实体阈值(同上归一, 默认 0.15)。
@@ -264,11 +291,20 @@ def classify_fx_power(b1: Any, b2: Any, b3: Any, direction: str,
 
     边界行为:
         - 三根 K 线总区间为 0(高低点全部相同)返回 neutral;
-        - direction 非 "top"/"bottom" 抛 ValueError。
+        - direction 非 "top"/"bottom" 抛 ValueError;
+        - 阈值须满足 0<=small_body<long_body<=1, 0<shadow<=1;
+          OHLC非有限值/错误区间或原始行情的无效价格包络抛 ValueError。
     """
     if direction not in ("top", "bottom"):
         raise ValueError(
             "direction must be 'top' or 'bottom': {0!r}".format(direction))
+    # 长/小/影线阈值为明示的工程参数, 不把无效比例当成理论判据。
+    for name, value in (("long_body", long_body), ("small_body", small_body),
+                        ("shadow", shadow)):
+        if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value):
+            raise ValueError("{} 必须为有限比例".format(name))
+    if not (0 <= small_body < long_body <= 1 and 0 < shadow <= 1):
+        raise ValueError("须满足 0<=small_body<long_body<=1, 0<shadow<=1")
 
     # 统一输入形态(NewBar 对象 / 原始 bar dict -> 内部 _K 视图)
     b1 = _as_k(b1)
@@ -296,10 +332,10 @@ def classify_fx_power(b1: Any, b2: Any, b3: Any, direction: str,
     r3 = abs(b3.close - b3.open) / range3
     if direction == "top":
         # 顶分型: 看中间K线的上影(卖分力阻击留下的痕迹)
-        sh2 = (b2.high - max(b2.open, b2.close)) / range3
+        sh2 = max(0.0, b2.high - max(b2.open, b2.close)) / range3
     else:
         # 底分型: 看中间K线的下影(买分力阻击留下的痕迹)
-        sh2 = (min(b2.open, b2.close) - b2.low) / range3
+        sh2 = max(0.0, min(b2.open, b2.close) - b2.low) / range3
     metrics = {"k1_body": r1, "k2_body": r2, "k3_body": r3,
                "k2_shadow": sh2}
 
@@ -313,7 +349,7 @@ def classify_fx_power(b1: Any, b2: Any, b3: Any, direction: str,
     if direction == "top":
         # severe: K3 跌破 K1 的底且收盘收不回 K1 区间一半之上
         # (课 82: 属于最弱的一种, 杀伤力较强)
-        if b3.low < b1.low and b3.close <= mid1:
+        if not containment and b3.low < b1.low and b3.close <= mid1:
             power = POWER_SEVERE
             reasons.append(
                 "K3跌破K1的底且收盘未收上K1区间一半(最弱的一种, 杀伤力较强)")
@@ -334,7 +370,7 @@ def classify_fx_power(b1: Any, b2: Any, b3: Any, direction: str,
     else:
         # 底分型: 全部镜像(课 82: 「底分型的情况, 反过来就是」)
         # severe: K3 升破 K1 的顶且收盘收不回 K1 区间一半之下
-        if b3.high > b1.high and b3.close >= mid1:
+        if not containment and b3.high > b1.high and b3.close >= mid1:
             power = POWER_SEVERE
             reasons.append(
                 "K3升破K1的顶且收盘未收回K1区间一半之下(最强的一种, "
@@ -405,7 +441,7 @@ def classify_fx(fx: Any, new_bars: List[Any],
     find_fxs 正常输出不会越界, 此为防御。
     """
     i = fx.bar_index
-    if i < 1 or i + 2 > len(new_bars):
+    if isinstance(i, bool) or not isinstance(i, Integral) or i < 1 or i + 2 > len(new_bars):
         raise ValueError(
             "fx.bar_index 越界: {0} (len(new_bars)={1})".format(
                 i, len(new_bars)))
@@ -438,7 +474,8 @@ def ma_break_state(closes: List[float], mas: List[Optional[float]],
 
     判定规则(以顶分型为例):
         - 收盘 < 均线记一次越线; 连续越线达 confirm 根 -> state=
-          effective(有效跌破, 调整至少成笔; 一旦达成保持不变, 其后
+          effective(曾确认有效跌破, 也可能时间换空间而不成笔; 一旦
+          达成保持该历史事实不变, 其后
           收回不改写历史——课 79: 「那就没什么大戏了」);
         - 越线后未达 confirm 根即收盘收回 -> recovered=True(假突破,
           000938 口径, 往往中继);
@@ -448,12 +485,13 @@ def ma_break_state(closes: List[float], mas: List[Optional[float]],
     边界行为:
         - closes 与 mas 长度不等抛 ValueError; confirm < 1 抛
           ValueError; direction 非法抛 ValueError;
-        - closes[i] 为 None 视为该下标无数据(同 mas[i]=None 处理)。
+        - closes/mas 中 None、NaN、inf 均视为缺测, 打断连续确认;
+          bool/字符串等错误数值类型抛 ValueError。
     """
     if direction not in ("top", "bottom"):
         raise ValueError(
             "direction must be 'top' or 'bottom': {0!r}".format(direction))
-    if confirm < 1:
+    if isinstance(confirm, bool) or not isinstance(confirm, Integral) or confirm < 1:
         raise ValueError("confirm must be >= 1: {0!r}".format(confirm))
     if len(closes) != len(mas):
         raise ValueError(
@@ -468,8 +506,8 @@ def ma_break_state(closes: List[float], mas: List[Optional[float]],
     run = 0               # 当前连续越线根数
 
     for i in range(len(closes)):
-        c = closes[i]
-        ma = mas[i]
+        c = _optional_number(closes[i])
+        ma = _optional_number(mas[i])
         if c is None or ma is None:
             # 无数据下标不判定; 进行中的越线连续无法确认延续,
             # 保守按中断处理(不计假突破——与"收盘收回"不同, 此处
