@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.5.0`。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.5.1`。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -292,6 +292,34 @@ for stop in range(1, len(bars) + 1):
 
 取数截止与前复权基准均锚定观察日；聚宽可能填充未来日期行情，调用方需
 钳制 `end_date` 并再次过滤返回时间。跨周期数据也按对应观察时刻截断。
+
+### 按观察时点计算与追踪修订（0.5.1 起）
+
+```python
+from chan import analyze_at, replay_bars
+
+# bars 已按本观察时点可用的复权因子处理, 并且只包含已收盘bar。
+cutoff = bars[-1]["dt"]
+current = analyze_at(bars, cutoff, bi_standard="106")
+for snapshot in replay_bars(bars, observations=[row["dt"] for row in bars[-20:]]):
+    for change in snapshot.changes:
+        print(change.kind, change.field, change.first_seen, change.observed_dt)
+```
+
+`analyze_at` 先筛选原始 `dt<=cutoff` 行情，再计算包含、MACD 和结构。
+截止值与行情时间使用相同类型、字符串格式和 UTC 偏移。未来 OHLCV
+不参与计算；完整时间索引仍须有效且严格递增。返回的 `as_of` 是最后
+可见行情时间，可能早于请求截止。行情是否收盘由调用方保证。
+
+`replay_bars` 逐个观察时间独立计算并返回 `ReplaySnapshot`，记录分型、
+笔和旧买卖候选的 `appeared/revised/withdrawn`。`first_seen` 仅是当前
+观察网格首次出现时间，不能当作理论确认时间。未完成末笔可能被同向
+新极值替换；候选撤销保留在账本中。输入历史版本改变时重新建账本。
+账本身份适用于固定输入序列，不是跨重采样或数据修订的全局中枢身份。
+
+本入口不复权。若复权因子随观察时点变化，应分别构造各时点的行情前缀
+后调用 `analyze_at`，不能拿最终复权行情假定其当时可用。跨周期数据也
+须按同一实际观察时间截断。完整样本计算后按结构端点筛选不满足此契约。
 
 ## 模块与公开入口
 
@@ -613,6 +641,9 @@ CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Rel
 本 README 维护用法，版本历史维护公开变化，不另设理论完成状态表。
 
 ## 版本历史
+
+- **0.5.1**: 新增 `analyze_at/replay_bars`，按原始行情截止后计算，记录
+  首次观察、修订与撤销；候选首次出现与理论确认明确分开。
 
 - **0.5.0**: 阶段4辅助系统完成; 新增106课均线九类与板块强弱
   `classify_ma_strength/ma_strength_class/sector_strength`, 显式本轮

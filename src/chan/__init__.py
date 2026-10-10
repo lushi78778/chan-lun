@@ -70,6 +70,7 @@ from chan.kiss import (ALIGN_DOWN, ALIGN_UP, KISS_FLY, KISS_LIP, KISS_WET,
                        KissEvent, alignment_series, classify_kiss,
                        find_kisses)
 from chan.analysis import AnalysisResult, analyze_bars
+from chan.replay import ObservationChange, ReplaySnapshot, analyze_at, replay_bars
 from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
                           POWER_NEUTRAL, POWER_SEVERE, POWER_STRONG, POWER_WEAK,
                           FxPowerResult, MaBreakState, classify_fx,
@@ -79,13 +80,14 @@ from chan.bottom import FormationEvent, FormationState, formation_state
 from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 __all__ = [
     # chan.bars 行情归一化
     "BAR_KEYS", "normalize_bars", "bars_to_df", "validate_bars",
     # chan.analysis 批量组合入口
     "AnalysisResult", "analyze_bars",
+    "ObservationChange", "ReplaySnapshot", "analyze_at", "replay_bars",
     # chan.fx 包含处理 + 分型
     "NewBar", "FX", "remove_includes", "find_fxs",
     # chan.bi 笔
