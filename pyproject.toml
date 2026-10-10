@@ -16,6 +16,8 @@ readme = "README.md"
 requires-python = ">=3.6"
 # PEP 639: SPDX 表达式, pip show 显示为 "License: MIT"(不再内联全文)
 license = "MIT"
+# PEP 639: 显式随发行包保留许可证文件。
+license-files = ["LICENSE"]
 # 作者身份为发布时静态写入的稳定字符串(GitHub 改名不会同步);
 # 不公开邮箱(隐私优先)
 authors = [{name = "lushi78778"}]
@@ -54,8 +56,6 @@ Repository = "https://github.com/lushi78778/chan-lun"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-# 继续把 LICENSE 文件随包分发(PEP 639 下不再自动内联)
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

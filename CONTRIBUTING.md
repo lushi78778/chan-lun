@@ -55,13 +55,15 @@ python -m unittest discover -s tests -p 'test_*.py'
 完整 Chan checkout 根运行:
 
 ```bash
-.venv/bin/python -m unittest discover -s src/chan/tests -p 'test_*.py'
-.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
+.venv/bin/python tools/check_project.py --scope core
+.venv/bin/python tools/check_project.py
 ```
 
+统一入口显式将同一源码路径传给子进程；完整项目开发依赖安装使用
+`python -m pip install -r requirements-dev.txt`（Python 3.10+）。
 项目 `tests/test_core.py` 自动扫描本仓库 `tests/test_*.py`, 包测试只维护
 一份。新增文件/测试类自动进入项目全量测试, 无需手写 shim。只跑核心库
-项目入口可用 `-s tests -p 'test_core.py'`; 定向跑某个模块可直接在包内
+项目入口可用 `--pattern test_core.py`; 定向跑某个模块可直接在包内
 discover 指定文件名。
 
 `tests/test_contracts.py` 自动检查版本双处一致、顶层导出与 Python 3.6
