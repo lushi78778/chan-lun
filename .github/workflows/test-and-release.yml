@@ -26,6 +26,11 @@ jobs:
         run: uv pip install --system .
       - name: Run tests
         run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Build and verify installed wheel
+        run: |
+          uv build --wheel
+          uv pip install --system --force-reinstall --no-deps dist/*.whl
+          python -I tools/verify_installed.py
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')

@@ -186,6 +186,10 @@ bis = find_bis(new_bars, fxs)           # 或分步调用
 
 - 成笔条件(课 77/81):一顶一底交替、顶必须高于底、两个分型中间 K 线之间至少 `MIN_K_GAP=3` 根独立 K 线(无包含序列索引差 >= 4);
 - `find_bis(new_bars, fxs, min_k_gap=3)`:`min_k_gap` 可参数化——调小(如 2)笔更灵敏、数量更多,调大更稳健,用于不同级别/流动性适配;默认即课 81 标准;
+- 可显式选择 `chan_fx_bi(bars, standard="106")`, 按106课采用两个完整
+  三K分型至少六个无包含K线单位, 且端点区间触及原始MA5。分步调用
+  `find_bis(..., standard="106", ma5=...)` 时, MA5必须与无包含K线
+  按各包含组最后原始下标对齐; 此辅助条件不等于均线突破或独立成笔保证。
 - 同向连续分型取极端(顶取更高、底取更低),并同步延伸上一笔终点;
 - `BI` 对象:`direction`(`up`/`down`)、`start_dt/end_dt`、`start_value/end_value`、`high/low` 属性、`start_index/end_index`、`to_dict()`。
 
@@ -328,16 +332,57 @@ CI(GitHub Actions)在 Python 3.10 / 3.13 双版本运行同一套测试,打 `v*`
 `doc/缠论理论逐一实现计划.md` §6; 安装后的 `chan.__version__` 为该环境的
 实际版本, 本地源码版本与已发布版本分别核验。
 
+## 阶段4辅助系统(0.5.0)
+
+分型力度 `classify_fx_power` 采用可配置形态阈值, `ma_break_state` 是
+收盘破均线的历史确认; MACD防狼 `macd_below_zero` 是双线负区判据。
+这些辅助结果与笔/中枢结构独立, 不自动升级成买卖点或交易许可。
+
+底部/顶部构造使用实际确认事件, 同级别且关联同一因果中枢:
+
+```python
+from chan import FormationEvent, formation_state
+
+# 确认时间来自逐前缀识别或当时存档, 不是全样本结构端点
+first = FormationEvent("buy1", "2026-01-05", "day")
+events = [FormationEvent("buy3", "2026-01-12", "day", "center-A")]
+state = formation_state(first, "center-A", events, as_of="2026-01-10")
+assert state.in_formation
+assert formation_state(first, "center-A", events, "2026-01-12").phase == "completed"
+```
+
+板块指标保留本轮反弹已攻克的均线, 回落不降类。反弹起点需当时
+确定并记录, 所有成员使用同观察日期、周期和攻克标准。默认“攻克”
+为一次收盘严格高于SMA, `confirm`可调整; 这是原文定性条件的量化。
+
+```python
+from chan import ma_strength_class, sector_strength
+
+# 原始历史保留SMA暖机; start_index只标记本轮反弹的统计起点
+a = ma_strength_class([10.0] * 233 + [12.0, 9.0], start_index=233)
+b = ma_strength_class([10.0] * 235, start_index=233)
+report = sector_strength({"asset-A": a, "asset-B": b})
+assert (a.class_no, b.class_no, report.mean_class) == (9, 1, 5.0)
+```
+
+未知类别为None, 不填第1类; 板块均值仅统计已知成员, 需同时查看
+`coverage/valid_count/total_count`。默认八周期可按走势调整; 修改周期
+或确认口径后不可与旧类别直接平均。分型箱体的粗糙底部定义未混入
+精确走势的 `formation_state`。
+
 ## 工程变更(0.4.2 起)
 
 - 新增 `validate_bars` 输入契约与 `analyze_bars` 批量组合入口;
   `AnalysisResult` 按级别命名结果并提供独立的 JSON 快照。
 - 修复 `normalize_bars` 的命名索引 `dt` 与时间列重名时的排序错误。
 - 采用 [架构说明](ARCHITECTURE.md) 中的数据对象、纯函数和组合分层。
-  已随本地 0.4.2 同步元数据与运行时版本号; 远端发布另行核验。
+  元数据与运行时版本号同步, 远端CI/Release/PyPI分别核验。
 
 ## 版本历史
 
+- **0.5.0**: 阶段4辅助系统完成; 新增106课均线九类与板块强弱
+  `classify_ma_strength/ma_strength_class/sector_strength`, 显式本轮
+  起点、因果SMA、缺测状态及均值覆盖率。安装产物进入CI独立导入验收。
 - **0.4.5**: 底部/顶部构造状态(课108), `formation_state` 按同级同因果
   中枢的首次三类点结束构造。`FormationEvent.confirmed_dt` 为实际确认
   时间, 不能用全样本结构端点代替; 分型箱体辅助定义另行处理。

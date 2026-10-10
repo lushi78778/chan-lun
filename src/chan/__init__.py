@@ -15,6 +15,10 @@
     bs      - 三类买卖点信号
     cross30 - 日线买卖点 -> 30 分钟跨级别共振确认(区间套)
     gap     - 缺口识别与力度三分类(课 77)
+    fxpower - 分型力度与破均线辅助(课79/82)
+    macd_guard - MACD双线负区防狼判据(课103)
+    bottom  - 基于确认事件的底部/顶部构造(课108)
+    sector  - 本轮反弹均线类别与板块强弱(课106)
 
 顶层 API: 本模块重新导出各子模块的公开入口, 因此:
     from chan import find_zs, confirm_buy3_30m
@@ -72,8 +76,10 @@ from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
                           classify_fx_power, ma_break_state)
 from chan.macd_guard import macd_below_zero, macd_guard_series
 from chan.bottom import FormationEvent, FormationState, formation_state
+from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
+                         classify_ma_strength, ma_strength_class, sector_strength)
 
-__version__ = "0.4.5"
+__version__ = "0.5.0"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -130,6 +136,9 @@ __all__ = [
     "KissEvent", "alignment_series", "find_kisses", "classify_kiss",
     # chan.bottom 精确走势的底部/顶部构造(课108)
     "FormationEvent", "FormationState", "formation_state",
+    # chan.sector 本轮反弹均线类别与板块强弱(课106)
+    "MA_PERIODS", "MaClassResult", "SectorStrength", "classify_ma_strength",
+    "ma_strength_class", "sector_strength",
     # chan.fxpower 分型力度与破均线辅助(课79/82)
     "POWER_WEAK", "POWER_NEUTRAL", "POWER_STRONG", "POWER_SEVERE",
     "BREAK_NONE", "BREAK_TESTING", "BREAK_EFFECTIVE",

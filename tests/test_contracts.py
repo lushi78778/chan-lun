@@ -84,6 +84,14 @@ class TestPackageContracts(unittest.TestCase):
                          [bi.to_dict() for bi in namespace["bis"]])
         self.assertEqual(namespace["snapshot"]["as_of"], str(frame.index[-1]))
 
+    def test_readme_auxiliary_examples_run(self):
+        """新辅助API的文档示例必须可独立执行, 防确认时间与成员口径误用。"""
+        with open(os.path.join(_ROOT, "README.md"), encoding="utf-8") as f:
+            examples = re.findall(r"```python\n(.*?)```", f.read(), re.S)
+        for marker in ["first = FormationEvent", "report = sector_strength"]:
+            code = next(code for code in examples if marker in code)
+            exec(code, {})
+
 
 if __name__ == "__main__":
     unittest.main()
