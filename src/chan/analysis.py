@@ -7,10 +7,10 @@
 
 from collections import namedtuple
 from copy import deepcopy
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from chan.bars import BAR_KEYS, validate_bars
-from chan.bi import MIN_K_GAP, chan_fx_bi
+from chan.bi import chan_fx_bi
 from chan.xd import find_xds
 from chan.zs import classify_trend, find_zs
 from chan.bc import find_pan_bc, find_trend_bc, macd_series
@@ -58,12 +58,13 @@ class AnalysisResult(_Result):
 
 
 def analyze_bars(bars: List[Dict[str, Any]],
-                 min_k_gap: int = MIN_K_GAP) -> AnalysisResult:
+                 min_k_gap: Optional[int] = None, bi_standard: str = "81") -> AnalysisResult:
     """标准原始行情 -> AnalysisResult, 按现有默认规则进行批量分析。
 
     DataFrame 先用 normalize_bars 转换; 本入口执行 validate_bars,
-    再独立复制 OHLCV。成笔间隔 min_k_gap 为非负整数, 默认 3,
-    含义与 chan_fx_bi 一致。需要自定义 MACD/信号参数或其他理论辅助
+    再独立复制 OHLCV。成笔间隔 min_k_gap 为非负整数或None, 默认按
+    bi_standard选择('81'为3/'106'为2), 含义与chan_fx_bi一致。
+    需要自定义 MACD/信号参数或其他理论辅助
     系统时, 使用各模块函数组合, 避免在此复制全部算法参数。
 
     笔级中枢只与笔级背驰、买卖点相连; 线段级中枢另行返回。
@@ -71,11 +72,12 @@ def analyze_bars(bars: List[Dict[str, Any]],
     未完成尾部会随输入前缀变化, 历史回放应逐日前缀重算。
     """
     validate_bars(bars)
-    if isinstance(min_k_gap, bool) or not isinstance(min_k_gap, int) or min_k_gap < 0:
+    if min_k_gap is not None and (isinstance(min_k_gap, bool) or
+                                  not isinstance(min_k_gap, int) or min_k_gap < 0):
         raise ValueError("min_k_gap 必须为非负整数")
     raw = [{key: (bar[key] if key == "dt" else float(bar[key]))
             for key in BAR_KEYS} for bar in bars]
-    new_bars, fxs, bis = chan_fx_bi(raw, min_k_gap=min_k_gap)
+    new_bars, fxs, bis = chan_fx_bi(raw, min_k_gap=min_k_gap, standard=bi_standard)
     xds = find_xds(bis)
     bi_zss = find_zs(bis)
     xd_zss = find_zs(xds)

@@ -246,11 +246,12 @@ def find_xds(bis: List[BI]) -> List[XD]:
     return xds
 
 
-def chan_bis_xds(bars: List[Dict[str, Any]]) -> Tuple[List[Any], List[Any], List[BI], List[XD]]:
+def chan_bis_xds(bars: List[Dict[str, Any]], standard: str = "81") -> Tuple[List[Any], List[Any], List[BI], List[XD]]:
     """完整入口: 原始 bars -> (无包含序列, 分型, 笔, 线段)
 
     参数:
         bars: 标准 bar 列表(chan.bars.normalize_bars 产出)。
+        standard: 笔标准 '81'(默认)或'106', 透传给chan_fx_bi。
 
     返回:
         四元组 (new_bars, fxs, bis, xds):
@@ -259,10 +260,7 @@ def chan_bis_xds(bars: List[Dict[str, Any]]) -> Tuple[List[Any], List[Any], List
             bis: 笔列表(BI 列表);
             xds: 线段列表(XD 列表, 末个可能未完成)。
     """
-    from chan.fx import remove_includes, find_fxs
-    from chan.bi import find_bis
-    new_bars = remove_includes(bars)
-    fxs = find_fxs(new_bars)
-    bis = find_bis(new_bars, fxs)
+    from chan.bi import chan_fx_bi
+    new_bars, fxs, bis = chan_fx_bi(bars, standard=standard)
     xds = find_xds(bis)
     return new_bars, fxs, bis, xds

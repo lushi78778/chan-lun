@@ -30,7 +30,8 @@
 
 from chan.bars import BAR_KEYS, bars_to_df, normalize_bars, validate_bars
 from chan.fx import FX, NewBar, find_fxs, remove_includes
-from chan.bi import BI, MIN_K_GAP, chan_fx_bi, find_bis
+from chan.bi import (BI, BI_STANDARD_81, BI_STANDARD_106, MIN_K_GAP,
+                     chan_fx_bi, find_bis)
 from chan.xd import XD, chan_bis_xds, find_xds
 from chan.zs import (ZS, ZsEvent, build_expanded_zs, classify_trend,
                      find_zs, track_zs, zs_relation)
@@ -70,7 +71,7 @@ from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
                           FxPowerResult, MaBreakState, classify_fx,
                           classify_fx_power, ma_break_state)
 
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -80,7 +81,7 @@ __all__ = [
     # chan.fx 包含处理 + 分型
     "NewBar", "FX", "remove_includes", "find_fxs",
     # chan.bi 笔
-    "BI", "MIN_K_GAP", "find_bis", "chan_fx_bi",
+    "BI", "MIN_K_GAP", "BI_STANDARD_81", "BI_STANDARD_106", "find_bis", "chan_fx_bi",
     # chan.xd 线段
     "XD", "find_xds", "chan_bis_xds",
     # chan.zs 中枢与走势类型 + 中枢状态机(课 20/69/70)

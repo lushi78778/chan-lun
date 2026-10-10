@@ -14,17 +14,62 @@ chan.bi —— 笔的识别
 本模块是管线第二层: 无包含序列 + 分型 -> 笔(BI)。
 成笔间隔 MIN_K_GAP 为模块级常量, 亦可经参数按标的流动性/级别微调。
 
+可选课106标准(2008-07-10及08-14解盘):
+  「必须至少延伸6个基本K线单位」「如果5日线都不能碰到,
+  那就不会是笔的反弹了」「如果抛去包含关系,6根K线就可以构成笔」。
+  实现选无包含序列中完整两个三K分型的跨度: 端点索引差+3>=6,
+  因此中间至少2根; 仍要求顶底交替、顶高于底。向上笔在端点时间区间
+  内至少一次 high>=MA5, 向下镜像 low<=MA5, 触及即满足必要辅助条件。
+  这不是'有效站稳'确认, 也不将均线条件当成充分成笔条件。默认仍为
+  课81标准; 不根据行情自动切换标准。MA5由原始K线收盘计算, 包含组
+  按最后原始bar下标对齐, 不用合并后的序列重新定义5个原始周期。
+
 兼容: Python 3.6。
 """
 
 from __future__ import print_function
 
+import math
+from numbers import Integral, Real
 from typing import Any, Dict, List, Optional, Tuple
 
 from chan.fx import FX, NewBar, find_fxs, remove_includes
 
 # 成笔的最小独立K线间隔数(课81: 至少3根, 即索引差 >= 4)
 MIN_K_GAP = 3
+BI_STANDARD_81 = "81"
+BI_STANDARD_106 = "106"
+
+
+def _bi_inputs(new_bars, min_k_gap, standard, ma5):
+    """两套规则显式选择, 不允许缺失均线静默退回课81。"""
+    if standard not in (BI_STANDARD_81, BI_STANDARD_106):
+        raise ValueError("standard 须为 '81' 或 '106'")
+    if min_k_gap is None:
+        min_k_gap = MIN_K_GAP if standard == BI_STANDARD_81 else 2
+    if isinstance(min_k_gap, bool) or not isinstance(min_k_gap, Integral) or min_k_gap < 0:
+        raise ValueError("min_k_gap 须为非负整数或 None")
+    if standard == BI_STANDARD_106:
+        if ma5 is None or len(ma5) != len(new_bars):
+            raise ValueError("课106须传入与 new_bars 等长的原始MA5对齐序列")
+        for value in ma5:
+            if value is not None and (isinstance(value, bool) or not isinstance(value, Real)):
+                raise ValueError("ma5 须为数值或 None")
+    return min_k_gap
+
+
+def _touch_ma5(new_bars, ma5, start, end, direction):
+    """课106至少碰5均线: 端点区间内的方向性触及, 不借用确认邻K。"""
+    for index in range(start, end + 1):
+        value = ma5[index]
+        # 暖机/缺测没有均线证据; 不填值也不从未来反向补齐。
+        if value is None or not math.isfinite(value):
+            continue
+        if direction == "up" and new_bars[index].high >= value:
+            return True
+        if direction == "down" and new_bars[index].low <= value:
+            return True
+    return False
 
 
 class BI(object):
@@ -76,15 +121,21 @@ class BI(object):
 
 def find_bis(new_bars: List[NewBar],
              fxs: Optional[List[FX]] = None,
-             min_k_gap: int = MIN_K_GAP) -> List[BI]:
+             min_k_gap: Optional[int] = None,
+             standard: str = BI_STANDARD_81,
+             ma5: Optional[List[Optional[float]]] = None) -> List[BI]:
     """识别笔
 
     参数:
         new_bars: remove_includes 的输出(无包含K线序列)。
         fxs: 分型列表; None = 用 find_fxs(new_bars) 现算。
-        min_k_gap: 成笔的最小独立K线间隔数(课81 标准为 3)。
+        min_k_gap: 成笔的最小独立K线间隔数; None按标准选择(81为3,
+            106为2)。显式参数可额外限制间隔, 106始终保留六K必要条件。
             调小(如 2)会得到更灵敏、数量更多的笔, 调大则笔更稳健;
             仅用于不同级别/流动性的适配, 默认即标准。
+        standard: '81'(默认精化标准) / '106'(可选六K+MA5辅助标准)。
+        ma5: 仅106需要, 与new_bars等长, 每个包含组按其最后原始K线
+            对齐原始5周期均线。None/NaN/inf按缺测; 缺整个序列报错。
 
     返回:
         list of BI, 按时间顺序, 顶底交替。
@@ -98,6 +149,7 @@ def find_bis(new_bars: List[NewBar],
           反之新低同理;
         - 反向分型不满足成笔条件 -> 忽略该分型, 继续向后找。
     """
+    min_k_gap = _bi_inputs(new_bars, min_k_gap, standard, ma5)
     if fxs is None:
         fxs = find_fxs(new_bars)
     if len(fxs) < 2:
@@ -131,7 +183,14 @@ def find_bis(new_bars: List[NewBar],
         else:
             cond_value = fx.high > last.low
             direction = "up"
-        if gap >= min_k_gap and cond_value:
+        standard_ok = True
+        if standard == BI_STANDARD_106:
+            start, end = sorted((last.bar_index, fx.bar_index))
+            # 两个完整三K分型不共用K线: j-i+3>=6; 邻K须已在前缀中。
+            standard_ok = (start >= 1 and end + 1 < len(new_bars) and end - start >= 3)
+            if standard_ok:
+                standard_ok = _touch_ma5(new_bars, ma5, start, end, direction)
+        if gap >= min_k_gap and cond_value and standard_ok:
             a, b = (last, fx) if last.bar_index < fx.bar_index else (fx, last)
             bis.append(BI(direction, a, b,
                           min(last.bar_index, fx.bar_index),
@@ -142,12 +201,14 @@ def find_bis(new_bars: List[NewBar],
 
 
 def chan_fx_bi(bars: List[Dict[str, Any]],
-               min_k_gap: int = MIN_K_GAP) -> Tuple[List[NewBar], List[FX], List[BI]]:
+               min_k_gap: Optional[int] = None,
+               standard: str = BI_STANDARD_81) -> Tuple[List[NewBar], List[FX], List[BI]]:
     """完整入口: 原始 bars -> (无包含序列, 分型列表, 笔列表)
 
     参数:
         bars: 标准 bar 列表(chan.bars.normalize_bars 产出)。
-        min_k_gap: 透传给 find_bis 的成笔间隔(默认 MIN_K_GAP=3)。
+        min_k_gap: 透传给 find_bis; 默认81为3, 106为2。
+        standard: '81' / '106', 后者自动用原始收盘计算并对齐MA5。
 
     返回:
         三元组 (new_bars, fxs, bis):
@@ -157,5 +218,10 @@ def chan_fx_bi(bars: List[Dict[str, Any]],
     """
     new_bars = remove_includes(bars)
     fxs = find_fxs(new_bars)
-    bis = find_bis(new_bars, fxs, min_k_gap=min_k_gap)
+    ma5 = None
+    if standard == BI_STANDARD_106:
+        from chan.strength import sma_series
+        raw_ma5 = sma_series([bar["close"] for bar in bars], 5)
+        ma5 = [raw_ma5[bar.elements[-1]] for bar in new_bars]
+    bis = find_bis(new_bars, fxs, min_k_gap=min_k_gap, standard=standard, ma5=ma5)
     return new_bars, fxs, bis
