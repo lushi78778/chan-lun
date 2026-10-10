@@ -88,7 +88,8 @@ class TestPackageContracts(unittest.TestCase):
         """新辅助API的文档示例必须可独立执行, 防确认时间与成员口径误用。"""
         with open(os.path.join(_ROOT, "README.md"), encoding="utf-8") as f:
             examples = re.findall(r"```python\n(.*?)```", f.read(), re.S)
-        for marker in ["first = FormationEvent", "report = sector_strength"]:
+        for marker in ["first = FormationEvent", "report = sector_strength",
+                       "context = SecondPointContext"]:
             code = next(code for code in examples if marker in code)
             exec(code, {})
 

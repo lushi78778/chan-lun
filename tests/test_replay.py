@@ -4,6 +4,7 @@ import math
 import unittest
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 
 from chan import analyze_at, analyze_bars, replay_bars
 
@@ -111,6 +112,19 @@ class TestReplay(unittest.TestCase):
         for snap in replay_bars(bars, dates):
             for change in snap.changes:
                 self.assertIn(change.first_seen, dates)
+
+    def test_withdraw_and_reappear_preserve_first_seen(self):
+        """撤销记录保留前值, 同身份重现不能改写最早观察时间。"""
+        bars = prices(3)
+        empty = analyze_bars([])
+        candidate = empty._replace(buy_points=[dict(type=1, dt='2025-01-01', price=10, zs_idx=None)])
+        with patch('chan.replay.analyze_at', side_effect=[candidate, empty, candidate]):
+            snapshots = list(replay_bars(bars))
+        changes = [s.changes[0] for s in snapshots]
+        self.assertEqual([c.kind for c in changes], ['appeared', 'withdrawn', 'appeared'])
+        self.assertEqual([c.first_seen for c in changes], [bars[0]['dt']]*3)
+        self.assertIsNone(changes[1].after)
+        self.assertEqual(changes[1].before['price'], 10)
 
     def test_input_unchanged(self):
         """前缀计算不修改行情。"""

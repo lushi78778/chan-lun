@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.5.1`。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.5.2`。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -422,6 +422,50 @@ MACD 返回 `(dif, dea, hist)`，`hist = 2 * (dif - dea)`。
 中阴上下文、已完成次级走势以及第53课小转大中无本级一类点的情形仍需
 补强。后续需要完整定义输入证据，不能只删除价格门槛扩大输出。
 
+### 已确认次级走势的二类点（0.5.2 起）
+
+`find_second_points` 是课53/101的条件判定入口，独立于旧 `find_buy_points`
+和 `find_sell_points`。它接收已经确认结束的次级走势，允许二买低于一买，
+支持小转大没有本级一类点的上下文，并可识别给定因果中枢的二三合一。
+每个反转独立使用稳定 `context_id`，只取第一次反弹和紧接的第一次回试。
+
+```python
+from chan import ConfirmedMove, SecondPointContext, find_second_points
+
+# 条件输入示例：调用方已确认这两个次级走势，以及本级一买上下文。
+# 这些对象不是由任意两笔自动转换而来。
+moves = [
+    ConfirmedMove("rise", "sub", "up", "2026-01-01", "2026-01-03",
+                  10, 15, 10, 15, "2026-01-04"),
+    ConfirmedMove("pull", "sub", "down", "2026-01-03", "2026-01-05",
+                  15, 9, 9, 15, "2026-01-06"),
+]
+context = SecondPointContext("cycle-A", "buy", "main", "sub",
+                             "2026-01-01", 10, "2026-01-02")
+assert find_second_points(moves, [context], "2026-01-05") == []
+point = find_second_points(moves, [context], "2026-01-06")[0]
+assert point.strength == "weak"
+assert point.dt == "2026-01-05"          # 回试端点
+assert point.confirmed_dt == "2026-01-06"  # 可用时间
+```
+
+| 输入 | 契约 |
+|---|---|
+| `ConfirmedMove` | 次级走势的稳定身份、级别、方向、端点价、全程极值及实际确认时间；未完成尾部不输入 |
+| `SecondPointContext` | 一类点或小转大反转锚点、目标/次级级别及上下文确认时间；`ended_dt` 是本次中阴结束的确认时间 |
+| `centers` | 可选 `context_id -> ConfirmedCenter`，须为反转前已形成的同级因果中枢；缺省不判最强合一 |
+| `ConfirmedDivergence` | 小转大回试创新极值分支所需的盘整背驰证据，按走势身份、级别、方向关联 |
+
+输出 `SecondPoint` 保留端点及最晚必要证据的确认时间。原中枢向上首次
+离开后回试全程低点不破 ZG 可标 `also_third=True`，卖点镜像；无额外
+力度比门槛。后续中阴结束不会删除此前成立的二类点，但结束后才确认
+的点被排除。小转大回试创新低/高时须有当时已确认的盘整背驰证据。
+
+本入口不自动识别一类点、走势完成、级别邻接或因果中枢，也不将旧
+笔级候选直接升级为精确点。调用方需用当时前缀/存档确定这些输入；
+严禁用全样本 `complete=True` 给历史端点倒填确认时间。因此自动完整
+三类点识别仍需进一步实现，进度与边界登记在正式计划。
+
 ### 同级分解、级别递归与状态
 
 ```python
@@ -641,6 +685,9 @@ CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Rel
 本 README 维护用法，版本历史维护公开变化，不另设理论完成状态表。
 
 ## 版本历史
+
+- **0.5.2**: 新增已确认次级走势的二类点条件判定，支持弱二类点、
+  小转大无本级一类点、给定因果中枢的二三合一与中阴时间边界。
 
 - **0.5.1**: 新增 `analyze_at/replay_bars`，按原始行情截止后计算，记录
   首次观察、修订与撤销；候选首次出现与理论确认明确分开。
