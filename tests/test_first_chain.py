@@ -2,7 +2,7 @@
 """课24/27/101/108: 自动辅助一类与两个不同归属中枢, 实际证据时间。"""
 import unittest
 from datetime import datetime,timedelta
-from chan import (ConfirmedMove, ConfirmedCenter, find_first_points,
+from chan import (ConfirmedMove, ConfirmedMoveType, ConfirmedCenter, find_first_points, scan_first_points,
                   first_point_contexts, analyze_point_chain)
 
 PRICES=[120,110,115,108,114,90,95,88,94,70,74,68,72,67,69,65,76,70,78,75,82,76,86]
@@ -108,6 +108,7 @@ class TestAutomaticFirstChain(unittest.TestCase):
         self.assertEqual([p.kind for p in chain.third_points],['buy3'])
         self.assertEqual(chain.formations[0].phase,'completed')
         self.assertEqual(chain.formations[0].end_dt,u[20].confirmed_dt)
+        self.assertEqual(chain.contexts[0].second_context.ended_dt,chain.formations[0].end_dt)
 
     def test_top_and_failed_bottom(self):
         """课108镜像顶部完成及底部先三卖的失败分支。"""
@@ -128,3 +129,35 @@ class TestAutomaticFirstChain(unittest.TestCase):
         """迟到历史缺口可能重算EMA, 必须声明新版本, 不能跳过缺口。"""
         u,b,now=sample();b[20]['available_dt']=now+timedelta(days=1)
         with self.assertRaises(ValueError):find_first_points(u,b,now,'main')
+
+    def test_flat_type_is_reported_without_joining_across_it(self):
+        """平端点是有效走势类型, 不能猜方向; 先前有效点保留且诊断可见。"""
+        u,b,now=sample(PRICES+[PRICES[-1]])
+        flat=u[-1]
+        u[-1]=ConfirmedMoveType(flat.move_id,'base','consolidation',None,
+            flat.start_dt,flat.end_dt,flat.start_price,flat.end_price,
+            flat.low,flat.high,flat.confirmed_dt,('part',),('part',),((flat.low,flat.high),))
+        chain=analyze_point_chain(u,b,now,'main')
+        self.assertEqual(chain.unresolved_move_ids,(flat.move_id,))
+        self.assertEqual([p.kind for p in chain.third_points],['buy3'])
+
+    def test_flat_pull_blocks_later_points_in_this_cycle(self):
+        """首次回试无法表达方向时不能绕过它找后面同向回试。"""
+        prices=PRICES[:17]+[PRICES[16]]+PRICES[17:]
+        u,b,now=sample(prices);flat=u[16]
+        u[16]=ConfirmedMoveType(flat.move_id,'base','consolidation',None,
+            flat.start_dt,flat.end_dt,flat.start_price,flat.end_price,
+            flat.low,flat.high,flat.confirmed_dt,('part',),('part',),((flat.low,flat.high),))
+        chain=analyze_point_chain(u,b,now,'main')
+        self.assertEqual(len(chain.first_points),1)
+        self.assertEqual(chain.second_points,[])
+        self.assertEqual(chain.third_points,[])
+        self.assertEqual(chain.formations[0].phase,'constructing')
+
+    def test_negative_scan_keeps_the_actual_rejected_condition(self):
+        """没有一类候选时仍区分趋势完成数与具体条件排除, 不混作无数据。"""
+        u,b,now=sample()
+        scan=scan_first_points(u,b,now,'main',0.)
+        self.assertEqual(scan.points,[])
+        self.assertGreater(scan.completed_types,0)
+        self.assertIn('no_zero_axis_pull',[reason for identity,reason in scan.exclusions])

@@ -98,3 +98,23 @@ class TestOriginalXD(unittest.TestCase):
                 for x in current:
                     self.assertGreaterEqual(x.end_index-x.start_index,3)
                     self.assertEqual(x.direction == 'up', x.end_value > x.start_value)
+
+    def test_all_original_prefixes_freeze_completed_segments(self):
+        """全部独立标注和镜像逐笔进入; 完成证据及历史段不回写。"""
+        with open(os.path.join(os.path.dirname(__file__),'fixtures','xd_originals.json')) as f:
+            cases=json.load(f)
+        for case in cases:
+            for values in [case['values'],[30-v for v in case['values']]]:
+                bis=strokes(values);previous=[]
+                for n in range(len(bis)+1):
+                    current=[x.to_dict() for x in find_xds(bis[:n]) if x.complete]
+                    self.assertEqual(current[:len(previous)],previous,case['id'])
+                    previous=current
+
+    def test_original_internal_extreme_is_not_replaced_by_endpoint(self):
+        """课67附图第八种/78: 第二段终点4, 区间最低仍是内部2。"""
+        bis=strokes([1,6,3,12,2,10,6,8,4,8.5,6,14])
+        x=find_xds(bis)[1]
+        self.assertTrue(x.complete)
+        self.assertEqual((x.start_index,x.end_index,x.end_value,x.low),(3,8,4,2))
+        self.assertEqual(x.evidence_end_index,11)

@@ -133,61 +133,74 @@ def _feature_append(out, elem, direction_up):
     return out[:-1] + [(low, high, ref)]
 
 
-def _segment_end(bis, start):
-    """从一个已给定起点找最早确认的分界(课67/71/78/81)。
+def _candidate_end(bis, start, candidate, left):
+    """课71假设局部转折, 左右不跨界包含; 课78允许段内部极值。"""
+    up = bis[start].direction == "up"
+    first = bis[candidate]
+    # 假设转折须相对其左特征元素同向突出, 不是任意回落点。
+    if (first.high <= left[1] if up else first.low >= left[0]):
+        return None
+    right, second = [(first.low, first.high, first)], []
+    extreme = first.start_value
+    gap = left[1] < first.low if up else left[0] > first.high
+    for i in range(candidate+1, len(bis)):
+        bi = bis[i]
+        if bi.direction == first.direction:
+            # 首次包含方向由左元素到假设转折给定, 不能凭下一段猜方向。
+            right = _feature_append(right, (bi.low, bi.high, bi), up)
+        else:
+            second = _feature_append(second, (bi.low, bi.high, bi), not up)
+            if gap and len(right) >= 2 and _has_fx(second, "bottom" if up else "top") is not None:
+                return candidate, i, 2
+            if bi.end_value > extreme if up else bi.end_value < extreme:
+                return None  # 第二序列未确认前先创新极值, 假设撤销。
+        if len(right) < 2:
+            continue
+        a, b = right[0], right[1]
+        turned = (b[1] < a[1] and b[0] < a[0] if up else
+                  b[1] > a[1] and b[0] > a[0])
+        if turned and not gap:
+            return candidate, i, 1
+        if turned and _has_fx(second, "bottom" if up else "top") is not None:
+            return candidate, i, 2
+    return None
 
-    分界前的最后特征元素和分界开始的一笔不合并; 分界后同类元素
-    可以合并。第二特征序列从分界开始完整收集, 不从发现分型以后
-    才收集。第二分型尚未成立而原方向新极值出现时, 假设分界撤销。
+
+def _segment_end(bis, start):
+    """按课71逐一检验假设转折, 选择最早证据确认的分界。
+
+    课67附图第八种/课78: 段内部可有比终点更极端的价格, 不能只
+    检查全局新高/新低。假设左右元素不包含合并; 右側首次包含以
+    左元素到转折的方向处理。第二特征必须真实形成三元素分型。
     """
     up = bis[start].direction == "up"
     counter = "down" if up else "up"
-    candidate, left, right, second = None, None, [], []
-    features = []
-    extreme = bis[start].start_value
+    features, endings = [], []
     for i in range(start, len(bis)):
         bi = bis[i]
         if bi.direction != counter:
-            if candidate is not None:
-                second = _feature_append(second, (bi.low, bi.high, bi), not up)
-                # 第二序列至少三元素; 不再分缺口的两种情况(课67)。
-                if left is not None and len(right) >= 2:
-                    a, b = left, right[0]
-                    gap = a[1] < b[0] if up else a[0] > b[1]
-                    kind = "bottom" if up else "top"
-                    if gap and _has_fx(second, kind) is not None:
-                        return candidate, i, 2
-                if bi.end_value > extreme if up else bi.end_value < extreme:
-                    candidate, right, second = None, [], []
             continue
-        price = bi.start_value
-        new_extreme = price > extreme if up else price < extreme
-        if new_extreme:
-            # 课78: 未确认前直接新高/新低, A+B+C只能算原方向一段。
-            left = features[-1] if features else None
-            candidate, extreme = i, price
-            right, second = [(bi.low, bi.high, bi)], []
-            features = _feature_append(features, (bi.low, bi.high, bi), up)
-            continue
-        if candidate is None:
-            continue
-        right = _feature_append(right, (bi.low, bi.high, bi), not up)
-        if left is None or len(right) < 2:
-            continue
-        a, b, c = left, right[0], right[1]
-        gap = a[1] < b[0] if up else a[0] > b[1]
-        lower_right = (c[1] < b[1] and c[0] < b[0] if up else
-                       c[0] > b[0] and c[1] > b[1])
-        if not lower_right:
-            continue
-        if not gap:
-            # 课71: 首笔破坏的中间地带不可跨分界包含, 包括b包含a。
-            return candidate, i, 1
-        # 第二种情况的第一分型已成立, 第二序列可能更早已收集。
-        kind = "bottom" if up else "top"
-        if _has_fx(second, kind) is not None:
-            return candidate, i, 2
-    return None
+        if i >= start+3 and features and (bi.start_value > bis[start].start_value if up else
+                                         bi.start_value < bis[start].start_value):
+            end = _candidate_end(bis, start, i, features[-1])
+            if end is not None:
+                endings.append(end)
+            # 课65线段分解定理/课78内部极值: 三笔反向段已穿越旧段
+            # 起价时破坏成立, 不能因较早内部极值被包含而漏掉局部端点。
+            raw = bis[i-2]
+            local = _candidate_end(bis, start, i, (raw.low, raw.high, raw))
+            if local is not None:
+                evidence = bis[local[1]]
+                reverse = bis[i:local[1]+1]
+                first_three = reverse[:3]
+                crossed = (evidence.end_value < bis[start].start_value if up else
+                           evidence.end_value > bis[start].start_value)
+                overlap = (len(first_three) == 3 and
+                           max(u.low for u in first_three) <= min(u.high for u in first_three))
+                if crossed and overlap:
+                    endings.append(local)
+        features = _feature_append(features, (bi.low, bi.high, bi), up)
+    return min(endings, key=lambda r: (r[1], r[0])) if endings else None
 
 
 def find_xds(bis: List[BI]) -> List[XD]:

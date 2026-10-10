@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.7.4`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.7.5`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -51,7 +51,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.7.3'
+python -m pip install 'chan-lun-core==0.7.5'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -65,16 +65,16 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.7.3 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==0.7.5 --no-cache-dir
 ```
 
-如果当前镜像尚未提供 `0.7.3`，可继续使用已经安装并可导入的 `0.4.0`。
+如果当前镜像尚未提供 `0.7.5`，可继续使用已经安装并可导入的 `0.4.0`。
 镜像同步时间不由本库控制；版本不可获取时不要把安装失败当成算法错误。
 如能访问 GitHub Release，也可安装指定 wheel：
 
 ```python
 import sys
-!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.7.3/chan_lun_core-0.7.3-py3-none-any.whl
+!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.7.5/chan_lun_core-0.7.5-py3-none-any.whl
 ```
 
 离线时，先下载该 wheel 并上传到 Notebook 能读取的目录，再用当前解释器
@@ -1028,3 +1028,30 @@ print(chain.formations)
 入口，用引发中枢的首次三类点驱动第108课底/顶构造，用原趋势中枢判
 二三合一；一类候选性质继续沿整个链传递。更大级别重组的中枢身份继承、
 严格区间套一类证明及真实基础类型人工验收仍在正式计划跟进。
+
+
+### 原图回归扩展（0.7.5）
+
+包内 `fixtures/fx_bi_originals.json` 和 `fixtures/xd_originals.json` 共28组
+独立相对价格标注。第62课定义图1—9、第67课编者八种分析补图及第81课
+点5/7关系的三分支更正均覆盖；第67课原文示意与编者分析分开引用。
+每组记录原PDF页、图名、完整输入、人工预期、理由及必要确认前缀，
+上/下镜像和全部逐笔前缀进入回归。不是从算法输出生成预期或恢复市场报价。
+
+`find_xds` 修正假设转折后首次包含方向，按第71课检验局部转折；第65/78课
+反向三笔穿越旧段起价的破坏证据允许旧段的极值在内部。完成区间仍使用
+该段全部真实极值，后继确认笔不计入旧段区间。这会改变特殊包含图形的
+线段划分，已发布版本保留，冻结策略不会自动切到本版。
+
+平端点的完成类型仍能参与递归和中枢形成。自动点位组合通过
+`unresolved_move_ids` 显式报告它，当前轮次的有向二/三类判定在首个
+平端点前停止，保留此前结果；不会猜方向或删段后拼接。`contexts` 中
+`second_context.ended_dt` 与该轮构造结束一致。更大级别中枢身份重组
+和全书所有实盘图仍需继续独立验收。
+
+
+`scan_first_points` 返回 `FirstPointScan(points, exclusions, completed_types)`，
+在没有候选时可查看完成类型的首个否决条件。它区分盘整、比较段不足、
+中枢波动区间重叠、未创新极值、内部极值时间未知、价格证据待到达、
+面积没有减弱、未回零轴和零宽中枢。尚未完成的类型不在否决列表中。
+这使“没有候选”可以复核，而不把它解释成全部理论分支验证通过。

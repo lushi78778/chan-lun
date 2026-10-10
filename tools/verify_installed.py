@@ -72,4 +72,8 @@ assert chan.find_third_points([],[],"2026-01-01")==[]
 assert chan.fractal_range_state(None, [], datetime(2026,7,31)).phase=="waiting"
 assert chan.find_ma_points([], datetime(2026,7,31))==[]
 assert chan.confirm_level_up([], datetime(2026,7,31), 'higher')==[]
+assert chan.find_first_points([], [], datetime(2026,7,31), 'higher')==[]
+assert chan.first_point_contexts([], [], datetime(2026,7,31), 'higher')==[]
+chain=chan.analyze_point_chain([], [], datetime(2026,7,31), 'higher')
+assert chain.first_points==[] and chain.unresolved_move_ids==()
 print("installed wheel OK:", chan.__version__, package_path)

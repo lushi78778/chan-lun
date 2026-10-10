@@ -1,0 +1,291 @@
+[
+  {
+    "id": "62-1-top",
+    "figure": "图1顶分型",
+    "pdf_page": 473,
+    "kind": "fx",
+    "ranges": [
+      [
+        3,
+        5
+      ],
+      [
+        5,
+        8
+      ],
+      [
+        4,
+        6
+      ]
+    ],
+    "expected": [
+      "top"
+    ],
+    "annotation": "independent_relative_prices",
+    "standard": null
+  },
+  {
+    "id": "62-2-bottom",
+    "figure": "图2底分型",
+    "pdf_page": 473,
+    "kind": "fx",
+    "ranges": [
+      [
+        5,
+        8
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        4,
+        6
+      ]
+    ],
+    "expected": [
+      "bottom"
+    ],
+    "annotation": "independent_relative_prices",
+    "standard": null
+  },
+  {
+    "id": "62-3-shared",
+    "figure": "图3共享K线不成笔",
+    "pdf_page": 473,
+    "kind": "bi",
+    "ranges": [
+      [
+        5,
+        7
+      ],
+      [
+        7,
+        9
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        4,
+        6
+      ]
+    ],
+    "expected": [],
+    "annotation": "independent_relative_prices",
+    "standard": "81"
+  },
+  {
+    "id": "62-4-no-independent",
+    "figure": "图4两分型之间无独立K线",
+    "pdf_page": 473,
+    "kind": "bi",
+    "ranges": [
+      [
+        5,
+        7
+      ],
+      [
+        7,
+        9
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        3,
+        5
+      ]
+    ],
+    "expected": [],
+    "annotation": "independent_relative_prices",
+    "standard": "81"
+  },
+  {
+    "id": "62-5-basic-bi",
+    "figure": "图5独立K线的成笔基础",
+    "pdf_page": 473,
+    "kind": "bi",
+    "ranges": [
+      [
+        5,
+        7
+      ],
+      [
+        7,
+        9
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        3,
+        5
+      ]
+    ],
+    "expected": [
+      [
+        1,
+        5,
+        "down"
+      ]
+    ],
+    "annotation": "independent_relative_prices",
+    "standard": "81"
+  },
+  {
+    "id": "62-6-inclusion-up",
+    "figure": "图6包含向上处理",
+    "pdf_page": 473,
+    "kind": "include",
+    "ranges": [
+      [
+        1,
+        3
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "expected": [
+      [
+        1,
+        3
+      ],
+      [
+        3,
+        5
+      ]
+    ],
+    "annotation": "independent_relative_prices",
+    "standard": null
+  },
+  {
+    "id": "62-7-rising",
+    "figure": "图7一:上升K线",
+    "pdf_page": 473,
+    "kind": "fx",
+    "ranges": [
+      [
+        1,
+        3
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        3,
+        5
+      ]
+    ],
+    "expected": [],
+    "annotation": "independent_relative_prices",
+    "standard": null
+  },
+  {
+    "id": "62-7-top",
+    "figure": "图7二:顶分型",
+    "pdf_page": 473,
+    "kind": "fx",
+    "ranges": [
+      [
+        3,
+        5
+      ],
+      [
+        5,
+        8
+      ],
+      [
+        4,
+        6
+      ]
+    ],
+    "expected": [
+      "top"
+    ],
+    "annotation": "independent_relative_prices",
+    "standard": null
+  },
+  {
+    "id": "62-7-falling",
+    "figure": "图7三:下降K线",
+    "pdf_page": 473,
+    "kind": "fx",
+    "ranges": [
+      [
+        3,
+        5
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        1,
+        3
+      ]
+    ],
+    "expected": [],
+    "annotation": "independent_relative_prices",
+    "standard": null
+  },
+  {
+    "id": "62-7-bottom",
+    "figure": "图7四:底分型",
+    "pdf_page": 473,
+    "kind": "fx",
+    "ranges": [
+      [
+        5,
+        8
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        4,
+        6
+      ]
+    ],
+    "expected": [
+      "bottom"
+    ],
+    "annotation": "independent_relative_prices",
+    "standard": null
+  }
+]

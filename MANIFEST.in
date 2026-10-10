@@ -1,3 +1,4 @@
 include ARCHITECTURE.md
 include CONTRIBUTING.md
 recursive-include tools *.py
+recursive-include tests/fixtures *.json

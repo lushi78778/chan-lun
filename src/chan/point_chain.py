@@ -25,14 +25,30 @@ class PointContext(namedtuple('PointContextBase',
     __slots__ = ()
 
 
-class PointChain(namedtuple('PointChainBase', 'first_points contexts second_points third_points formations')):
-    """纯函数组合结果, 自动一类点继续保留MACD辅助候选性质。"""
+class PointChain(namedtuple('PointChainBase', 'first_points contexts second_points third_points formations unresolved_move_ids')):
+    """组合结果; unresolved_move_ids为不可表达方向的平端点类型。
+
+    平端点前的已确认点保留, 本轮其后的有向条件等待, 不跳段拼接。
+    自动一类点继续保留MACD辅助候选性质。
+    """
     __slots__ = ()
 
 
 def _moves(units):
     """不丢平端点走势; 二三类有向接口无法表达则明确报错。"""
     return [u if isinstance(u, ConfirmedMove) else u.to_confirmed_move() for u in units]
+
+
+def _directed_prefix(units, anchor):
+    """每轮锚点以后遇首个平端点就停止, 不能删掉该段串接两侧。"""
+    out = []
+    for u in units:
+        if u.start_dt < anchor:
+            continue
+        if u.start_price == u.end_price:
+            break
+        out.append(u)
+    return _moves(out)
 
 
 def first_point_contexts(units, first_points, as_of, level):
@@ -104,21 +120,24 @@ def analyze_point_chain(units, bars, as_of, level, zero_axis_ratio=0.005):
     points = find_first_points(units, bars, as_of, level, zero_axis_ratio)
     contexts = first_point_contexts(units, points, as_of, level)
     visible, _ = _visible_units(units, as_of, level)
-    moves = _moves(visible)
-    third_contexts = [ThirdPointContext(c.first_point.point_id, level,
-                       c.first_point.sub_level, c.causal_center) for c in contexts if c.causal_center]
-    thirds = find_third_points(moves, third_contexts, as_of)
-    formations, seconds, centers = [], [], {}
+    thirds, second_points, formations, adjusted = [], [], [], []
     for c in contexts:
         p = c.first_point
+        moves = _directed_prefix(visible, p.dt)
+        related = (find_third_points(moves, [ThirdPointContext(p.point_id, level,
+                   p.sub_level, c.causal_center)], as_of) if c.causal_center else [])
+        thirds.extend(related)
         event = FormationEvent(p.kind, p.confirmed_dt, level,
                                c.causal_center.center_id if c.causal_center else None)
         events = [FormationEvent(t.kind, t.confirmed_dt, t.level, t.center_id)
-                  for t in thirds if t.context_id == p.point_id]
+                  for t in related]
         state = formation_state(event, event.center_id, events, as_of)
         formations.append(state)
-        seconds.append(c.second_context._replace(ended_dt=state.end_dt))
+        second = c.second_context._replace(ended_dt=state.end_dt)
+        adjusted.append(c._replace(second_context=second))
+        centers = {}
         if c.previous_center.confirmed_dt <= p.dt:
             centers[p.point_id] = c.previous_center
-    second_points = find_second_points(moves, seconds, as_of, centers=centers)
-    return PointChain(points, contexts, second_points, thirds, formations)
+        second_points.extend(find_second_points(moves, [second], as_of, centers=centers))
+    unresolved = tuple(u.move_id for u in visible if u.start_price == u.end_price)
+    return PointChain(points, adjusted, second_points, thirds, formations, unresolved)

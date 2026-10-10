@@ -40,6 +40,16 @@ class FirstPoint(namedtuple('FirstPointBase',
         return out
 
 
+class FirstPointScan(namedtuple('FirstPointScanBase', 'points exclusions completed_types')):
+    """辅助扫描结果; exclusions保存完成走势身份和未通过的首个条件。"""
+    __slots__ = ()
+
+
+def find_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
+    """自动MACD辅助一类候选列表, 完整契约见scan_first_points。"""
+    return scan_first_points(units, bars, as_of, level, zero_axis_ratio).points
+
+
 def _net(unit):
     return ('up' if unit.end_price > unit.start_price else
             'down' if unit.end_price < unit.start_price else None)
@@ -55,7 +65,7 @@ def _tail(units, span, direction):
     return None
 
 
-def find_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
+def scan_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
     """从已确认次级类型自动构造MACD辅助一类候选, 买卖镜像。
 
     units与confirm_level_up同契约。bars须标准OHLCV且有closed_dt和
@@ -78,15 +88,17 @@ def find_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
         raise ValueError('可见行情须为连续前缀, 不允许跳过迟到历史行')
     validate_bars(rows)
     if not rows or not visible:
-        return []
+        return FirstPointScan([], (), 0)
     for a, b in zip(rows, rows[1:]):
         if _time(a['available_dt'], time_kind) > _time(b['available_dt'], time_kind):
             raise ValueError('行情到达时间须按序非递减')
     dt_map = {row['dt']: i for i, row in enumerate(rows)}
     dif, dea, hist = macd_series(rows)
-    out = []
-    for trend in confirm_level_up(visible, as_of, level):
+    out, excluded = [], []
+    completed = confirm_level_up(visible, as_of, level)
+    for trend in completed:
         if trend.kind not in ('up', 'down'):
+            excluded.append((trend.move_id, 'not_trend'))
             continue
         prefix = [u for u in visible if u.move_id in trend.evidence_ids]
         decomposed, traces = _level_up_traced(prefix)
@@ -96,10 +108,12 @@ def find_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
         previous, last = spans[-2:]
         prev_end, last_end = _tail(prefix, previous, trend.kind), _tail(prefix, last, trend.kind)
         if prev_end is None or last_end is None:
+            excluded.append((trend.move_id, 'no_comparable_center_tail'))
             continue
         reference = prefix[prev_end+1:last[0]]
         leave = prefix[last_end+1:move.seg_end+1]
         if not reference or not leave or _net(reference[0]) != trend.kind or _net(leave[-1]) != trend.kind:
+            excluded.append((trend.move_id, 'no_directional_compare_legs'))
             continue
         # 课20: 不仅ZD/ZG, 中枢周围波动也不得重叠。
         p = prefix[previous[0]:prev_end+1]
@@ -108,15 +122,19 @@ def find_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
         c_low, c_high = min(u.low for u in c), max(u.high for u in c)
         up = trend.kind == 'up'
         if not (c_low > p_high if up else c_high < p_low):
+            excluded.append((trend.move_id, 'center_waves_overlap'))
             continue
         price = _price(leave[-1].end_price)
         if not (price > c_high if up else price < c_low):
+            excluded.append((trend.move_id, 'no_new_extreme'))
             continue
         if price != (max(u.high for u in leave) if up else min(u.low for u in leave)):
+            excluded.append((trend.move_id, 'internal_extreme_time_unknown'))
             continue  # 内部极值不猜发生时刻, 不把净端点叫背驰极值。
         boundaries = [reference[0].start_dt, reference[-1].end_dt,
                       c[0].start_dt, c[-1].end_dt, leave[0].start_dt, leave[-1].end_dt]
         if any(_time(dt, time_kind) > _time(rows[-1]['dt'], time_kind) for dt in boundaries):
+            excluded.append((trend.move_id, 'waiting_price_evidence'))
             continue  # 结构先到、末端行情尚未到达, 等待价格证据。
         if any(dt not in dt_map for dt in boundaries):
             raise ValueError('比较段与中枢端点须有精确行情, 不近似匹配')
@@ -126,9 +144,14 @@ def find_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
         area_c = float(sum(max(sign*float(v), 0.) for v in hist[c0+1:c1+1]))
         zero = min(max(abs(float(dif[i])), abs(float(dea[i])))/rows[i]['close']
                    for i in range(z0, z1+1))
-        if not 0 < area_c < area_a or zero > ratio:
+        if not 0 < area_c < area_a:
+            excluded.append((trend.move_id, 'area_not_positive_and_weaker'))
+            continue
+        if zero > ratio:
+            excluded.append((trend.move_id, 'no_zero_axis_pull'))
             continue
         if trend.centers[-1][0] == trend.centers[-1][1]:
+            excluded.append((trend.move_id, 'zero_width_center'))
             continue  # 二三类接口当前不表达零宽中枢。
         formed = prefix[last[1]].confirmed_dt
         center = ConfirmedCenter(json.dumps([level, prefix[last[0]].move_id],
@@ -141,4 +164,4 @@ def find_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
                              visible[0].level, leave[-1].end_dt, price, known,
                              trend.move_id, center, tuple(u.move_id for u in reference),
                              tuple(u.move_id for u in leave), area_a, area_c, zero, 'macd_area'))
-    return out
+    return FirstPointScan(out, tuple(excluded), len(completed))
