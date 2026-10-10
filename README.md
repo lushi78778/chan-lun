@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.7.2`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.7.3`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -51,7 +51,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.7.0'
+python -m pip install 'chan-lun-core==0.7.3'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -65,7 +65,7 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.7.0 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==0.7.3 --no-cache-dir
 ```
 
 如果当前镜像尚未提供 `0.6.1`，可继续使用已经安装并可导入的 `0.4.0`。
@@ -566,6 +566,7 @@ reading = level_reading(levels, at_dt=bars[-1]["dt"]) if bars else []
 |---|---|---|
 | `decompose` | `MoveType`、`same_level_decompose` | 固定三段中枢的同级分解；不把中枢延伸混入切分 |
 | `recurse` | `level_up` | 次级单元递归聚合，处理延伸与更高级别结构 |
+| `completion` | `ConfirmedMoveType`、`confirm_level_up` | 已确认类型逐到达前缀递归，冻结组成、中枢、完成证据与确认时刻 |
 | `levels` | `LevelDecomposition`、`decompose_levels`、`level_reading`、`change_starts_low` | 多级分解、指定端点时间读数、上下级方向改变自洽性 |
 | `zhongyin` | `ZhongYinResult`、`track_zhongyin` | 中阴阶段：进入、中枢形成及结束状态 |
 | `zhongyin` | `boll_bands`、`boll_state`、`boll_events`、`boll_bs1_hints` | BOLL 辅助事件与一类点提示 |
@@ -579,6 +580,55 @@ reading = level_reading(levels, at_dt=bars[-1]["dt"]) if bars else []
 `decompose_levels` 第1级保留输入单元，以后逐级上推；序号不自动对应
 1分钟/5分钟/日线等时间周期。`level_reading` 按起止端点的闭区间读数，
 历史可见性仍要先做前缀计算。
+
+### 完成走势类型的递归确认（0.7.3）
+
+`confirm_level_up` 只接受已确认的 `ConfirmedMove` 或完整的
+`ConfirmedMoveType`，按实际确认时间逐批重算可见前缀。调用方按明确f1
+规则冻结的最低层完整类型也可用后者表示，保留类型、中枢和进入方向。
+它沿用允许中枢延伸的 `level_up` 规则，输出已完成走势，未完成尾部和
+无中枢残段不输出。
+输入须同级、同一冻结价格版本，时间及端点价格连续；乱序确认或缺段报错。
+原始笔、线段、裸 `MoveType.complete` 不带这些证明，不能直接输入。
+
+下面只演示调用方已经确认的最低层类型序列；合成端点不构成最低层识别器。
+
+```python
+from datetime import datetime, timedelta
+from chan import ConfirmedMove, confirm_level_up
+completion_prices = [10, 14, 11, 15, 13, 18, 16, 20, 14]
+t0 = datetime(2026, 1, 1)
+completion_units = [
+    ConfirmedMove("u%d" % i, "base", "up" if b > a else "down",
+                  t0 + timedelta(days=i), t0 + timedelta(days=i+1),
+                  a, b, min(a, b), max(a, b), t0 + timedelta(days=i+2))
+    for i, (a, b) in enumerate(zip(completion_prices, completion_prices[1:]))
+]
+assert confirm_level_up(completion_units, t0 + timedelta(days=8), "L1") == []
+completion_result = confirm_level_up(completion_units, t0 + timedelta(days=9), "L1")
+assert completion_result[0].end_dt == t0 + timedelta(days=7)
+assert completion_result[0].confirmed_dt == t0 + timedelta(days=9)
+assert len(completion_result[0].unit_ids) == 7
+assert len(completion_result[0].evidence_ids) == 8
+next_result = confirm_level_up(completion_result, t0 + timedelta(days=9), "L2")
+assert next_result == []  # 单个已完成类型不足以形成上一级中枢。
+point_move = completion_result[0].to_confirmed_move()
+assert point_move.direction == "up"
+```
+
+`unit_ids` 是组成单元，`evidence_ids` 是首次完成时的全部可见次级前缀，
+包含可能位于端点之后的完成证据。`confirmed_dt` 取该批证据到达时间，
+不能改成端点日或只取组成单元的最晚确认；较晚才调用也保留较早证据时间。
+输出无可变嵌套，既有完成结果不随输入增长改变。各次调用须使用同一身份、
+坐标和输入版本；供应修订要另存版本，本入口不存历史行情。
+
+`direction` 是原f2进入方向，可为 `None`；`to_confirmed_move()` 以端点
+净涨跌表示二/三类点所需的整体回抽方向，保留确认时间和全程极值。
+平端点盘整显式报错，不能跳过后拼接两侧走势；它仍可参与结构递归。
+转换不生成一类点、背驰、反转上下文或因果中枢。级别名由递归相邻关系
+声明；继续递归时保留完整 `ConfirmedMoveType`，不要转换后丢失类型及进入方向。
+级别不对应固定分钟时长。本轮补齐条件输入到上一级确认的链条，基础
+类型真实性与全部原图语义仍需独立验收。
 
 震荡监视器的 `center` 是 `(zd, zg)`，单元需有价格区间与方向属性。
 BOLL 阈值和震荡估计都是辅助口径，BOLL 提示不等同于 `bs` 的确认事件。
@@ -784,6 +834,9 @@ CI 在 Python 3.10/3.13 构建及验收，并增加Python3.6/旧numpy与pandas�
 本 README 维护用法，版本历史维护公开变化，不另设理论完成状态表。
 
 ## 版本历史
+
+- **0.7.3**: 已确认走势类型按证据到达前缀递归，区分组成单元与完成
+  证据；冻结实际确认时刻，支持多级复合及二/三类点输入转换。
 
 - **0.7.0**: 原图边界修正、线段完成/证据端点分开；实际收盘及到达
   时间门控、保守确认结构账本；已确认次级走势的三类点条件接口。

@@ -71,4 +71,5 @@ assert len(list(chan.replay_available([bar])))==1
 assert chan.find_third_points([],[],"2026-01-01")==[]
 assert chan.fractal_range_state(None, [], datetime(2026,7,31)).phase=="waiting"
 assert chan.find_ma_points([], datetime(2026,7,31))==[]
+assert chan.confirm_level_up([], datetime(2026,7,31), 'higher')==[]
 print("installed wheel OK:", chan.__version__, package_path)

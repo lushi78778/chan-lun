@@ -89,7 +89,7 @@ class TestPackageContracts(unittest.TestCase):
         with open(os.path.join(_ROOT, "README.md"), encoding="utf-8") as f:
             examples = re.findall(r"```python\n(.*?)```", f.read(), re.S)
         for marker in ["first = FormationEvent", "report = sector_strength",
-                       "context = SecondPointContext", "available_bars =", "third_moves =", "fractal_box =", "ma_point_bars ="]:
+                       "context = SecondPointContext", "available_bars =", "third_moves =", "fractal_box =", "ma_point_bars =", "completion_prices ="]:
             code = next(code for code in examples if marker in code)
             exec(code, {})
 
