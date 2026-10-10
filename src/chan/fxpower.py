@@ -91,6 +91,8 @@ import math
 from numbers import Integral, Real
 from typing import Any, Dict, List, Optional
 
+from chan._series import _finite_number
+
 __all__ = [
     "POWER_WEAK", "POWER_NEUTRAL", "POWER_STRONG", "POWER_SEVERE",
     "BREAK_NONE", "BREAK_TESTING", "BREAK_EFFECTIVE",
@@ -250,12 +252,7 @@ def _as_k(bar: Any) -> _K:
 
 def _optional_number(value):
     """序列暖机/非有限值记为缺测; 错误的数值类型明确拒绝。"""
-    if value is None:
-        return None
-    if isinstance(value, bool) or not isinstance(value, Real):
-        raise ValueError("收盘与均线须为数值或 None")
-    value = float(value)
-    return value if math.isfinite(value) else None
+    return _finite_number(value)
 
 
 def classify_fx_power(b1: Any, b2: Any, b3: Any, direction: str,

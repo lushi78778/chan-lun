@@ -70,8 +70,9 @@ from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
                           POWER_NEUTRAL, POWER_SEVERE, POWER_STRONG, POWER_WEAK,
                           FxPowerResult, MaBreakState, classify_fx,
                           classify_fx_power, ma_break_state)
+from chan.macd_guard import macd_below_zero, macd_guard_series
 
-__version__ = "0.4.3"
+__version__ = "0.4.4"
 
 __all__ = [
     # chan.bars 行情归一化
@@ -131,6 +132,8 @@ __all__ = [
     "BREAK_NONE", "BREAK_TESTING", "BREAK_EFFECTIVE",
     "FxPowerResult", "MaBreakState", "classify_fx_power", "classify_fx",
     "ma_break_state",
+    # chan.macd_guard MACD零轴防狼术(课103)
+    "macd_below_zero", "macd_guard_series",
     # 版本号
     "__version__",
 ]

@@ -5,7 +5,22 @@
 None/NaN 及不能参与数值运算的对象置 None。保持原有处理语义。
 """
 
+import math
+from numbers import Real
 from typing import Any, List, Optional
+
+
+def _finite_number(value: Any) -> Optional[float]:
+    """有限实数适配: 暖机/NaN/inf返回None, 错误数值类型报错。"""
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError("须为实数或 None")
+    try:
+        value = float(value)
+    except OverflowError as error:
+        raise ValueError("数值超出float范围") from error
+    return value if math.isfinite(value) else None
 
 
 def _diff_series(short: Any, long: Any) -> List[Optional[float]]:
