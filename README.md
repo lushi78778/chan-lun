@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.5.2`。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.6.0`。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
@@ -51,7 +51,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.5.0'
+python -m pip install 'chan-lun-core==0.6.0'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -65,16 +65,16 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.5.0 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==0.6.0 --no-cache-dir
 ```
 
-如果当前镜像尚未提供 `0.5.0`，可继续使用已经安装并可导入的 `0.4.0`。
+如果当前镜像尚未提供 `0.6.0`，可继续使用已经安装并可导入的 `0.4.0`。
 镜像同步时间不由本库控制；版本不可获取时不要把安装失败当成算法错误。
 如能访问 GitHub Release，也可安装指定 wheel：
 
 ```python
 import sys
-!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.5.0/chan_lun_core-0.5.0-py3-none-any.whl
+!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.6.0/chan_lun_core-0.6.0-py3-none-any.whl
 ```
 
 离线时，先下载该 wheel 并上传到 Notebook 能读取的目录，再用当前解释器
@@ -96,7 +96,7 @@ print("has find_bis:", hasattr(chan, "find_bis"))
 `0.4.0` 可以使用其已有基础链与理论模块；`analyze_bars`、行情校验和
 分型力度从 `0.4.2` 起可用，106课笔标准从 `0.4.3` 起可用，MACD 防狼从
 `0.4.4` 起可用，底/顶构造从 `0.4.5` 起可用，板块强弱从 `0.5.0` 起可用。
-下面的完整示例按 `0.5.0` 编写。冻结研究脚本的原有版本要求另行保留。
+下面的完整示例按 `0.6.0` 编写。冻结研究脚本的原有版本要求另行保留。
 
 ### `chan.__version__` 不存在时
 
@@ -419,8 +419,9 @@ MACD 返回 `(dif, dea, hist)`，`hist = 2 * (dif - dea)`。
 
 理论覆盖边界：当前 `bs` 是笔级简化识别，不等同于第101课的完整精确定义。
 第101课允许二买低于一买的弱情形，现有“不破一类点”门槛尚未覆盖；
-中阴上下文、已完成次级走势以及第53课小转大中无本级一类点的情形仍需
-补强。后续需要完整定义输入证据，不能只删除价格门槛扩大输出。
+`second` 提供已确认次级走势及上下文的独立条件入口（见下一节）；
+一类点、实际走势完成和因果级别的自动识别仍需补强，不能只删除旧
+价格门槛扩大输出。
 
 ### 已确认次级走势的二类点（0.5.2 起）
 
@@ -663,7 +664,7 @@ python -m unittest discover -s tests -p 'test_contracts.py'
 ```bash
 python -m pip install build
 python -m build
-python -m pip install --force-reinstall --no-deps dist/chan_lun_core-0.5.0-py3-none-any.whl
+python -m pip install --force-reinstall --no-deps dist/chan_lun_core-0.6.0-py3-none-any.whl
 python -I tools/verify_installed.py
 ```
 
@@ -680,11 +681,28 @@ CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Rel
 聚宽已确认 `0.4.0` 可安装并导入，但这不代替全部新增算法在该环境的实跑。
 新的辅助结果不会自动接入冻结研究脚本或改变策略参数。
 
+0.6.0本地验收包含463项包测试（完整外层工程814项）、wheel/sdist及
+隔离安装。真实行情使用ETF历史数据集 `v2026-07-31-r2` 的十只代表ETF：
+26,727根日线与2026年30m；核验读取文件SHA-256，按观察日锚定复权。
+2026年1,390个逐交易日观察点通过未来价格扰动和MACD比例前缀检查。
+固定输入版本的账本记录123次末笔修订、14次买卖候选撤销，因此这些
+候选首次出现不能被解释为永久确认。
+
+真实数据检验的是计算及时间契约；该样本未观察到一类候选用于底/顶
+构造、仅有一个可接线的普通二买条件样本，弱二类点与因果中枢的
+全部真实分支尚未验证。它不证明理论自动识别完备、交易收益、旧依赖
+或聚宽可运行。数据源未提供历史发布版本，无法据此证明历史因子未
+被供应方事后修订。详细报告在完整工作区 `doc/validation/`。
+
 开发分层、原文核验、概念版本和交付流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 完整 Chan 工作区的理论进度唯一维护在 `doc/缠论理论逐一实现计划.md` §6；
 本 README 维护用法，版本历史维护公开变化，不另设理论完成状态表。
 
 ## 版本历史
+
+- **0.6.0**: 观察时点与二类点条件接口阶段版；含0.5.1/0.5.2能力，
+  完整测试、真实ETF逐日防未来验收及安装产物检查见外层验证记录。
+  自动走势完成/因果中枢识别、线段原图审计与均线版买卖组合继续独立推进。
 
 - **0.5.2**: 新增已确认次级走势的二类点条件判定，支持弱二类点、
   小转大无本级一类点、给定因果中枢的二三合一与中阴时间边界。
@@ -692,7 +710,7 @@ CI 在 Python 3.10/3.13 运行源码与安装产物检查；tag 发布另有 Rel
 - **0.5.1**: 新增 `analyze_at/replay_bars`，按原始行情截止后计算，记录
   首次观察、修订与撤销；候选首次出现与理论确认明确分开。
 
-- **0.5.0**: 阶段4辅助系统完成; 新增106课均线九类与板块强弱
+- **0.5.0**: 阶段4已交付范围验收; 新增106课均线九类与板块强弱
   `classify_ma_strength/ma_strength_class/sector_strength`, 显式本轮
   起点、因果SMA、缺测状态及均值覆盖率。安装产物进入CI独立导入验收。
 - **0.4.5**: 底部/顶部构造状态(课108), `formation_state` 按同级同因果

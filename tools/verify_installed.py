@@ -33,6 +33,16 @@ for name in chan.__all__:
     assert hasattr(chan, name), name
 assert chan.analyze_bars([]).to_dict()["as_of"] is None
 assert chan.analyze_bars([], bi_standard="106").bis == []
+assert chan.analyze_at([], "2026-01-01").as_of is None
+assert len(list(chan.replay_bars([], ["2026-01-01"]))) == 1
+moves = [chan.ConfirmedMove("rise", "sub", "up", "2026-01-01", "2026-01-03",
+                            10, 15, 10, 15, "2026-01-04"),
+         chan.ConfirmedMove("pull", "sub", "down", "2026-01-03", "2026-01-05",
+                            15, 9, 9, 15, "2026-01-06")]
+context = chan.SecondPointContext("cycle", "buy", "main", "sub",
+                                  "2026-01-01", 10, "2026-01-02")
+assert chan.find_second_points(moves, [context], "2026-01-05") == []
+assert chan.find_second_points(moves, [context], "2026-01-06")[0].strength == "weak"
 assert chan.classify_fx_power({"open": 10, "high": 12, "low": 9, "close": 11},
                               {"open": 12, "high": 14, "low": 11, "close": 13},
                               {"open": 12, "high": 13, "low": 10, "close": 11},
