@@ -68,13 +68,13 @@ import sys
 !{sys.executable} -m pip install --user chan-lun-core==0.7.3 --no-cache-dir
 ```
 
-如果当前镜像尚未提供 `0.6.1`，可继续使用已经安装并可导入的 `0.4.0`。
+如果当前镜像尚未提供 `0.7.3`，可继续使用已经安装并可导入的 `0.4.0`。
 镜像同步时间不由本库控制；版本不可获取时不要把安装失败当成算法错误。
 如能访问 GitHub Release，也可安装指定 wheel：
 
 ```python
 import sys
-!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.6.1/chan_lun_core-0.6.1-py3-none-any.whl
+!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.7.3/chan_lun_core-0.7.3-py3-none-any.whl
 ```
 
 离线时，先下载该 wheel 并上传到 Notebook 能读取的目录，再用当前解释器
