@@ -54,7 +54,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.7.5'
+python -m pip install 'chan-lun-core==0.9.0'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -68,16 +68,16 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.7.5 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==0.9.0 --no-cache-dir
 ```
 
-如果当前镜像尚未提供 `0.7.5`，可继续使用已经安装并可导入的 `0.4.0`。
+如果当前镜像尚未提供 `0.9.0`，可继续使用已经安装并可导入的版本。
 镜像同步时间不由本库控制；版本不可获取时不要把安装失败当成算法错误。
 如能访问 GitHub Release，也可安装指定 wheel：
 
 ```python
 import sys
-!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.7.5/chan_lun_core-0.7.5-py3-none-any.whl
+!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.9.0/chan_lun_core-0.9.0-py3-none-any.whl
 ```
 
 离线时，先下载该 wheel 并上传到 Notebook 能读取的目录，再用当前解释器
