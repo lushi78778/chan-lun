@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.7.7`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`0.7.8`（beta；正式1.0.0目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 

@@ -27,6 +27,55 @@ def records(xds):
 
 
 class TestOriginalXD(unittest.TestCase):
+    def test_78_prior_break_is_visible_before_strange_extension(self):
+        """课78: B已破坏A是前提; 上破笔未成段后先破其底, B延伸。
+
+        6笔前缀已确认A, 不能借未来上破14反过来宣称B在当时成立。
+        B起价12与内部最高14分开, 对称情况下内部最低也不能回填。
+        """
+        values = [1,6,3,12,2,8,1,14,6,10,0]
+        for prices in [values,[30-v for v in values]]:
+            bis = strokes(prices)
+            old = find_xds(bis[:6])[0].to_dict()
+            result = find_xds(bis)
+            self.assertEqual(result[0].to_dict(), old)
+            self.assertEqual(records(result), [[0,3,1,True],[3,10,1,False]])
+            self.assertFalse(result[1].complete)
+            self.assertEqual((result[1].low,result[1].high),
+                             (min(prices[3:11]),max(prices[3:11])))
+            self.assertNotIn(result[1].start_value,
+                             [result[1].high] if prices is values else [result[1].low])
+
+    def test_78_no_bottom_break_waits_for_reverse_confirmation(self):
+        """课78: 不破反向首笔底才可延伸新段, 到11的证据不可提前。
+
+        1→14之后6、2均未破1; 10笔观察仍只有A完成, 第11笔15
+        经包含后的特征分型确认B终点6, 确认时刻保持在证据末笔。
+        """
+        bis = strokes([1,6,3,12,2,8,1,14,6,10,2,15])
+        self.assertEqual([r for r in records(find_xds(bis[:10])) if r[3]],
+                         [[0,3,1,True]])
+        x = find_xds(bis)[1]
+        self.assertEqual((x.start_index,x.end_index,x.evidence_end_index), (3,6,11))
+        self.assertEqual((x.high,x.low), (12,1))
+
+    def test_78_standardized_range_does_not_retime_extremes(self):
+        """课78 PDF611-613/616: 分析用实际包络, 对象保留原分界时间。
+
+        无前段时作者答案03/38/811。38的内部最高11出现在点4,
+        净终点点8为10; range可标准化, 不把4的时间写成8的时间,
+        也不在点8时把确认字段补成已完成。没有新增标准化公开API。
+        """
+        bis = strokes([8,3,7,2,11,3,8,5,10,2,4.5,0])
+        result = find_xds(bis)
+        self.assertEqual(records(result), [[0,3,1,True],[3,8,1,True],[8,11,1,False]])
+        x = result[1]
+        self.assertEqual((x.start_value,x.end_value,x.low,x.high), (2,10,2,11))
+        self.assertEqual(x.end_dt, bis[7].end_dt)
+        self.assertNotEqual(x.end_dt, bis[3].end_dt)
+        self.assertEqual(x.evidence_dt, bis[10].end_dt)
+        self.assertFalse(any(y.complete and y.start_index==3 for y in find_xds(bis[:8])))
+
     def test_71_complete_figure_inventory(self):
         """课71 PDF561/562: 作者两张新图、编者15+16张组合有独立预期。
 
