@@ -1088,5 +1088,1316 @@
     "pdf_page": 506,
     "figure": "两图比较右图(B)",
     "annotation": "independent_relative_prices"
+  },
+  {
+    "id": "71-author-first-break-end",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "作者左上: 先破结束位置",
+    "values": [
+      1,
+      4,
+      2,
+      8,
+      5,
+      12,
+      2.5,
+      10,
+      4,
+      9,
+      1.5
+    ],
+    "expected": [
+      [
+        0,
+        5,
+        1,
+        true
+      ],
+      [
+        5,
+        10,
+        1,
+        false
+      ]
+    ],
+    "reason": "分界前[5,8]与分界后[2.5,12]不跨界包含;右侧顺序包含得[4,12],随后[1.5,9]向下,结束5。第三反向笔结束4仍在首笔内,须等后续1.5破首笔底2.5。",
+    "source_role": "author",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。",
+    "observations": {
+      "8": [],
+      "10": [
+        [
+          0,
+          5,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "id": "71-author-first-break-start",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "作者右上: 先破开始位置",
+    "values": [
+      1,
+      4,
+      2,
+      8,
+      5,
+      12,
+      7,
+      10,
+      8,
+      11,
+      9,
+      15
+    ],
+    "expected": [
+      [
+        0,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "反向笔在[7,12]内摆动,未向下形成破坏;15先突破首笔开始12,旧上段延续。",
+    "source_role": "author",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。",
+    "observations": {
+      "6": [],
+      "8": [],
+      "10": [],
+      "11": []
+    }
+  },
+  {
+    "id": "71-i-t1-b1",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶1+底1",
+    "values": [
+      1,
+      5,
+      2,
+      9,
+      4,
+      6,
+      1.5,
+      4.5,
+      3,
+      9
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "左右特征无缺口,两次三元素分型依次成立。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t1-b2",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶1+底2",
+    "values": [
+      1,
+      5,
+      3,
+      9,
+      4,
+      7,
+      0,
+      3,
+      1,
+      8
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段情况一;下段转折左右[4,7]/[0,3]有缺口,只有一个第二特征元素,底2图名不代替完成。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t1-b3",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶1+底3",
+    "values": [
+      1,
+      4,
+      2,
+      8,
+      5,
+      7,
+      2,
+      8.5,
+      3.5,
+      11
+    ],
+    "expected": [
+      [
+        0,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段缺口;第二向上特征[5,7]/[2,8.5]包含,新高11前未成底分型,三段合一。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t2-b1",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶2+底1",
+    "values": [
+      1,
+      3,
+      2,
+      8,
+      5.5,
+      7,
+      3,
+      6,
+      4,
+      9
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        2,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段缺口由[5.5,7]/[3,6]/[4,9]底分型确认;下段无缺口。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t2-b2",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶2+底2",
+    "values": [
+      1,
+      3,
+      2,
+      8,
+      5,
+      7,
+      0,
+      3,
+      1,
+      8
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        2,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段第二特征底分型成立;下段转折[5,7]/[0,3]有缺口且缺后续第二序列证据。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t2-b3",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶2+底3",
+    "values": [
+      1,
+      3,
+      2,
+      8,
+      5,
+      7,
+      1.5,
+      8,
+      3,
+      10
+    ],
+    "expected": [
+      [
+        0,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "第二特征序列包含后不足三元素;8不低于7,按81更正属于一段。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t3-b1",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶3+底1",
+    "values": [
+      1,
+      5,
+      2,
+      9,
+      1,
+      7,
+      0,
+      3,
+      1,
+      8
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "首反向笔跨界包含不可合并;向下第三笔破底,其后底分型无缺口。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t3-b2",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶3+底2",
+    "values": [
+      1,
+      5,
+      3,
+      9,
+      2,
+      7,
+      -1,
+      1,
+      0,
+      8
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段情况一;下段[2,7]/[-1,1]缺口,不能只按端点反弹宣布完成。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t3-b3",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶3+底3",
+    "values": [
+      1,
+      5,
+      3,
+      9,
+      1.5,
+      7,
+      -0.5,
+      8,
+      1.8,
+      11
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "首反向三笔破坏成立;下段分界前后元素包含不合并,后侧上行三笔确认。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t1a-b1",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶1A+底1",
+    "values": [
+      1,
+      4,
+      2,
+      8,
+      1.5,
+      6.5,
+      3.2,
+      5.8,
+      2.2,
+      4.4,
+      3.1,
+      8.2
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "右侧先包含再回落确认顶;下段内部低1.5低于端点2.2,后继上段穿过旧段起价8确认局部分界8。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t1a-b2",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶1A+底2",
+    "values": [
+      1,
+      5,
+      2,
+      9,
+      1,
+      8,
+      4,
+      7,
+      -0.5,
+      3,
+      1,
+      9
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "顶右侧[1,9]/[4,8]包含后遇[-.5,7]转下;底左右[1,7]/[-.5,3]无缺口。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t1a-b3",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶1A+底3",
+    "values": [
+      1,
+      5,
+      2,
+      9,
+      0,
+      7,
+      4,
+      6,
+      1,
+      8,
+      3,
+      10
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "顶右侧顺序包含;下段内部低0与端点1分开,反向三笔穿过9后确认局部分界8。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t2a-b1",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶2A+底1",
+    "values": [
+      1,
+      3,
+      2,
+      9,
+      -0.5,
+      8,
+      4,
+      7,
+      1.5,
+      4,
+      2.5,
+      9.5
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "首反向大笔使原缺口回补,情况一;内部低-.5不可被端点1.5替代,9.5穿过起价9。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t2a-b2",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶2A+底2",
+    "values": [
+      1,
+      3,
+      2,
+      9,
+      0,
+      8,
+      4,
+      7,
+      1,
+      4,
+      2,
+      9.5
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "跨界包含不合并;端点1高于内部0,反向三笔9.5越过9确认下段破坏。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-i-t2a-b3",
+    "source": "课71 PDF561页",
+    "pdf_page": 561,
+    "figure": "形式一/顶2A+底3",
+    "values": [
+      1,
+      3,
+      2,
+      9,
+      0,
+      8,
+      4,
+      7,
+      1,
+      8,
+      3,
+      10
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "顶右侧首次包含向上,下一非包含元素转下;末三笔突破9,下段内部最低0仍保留。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t4-b1",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶4+底1",
+    "values": [
+      1,
+      4,
+      3,
+      10,
+      6,
+      8,
+      0,
+      6,
+      3,
+      11
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        2,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "第二特征[6,8]/[0,6]/[3,11]底分型;下段左右区间接触6无缺口。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t4-b2",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶4+底2",
+    "values": [
+      1,
+      4,
+      3,
+      10,
+      6,
+      8,
+      0,
+      4,
+      1,
+      9
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        2,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段缺口由第二序列确认;下段左右6>4有缺口且无第二序列分型。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t4-b3",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶4+底3",
+    "values": [
+      1,
+      4,
+      3,
+      10,
+      6,
+      8,
+      0,
+      10,
+      4,
+      13
+    ],
+    "expected": [
+      [
+        0,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "第二序列[6,8]/[0,10]包含,新高13时仍未形成底分型。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t4-b4",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶4+底4",
+    "values": [
+      1,
+      4,
+      3,
+      10,
+      6,
+      8,
+      0,
+      4,
+      2,
+      12
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        2,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段第二底分型确认;反弹即使超过10,下段第二序列仍只有一个元素,不倒填缺口完成。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t4-b1a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶4+底1A",
+    "values": [
+      1,
+      4,
+      2,
+      9,
+      5,
+      7,
+      0,
+      8,
+      3,
+      6,
+      4,
+      10
+    ],
+    "expected": [
+      [
+        0,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "第二序列依次包含缩为[0,6],再上行仅两元素;新高前无底分型。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t4-b2a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶4+底2A",
+    "values": [
+      1,
+      4,
+      2,
+      9,
+      6,
+      8,
+      0,
+      8.5,
+      2,
+      5,
+      3,
+      10
+    ],
+    "expected": [
+      [
+        0,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "第二序列先包含再包含,不能用未标准化底点提前分成三段。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t1a-b1a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶1A+底1A",
+    "values": [
+      1,
+      4,
+      2,
+      8,
+      1.5,
+      6.5,
+      3.2,
+      5,
+      1.3,
+      7,
+      2.2,
+      4,
+      3,
+      8.2
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        13,
+        1,
+        false
+      ]
+    ],
+    "reason": "右侧包含确认顶3;下段分界后向上元素[1.3,7]/[2.2,4]包含,须等[3,8.2]才完成。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t1a-b2a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶1A+底2A",
+    "values": [
+      1,
+      5,
+      2,
+      9,
+      1,
+      8,
+      4,
+      6,
+      0,
+      8,
+      1.3,
+      3,
+      2,
+      9
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        13,
+        1,
+        false
+      ]
+    ],
+    "reason": "两段均情况一,两次后侧包含不可跳过;后继三笔先在首笔内摆动再向上破坏。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t2a-b1a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶2A+底1A",
+    "values": [
+      1,
+      3,
+      2,
+      9,
+      0,
+      8,
+      4,
+      6,
+      1,
+      7,
+      3,
+      5,
+      4,
+      9.5
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        13,
+        1,
+        false
+      ]
+    ],
+    "reason": "下段端点1高于内部0;反向后侧先包含,9.5越过起价9才确认局部分界。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t2a-b2a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶2A+底2A",
+    "values": [
+      1,
+      3,
+      2,
+      9,
+      0,
+      8,
+      4,
+      7,
+      1,
+      8.2,
+      2,
+      4,
+      3,
+      7.5
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        false
+      ]
+    ],
+    "reason": "顶3已确认;下段内部低0,反向未越过起价9且标准序列无底分型,尾段待确认。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t1-b1a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶1+底1A",
+    "values": [
+      1,
+      5,
+      2,
+      9,
+      4,
+      6,
+      0.5,
+      8.5,
+      2.5,
+      5.5,
+      3.5,
+      11
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段情况一;下段分界后包含以向下处理,[.5,8.5]/[2.5,5.5]合并后再形成底。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t2-b1a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶2+底1A",
+    "values": [
+      1,
+      3,
+      2,
+      9,
+      5,
+      7.5,
+      2,
+      8,
+      3,
+      6,
+      4,
+      10
+    ],
+    "expected": [
+      [
+        0,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "第二向上序列依次包含,不是裸点的三元素底分型;旧上段延续。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t3-b1a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶3+底1A",
+    "values": [
+      1,
+      5,
+      3,
+      9,
+      1.5,
+      6,
+      0,
+      7.5,
+      1,
+      4,
+      2,
+      9
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "首反向笔破坏无跨界包含,底右侧顺序包含后才确认下段。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t3-b2a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶3+底2A",
+    "values": [
+      1,
+      5,
+      3,
+      10,
+      2,
+      7,
+      0,
+      9,
+      1,
+      3,
+      2,
+      7
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "情况一两次确认;新上段内部高9高于净终点7,不得用端点代替实际区间。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t1-b2a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶1+底2A",
+    "values": [
+      1,
+      5,
+      3,
+      9,
+      4,
+      7,
+      0,
+      8,
+      1,
+      3,
+      2,
+      9
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "无缺口且下段后侧包含,必须等第二个非包含上元素才完成。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+  },
+  {
+    "id": "71-ii-t2-b2a",
+    "source": "课71 PDF562页",
+    "pdf_page": 562,
+    "figure": "形式二/顶2+底2A",
+    "values": [
+      1,
+      3,
+      2,
+      9,
+      5,
+      7,
+      0,
+      8,
+      1,
+      3,
+      2,
+      9.5
+    ],
+    "expected": [
+      [
+        0,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段第二特征序列必须包含;新高9.5前无三元素分型,一段。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
   }
 ]

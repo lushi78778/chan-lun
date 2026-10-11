@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
 from chan import BI, FX, find_xds
+from chan.xd import _feature_append
 
 
 def strokes(values):
@@ -26,6 +27,60 @@ def records(xds):
 
 
 class TestOriginalXD(unittest.TestCase):
+    def test_71_complete_figure_inventory(self):
+        """课71 PDF561/562: 作者两张新图、编者15+16张组合有独立预期。
+
+        作者缺口两段及最后错误三段图分别复用67/81用例, 避免另造
+        一套更正。编者顶/底标签不是完成标志, 单段/待确认均保留。
+        """
+        with open(os.path.join(os.path.dirname(__file__), 'fixtures', 'xd_originals.json')) as f:
+            cases = json.load(f)
+        self.assertEqual(len([c for c in cases if c['id'].startswith('71-i-')]), 15)
+        self.assertEqual(len([c for c in cases if c['id'].startswith('71-ii-')]), 16)
+        for c in cases:
+            if c['id'].startswith(('71-i-', '71-ii-')):
+                self.assertEqual(c['source_role'], 'editorial')
+                self.assertIn('不推测图外前段', c['assumptions'])
+
+    def test_71_boundary_inclusion_and_sequential_inclusion(self):
+        """课71: 跨假设分界不合并, 分界后的包含必须按先后处理。
+
+        [2,8]和[1,12]有包含关系, 但属于假设分界两侧; 后侧
+        第三反向笔0.5破首笔1, 顶分型直接成立。顺序包含不传递:
+        [3,10]并[4,9]上行变[4,10], 再遇[3.5,9.5]应为新元素。
+        """
+        bis = strokes([0,8,2,12,1,9,.5])
+        self.assertEqual(records(find_xds(bis)), [[0,3,1,True],[3,6,1,False]])
+        features = []
+        for lo, hi in [(3,10),(4,9),(3.5,9.5)]:
+            features = _feature_append(features, (lo,hi,None), True)
+        self.assertEqual([v[:2] for v in features], [(4,10),(3.5,9.5)])
+
+    def test_71_broken_stroke_waits_for_a_segment(self):
+        """课71: 第三笔仍在首笔内不能提前完成, 先破结束/开始分开。
+
+        证据可见前缀10确认段端点5, 不是在端点5或中间前缀8确认。
+        另一序列先创新高15, 全部前缀均不能倒填历史分界。
+        """
+        broken = strokes([1,4,2,8,5,12,2.5,10,4,9,1.5])
+        self.assertFalse(any(x.complete for x in find_xds(broken[:8])))
+        x = find_xds(broken[:10])[0]
+        self.assertEqual((x.end_index,x.evidence_end_index), (5,10))
+        continued = strokes([1,4,2,8,5,12,7,10,8,11,9,15])
+        for n in range(len(continued)+1):
+            self.assertFalse(any(x.complete for x in find_xds(continued[:n])))
+
+    def test_71_editorial_names_do_not_assert_completion(self):
+        """课71/78/81: 缺口顶底组合仍须第二序列, 不能仅看图名。
+
+        顶4+底4即使最后上行超过旧段起价, 下段缺口第二序列只有
+        一元素, 仍待确认。顶2+底3的第二序列包含后不够三个元素。
+        """
+        result = find_xds(strokes([1,4,3,10,6,8,0,4,2,12]))
+        self.assertEqual(records(result), [[0,3,2,True],[3,6,1,False]])
+        result = find_xds(strokes([1,3,2,8,5,7,1.5,8,3,10]))
+        self.assertEqual(records(result), [[0,9,1,False]])
+
     def test_independent_original_labels_and_mirrors(self):
         """课67/71/81原图: 预期不从算法输出生成; 上下镜像相同分界。"""
         with open(os.path.join(os.path.dirname(__file__), 'fixtures', 'xd_originals.json')) as f:
