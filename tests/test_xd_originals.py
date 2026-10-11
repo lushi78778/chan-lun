@@ -27,6 +27,68 @@ def records(xds):
 
 
 class TestOriginalXD(unittest.TestCase):
+    def test_78_editorial_twelve_figures_use_author_rules(self):
+        """课78 PDF611/612: 十二编者补图覆盖, 实用提前选向不入核心。
+
+        第一种(e)的首反向4→14之后9/12/7未破14或4, 旧下段
+        待确认; 第二种(e)必须包含后取低低, (f)无第二分型续旧段。
+        """
+        with open(os.path.join(os.path.dirname(__file__), 'fixtures', 'xd_originals.json')) as f:
+            cases = {c['id']:c for c in json.load(f)}
+        ids = ['78-editorial-'+mode+'-'+letter
+               for mode in ['first','second'] for letter in 'abcdef']
+        self.assertTrue(all(key in cases for key in ids))
+        for key in ids:
+            self.assertEqual(cases[key]['source_role'], 'editorial')
+        e = cases['78-editorial-first-e']
+        self.assertEqual(records(find_xds(strokes(e['values']))),
+                         [[0,3,1,True],[3,6,1,False]])
+        e = cases['78-editorial-second-e']
+        result = find_xds(strokes(e['values']))
+        self.assertEqual((result[0].mode,result[1].end_index), (2,8))
+
+    def test_77_nested_first_break_is_not_a_completed_segment(self):
+        """课71/77: 首反向笔内摆动与一笔反弹不能替代线段破坏。
+
+        80-81在6后受2→10首笔破坏, 但6、8、4、9仍在该笔内;
+        单笔4→9未破坏A, 再到1应延续旧下段, 不生成伪81-82。
+        这是包含导致过早完成的最小回归, 同时检查上下两侧。
+        """
+        values = [1,6,3,12,5,9,2,10,6,8,4,9,1]
+        for prices in [values,[30-v for v in values]]:
+            bis = strokes(prices)
+            self.assertEqual(records(find_xds(bis[:11])),
+                             [[0,3,1,True],[3,6,1,False]])
+            self.assertEqual(records(find_xds(bis)),
+                             [[0,3,1,True],[3,12,1,False]])
+
+    def test_77_three_stroke_rebound_selects_the_direction(self):
+        """课77: 反弹三笔破坏A后, 首破坏笔+A+反弹合成81-82。
+
+        在13反弹11高于首破坏笔顶10, 80-81才完成于6; 随后
+        新低的反向三笔在16确认81-82于13结束。确认不向前回填。
+        """
+        bis = strokes([1,6,3,12,5,9,2,10,6,8,4,9,5,11,4,8,1])
+        self.assertEqual([r for r in records(find_xds(bis[:11])) if r[3]],
+                         [[0,3,1,True]])
+        result = find_xds(bis)
+        self.assertEqual(records(result),
+                         [[0,3,1,True],[3,6,1,True],[6,13,1,True],[13,16,1,False]])
+        self.assertEqual([x.evidence_end_index for x in result[:3]], [6,13,16])
+
+    def test_78_backward_propagation_uses_later_actual_evidence(self):
+        """课77/78: 后段破坏可逆时间传递, 证据不能逆时间可见。
+
+        向下首笔12→2之后的6/8/4仍在该笔内, 8时不能完成
+        旧上段; 新上段的4→8.5→6→14在11破坏下段, 才同时
+        确认旧上段03及下段38。区间与内部最低2均保持。
+        """
+        bis = strokes([1,6,3,12,2,10,6,8,4,8.5,6,14])
+        self.assertFalse(any(x.complete for x in find_xds(bis[:10])))
+        result = find_xds(bis)
+        self.assertEqual([x.evidence_end_index for x in result[:2]], [11,11])
+        self.assertEqual((result[1].end_index,result[1].low), (8,2))
+
     def test_78_prior_break_is_visible_before_strange_extension(self):
         """课78: B已破坏A是前提; 上破笔未成段后先破其底, B延伸。
 

@@ -151,13 +151,22 @@ def _feature_append(out, elem, direction_up):
 
 
 def _candidate_end(bis, start, candidate, left):
-    """课71假设局部转折, 左右不跨界包含; 课78允许段内部极值。"""
+    """课71/77/78假设局部转折, 返回(分界笔,证据末笔,结束方式)。
+
+    bis为当前可见固定笔前缀; start是旧段起笔, candidate为第一
+    反向笔, left为旧段最后标准特征(low,high,原笔)。左右不跨界
+    包含, 后側须顺序包含。无缺口时未经包含的首反向笔约束方向
+    选择; 其内摆动只能等待, 后继段破坏可以同时确认两段。递归
+    起点严格后移且逐次限制于当前笔, 不引入观察前缀之外的价格。
+    未满足定义返回None, 不把待定标准元素的转向当完成标志。
+    """
     up = bis[start].direction == "up"
     first = bis[candidate]
     # 假设转折须相对其左特征元素同向突出, 不是任意回落点。
     if (first.high <= left[1] if up else first.low >= left[0]):
         return None
     right, second = [(first.low, first.high, first)], []
+    pending_first_kind = False
     extreme = first.start_value
     gap = left[1] < first.low if up else left[0] > first.high
     for i in range(candidate+1, len(bis)):
@@ -169,6 +178,15 @@ def _candidate_end(bis, start, candidate, left):
             second = _feature_append(second, (bi.low, bi.high, bi), not up)
             if gap and len(right) >= 2 and _has_fx(second, "bottom" if up else "top") is not None:
                 return candidate, i, 2
+            if pending_first_kind:
+                # 课77/78逆时间传递: 反向首笔内的摆动本身不完成旧段,
+                # 但后继线段已破坏这条反向段时, 两段破坏可同时确认。
+                # 递归起点严格后移, 只使用当前i的可见前缀; 不把该
+                # 后继证据回填到早先的包含时刻。先检验再撤销假设,
+                # 才能保留端点并非实际极值的古怪线段。
+                following = _segment_end(bis[:i+1], candidate)
+                if following is not None:
+                    return candidate, i, 1
             if bi.end_value > extreme if up else bi.end_value < extreme:
                 return None  # 第二序列未确认前先创新极值, 假设撤销。
         if len(right) < 2:
@@ -176,9 +194,21 @@ def _candidate_end(bis, start, candidate, left):
         a, b = right[0], right[1]
         turned = (b[1] < a[1] and b[0] < a[0] if up else
                   b[1] > a[1] and b[0] > a[0])
-        if turned and not gap:
-            return candidate, i, 1
-        if turned and _has_fx(second, "bottom" if up else "top") is not None:
+        if turned and not gap and bi.direction == first.direction:
+            # 课71/77: 后侧包含可削低/抬高标准元素, 但不能把它的
+            # 新边界当成原始第一反向笔的结束价。第三及后续反向笔
+            # 仍在首笔内时方向未选择, 单笔反弹不完成旧段。
+            selected = (bi.end_value < first.end_value if up else
+                        bi.end_value > first.end_value)
+            # 课78回复03/38/811: 首笔虽含内部更大极值, 反向三笔
+            # 已越过旧段起价时破坏仍成立。保留这一充分证据, 不
+            # 强制所有新段的极值都在净端点。
+            crossed_start = (bi.end_value < bis[start].start_value if up else
+                             bi.end_value > bis[start].start_value)
+            if selected or crossed_start:
+                return candidate, i, 1
+            pending_first_kind = True
+        if turned and gap and _has_fx(second, "bottom" if up else "top") is not None:
             return candidate, i, 2
     return None
 

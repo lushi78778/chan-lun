@@ -594,20 +594,8 @@
     "reason": "g4和g5合并;d5不破d3,第二段完成于d5,极值仍取内部d3",
     "annotation": "independent_relative_prices",
     "observations": {
-      "8": [
-        [
-          0,
-          3,
-          1
-        ]
-      ],
-      "10": [
-        [
-          0,
-          3,
-          1
-        ]
-      ],
+      "8": [],
+      "10": [],
       "11": [
         [
           0,
@@ -620,7 +608,40 @@
           1
         ]
       ]
-    }
+    },
+    "annotation_revisions": [
+      {
+        "old_observations": {
+          "8": [
+            [
+              0,
+              3,
+              1
+            ]
+          ],
+          "10": [
+            [
+              0,
+              3,
+              1
+            ]
+          ],
+          "11": [
+            [
+              0,
+              3,
+              1
+            ],
+            [
+              3,
+              8,
+              1
+            ]
+          ]
+        },
+        "reason": "课71首反向笔12→2以内的6/8/4尚未选择方向,8/10不能确认03;课77/78后段破坏在11才逆时间传递同时确认03/38。端点预期不变。"
+      }
+    ]
   },
   {
     "id": "81-select-true-extreme",
@@ -2146,19 +2167,32 @@
         0,
         3,
         1,
-        true
-      ],
-      [
-        3,
-        8,
-        1,
         false
       ]
     ],
-    "reason": "顶3已确认;下段内部低0,反向未越过起价9且标准序列无底分型,尾段待确认。",
+    "reason": "首反向笔9→0后仍在其内摆动;次级反向未越过9且未破坏后侧线段,旧上段未完成。",
     "source_role": "editorial",
     "annotation": "independent_relative_prices",
-    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。",
+    "annotation_revisions": [
+      {
+        "old_expected": [
+          [
+            0,
+            3,
+            1,
+            true
+          ],
+          [
+            3,
+            8,
+            1,
+            false
+          ]
+        ],
+        "reason": "课71/77: 首反向笔内的标准元素转向不能代表已经先破原始首笔结束价;本图没有后继反向线段破坏证据,不得采用编者提前选择方向的实用口径。"
+      }
+    ]
   },
   {
     "id": "71-ii-t1-b1a",
@@ -2310,19 +2344,38 @@
         3,
         6,
         1,
-        true
-      ],
-      [
-        6,
-        11,
-        1,
         false
       ]
     ],
-    "reason": "情况一两次确认;新上段内部高9高于净终点7,不得用端点代替实际区间。",
+    "reason": "上段情况一已完成;下段首反向笔0→9以内的1/3/2/7未先破9或0,无后继线段破坏证据,下段等待。",
     "source_role": "editorial",
     "annotation": "independent_relative_prices",
-    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。"
+    "assumptions": "每划为固定笔;整个图为输入,不推测图外前段;相对价位保留明确不等式,不恢复市场报价。",
+    "annotation_revisions": [
+      {
+        "old_expected": [
+          [
+            0,
+            3,
+            1,
+            true
+          ],
+          [
+            3,
+            6,
+            1,
+            true
+          ],
+          [
+            6,
+            11,
+            1,
+            false
+          ]
+        ],
+        "reason": "课71/77: 首反向笔内的标准元素转向不能代表已经先破原始首笔结束价;本图没有后继反向线段破坏证据,不得采用编者提前选择方向的实用口径。"
+      }
+    ]
   },
   {
     "id": "71-ii-t1-b2a",
@@ -2605,5 +2658,628 @@
     "source_role": "author_reply",
     "annotation": "independent_relative_prices",
     "assumptions": "每划为固定笔;610页用原文条件复刻,不把编者图ABC当作者原始行情;616页前面无任何走势。"
+  },
+  {
+    "id": "77-composite-rebound",
+    "pdf_page": 607,
+    "figure": "反弹满足线段: 第一破坏笔+A+反弹合为81-82",
+    "source": "课77 PDF607页80-83结构说明",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      5,
+      9,
+      2,
+      10,
+      6,
+      8,
+      4,
+      9,
+      5,
+      11,
+      4,
+      8,
+      1
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        13,
+        1,
+        true
+      ],
+      [
+        13,
+        16,
+        1,
+        false
+      ]
+    ],
+    "reason": "79/80/81/82/83对应0/3/6/13/16;80-81的后继首笔2→10破坏,B内下行A为10→6→8→4且4不低于81价2。反弹4→9→5→11三笔方向已选择并破坏A,故81-82合成新上段;至13以前不能用只到9的一笔反弹预告80-81已结束。",
+    "observations": {
+      "6": [
+        [
+          0,
+          3,
+          1
+        ]
+      ],
+      "11": [
+        [
+          0,
+          3,
+          1
+        ]
+      ],
+      "13": [
+        [
+          0,
+          3,
+          1
+        ],
+        [
+          3,
+          6,
+          1
+        ]
+      ],
+      "16": [
+        [
+          0,
+          3,
+          1
+        ],
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          6,
+          13,
+          1
+        ]
+      ]
+    },
+    "annotation": "figure_structure_replay",
+    "source_role": "author_condition_replay",
+    "assumptions": "合成固定笔复刻正文条件;非原始2007年OHLC;图中字母可表示子结构,不把简化折线当逐笔报价。",
+    "annotation_revisions": [
+      {
+        "old_values": [
+          1,
+          6,
+          3,
+          12,
+          7,
+          9,
+          2,
+          10,
+          6,
+          8,
+          4,
+          9,
+          5,
+          11,
+          4,
+          8,
+          1
+        ],
+        "reason": "初次结构复刻点4价7使79-80特征缺口(6<7),不满足前置情况一;点4修正为5,保留80-81及A/反弹不等式。"
+      }
+    ]
+  },
+  {
+    "id": "77-one-stroke-rebound",
+    "pdf_page": 607,
+    "figure": "反弹只有一笔: A继续并为80-81的延续",
+    "source": "课77 PDF607页80-83结构说明",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      5,
+      9,
+      2,
+      10,
+      6,
+      8,
+      4,
+      9,
+      1
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        12,
+        1,
+        false
+      ]
+    ],
+    "reason": "4→9只是一笔反弹,未破坏A的10→6→8→4线段;新底1令A与原80-81继续。首反向笔2→10以内的6/8/4/9都未先破10或2,不能用被包含削低的8当破10的证据。",
+    "observations": {
+      "6": [
+        [
+          0,
+          3,
+          1
+        ]
+      ],
+      "11": [
+        [
+          0,
+          3,
+          1
+        ]
+      ],
+      "12": [
+        [
+          0,
+          3,
+          1
+        ]
+      ]
+    },
+    "annotation": "figure_structure_replay",
+    "source_role": "author_condition_replay",
+    "assumptions": "合成固定笔复刻正文条件;非原始2007年OHLC;图中字母可表示子结构,不把简化折线当逐笔报价。",
+    "annotation_revisions": [
+      {
+        "old_values": [
+          1,
+          6,
+          3,
+          12,
+          7,
+          9,
+          2,
+          10,
+          6,
+          8,
+          4,
+          9,
+          1
+        ],
+        "reason": "初次结构复刻点4价7使79-80特征缺口(6<7),不满足前置情况一;点4修正为5,保留80-81及A/反弹不等式。"
+      }
+    ]
+  },
+  {
+    "id": "78-editorial-first-a",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第一种情况补图(a)",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      5,
+      10,
+      4
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        false
+      ]
+    ],
+    "reason": "标准情况一,首两特征无缺口,第三反向笔4先破5。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-first-b",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第一种情况补图(b)",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      2,
+      5,
+      1
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        false
+      ]
+    ],
+    "reason": "第一破坏笔跨界包含不合并,三笔反向先破2。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-first-c",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第一种情况补图(c)",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      4,
+      10,
+      5,
+      14
+    ],
+    "expected": [
+      [
+        0,
+        7,
+        1,
+        false
+      ]
+    ],
+    "reason": "后侧包含未选择反向,先破首笔开始12,上段延续。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-first-d",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第一种情况补图(d)",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      2,
+      7,
+      3,
+      8,
+      1
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        false
+      ]
+    ],
+    "reason": "首笔12→2之后3仍在首笔内,等1先破结束2后才完成上段。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-first-e",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第一种情况补图(e)",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      6,
+      8,
+      4,
+      14,
+      9,
+      12,
+      7
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段03先确认;下段首反向笔4→14后9/12/7仍在首笔内,后续未选方向。蓝线实用法提前分三段不采用(612页编者明示两种方法)。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-first-f",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第一种情况补图(f)",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      5,
+      9,
+      4,
+      13,
+      7,
+      14
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "首段情况一,反向后三笔14超过13,同时确认下段底6;不是第一笔13就提前确认。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-second-a",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第二种情况补图(a)",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      8,
+      11,
+      6,
+      10,
+      7,
+      13
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        2,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        true
+      ],
+      [
+        6,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "标准第二种,第二特征[8,11]/[6,10]/[7,13]底分型,下段情况一同时确认。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-second-b",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第二种情况补图(b)",
+    "values": [
+      1,
+      6,
+      3,
+      12,
+      8,
+      11,
+      4,
+      7,
+      5,
+      14
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        2,
+        true
+      ],
+      [
+        3,
+        6,
+        1,
+        false
+      ]
+    ],
+    "reason": "上段第二底分型确认;下段左右[8,11]/[4,7]缺口,不能仅看最后新高14宣称完成。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-second-c",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第二种情况补图(c)",
+    "values": [
+      1,
+      6,
+      3,
+      14,
+      7,
+      12,
+      9,
+      16
+    ],
+    "expected": [
+      [
+        0,
+        7,
+        1,
+        false
+      ]
+    ],
+    "reason": "第二序列只有两个元素,新高16先于底分型,上段延续。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-second-d",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第二种情况补图(d)",
+    "values": [
+      1,
+      6,
+      3,
+      14,
+      8,
+      12,
+      10,
+      13,
+      7
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        1,
+        false
+      ]
+    ],
+    "reason": "缺口第二序列不足三元素,首序列右侧虽包含后转下,不能替代第二分型。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-second-e",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第二种情况补图(e)",
+    "values": [
+      1,
+      6,
+      3,
+      15,
+      8,
+      12,
+      6,
+      10,
+      4,
+      14,
+      8,
+      17
+    ],
+    "expected": [
+      [
+        0,
+        3,
+        2,
+        true
+      ],
+      [
+        3,
+        8,
+        1,
+        true
+      ],
+      [
+        8,
+        11,
+        1,
+        false
+      ]
+    ],
+    "reason": "第二序列[6,10]/[4,14]向下包含取低低,再遇[8,17]才成底分型;低点是8,不是较早6。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
+  },
+  {
+    "id": "78-editorial-second-f",
+    "pdf_page": 611,
+    "source": "课78 PDF611页编者十二补图",
+    "figure": "第二种情况补图(f)",
+    "values": [
+      1,
+      6,
+      3,
+      14,
+      8,
+      12,
+      7,
+      15,
+      10,
+      17
+    ],
+    "expected": [
+      [
+        0,
+        9,
+        1,
+        false
+      ]
+    ],
+    "reason": "第二序列[8,12]/[7,15]包含后只有两个标准元素,不能把裸折点当底分型,三段合一。",
+    "source_role": "editorial",
+    "annotation": "independent_relative_prices",
+    "assumptions": "每划为固定笔;相对价位只保留可读不等式;蓝线实用选择与作者71/77/78定义分开。"
   }
 ]
