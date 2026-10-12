@@ -91,7 +91,7 @@ from chan.fractal_range import (ConfirmedFractalRange, FractalRangeState,
 from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
 
-__version__ = "0.9.2"
+__version__ = "0.9.3"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
