@@ -5,7 +5,7 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.10.0`（本地阶段版；公开发布仍为 `0.9.0`；正式
+- 当前源码版本：`0.10.0`（已发布到 PyPI；正式
   1.0.0 目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
 - 版本更迭的完整记录见 [CHANGELOG.md](CHANGELOG.md)（每版定位、主要
   变化、行为变化与发布状态）。
@@ -69,7 +69,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.9.0'
+python -m pip install 'chan-lun-core==0.10.0'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -83,16 +83,16 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.9.0 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==0.10.0 --no-cache-dir
 ```
 
-如果当前镜像尚未提供 `0.9.0`，可继续使用已经安装并可导入的版本。
+如果当前镜像尚未提供 `0.10.0`，可继续使用已经安装并可导入的版本。
 镜像同步时间不由本库控制；版本不可获取时不要把安装失败当成算法错误。
 如能访问 GitHub Release，也可安装指定 wheel：
 
 ```python
 import sys
-!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.9.0/chan_lun_core-0.9.0-py3-none-any.whl
+!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.10.0/chan_lun_core-0.10.0-py3-none-any.whl
 ```
 
 离线时，先下载该 wheel 并上传到 Notebook 能读取的目录，再用当前解释器
@@ -116,7 +116,8 @@ print("has find_bis:", hasattr(chan, "find_bis"))
 MACD 防狼从 `0.4.4` 起可用，底/顶构造从 `0.4.5` 起可用，板块强弱从
 `0.5.0` 起可用，观察时点接口从 `0.5.1` 起可用，二类点条件接口从
 `0.5.2` 起可用，实际可用时间门控从 `0.7.0` 起可用，自动一类候选与
-点位链从 `0.7.4` 起可用。`0.9.1` 及之后的本地小版本未发布到 PyPI。
+点位链从 `0.7.4` 起可用。`0.9.1` 与 `0.10.0` 已发布到 PyPI；
+`0.9.2`—`0.9.11` 为本地概念 tag，未单独发布，随 `0.10.0` 统一交付。
 本文示例按当前源码版本 `0.10.0` 编写，并随契约测试自动执行。
 冻结研究脚本的原有版本要求另行保留。
 
@@ -1115,7 +1116,7 @@ python -m unittest discover -s tests -p 'test_contracts.py'
 ```bash
 python -m pip install build
 python -m build
-python -m pip install --force-reinstall --no-deps dist/chan_lun_core-0.9.0-py3-none-any.whl
+python -m pip install --force-reinstall --no-deps dist/chan_lun_core-0.10.0-py3-none-any.whl
 python -I tools/verify_installed.py
 ```
 
