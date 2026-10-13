@@ -163,6 +163,16 @@ def raw_index(rows, unit_dt, granularity, last=False):
 
 
 class TestRealFirstPoint(unittest.TestCase):
+    def assert_area_close(self, actual, expected, label):
+        """MACD面积按相对误差1e-12比较: 内建sum自Python 3.12对浮点
+        改用Neumaier补偿求和, 3.6/3.10为顺序累加, 两种算法存在末位
+        舍入差异; 相对误差1e-12只吸收该差异, 任何真实的区间/EMA/符号
+        算术错误都会显著超出。"""
+        self.assertLessEqual(
+            abs(actual - expected),
+            1e-12 * max(abs(actual), abs(expected)),
+            '%s: %r != %r' % (label, actual, expected))
+
     def rederive_center(self, ticks, spec, context):
         """课17/20/29: 库单元上重推中枢算术; zn成员为人工声明结构。
 
@@ -458,8 +468,10 @@ class TestRealFirstPoint(unittest.TestCase):
             c0, c1 = spans['c_span_raw']
             area_b = sum(max(sign * v, 0.0) for v in hist[b0 + 1:b1 + 1])
             area_c = sum(max(sign * v, 0.0) for v in hist[c0 + 1:c1 + 1])
-            self.assertEqual(area_b, first['area_b'], (case['id'], 'area_b'))
-            self.assertEqual(area_c, first['area_c'], (case['id'], 'area_c'))
+            self.assert_area_close(area_b, first['area_b'],
+                                   (case['id'], 'area_b'))
+            self.assert_area_close(area_c, first['area_c'],
+                                   (case['id'], 'area_c'))
             divergence = 0 < area_c < area_b
             trend_first = (roles['a']['unit'] if roles['a']
                            else roles['A']['zn'][0])
