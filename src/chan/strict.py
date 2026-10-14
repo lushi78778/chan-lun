@@ -45,20 +45,32 @@ first.py只比末中枢波动); 不设比较段方向排除, c末单元为回抽
     candidate           结构未闭合(开放尾部趋势), 登记当前依据
                         (课61"先假设进入背驰段"); 同一尾部起点
                         使用同一身份, 尾部完成后该身份落为最终
-                        语义;
-    confirmed           结构闭合+力度支持——本版本力度未接入,
-                        恒不可达, 留给力度注入版本;
+                        语义; 不评估力度(开放段力度单调性依
+                        赖度量定义, 课61"力度大于比较段即不
+                        成立"由力度方法自身语义处理);
+    confirmed           结构闭合+注入力度方法支持(c段力度严格
+                        弱于b段); 力度方法保留自身身份与局限,
+                        不冒充理论证明(课24口径);
     insufficient_evidence  结构闭合但必需证据缺失(力度方法未
-                        注入/内部极值时间未知/零宽中枢无法表达);
-    rejected            任一必要结构条件被反例否定(无新极值、
-                        c无三类点、中枢波动重叠)。
+                        注入/力度方法对该输入不可用/内部极值
+                        时间未知/零宽中枢无法表达);
+    rejected            任一必要结构条件或注入力度被反例否定
+                        (无新极值、c无三类点、中枢波动重叠、
+                        力度不减)。
+
+力度注入契约: force_fn(reference_units, leave_units)返回
+(reference_force, leave_force)数值对; 返回None表示该方法在
+该输入上不可用(数据缺失等), 登记证据不足不否决。注入时必须
+以force_method声明方法身份字符串, 保留方法身份与局限。
+travel_force为内置示例方法(单元行程和), 是工程示例度量,
+不称走势真实力度(不含单元内部次级结构信息)。
 
 差异声明: b/c 均由同级输入单元组成, "b级别不大于c"由构造满足,
 连续缺口等更小级别b不由本模块推断; 确认时间取完成趋势实际冻结
 时刻, 不回填端点时间(课37/65口径, 分型/笔端点时间不等于确认
 时间)。完成趋势结果冻结; 开放尾部候选随观察前缀演进。bars不
-由本入口消费: 结构证据全部来自已确认单元, 力度方法注入属后续
-版本。
+由本入口消费: 结构证据全部来自已确认单元; 力度方法消费单元
+序列, 消费K线的力度方法属调用方适配层。
 """
 
 from collections import namedtuple
@@ -79,6 +91,7 @@ STRICT_REJECTED = 'rejected'
 class StrictDivergence(namedtuple('StrictDivergenceBase',
                                   'divergence_id kind level status reason trend_id '
                                   'center_id center_range reference_ids leave_ids '
+                                  'force_method force_reference force_leave '
                                   'conditions confirmed_dt dt price')):
     """严格趋势背驰单结果: 四类语义之一及完整证据链。
 
@@ -86,8 +99,10 @@ class StrictDivergence(namedtuple('StrictDivergenceBase',
     已评估结构条件(code, passed/None)元组, 供逐项审计; 开放尾部
     候选中未决条件记None。center_id/center_range为末中枢身份与
     冻结(zd,zg); reference_ids/leave_ids为比较段单元身份; 价格
-    单位沿用输入坐标。confirmed_dt为该结果所需证据的最晚确认
-    时刻, 不早于任何被消费证据(课37/65口径)。
+    单位沿用输入坐标。force_method为力度方法身份(未注入或候选
+    未评估为None), force_reference/force_leave为注入方法返回的
+    比较段力度值(未评估为None)。confirmed_dt为该结果所需证据的
+    最晚确认时刻, 不早于任何被消费证据(课37/65口径)。
     """
     __slots__ = ()
 
@@ -111,6 +126,17 @@ class StrictScan(namedtuple('StrictScanBase',
 
 def _identity(parts):
     return json.dumps(list(parts), ensure_ascii=False, separators=(',', ':'))
+
+
+def travel_force(units):
+    """单元行程力度示例方法: sum(high-low)。
+
+    工程示例度量, 不称走势真实力度: 单元内部次级结构信息不
+    由已确认单元端点表达, 中枢内回抽行程计入段力度。作为
+    force_fn注入示例保留方法身份与局限(课24口径), 不冒充
+    理论力度度量。
+    """
+    return float(sum(_price(u.high) - _price(u.low) for u in units))
 
 
 def check_leave_third(leave, kind):
@@ -148,11 +174,11 @@ def _pivot_extremes(prefix, span, end):
             max(_price(u.high) for u in units))
 
 
-def _evaluate_completed(trend, move, prefix, spans):
+def _evaluate_completed(trend, move, prefix, spans, force_fn):
     """完成趋势结构条件评估: 依次判separated/new_extreme/
-    leave_third_point, 首个否决即rejected; 结构闭合无力度方法
-    登记insufficient/force_missing。不构成趋势背驰问题返回
-    (None, skipped原因)。
+    leave_third_point, 首个否决即rejected; 结构闭合后按注入
+    力度方法判confirmed/rejected/insufficient。不构成趋势背驰
+    问题返回(None, skipped原因)。
     """
     previous, last = spans[-2:]
     direction = trend.kind
@@ -172,7 +198,7 @@ def _evaluate_completed(trend, move, prefix, spans):
         # 课20: 不仅ZD/ZG, 中枢周围波动也不得重叠。
         return (STRICT_REJECTED, 'center_waves_overlap',
                 conditions + [('separated_centers', False)],
-                reference, leave, None)
+                reference, leave, None, None, None, None)
     conditions.append(('separated_centers', True))
     zd, zg = [_price(v) for v in trend.centers[-1]]
     if zd == zg:
@@ -180,7 +206,7 @@ def _evaluate_completed(trend, move, prefix, spans):
         # 不足而非否决(R3规格边界清单)。
         return (STRICT_INSUFFICIENT, 'zero_width_center',
                 conditions + [('leave_third_point', None)],
-                reference, leave, (zd, zg))
+                reference, leave, (zd, zg), None, None, None)
     prior = prefix[move.seg_start:last_end+1]
     prior_high = max(_price(u.high) for u in prior)
     prior_low = min(_price(u.low) for u in prior)
@@ -190,23 +216,41 @@ def _evaluate_completed(trend, move, prefix, spans):
         # 课61: 背驰如果没有创新高新低, 是不存在的。
         return (STRICT_REJECTED, 'no_new_extreme',
                 conditions + [('new_extreme', False)],
-                reference, leave, (zd, zg))
+                reference, leave, (zd, zg), None, None, None)
     if not at_endpoint:
         # 内部极值不猜发生时刻, 不把净端点叫背驰极值。
         return (STRICT_INSUFFICIENT, 'internal_extreme_time_unknown',
                 conditions + [('new_extreme', None)],
-                reference, leave, (zd, zg))
+                reference, leave, (zd, zg), None, None, None)
     conditions.append(('new_extreme', True))
     third = check_leave_third(leave, direction)
     conditions.append(('leave_third_point', third))
     if not third:
         # 课37: c不含末中枢三类点则只是围绕B的震荡, 用盘整背驰。
         return (STRICT_REJECTED, 'no_third_point_in_leave',
-                conditions, reference, leave, (zd, zg))
-    # 结构全闭合; 力度证据未注入, 不冒充成立(R3规格: 单次面积
-    # 减弱不作严格证明, 必要证据缺失登记证据不足)。
-    return (STRICT_INSUFFICIENT, 'force_missing', conditions,
-            reference, leave, (zd, zg))
+                conditions, reference, leave, (zd, zg), None, None, None)
+    if force_fn is None:
+        # 力度方法未注入, 不冒充成立(R3规格: 结构闭合不等于力度
+        # 证明, 必要证据缺失登记证据不足)。
+        return (STRICT_INSUFFICIENT, 'force_missing', conditions,
+                reference, leave, (zd, zg), None, None, None)
+    forces = force_fn(reference, leave)
+    if forces is None:
+        # 方法对该输入不可用(数据缺失等), 登记证据不足不否决。
+        return (STRICT_INSUFFICIENT, 'force_unavailable',
+                conditions + [('force', None)],
+                reference, leave, (zd, zg), None, None, None)
+    ref_force, leave_force = forces
+    if not leave_force < ref_force:
+        # 注入力度不减即反例: 背驰段假设不成立(课61)。
+        return (STRICT_REJECTED, 'force_not_declining',
+                conditions + [('force', False)],
+                reference, leave, (zd, zg), None, ref_force, leave_force)
+    # 结构闭合+注入力度支持; 力度方法保留自身身份与局限,
+    # 不冒充理论证明(课24口径)。
+    return (STRICT_CONFIRMED, 'force_decline',
+            conditions + [('force', True)],
+            reference, leave, (zd, zg), None, ref_force, leave_force)
 
 
 def _evaluate_open_tail(move, spans, prefix):
@@ -246,21 +290,29 @@ def _evaluate_open_tail(move, spans, prefix):
             leave, (zd, zg), direction)
 
 
-def scan_strict_divergence(units, as_of, level):
+def scan_strict_divergence(units, as_of, level, force_fn=None,
+                           force_method=None):
     """已确认次级类型上的严格趋势背驰结构扫描(四类返回语义)。
 
     units与confirm_level_up同契约: 同标的/价格坐标、同级、时间
     及端点价格连续的ConfirmedMove/ConfirmedMoveType, 只消费
     as_of前已确认连续前缀。level为趋势级别名(不同于输入级别,
-    不猜K线周期)。返回StrictScan: 每个完成上涨/下跌趋势一个
-    冻结结果(结构闭合无力度方法时insufficient_evidence/
-    force_missing, 条件否决时rejected并保留首个否决条件), 开放
-    尾部两个及以上严格分离中枢且离开段已开始时登记candidate/
-    trend_open(同一尾部起点同一身份, 随前缀演进, 完成后该身份
-    落为最终语义)。盘整完成项与不满足两分离中枢的尾部记入
-    skipped。确认不早于最后证据; 未来身份/价格不读取。复杂度
-    O(n^2)最坏, 无跨调用缓存。
+    不猜K线周期)。force_fn为可选力度方法: 接收(reference_units,
+    leave_units)返回(reference_force, leave_force)数值对, 返回
+    None表示该方法对该输入不可用; 注入时必须以force_method声明
+    非空方法身份字符串, 保留方法身份与局限(课24口径)。返回
+    StrictScan: 每个完成上涨/下跌趋势一个冻结结果(结构闭合+
+    注入力度减弱为confirmed, 力度不减为rejected, 方法不可用或
+    未注入为insufficient_evidence, 条件否决时rejected并保留
+    首个否决条件), 开放尾部两个及以上严格分离中枢且离开段已
+    开始时登记candidate/trend_open(同一尾部起点同一身份, 随
+    前缀演进, 完成后该身份落为最终语义; 不评估力度)。盘整完成
+    项与不满足两分离中枢的尾部记入skipped。确认不早于最后证据;
+    未来身份/价格不读取。复杂度O(n^2)最坏, 无跨调用缓存。
     """
+    if force_fn is not None and not (isinstance(force_method, str)
+                                     and force_method):
+        raise ValueError('注入force_fn时必须以force_method声明方法身份')
     visible = _visible_units(units, as_of, level)[0]
     results, skipped = [], []
     completed = confirm_level_up(visible, as_of, level)
@@ -276,11 +328,12 @@ def scan_strict_divergence(units, as_of, level):
             skipped.append((trend.move_id, 'no_matching_decomposition'))
             continue
         move, spans = pair
-        outcome = _evaluate_completed(trend, move, prefix, spans)
+        outcome = _evaluate_completed(trend, move, prefix, spans, force_fn)
         if outcome[0] is None:
             skipped.append((trend.move_id, outcome[1]))
             continue
-        status, reason, conditions, reference, leave, center_range = outcome
+        (status, reason, conditions, reference, leave, center_range,
+         _, ref_force, leave_force) = outcome
         up = trend.kind == 'up'
         identity = _identity([level, prefix[move.seg_start].move_id, 'strict1'])
         results.append(StrictDivergence(
@@ -288,6 +341,7 @@ def scan_strict_divergence(units, as_of, level):
             status, reason, trend.move_id,
             _identity([level, prefix[spans[-1][0]].move_id]), center_range,
             tuple(u.move_id for u in reference), tuple(u.move_id for u in leave),
+            force_method, ref_force, leave_force,
             tuple(conditions), trend.confirmed_dt,
             leave[-1].end_dt, _price(leave[-1].end_price)))
     open_tail = False
@@ -304,13 +358,14 @@ def scan_strict_divergence(units, as_of, level):
                 _, reason, conditions, reference, leave, center_range, direction = outcome
                 results.append(StrictDivergence(
                     _identity([level, visible[tail_move.seg_start].move_id,
-                               'strict1']),
+                                'strict1']),
                     'sell1' if direction == 'up' else 'buy1', level,
                     STRICT_CANDIDATE, reason, tail_id,
                     _identity([level, visible[tail_spans[-1][0]].move_id]),
                     center_range,
                     tuple(u.move_id for u in reference),
                     tuple(u.move_id for u in leave),
+                    None, None, None,
                     tuple(conditions), visible[-1].confirmed_dt,
                     leave[-1].end_dt, _price(leave[-1].end_price)))
     return StrictScan(tuple(results), tuple(skipped), len(completed), open_tail)

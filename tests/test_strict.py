@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from chan import (ConfirmedMove, STRICT_CANDIDATE, STRICT_CONFIRMED,
                   STRICT_INSUFFICIENT, STRICT_REJECTED, StrictScan,
-                  scan_strict_divergence)
+                  scan_strict_divergence, travel_force)
 
 T = datetime(2025, 1, 1)
 # 完成下跌趋势: A=(88,94)系与B=(70,72)系波动分离, b=u8, c=u12-u14,
@@ -186,17 +186,115 @@ class TestStrictRobustness(unittest.TestCase):
                          [['trend', True], ['separated_centers', True],
                           ['new_extreme', True], ['leave_third_point', True]])
         self.assertEqual(out['center_range'], [70.0, 72.0])
+        self.assertIsNone(out['force_method'])
+        self.assertIsNone(out['force_reference'])
+        self.assertIsNone(out['force_leave'])
         self.assertIsInstance(out['confirmed_dt'], str)
         self.assertEqual(sorted(out.keys()), sorted([
             'divergence_id', 'kind', 'level', 'status', 'reason', 'trend_id',
             'center_id', 'center_range', 'reference_ids', 'leave_ids',
+            'force_method', 'force_reference', 'force_leave',
             'conditions', 'confirmed_dt', 'dt', 'price']))
 
     def test_semantic_constants(self):
-        """四类语义常量与确认语义恒不可达声明。"""
+        """四类语义常量与确认语义声明。"""
         self.assertEqual((STRICT_CANDIDATE, STRICT_CONFIRMED,
                           STRICT_INSUFFICIENT, STRICT_REJECTED),
                          ('candidate', 'confirmed', 'insufficient_evidence', 'rejected'))
+
+
+class TestStrictForceInjection(unittest.TestCase):
+    def _fn(self, value):
+        return lambda reference, leave: value
+
+    def test_force_decline_confirms(self):
+        """结构闭合+注入力度减弱成立, 保留方法身份与力度值。"""
+        units, now = sample()
+        scan = scan_strict_divergence(units, now, 'main',
+                                      force_fn=self._fn((10.0, 5.0)),
+                                      force_method='unit_travel')
+        r = scan.results[0]
+        self.assertEqual((r.kind, r.status, r.reason),
+                         ('buy1', STRICT_CONFIRMED, 'force_decline'))
+        self.assertEqual(r.conditions, (('trend', True), ('separated_centers', True),
+                                        ('new_extreme', True),
+                                        ('leave_third_point', True),
+                                        ('force', True)))
+        self.assertEqual((r.force_method, r.force_reference, r.force_leave),
+                         ('unit_travel', 10.0, 5.0))
+
+    def test_force_not_declining_rejects(self):
+        """注入力度不减即反例, 背驰段假设不成立(课61)。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main',
+                                   force_fn=self._fn((5.0, 10.0)),
+                                   force_method='unit_travel').results[0]
+        self.assertEqual((r.status, r.reason),
+                         (STRICT_REJECTED, 'force_not_declining'))
+        self.assertEqual(r.conditions[-1], ('force', False))
+        self.assertEqual((r.force_reference, r.force_leave), (5.0, 10.0))
+
+    def test_equal_force_rejects(self):
+        """力度相等不减, 同样否决。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main',
+                                   force_fn=self._fn((7.0, 7.0)),
+                                   force_method='unit_travel').results[0]
+        self.assertEqual((r.status, r.reason),
+                         (STRICT_REJECTED, 'force_not_declining'))
+
+    def test_force_unavailable_is_insufficient(self):
+        """方法对该输入不可用返回None, 登记证据不足不否决。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main',
+                                   force_fn=self._fn(None),
+                                   force_method='macd_area').results[0]
+        self.assertEqual((r.status, r.reason),
+                         (STRICT_INSUFFICIENT, 'force_unavailable'))
+        self.assertEqual(r.conditions[-1], ('force', None))
+        self.assertEqual(r.force_method, 'macd_area')
+        self.assertIsNone(r.force_reference)
+
+    def test_injection_requires_method_identity(self):
+        """注入force_fn必须声明方法身份, 保留方法身份与局限。"""
+        units, now = sample()
+        with self.assertRaises(ValueError):
+            scan_strict_divergence(units, now, 'main', force_fn=self._fn((1, 0)))
+        with self.assertRaises(ValueError):
+            scan_strict_divergence(units, now, 'main', force_fn=self._fn((1, 0)),
+                                   force_method='')
+
+    def test_structural_rejection_ignores_force(self):
+        """结构否决先于力度评估, 力度方法不被消费。"""
+        prices = [120, 110, 115, 108, 114, 90, 95, 88, 94, 70, 74, 60, 72, 67, 69, 65, 76]
+        units, now = sample(prices)
+        calls = []
+        def fn(reference, leave):
+            calls.append(1)
+            return (10.0, 5.0)
+        r = scan_strict_divergence(units, now, 'main', force_fn=fn,
+                                   force_method='unit_travel').results[0]
+        self.assertEqual((r.status, r.reason), (STRICT_REJECTED, 'no_new_extreme'))
+        self.assertEqual(calls, [])
+
+    def test_travel_force_example(self):
+        """内置示例力度: 单元行程和, 不冒充理论度量。"""
+        units, _ = sample()
+        leave = units[12:15]
+        self.assertEqual(travel_force(leave),
+                         sum(u.high - u.low for u in leave))
+
+    def test_candidate_not_force_evaluated(self):
+        """开放尾部候选不评估力度, 方法身份与力度值为空。"""
+        units, _ = sample()
+        scan = scan_strict_divergence(units, units[13].confirmed_dt, 'main',
+                                      force_fn=self._fn((10.0, 5.0)),
+                                      force_method='unit_travel')
+        r = scan.results[0]
+        self.assertEqual(r.status, STRICT_CANDIDATE)
+        self.assertIsNone(r.force_method)
+        self.assertIsNone(r.force_reference)
+        self.assertIsNone(r.force_leave)
 
 
 if __name__ == "__main__":

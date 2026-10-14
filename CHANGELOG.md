@@ -31,8 +31,30 @@
 | — | 0.9.2—0.9.11 | 严格趋势/三类/触沿/一类/二类/因果底顶真实正反例 | 0.9.2—0.9.5 先行推送；0.9.6—0.9.11 随 0.10.0 补齐推送；本地 tag 保留 |
 | — | 0.10.0 | R2 闭合阶段发布版：概念链补齐至远端 + README/CHANGELOG 文档整治 | CI/Release/PyPI 已核验 |
 | — | 0.10.1 | R3 严格趋势背驰结构条件与四类返回语义首版 | 仅本地提交 |
+| — | 0.10.2 | R3 力度方法注入：confirmed 语义可达 | 仅本地提交 |
 
 ---
+
+## 0.10.2（2026-10-14）
+
+- **定位**：R3 严格自动识别力度度量层接入。`scan_strict_divergence`
+  新增 `force_fn`/`force_method` 注入参数，结构闭合后按注入力度方法
+  判定：力度减弱（leave 严格弱于 reference）→ `confirmed`（保留方法
+  身份与局限，不冒充理论证明，课24 口径）；力度不减 → `rejected`/
+  `force_not_declining`（课61 反例）；方法对该输入不可用（返回 None）
+  → `insufficient_evidence`/`force_unavailable` 不否决；未注入维持
+  0.10.1 行为 `force_missing`。
+- **主要变化（新增公开入口）**：`travel_force(units)` 内置示例力度
+  方法（单元行程和 sum(high-low)），标注工程示例度量，不称走势真实
+  力度。注入时必须以 `force_method` 声明非空方法身份字符串，否则
+  `ValueError`。结构否决先于力度评估，力度方法不被消费。
+- **行为变化**：`StrictDivergence` 字段新增 `force_method`/
+  `force_reference`/`force_leave`（0.10.1 未发布，无已发布行为差异）；
+  开放尾部 candidate 不评估力度，三字段为 None。
+- **测试**：核心 686 测通过（`test_strict.py` 增至 24 项：力度减弱
+  成立、力度不减/相等否决、方法不可用证据不足、方法身份必填、结构
+  否决先于力度、示例力度、候选不评估力度）。
+- **发布状态**：仅本地提交。
 
 ## 0.10.1（2026-10-14）
 

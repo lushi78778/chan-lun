@@ -93,9 +93,9 @@ from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
 from chan.strict import (STRICT_CANDIDATE, STRICT_CONFIRMED, STRICT_INSUFFICIENT,
                          STRICT_REJECTED, StrictDivergence, StrictScan,
-                         scan_strict_divergence)
+                         scan_strict_divergence, travel_force)
 
-__version__ = "0.10.1"
+__version__ = "0.10.2"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
@@ -176,7 +176,7 @@ __all__ = [
     # chan.strict 严格趋势背驰结构条件与四类返回语义(课24/27/37/53/61/101)
     "STRICT_CANDIDATE", "STRICT_CONFIRMED", "STRICT_INSUFFICIENT",
     "STRICT_REJECTED", "StrictDivergence", "StrictScan",
-    "scan_strict_divergence",
+    "scan_strict_divergence", "travel_force",
     # 版本号
     "__version__",
 ]
