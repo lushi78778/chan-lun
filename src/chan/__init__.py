@@ -93,10 +93,12 @@ from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
 from chan.strict import (STRICT_CANDIDATE, STRICT_CONFIRMED, STRICT_INSUFFICIENT,
                          STRICT_REJECTED, StrictChain, StrictChainLevel,
+                         StrictCompletion, StrictCompletionLevel,
                          StrictDivergence, StrictScan,
-                         scan_strict_divergence, strict_nested_chain, travel_force)
+                         scan_strict_divergence, strict_completion_cascade,
+                         strict_nested_chain, travel_force)
 
-__version__ = "0.10.4"
+__version__ = "0.10.5"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
@@ -178,7 +180,9 @@ __all__ = [
     "STRICT_CANDIDATE", "STRICT_CONFIRMED", "STRICT_INSUFFICIENT",
     "STRICT_REJECTED", "StrictDivergence", "StrictScan",
     "StrictChain", "StrictChainLevel",
-    "scan_strict_divergence", "strict_nested_chain", "travel_force",
+    "StrictCompletion", "StrictCompletionLevel",
+    "scan_strict_divergence", "strict_completion_cascade",
+    "strict_nested_chain", "travel_force",
     # 版本号
     "__version__",
 ]

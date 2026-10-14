@@ -79,6 +79,17 @@ travel_force为内置示例方法(单元行程和), 是工程示例度量,
 无否定证据继续下探(课61"在没有证据否定背驰之前"), 否决即断;
 子单元须与上一重背驰段区间时间首尾相等且端点价格对齐; 转折
 取最内bc重段终点与极值价格, 单元级数据不定位极值发生时刻。
+
+次级走势完成级联确认(0.10.5): strict_completion_cascade复核
+父级背驰段端点单元(含转折端点的次级别走势)的完成——课37
+"c 必然是次级别的"; 课35"一个高级别的走势类型必然就是由几个
+低级别的走势类型连接而成"、分解定理二"任何级别的任何走势
+类型, 都至少由三段以上次级别走势类型构成", 完成由细级完成
+证据到达时刻冻结(completion.py契约)。逐层细级切片与上层端点
+单元区间时间首尾相等且端点价格对齐, 切片上重算完成类型, 恰
+覆盖该区间的完成类型即该层复核通过并级联至其末组成单元;
+无匹配完成类型登记unverified(调用方声明口径与细级证据不同
+或证据不足以复核, 不判任一方错误), 不判实现或标注错误。
 """
 
 from collections import namedtuple
@@ -601,10 +612,10 @@ def strict_nested_chain(divergence, units, layers, as_of,
                 interval = (leave[0].start_dt, leave[-1].end_dt,
                             leave[0].start_price, leave[-1].end_price)
     turn = next((level for level in reversed(levels)
-                 if level.status == 'bc'), None)
+                  if level.status == 'bc'), None)
     stamps = [divergence.confirmed_dt] + [level.confirmed_dt
-                                          for level in levels
-                                          if level.confirmed_dt is not None]
+                                           for level in levels
+                                           if level.confirmed_dt is not None]
     return StrictChain(
         divergence.divergence_id, divergence.kind, divergence.level,
         tuple(levels), len(levels),
@@ -612,4 +623,144 @@ def strict_nested_chain(divergence, units, layers, as_of,
         break_depth, break_reason,
         turn.dt if turn is not None else None,
         turn.price if turn is not None else None,
+        max(stamps))
+
+
+class StrictCompletionLevel(namedtuple('StrictCompletionLevelBase',
+                                       'depth level unit_id status '
+                                       'unit_ids confirmed_dt')):
+    """次级完成级联单层结果: 上层端点单元在该层细级证据下的复核。
+
+    level为该层细级单元级别名; unit_id为被复核的上层端点单元身份;
+    status为该层复核码: confirmed(该层完成类型恰覆盖上层端点单元
+    区间与端点价格, 复核时刻为完成证据到达时刻)/unverified(该层
+    分解不产出该区间完成类型, 调用方声明口径与细级证据不同或证据
+    不足以复核)/not_covered(该层单元未覆盖上层端点单元区间)。
+    unit_ids为匹配完成类型的组成单元身份(confirmed时, 否则为空);
+    confirmed_dt为该层复核完成时刻(未通过为None)。
+    """
+    __slots__ = ()
+
+    def to_dict(self):
+        out = dict(self._asdict())
+        out['confirmed_dt'] = (None if self.confirmed_dt is None
+                               else str(self.confirmed_dt))
+        out['unit_ids'] = list(self.unit_ids)
+        return out
+
+
+class StrictCompletion(namedtuple('StrictCompletionBase',
+                                  'divergence_id kind level levels depth '
+                                  'complete confirmed_dt')):
+    """次级走势完成级联确认结果(课35/37)。
+
+    levels为逐层复核结果(层1起, 首个未通过层即止, 其余声明层
+    不消费); depth为已评估层数; complete为全部已评估层confirmed
+    且至少一层(端点单元的完成沿声明级别链逐层由细级证据复核);
+    confirmed_dt为整链最晚确认时刻(含父级结果, 不早于任何被
+    消费证据)。父级语义不因本入口改变, 未声明层不复核。
+    """
+    __slots__ = ()
+
+    def to_dict(self):
+        out = dict(self._asdict())
+        out['confirmed_dt'] = str(out['confirmed_dt'])
+        out['levels'] = [level.to_dict() for level in self.levels]
+        return out
+
+
+def _cascade_match(visible, obj, as_of):
+    """细级可见前缀中定位上层端点单元起点并复核其完成类型。
+
+    返回(status, matched, pieces): 细级前缀未及上层端点单元起点为
+    not_covered; 已及该时刻而无起点切分登记unverified(细级分解不
+    在上层端点单元起点切开, 调用方声明口径与细级证据不同); 起点
+    切分处端点价格不对齐报价格坐标契约错误。pieces为自起点切分至
+    as_of的可见前缀(完成证据可能在走势端点之后, 属下一走势, 课35
+    /completion契约), 其上重算完成类型, 恰覆盖上层端点单元区间与
+    端点价格的完成类型为matched, 无匹配为unverified(证据未到达
+    或分解口径不同)。pieces保留供级联至末组成单元。
+    """
+    starts = dict((unit.start_dt, i) for i, unit in enumerate(visible))
+    low = starts.get(obj.start_dt)
+    if low is None:
+        reached = any(unit.end_dt > obj.start_dt for unit in visible)
+        return ('unverified' if reached else 'not_covered'), None, None
+    pieces = visible[low:]
+    if _price(pieces[0].start_price) != _price(obj.start_price):
+        raise ValueError('细级单元端点价格须与上层端点单元对齐')
+    for typ in confirm_level_up(pieces, as_of, obj.level):
+        if (typ.start_dt == obj.start_dt and typ.end_dt == obj.end_dt
+                and _price(typ.start_price) == _price(obj.start_price)
+                and _price(typ.end_price) == _price(obj.end_price)):
+            return 'confirmed', typ, pieces
+    return 'unverified', None, pieces
+
+
+def strict_completion_cascade(divergence, units, layers, as_of):
+    """严格背驰转折端点的次级走势完成级联确认(课35/37, R3)。
+
+    课37: "c 必然是次级别的"——父级背驰段端点单元是次级别走势,
+    其完成由更细级别完成证据冻结(课35: 高级别走势类型由低级别
+    走势类型连接而成, 分解定理二; 完成证据可能在走势端点之后、
+    属下一走势, completion.py契约)。本入口对divergence的leave
+    末单元(含转折端点)逐层复核: 每层细级可见前缀自上层端点单元
+    起点切分处起至as_of证据视野重算完成类型, 恰覆盖上层端点单元
+    区间与端点价格的完成类型即该层confirmed并级联至其末组成单元
+    作为下层复核对象; 细级前缀未及起点为not_covered, 已及而无
+    起点切分、无匹配完成类型或完成证据未到达为unverified(调用方
+    声明口径与细级证据不同或证据不足以复核, 不判任一方错误),
+    首个未通过层即止; 起点价格不对齐报价格坐标契约错误。
+
+    divergence为scan_strict_divergence结果(任意语义: 端点单元的
+    完成复核与父级裁定正交); units为产生divergence的父级单元;
+    layers为逐层(级别名, 细级单元表)序列, 级别邻接由调用方明示,
+    不按K线周期名猜级别, 细级单元契约同scan_strict_divergence
+    (as_of前已确认连续前缀)。返回StrictCompletion: 全部已评估层
+    confirmed时complete为真; confirmed_dt不早于任何被消费证据;
+    未来身份/价格不读取。复杂度每层O(n^2)最坏, 无跨调用缓存。
+    """
+    if not isinstance(divergence, StrictDivergence):
+        raise ValueError('divergence须为scan_strict_divergence结果')
+    if not isinstance(layers, (list, tuple)):
+        raise TypeError('layers须为list或tuple')
+    for layer in layers:
+        if not isinstance(layer, (list, tuple)) or len(layer) != 2:
+            raise ValueError('layers项须为(级别名, 单元表)二元组')
+    if not divergence.leave_ids:
+        raise ValueError('divergence.leave_ids不能为空')
+    parent_visible = _visible_units(units, as_of, divergence.level)[0]
+    parent_ids = dict((u.move_id, u) for u in parent_visible)
+    if any(name not in parent_ids for name in divergence.leave_ids):
+        raise ValueError('divergence.leave_ids须在as_of可见父级单元中')
+    obj = parent_ids[divergence.leave_ids[-1]]
+    levels = []
+    for depth, (layer_level, layer_units) in enumerate(layers, 1):
+        verified_id = obj.move_id
+        visible = _visible_units(layer_units, as_of, obj.level)[0]
+        if visible and visible[0].level != layer_level:
+            raise ValueError('声明的级别名须与该层单元级别一致')
+        if not visible:
+            status, matched, pieces = 'not_covered', None, None
+        else:
+            status, matched, pieces = _cascade_match(visible, obj, as_of)
+        unit_ids = ()
+        confirmed = None
+        if matched is not None:
+            unit_ids = matched.unit_ids
+            confirmed = matched.confirmed_dt
+            by_id = dict((u.move_id, u) for u in pieces)
+            obj = by_id[matched.unit_ids[-1]]
+        levels.append(StrictCompletionLevel(
+            depth, layer_level, verified_id, status, unit_ids, confirmed))
+        if matched is None:
+            break
+    stamps = [divergence.confirmed_dt] + [level.confirmed_dt
+                                          for level in levels
+                                          if level.confirmed_dt is not None]
+    return StrictCompletion(
+        divergence.divergence_id, divergence.kind, divergence.level,
+        tuple(levels), len(levels),
+        bool(levels) and all(level.status == 'confirmed'
+                             for level in levels),
         max(stamps))

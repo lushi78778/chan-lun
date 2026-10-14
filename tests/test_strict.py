@@ -4,8 +4,9 @@ import unittest
 from datetime import datetime, timedelta
 
 from chan import (ConfirmedMove, STRICT_CANDIDATE, STRICT_CONFIRMED,
-                  STRICT_INSUFFICIENT, STRICT_REJECTED, StrictScan,
-                  scan_strict_divergence, strict_nested_chain, travel_force)
+                   STRICT_INSUFFICIENT, STRICT_REJECTED, StrictScan,
+                   scan_strict_divergence, strict_completion_cascade,
+                   strict_nested_chain, travel_force)
 
 T = datetime(2025, 1, 1)
 # 完成下跌趋势: A=(88,94)系与B=(70,72)系波动分离, b=u8, c=u12-u14,
@@ -617,6 +618,229 @@ class TestStrictNestedChain(unittest.TestCase):
         self.assertEqual(lv['leave_ids'], ['s5'])
         self.assertIsInstance(lv['confirmed_dt'], str)
         self.assertIsInstance(lv['dt'], str)
+
+
+class TestStrictCompletionCascade(unittest.TestCase):
+    """课35/37: 次级走势完成级联确认——端点单元由细级完成证据逐层复核。"""
+
+    @staticmethod
+    def _make(rows, level, start):
+        units = []
+        for i, (a, b, hours) in enumerate(rows):
+            s = start + timedelta(hours=sum(r[2] for r in rows[:i]))
+            e = s + timedelta(hours=hours)
+            units.append(ConfirmedMove('%s%d' % (level[0], i), level,
+                                       'up' if b > a else 'down',
+                                       s, e, a, b, min(a, b), max(a, b),
+                                       e + timedelta(minutes=2)))
+        return units
+
+    def sub_units(self):
+        """细级层: 复核u14[T+280h,T+300h]69->65。
+
+        中枢(67,68)=[s1,s2,s3], s4离开, 证据s5回抽进中枢(课39 A3
+        跌回, 递归规则3)——完成证据在端点之后, 属下一走势。
+        """
+        return self._make([(69, 70, 4), (70, 67, 6), (67, 68, 4),
+                           (68, 66, 3), (66, 65, 3), (65, 67, 6)],
+                          'sub', T + timedelta(hours=280))
+
+    def tick_units(self):
+        """更细级层: 复核s4[T+297h,T+300h]66->65。
+
+        中枢(65.5,65.9)=[t0,t1,t2], t3/t4离开, 证据t5回抽进中枢。
+        """
+        return self._make([(66, 65.5, 0.5), (65.5, 65.9, 0.5),
+                           (65.9, 65.4, 0.5), (65.4, 65.2, 0.5),
+                           (65.2, 65.0, 1.0), (65.0, 65.7, 1.0)],
+                          'tick', T + timedelta(hours=297))
+
+    def test_confirmed_cascade_single_layer(self):
+        """端点单元恰为细级完成类型: 该层confirmed并级联至末组成单元。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        sub = self.sub_units()
+        cascade = strict_completion_cascade(r, units, [('sub', sub)], now)
+        self.assertEqual(cascade.divergence_id, r.divergence_id)
+        self.assertEqual((cascade.kind, cascade.level), ('buy1', 'main'))
+        self.assertEqual(cascade.depth, 1)
+        self.assertTrue(cascade.complete)
+        lv = cascade.levels[0]
+        self.assertEqual((lv.depth, lv.level, lv.unit_id, lv.status),
+                         (1, 'sub', 'u14', 'confirmed'))
+        self.assertEqual(lv.unit_ids, ('s0', 's1', 's2', 's3', 's4'))
+        self.assertEqual(lv.confirmed_dt, sub[5].confirmed_dt)
+        self.assertEqual(cascade.confirmed_dt,
+                         max(r.confirmed_dt, sub[5].confirmed_dt))
+
+    def test_double_layer_cascade_confirmed(self):
+        """双层confirmed: 级联对象为上层匹配类型的末组成单元(分解定理二)。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        sub = self.sub_units()
+        tick = self.tick_units()
+        cascade = strict_completion_cascade(
+            r, units, [('sub', sub), ('tick', tick)], now)
+        self.assertEqual(cascade.depth, 2)
+        self.assertTrue(cascade.complete)
+        self.assertEqual([(lv.unit_id, lv.status) for lv in cascade.levels],
+                         [('u14', 'confirmed'), ('s4', 'confirmed')])
+        lv2 = cascade.levels[1]
+        self.assertEqual(lv2.unit_ids, ('t0', 't1', 't2', 't3', 't4'))
+        self.assertEqual(lv2.confirmed_dt, tick[5].confirmed_dt)
+        self.assertEqual(cascade.confirmed_dt,
+                         max(r.confirmed_dt, sub[5].confirmed_dt,
+                             tick[5].confirmed_dt))
+
+    def test_completion_evidence_not_arrived_is_unverified(self):
+        """完成证据在端点之后: 证据单元未确认前该层unverified(课35)。"""
+        units, _ = sample()
+        r = scan_strict_divergence(units, units[14].confirmed_dt,
+                                   'main').results[0]
+        sub = self.sub_units()
+        early = strict_completion_cascade(
+            r, units, [('sub', sub)], units[14].confirmed_dt)
+        lv = early.levels[0]
+        self.assertEqual((lv.unit_id, lv.status, lv.unit_ids),
+                         ('u14', 'unverified', ()))
+        self.assertIsNone(lv.confirmed_dt)
+        self.assertFalse(early.complete)
+        late = strict_completion_cascade(
+            r, units, [('sub', sub)], sub[5].confirmed_dt)
+        self.assertEqual(late.levels[0].status, 'confirmed')
+        self.assertTrue(late.complete)
+
+    def test_no_matching_type_is_unverified(self):
+        """细级切片不成完成类型或区间不匹配: unverified不判任一方错误。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        bare = self._make([(69, 68, 10), (68, 65, 10)],
+                          'sub', T + timedelta(hours=280))
+        cascade = strict_completion_cascade(r, units, [('sub', bare)], now)
+        self.assertEqual((cascade.levels[0].status, cascade.levels[0].unit_ids),
+                         ('unverified', ()))
+        self.assertFalse(cascade.complete)
+
+    def test_decomposition_without_start_cut_is_unverified(self):
+        """细级前缀已及端点单元起点但不在此切开: 分解口径不同。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        shift = self._make([(69.5, 70, 4), (70, 67, 6), (67, 68, 4),
+                            (68, 66, 3), (66, 65, 3), (65, 67, 6)],
+                           'sub', T + timedelta(hours=280)
+                           - timedelta(minutes=30))
+        cascade = strict_completion_cascade(r, units, [('sub', shift)], now)
+        self.assertEqual(cascade.levels[0].status, 'unverified')
+
+    def test_first_failure_stops_cascade(self):
+        """首个未通过层即止: 其余声明层不消费。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        bare = self._make([(69, 68, 10), (68, 65, 10)],
+                          'sub', T + timedelta(hours=280))
+        cascade = strict_completion_cascade(
+            r, units, [('sub', bare), ('tick', self.tick_units())], now)
+        self.assertEqual(cascade.depth, 1)
+        self.assertEqual(len(cascade.levels), 1)
+        self.assertFalse(cascade.complete)
+
+    def test_not_covered_layer(self):
+        """细级前缀未及端点单元起点: not_covered; 空单元表同理。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        short = self._make([(72, 70, 10), (70, 67.5, 5), (67.5, 69, 10)],
+                           'sub', T + timedelta(hours=240))
+        cascade = strict_completion_cascade(r, units, [('sub', short)], now)
+        self.assertEqual((cascade.levels[0].status,
+                          cascade.levels[0].confirmed_dt),
+                         ('not_covered', None))
+        self.assertFalse(cascade.complete)
+        empty = strict_completion_cascade(r, units, [('sub', [])], now)
+        self.assertEqual(empty.levels[0].status, 'not_covered')
+        self.assertEqual(empty.depth, 1)
+
+    def test_price_misalignment_raises(self):
+        """起点切分处端点价格不对齐: 价格坐标契约违反报错。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        bad = self._make([(69.5, 70, 4), (70, 67, 6), (67, 68, 4),
+                          (68, 66, 3), (66, 65, 3), (65, 67, 6)],
+                         'sub', T + timedelta(hours=280))
+        with self.assertRaises(ValueError):
+            strict_completion_cascade(r, units, [('sub', bad)], now)
+
+    def test_layer_level_mismatch_raises(self):
+        """声明的级别名须与该层单元级别一致。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        with self.assertRaises(ValueError):
+            strict_completion_cascade(r, units,
+                                      [('other', self.sub_units())], now)
+
+    def test_future_layer_unit_not_read(self):
+        """观察时刻之后的细级身份/价格毒值不影响复核。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        sub = self.sub_units()
+        extra = self._make([(67, 68, 4)], 'sub', sub[5].end_dt)
+        cut = sub[5].confirmed_dt
+        base = strict_completion_cascade(r, units, [('sub', sub + extra)], cut)
+        self.assertEqual(base.levels[0].status, 'confirmed')
+        poison = extra[0]._replace(move_id=None, level=None,
+                                   start_price=float('nan'))
+        self.assertEqual(strict_completion_cascade(r, units,
+                                                   [('sub', sub + [poison])],
+                                                   cut),
+                         base)
+
+    def test_requires_divergence_and_layer_shape(self):
+        """divergence须为扫描结果; layers须为(级别名, 单元表)序列。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        with self.assertRaises(ValueError):
+            strict_completion_cascade(object(), units, [], now)
+        with self.assertRaises(TypeError):
+            strict_completion_cascade(r, units, 'bad', now)
+        with self.assertRaises(ValueError):
+            strict_completion_cascade(r, units, [('sub',)], now)
+
+    def test_leave_ids_must_be_visible(self):
+        """父级leave_ids不在as_of可见单元中: 输入与结果不配套报错。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        with self.assertRaises(ValueError):
+            strict_completion_cascade(r, units[:10], [], now)
+
+    def test_candidate_endpoint_cascade(self):
+        """开放尾部候选端点同样可级联复核, 与父级语义正交。"""
+        units, _ = sample()
+        scan = scan_strict_divergence(units, units[14].confirmed_dt, 'main')
+        r = scan.results[0]
+        self.assertEqual(r.status, STRICT_CANDIDATE)
+        sub = self.sub_units()
+        cascade = strict_completion_cascade(
+            r, units, [('sub', sub)], sub[5].confirmed_dt)
+        lv = cascade.levels[0]
+        self.assertEqual((lv.unit_id, lv.status), ('u14', 'confirmed'))
+        self.assertTrue(cascade.complete)
+
+    def test_cascade_to_dict_roundtrip(self):
+        """存档格式: 层级嵌套转列表, 时间转字符串, 组成身份转列表。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        cascade = strict_completion_cascade(
+            r, units, [('sub', self.sub_units())], now)
+        out = cascade.to_dict()
+        self.assertEqual(sorted(out.keys()), sorted([
+            'divergence_id', 'kind', 'level', 'levels', 'depth',
+            'complete', 'confirmed_dt']))
+        lv = out['levels'][0]
+        self.assertEqual(sorted(lv.keys()), sorted([
+            'depth', 'level', 'unit_id', 'status', 'unit_ids',
+            'confirmed_dt']))
+        self.assertEqual(lv['unit_ids'], ['s0', 's1', 's2', 's3', 's4'])
+        self.assertIsInstance(lv['confirmed_dt'], str)
+        self.assertIsInstance(out['confirmed_dt'], str)
 
 
 if __name__ == "__main__":
