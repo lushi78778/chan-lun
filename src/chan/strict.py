@@ -71,11 +71,20 @@ travel_force为内置示例方法(单元行程和), 是工程示例度量,
 时间)。完成趋势结果冻结; 开放尾部候选随观察前缀演进。bars不
 由本入口消费: 结构证据全部来自已确认单元; 力度方法消费单元
 序列, 消费K线的力度方法属调用方适配层。
+
+区间套次级确认链(0.10.4): strict_nested_chain把课61区间套定位
+显式化——重1为严格扫描结果, 重2起逐重显式供给更细级别单元,
+在上一重背驰段区间内取最后一个次级中枢, 围绕它比较两段力度
+(课61/课53盘整背驰推广, 不要求重2起内部再构成两个分离中枢)。
+无否定证据继续下探(课61"在没有证据否定背驰之前"), 否决即断;
+子单元须与上一重背驰段区间时间首尾相等且端点价格对齐; 转折
+取最内bc重段终点与极值价格, 单元级数据不定位极值发生时刻。
 """
 
 from collections import namedtuple
 import json
 
+from chan._intervals import _range3
 from chan.completion import _visible_units, confirm_level_up
 from chan.first import _net, _tail
 from chan.recurse import _level_up_traced
@@ -369,3 +378,238 @@ def scan_strict_divergence(units, as_of, level, force_fn=None,
                     tuple(conditions), visible[-1].confirmed_dt,
                     leave[-1].end_dt, _price(leave[-1].end_price)))
     return StrictScan(tuple(results), tuple(skipped), len(completed), open_tail)
+
+
+class StrictChainLevel(namedtuple('StrictChainLevelBase',
+                                  'depth level status reason reference_ids '
+                                  'leave_ids center_range force_method '
+                                  'force_reference force_leave confirmed_dt '
+                                  'dt price')):
+    """区间套单重结果: 该重围绕末次级中枢两段比较的状态与证据。
+
+    status为该重结果码: bc(该重背驰段力度减弱, 课61)/
+    no_new_extreme/force_not_declining(否决)/force_missing/
+    force_unavailable/no_sub_center/no_compare_legs/not_covered
+    (证据不足)。reason为语义归类: bc为None, 否决与证据不足沿用
+    四类语义常量, 供按语义过滤。reference_ids/leave_ids为该重
+    对照段与背驰段单元身份; center_range为该重末次级中枢冻结
+    (zd,zg); force_*为注入方法身份与力度值(未注入或未评估为
+    None)。dt/price为该重背驰段终点时刻与极值价格(单元级数据
+    不定位极值发生时刻); confirmed_dt为该重所需证据的最晚确认
+    时刻, 不早于任何被消费证据。
+    """
+    __slots__ = ()
+
+    def to_dict(self):
+        out = dict(self._asdict())
+        for key in ('confirmed_dt', 'dt'):
+            out[key] = None if out[key] is None else str(out[key])
+        out['center_range'] = (None if self.center_range is None
+                               else list(self.center_range))
+        out['reference_ids'] = list(self.reference_ids)
+        out['leave_ids'] = list(self.leave_ids)
+        return out
+
+
+class StrictChain(namedtuple('StrictChainBase',
+                             'divergence_id kind level levels depth complete '
+                             'break_depth break_reason turn_dt turn_price '
+                             'confirmed_dt')):
+    """区间套次级确认链: 重1为传入严格背驰结果, levels为重2起逐重。
+
+    levels/depth为已评估的重数(重2起); complete为最内一重bc
+    (区间套定位完成); break_depth为否决重数(0为父级
+    parent_rejected, None为无否决), break_reason为否决码;
+    turn_dt/turn_price为最内bc重背驰段终点时刻与极值价格(无bc
+    重为None); confirmed_dt为整链所需证据的最晚确认时刻。
+    """
+    __slots__ = ()
+
+    def to_dict(self):
+        out = dict(self._asdict())
+        for key in ('turn_dt', 'confirmed_dt'):
+            out[key] = None if out[key] is None else str(out[key])
+        out['levels'] = [level.to_dict() for level in self.levels]
+        return out
+
+
+def _chain_windows(units, direction):
+    """区间内最后一个次级中枢与围绕它的对照/背驰段窗口(课61/53)。
+
+    leave为末次级中枢最后反向回试之后的全部单元, 延伸至区间
+    终点(含跨中枢移动单元); 中枢所在分解项单中枢时reference为
+    其进入段a, 多中枢时为前中枢回试后段b(课61"只要是围绕一中枢
+    的两段走势都可以比较力度"; 课53推广)。返回(code, reference,
+    leave, center_range): code为None时窗口成立; no_sub_center为
+    区间内无次级中枢; no_compare_legs为中枢存在但窗口不可建立
+    (无回试边界或对照/背驰段为空)。中枢区间冻结于首三单元,
+    延伸不改变(zd,zg)。
+    """
+    decomposed, traces = _level_up_traced(units)
+    last = next((i for i in range(len(traces) - 1, -1, -1)
+                 if traces[i]), None)
+    if last is None:
+        return 'no_sub_center', None, None, None
+    spans = traces[last]
+    last_end = _tail(units, spans[-1], direction)
+    if last_end is None:
+        return 'no_compare_legs', None, None, None
+    leave = units[last_end + 1:]
+    if not leave:
+        return 'no_compare_legs', None, None, None
+    if len(spans) == 1:
+        reference = units[decomposed[last].seg_start:spans[-1][0]]
+    else:
+        previous_end = _tail(units, spans[-2], direction)
+        if previous_end is None:
+            return 'no_compare_legs', None, None, None
+        reference = units[previous_end + 1:spans[-1][0]]
+    if not reference:
+        return 'no_compare_legs', None, None, None
+    return None, reference, leave, _range3(units, spans[-1][0])
+
+
+def _evaluate_chain_level(units, direction, force_fn):
+    """围绕区间内末次级中枢的两段比较(课61/课53盘整背驰推广)。
+
+    重2起不要求内部再构成两个分离中枢(课61原文只要求围绕一中枢
+    的两段; 重1严格趋势结构由scan_strict_divergence承担)。返回
+    七元组(status, reason, reference, leave, center_range,
+    ref_force, leave_force)。先验极值取该重区间内背驰段窗口之前
+    全部单元: 未创新极值即否决(课61"背驰如果没有创新高, 是不存
+    在的"), 父级c端点为极值时子级结构上恒真; 注入力度不减即反例
+    (课61"一旦力度大于前者, 那么就可以断定背驰段不成立");
+    力度未注入或不可用登记证据不足不否决, 由调用方继续下探。
+    """
+    code, reference, leave, center_range = _chain_windows(units, direction)
+    if code is not None:
+        return code, STRICT_INSUFFICIENT, None, None, None, None, None
+    prior = units[:len(units) - len(leave)]
+    made, _ = _new_extreme_state(
+        leave, direction,
+        max(_price(u.high) for u in prior),
+        min(_price(u.low) for u in prior))
+    if not made:
+        return 'no_new_extreme', STRICT_REJECTED, reference, leave, \
+            center_range, None, None
+    if force_fn is None:
+        return 'force_missing', STRICT_INSUFFICIENT, reference, leave, \
+            center_range, None, None
+    forces = force_fn(reference, leave)
+    if forces is None:
+        return 'force_unavailable', STRICT_INSUFFICIENT, reference, leave, \
+            center_range, None, None
+    ref_force, leave_force = forces
+    if not leave_force < ref_force:
+        return 'force_not_declining', STRICT_REJECTED, reference, leave, \
+            center_range, ref_force, leave_force
+    return 'bc', None, reference, leave, center_range, ref_force, leave_force
+
+
+def strict_nested_chain(divergence, units, layers, as_of,
+                        force_fn=None, force_method=None):
+    """严格趋势背驰的区间套次级确认链(课27定理/课61图解, R3)。
+
+    课61: "在没有证据否定背驰之前，就要观察从65开始的一段其内部
+    结构中的背驰情况，这种方法可以逐次下去，这就是区间套的定位
+    方法"。重1为传入的scan_strict_divergence结果(任意语义, 开放
+    尾部候选可当下定位); 重2起每重在上一重背驰段区间内取最后
+    一个次级中枢, 围绕它比较对照段与背驰段力度(课61/课53推广,
+    不要求重2起内部两个分离中枢)。
+
+    输入: units为产生divergence的父级单元(同一次扫描输入);
+    layers为逐重显式供给的(级别名, 单元表)序列, 级别邻接由调用
+    方明示, 不按K线周期名猜级别; 第k重单元须与第k-1重背驰段
+    区间时间首尾相等(否则not_covered)且端点价格对齐(否则报错,
+    价格坐标契约违反), 单元契约与scan_strict_divergence相同
+    (已确认走势, as_of前连续前缀)。force_fn/force_method注入
+    契约同scan_strict_divergence, 作用于每一重。
+
+    返回StrictChain: 每重status: bc(该重力度减弱)/
+    no_new_extreme/force_not_declining(否决, 停止下探),
+    force_missing/force_unavailable(力度证据缺失, 无否定证据
+    继续下探)/no_sub_center/no_compare_legs/not_covered(窗口
+    不可建立, 停止)。complete为最内一重bc; turn取最内bc重背驰
+    段终点时刻与极值价格(单元级数据不定位极值发生时刻, 父级
+    极值在c端点时两者重合); 父级已否决时break_depth=0/
+    parent_rejected, 重内否决时break_depth为该重重数;
+    confirmed_dt不早于任何被消费证据。输入修订须使用独立输入
+    版本, 不混用身份; 本入口不证明子单元识别正确, 真实性由
+    调用方声明。复杂度O(n^2)最坏(每重一次分解), 无跨调用缓存。
+    """
+    if not isinstance(divergence, StrictDivergence):
+        raise ValueError('divergence须为scan_strict_divergence结果')
+    if force_fn is not None and not (isinstance(force_method, str)
+                                     and force_method):
+        raise ValueError('注入force_fn时必须以force_method声明方法身份')
+    if not isinstance(layers, (list, tuple)):
+        raise TypeError('layers须为list或tuple')
+    for layer in layers:
+        if not isinstance(layer, (list, tuple)) or len(layer) != 2:
+            raise ValueError('layers项须为(级别名, 单元表)二元组')
+    parent_visible = _visible_units(units, as_of, divergence.level)[0]
+    parent_ids = dict((u.move_id, u) for u in parent_visible)
+    if any(name not in parent_ids for name in divergence.leave_ids):
+        raise ValueError('divergence.leave_ids须在as_of可见父级单元中')
+    parent_leave = [parent_ids[name] for name in divergence.leave_ids]
+    direction = 'down' if divergence.kind == 'buy1' else 'up'
+    levels = []
+    break_depth = break_reason = None
+    if divergence.status == STRICT_REJECTED:
+        break_depth, break_reason = 0, 'parent_rejected'
+    else:
+        interval = (parent_leave[0].start_dt, parent_leave[-1].end_dt,
+                    parent_leave[0].start_price, parent_leave[-1].end_price)
+        for depth, (layer_level, layer_units) in enumerate(layers, 1):
+            upper = divergence.level if depth == 1 else layers[depth - 2][0]
+            visible = _visible_units(layer_units, as_of, upper)[0]
+            if visible and visible[0].level != layer_level:
+                raise ValueError('声明的级别名须与该重单元级别一致')
+            if not visible or visible[0].start_dt != interval[0] \
+                    or visible[-1].end_dt != interval[1]:
+                status, reason = 'not_covered', STRICT_INSUFFICIENT
+                reference = leave = center_range = None
+                ref_force = leave_force = None
+            elif visible[0].start_price != interval[2] \
+                    or visible[-1].end_price != interval[3]:
+                raise ValueError('子单元端点价格须与上一重背驰段区间对齐')
+            else:
+                (status, reason, reference, leave, center_range,
+                 ref_force, leave_force) = _evaluate_chain_level(
+                    visible, direction, force_fn)
+            dt = price = None
+            if leave:
+                dt = leave[-1].end_dt
+                price = (min(_price(u.low) for u in leave)
+                         if direction == 'down'
+                         else max(_price(u.high) for u in leave))
+            levels.append(StrictChainLevel(
+                depth, layer_level, status, reason,
+                tuple(u.move_id for u in reference) if reference else (),
+                tuple(u.move_id for u in leave) if leave else (),
+                center_range,
+                force_method if force_fn is not None else None,
+                ref_force, leave_force,
+                visible[-1].confirmed_dt if visible else None,
+                dt, price))
+            if status in ('no_new_extreme', 'force_not_declining'):
+                break_depth, break_reason = depth, status
+                break
+            if status not in ('bc', 'force_missing', 'force_unavailable'):
+                break
+            if depth < len(layers) and leave:
+                interval = (leave[0].start_dt, leave[-1].end_dt,
+                            leave[0].start_price, leave[-1].end_price)
+    turn = next((level for level in reversed(levels)
+                 if level.status == 'bc'), None)
+    stamps = [divergence.confirmed_dt] + [level.confirmed_dt
+                                          for level in levels
+                                          if level.confirmed_dt is not None]
+    return StrictChain(
+        divergence.divergence_id, divergence.kind, divergence.level,
+        tuple(levels), len(levels),
+        bool(levels) and levels[-1].status == 'bc',
+        break_depth, break_reason,
+        turn.dt if turn is not None else None,
+        turn.price if turn is not None else None,
+        max(stamps))

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from chan import (ConfirmedMove, STRICT_CANDIDATE, STRICT_CONFIRMED,
                   STRICT_INSUFFICIENT, STRICT_REJECTED, StrictScan,
-                  scan_strict_divergence, travel_force)
+                  scan_strict_divergence, strict_nested_chain, travel_force)
 
 T = datetime(2025, 1, 1)
 # 完成下跌趋势: A=(88,94)系与B=(70,72)系波动分离, b=u8, c=u12-u14,
@@ -295,6 +295,328 @@ class TestStrictForceInjection(unittest.TestCase):
         self.assertIsNone(r.force_method)
         self.assertIsNone(r.force_reference)
         self.assertIsNone(r.force_leave)
+
+
+class TestStrictNestedChain(unittest.TestCase):
+    """课27/61: 区间套次级确认链——围绕末次级中枢的两段比较逐重下探。"""
+
+    @staticmethod
+    def _units(rows, level, start):
+        units = []
+        for i, (a, b, hours) in enumerate(rows):
+            s = start + timedelta(hours=sum(r[2] for r in rows[:i]))
+            e = s + timedelta(hours=hours)
+            units.append(ConfirmedMove('%s%d' % (level[0], i), level,
+                                       'up' if b > a else 'down',
+                                       s, e, a, b, min(a, b), max(a, b),
+                                       e + timedelta(minutes=2)))
+        return units
+
+    def sub_units(self):
+        """重2单元: 精确覆盖父级c段[T+240h,T+300h] 72->65。
+
+        分解: a=[s0], 中枢(68,69)=[s1,s2,s3](s4/s5触沿延伸), 最后
+        反向回试=s4, 背驰段=[s5]。
+        """
+        return self._units([(72, 70, 10), (70, 67.5, 5), (67.5, 69, 10),
+                            (69, 68, 5), (68, 69.5, 5), (69.5, 65, 25)],
+                           'sub', T + timedelta(hours=240))
+
+    def tick_units(self):
+        """重3单元: 精确覆盖重2背驰段[T+275h,T+300h] 69.5->65。
+
+        分解: a=[t0], 中枢(66.8,67.8)=[t1,t2,t3](t4/t5触沿延伸),
+        最后反向回试=t4, 背驰段=[t5]。
+        """
+        return self._units([(69.5, 68, 10), (68, 66.5, 4), (66.5, 67.8, 4),
+                            (67.8, 66.8, 2), (66.8, 67.5, 2), (67.5, 65, 3)],
+                           'tick', T + timedelta(hours=275))
+
+    def test_bc_chain_completes_with_injected_force(self):
+        """重2力度减弱bc: 转折定位在该重背驰段终点与极值价格。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        sub = self.sub_units()
+        chain = strict_nested_chain(r, units, [('sub', sub)], now,
+                                    force_fn=lambda ref, lv: (10.0, 5.0),
+                                    force_method='unit_travel')
+        self.assertEqual(chain.divergence_id, r.divergence_id)
+        self.assertEqual((chain.kind, chain.level), ('buy1', 'main'))
+        self.assertEqual(chain.depth, 1)
+        self.assertTrue(chain.complete)
+        self.assertIsNone(chain.break_depth)
+        self.assertIsNone(chain.break_reason)
+        lv = chain.levels[0]
+        self.assertEqual((lv.depth, lv.level, lv.status, lv.reason),
+                         (1, 'sub', 'bc', None))
+        self.assertEqual(lv.reference_ids, ('s0',))
+        self.assertEqual(lv.leave_ids, ('s5',))
+        self.assertEqual(lv.center_range, (68.0, 69.0))
+        self.assertEqual((lv.force_method, lv.force_reference, lv.force_leave),
+                         ('unit_travel', 10.0, 5.0))
+        self.assertEqual((lv.dt, lv.price), (sub[5].end_dt, 65.0))
+        self.assertEqual((chain.turn_dt, chain.turn_price),
+                         (sub[5].end_dt, 65.0))
+        self.assertGreaterEqual(chain.confirmed_dt, sub[5].confirmed_dt)
+        self.assertGreaterEqual(chain.confirmed_dt, r.confirmed_dt)
+
+    def test_travel_force_not_declining_breaks(self):
+        """内置行程力度不减即反例, 该重否决(课61力度大于前者)。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        sub = self.sub_units()
+        chain = strict_nested_chain(
+            r, units, [('sub', sub)], now,
+            force_fn=lambda ref, lv: (travel_force(ref), travel_force(lv)),
+            force_method='unit_travel')
+        lv = chain.levels[0]
+        self.assertEqual((lv.status, lv.reason),
+                         ('force_not_declining', STRICT_REJECTED))
+        self.assertEqual((chain.break_depth, chain.break_reason),
+                         (1, 'force_not_declining'))
+        self.assertFalse(chain.complete)
+        self.assertIsNone(chain.turn_dt)
+        self.assertEqual(lv.force_reference, travel_force(sub[:1]))
+        self.assertEqual(lv.force_leave, travel_force(sub[5:]))
+
+    def test_force_missing_descends_to_next_layer(self):
+        """力度未注入不否决: 无否定证据继续下探(课61), 窗口逐重传递。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        chain = strict_nested_chain(
+            r, units, [('sub', self.sub_units()), ('tick', self.tick_units())],
+            now)
+        self.assertEqual(chain.depth, 2)
+        self.assertEqual([lv.status for lv in chain.levels],
+                         ['force_missing', 'force_missing'])
+        self.assertEqual([lv.reason for lv in chain.levels],
+                         [STRICT_INSUFFICIENT, STRICT_INSUFFICIENT])
+        self.assertFalse(chain.complete)
+        self.assertIsNone(chain.turn_dt)
+        self.assertEqual(chain.levels[1].reference_ids, ('t0',))
+        self.assertEqual(chain.levels[1].leave_ids, ('t5',))
+        self.assertEqual(chain.levels[1].center_range, (66.8, 67.8))
+
+    def test_force_unavailable_descends(self):
+        """方法对该输入不可用登记证据不足, 同样继续下探。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        chain = strict_nested_chain(
+            r, units, [('sub', self.sub_units()), ('tick', self.tick_units())],
+            now, force_fn=lambda ref, lv: None, force_method='macd_area')
+        self.assertEqual([lv.status for lv in chain.levels],
+                         ['force_unavailable', 'force_unavailable'])
+        self.assertEqual([lv.force_method for lv in chain.levels],
+                         ['macd_area', 'macd_area'])
+        self.assertFalse(chain.complete)
+
+    def test_double_layer_bc_chain_locates_turn_at_innermost(self):
+        """双层bc链: 转折取最内重背驰段终点与极值(课61逐重嵌套)。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        tick = self.tick_units()
+        chain = strict_nested_chain(
+            r, units, [('sub', self.sub_units()), ('tick', tick)], now,
+            force_fn=lambda ref, lv: (10.0, 5.0),
+            force_method='unit_travel')
+        self.assertEqual(chain.depth, 2)
+        self.assertTrue(chain.complete)
+        self.assertEqual([lv.status for lv in chain.levels], ['bc', 'bc'])
+        self.assertEqual((chain.turn_dt, chain.turn_price),
+                         (tick[5].end_dt, 65.0))
+        lv2 = chain.levels[1]
+        self.assertEqual((lv2.reference_ids, lv2.leave_ids),
+                         (('t0',), ('t5',)))
+        self.assertGreaterEqual(chain.confirmed_dt, tick[5].confirmed_dt)
+
+    def test_inner_rejection_keeps_outer_turn(self):
+        """重3力度不减否决该重, 转折仍取最内bc重(重2)定位。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        sub = self.sub_units()
+        values = [(10.0, 5.0), (0.5, 3.0)]
+        calls = []
+
+        def fn(reference, leave):
+            value = values[len(calls)]
+            calls.append(1)
+            return value
+
+        chain = strict_nested_chain(
+            r, units, [('sub', sub), ('tick', self.tick_units())], now,
+            force_fn=fn, force_method='unit_travel')
+        self.assertEqual([lv.status for lv in chain.levels],
+                         ['bc', 'force_not_declining'])
+        self.assertEqual((chain.break_depth, chain.break_reason),
+                         (2, 'force_not_declining'))
+        self.assertFalse(chain.complete)
+        self.assertEqual((chain.turn_dt, chain.turn_price),
+                         (sub[5].end_dt, 65.0))
+        self.assertEqual((chain.levels[1].force_reference,
+                          chain.levels[1].force_leave), (0.5, 3.0))
+
+    def test_candidate_parent_chain_locates_turn_now(self):
+        """开放尾部候选可当下定位: 重2bc链在候选父级上成立(课61)。"""
+        units, _ = sample()
+        scan = scan_strict_divergence(units, units[14].confirmed_dt, 'main')
+        r = scan.results[0]
+        self.assertEqual(r.status, STRICT_CANDIDATE)
+        self.assertEqual(r.leave_ids, ('u12', 'u13', 'u14'))
+        chain = strict_nested_chain(r, units, [('sub', self.sub_units())],
+                                    units[14].confirmed_dt,
+                                    force_fn=lambda ref, lv: (10.0, 5.0),
+                                    force_method='unit_travel')
+        self.assertTrue(chain.complete)
+        self.assertEqual(chain.turn_price, 65.0)
+        self.assertIsNone(chain.break_depth)
+
+    def test_no_new_extreme_rejects_sub_level(self):
+        """课61: 子级未创新低即否决该重背驰段假设(候选父级可达)。"""
+        units, _ = sample()
+        scan = scan_strict_divergence(units, units[13].confirmed_dt, 'main')
+        r = scan.results[0]
+        self.assertEqual(r.leave_ids, ('u12', 'u13'))
+        flat = self._units([(72, 70, 10), (70, 67.5, 5), (67.5, 69, 10),
+                            (69, 68, 5), (68, 69.5, 5), (69.5, 69, 5)],
+                           'sub', T + timedelta(hours=240))
+        chain = strict_nested_chain(r, units, [('sub', flat)],
+                                    units[13].confirmed_dt)
+        lv = chain.levels[0]
+        self.assertEqual((lv.status, lv.reason),
+                         ('no_new_extreme', STRICT_REJECTED))
+        self.assertEqual((chain.break_depth, chain.break_reason),
+                         (1, 'no_new_extreme'))
+        self.assertFalse(chain.complete)
+        self.assertIsNone(chain.turn_dt)
+
+    def test_not_covered_by_truncated_layer(self):
+        """子单元未覆盖上一重背驰段区间登记not_covered, 不猜窗口。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        chain = strict_nested_chain(r, units, [('sub', self.sub_units()[:4])],
+                                    now)
+        lv = chain.levels[0]
+        self.assertEqual((lv.status, lv.reason),
+                         ('not_covered', STRICT_INSUFFICIENT))
+        self.assertEqual(lv.reference_ids, ())
+        self.assertEqual(lv.leave_ids, ())
+        self.assertIsNone(lv.center_range)
+        self.assertIsNone(lv.dt)
+        self.assertIsNone(lv.price)
+        self.assertFalse(chain.complete)
+
+    def test_not_covered_empty_layer(self):
+        """空单元表不可见任何证据: not_covered且该重确认时间为空。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        chain = strict_nested_chain(r, units, [('sub', [])], now)
+        lv = chain.levels[0]
+        self.assertEqual((lv.status, lv.reason),
+                         ('not_covered', STRICT_INSUFFICIENT))
+        self.assertIsNone(lv.confirmed_dt)
+
+    def test_no_sub_center(self):
+        """区间内无次级中枢(单调下行不成重叠)登记证据不足。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        flat = self._units([(72, 68, 20), (68, 66, 20), (66, 65, 20)],
+                           'sub', T + timedelta(hours=240))
+        chain = strict_nested_chain(r, units, [('sub', flat)], now)
+        self.assertEqual((chain.levels[0].status, chain.levels[0].reason),
+                         ('no_sub_center', STRICT_INSUFFICIENT))
+
+    def test_no_compare_legs(self):
+        """中枢在区间首单元起(进入段为空): 对照窗口不可建立。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        legs = self._units([(72, 70, 10), (70, 71, 10), (71, 69, 10),
+                            (69, 68, 10), (68, 65, 20)],
+                           'sub', T + timedelta(hours=240))
+        chain = strict_nested_chain(r, units, [('sub', legs)], now)
+        self.assertEqual((chain.levels[0].status, chain.levels[0].reason),
+                         ('no_compare_legs', STRICT_INSUFFICIENT))
+
+    def test_parent_rejected_short_circuits(self):
+        """父级已否决: 不消费任何重, break_depth=0/parent_rejected。"""
+        prices = [120, 110, 115, 108, 114, 90, 95, 88, 94, 70, 74, 60, 72, 67, 69, 65, 76]
+        units, now = sample(prices)
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        self.assertEqual(r.status, STRICT_REJECTED)
+        chain = strict_nested_chain(r, units, [('sub', self.sub_units())], now)
+        self.assertEqual(chain.levels, ())
+        self.assertEqual(chain.depth, 0)
+        self.assertEqual((chain.break_depth, chain.break_reason),
+                         (0, 'parent_rejected'))
+        self.assertFalse(chain.complete)
+        self.assertIsNone(chain.turn_dt)
+        self.assertIsNone(chain.turn_price)
+        self.assertEqual(chain.confirmed_dt, r.confirmed_dt)
+
+    def test_price_misalignment_raises(self):
+        """时间覆盖但端点价格不对齐: 价格坐标契约违反报错。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        bad = self._units([(71.9, 67, 20), (67, 69, 20), (69, 66, 10),
+                           (66, 65, 10)],
+                          'sub', T + timedelta(hours=240))
+        with self.assertRaises(ValueError):
+            strict_nested_chain(r, units, [('sub', bad)], now)
+
+    def test_layer_level_mismatch_raises(self):
+        """声明的级别名须与该重单元级别一致。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        with self.assertRaises(ValueError):
+            strict_nested_chain(r, units, [('other', self.sub_units())], now)
+
+    def test_leave_ids_must_be_visible(self):
+        """父级leave_ids不在as_of可见单元中: 输入与结果不配套报错。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        with self.assertRaises(ValueError):
+            strict_nested_chain(r, units[:10], [], now)
+
+    def test_chain_requires_divergence_result(self):
+        """divergence须为scan_strict_divergence结果, layers须为序列。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        with self.assertRaises(ValueError):
+            strict_nested_chain(object(), units, [], now)
+        with self.assertRaises(TypeError):
+            strict_nested_chain(r, units, 'bad', now)
+
+    def test_chain_injection_requires_method_identity(self):
+        """链上注入force_fn同样必须声明方法身份。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        with self.assertRaises(ValueError):
+            strict_nested_chain(r, units, [('sub', self.sub_units())], now,
+                                force_fn=lambda ref, lv: (10.0, 5.0))
+
+    def test_chain_to_dict_roundtrip(self):
+        """存档格式: 层级嵌套转列表, 时间转字符串, 区间转列表。"""
+        units, now = sample()
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        chain = strict_nested_chain(r, units, [('sub', self.sub_units())],
+                                    now, force_fn=lambda ref, lv: (10.0, 5.0),
+                                    force_method='unit_travel')
+        out = chain.to_dict()
+        self.assertIsInstance(out['turn_dt'], str)
+        self.assertIsInstance(out['confirmed_dt'], str)
+        self.assertEqual(sorted(out.keys()), sorted([
+            'divergence_id', 'kind', 'level', 'levels', 'depth', 'complete',
+            'break_depth', 'break_reason', 'turn_dt', 'turn_price',
+            'confirmed_dt']))
+        lv = out['levels'][0]
+        self.assertEqual(sorted(lv.keys()), sorted([
+            'depth', 'level', 'status', 'reason', 'reference_ids',
+            'leave_ids', 'center_range', 'force_method', 'force_reference',
+            'force_leave', 'confirmed_dt', 'dt', 'price']))
+        self.assertEqual(lv['center_range'], [68.0, 69.0])
+        self.assertEqual(lv['reference_ids'], ['s0'])
+        self.assertEqual(lv['leave_ids'], ['s5'])
+        self.assertIsInstance(lv['confirmed_dt'], str)
+        self.assertIsInstance(lv['dt'], str)
 
 
 if __name__ == "__main__":
