@@ -19,6 +19,7 @@
     macd_guard - MACD双线负区防狼判据(课103)
     bottom  - 基于确认事件的底部/顶部构造(课108)
     sector  - 本轮反弹均线类别与板块强弱(课106)
+    strict  - 严格趋势背驰结构条件与四类返回语义(课24/27/37/53/61/101)
 
 顶层 API: 本模块重新导出各子模块的公开入口, 因此:
     from chan import find_zs, confirm_buy3_30m
@@ -90,8 +91,11 @@ from chan.fractal_range import (ConfirmedFractalRange, FractalRangeState,
                                 fractal_range_state)
 from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
                          classify_ma_strength, ma_strength_class, sector_strength)
+from chan.strict import (STRICT_CANDIDATE, STRICT_CONFIRMED, STRICT_INSUFFICIENT,
+                         STRICT_REJECTED, StrictDivergence, StrictScan,
+                         scan_strict_divergence)
 
-__version__ = "0.10.0"
+__version__ = "0.10.1"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
@@ -169,6 +173,10 @@ __all__ = [
     "ma_break_state",
     # chan.macd_guard MACD零轴防狼术(课103)
     "macd_below_zero", "macd_guard_series",
+    # chan.strict 严格趋势背驰结构条件与四类返回语义(课24/27/37/53/61/101)
+    "STRICT_CANDIDATE", "STRICT_CONFIRMED", "STRICT_INSUFFICIENT",
+    "STRICT_REJECTED", "StrictDivergence", "StrictScan",
+    "scan_strict_divergence",
     # 版本号
     "__version__",
 ]

@@ -1040,6 +1040,31 @@ confirm=1)`。`MaClassResult` 记录类别、各均线状态和攻克位置。
 均值只统计已知类别，需要同时查看 `coverage/valid_count/total_count`；
 空板块或无有效成员时均值为 None，不填成第 1 类或 0。
 
+### 15.15 严格趋势背驰结构条件（0.10.1）
+
+```python
+from chan import scan_strict_divergence, STRICT_INSUFFICIENT
+
+# units 是与 confirm_level_up 同契约的已确认连续前缀
+scan = scan_strict_divergence(units, as_of, 'main')
+for r in scan.results:
+    print(r.kind, r.status, r.reason, r.conditions)
+```
+
+`scan_strict_divergence(units, as_of, level)` 只判结构必要条件，
+不内置力度方法。完成趋势输出四类语义之一：`candidate`（开放尾部
+趋势，课61"先假设进入背驰段"，同一尾部起点同一身份，完成后落为
+最终语义）、`confirmed`（本版恒不可达，留力度注入版本）、
+`insufficient_evidence`（结构闭合但必需证据缺失：力度未注入、
+内部极值时间未知、零宽中枢）、`rejected`（中枢波动重叠、无新极值、
+c 无末中枢三类点，保留首个否决条件）。
+
+结构条件四项：趋势存在（课27/37）、中枢周围波动严格分离（课20/61）、
+c 极值超越全趋势先验极值且恰在 c 端点（课37/61）、c 内含末中枢
+次级别三类点（课37）。每项结果保留趋势/中枢/比较段单元身份与最晚
+确认时刻。与 0.7.5 的 MACD 辅助候选（`find_first_points`）分别：
+辅助候选不因本模块存在而改名严格（课24明示 MACD"不绝对精确"）。
+
 ## 16. 原图与真实算术回归
 
 包内测试夹具（fixtures）分两族：**原图几何标注**与**真实行情独立标注**。
