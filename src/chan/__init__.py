@@ -97,8 +97,10 @@ from chan.strict import (STRICT_CANDIDATE, STRICT_CONFIRMED, STRICT_INSUFFICIENT
                          StrictDivergence, StrictScan,
                          scan_strict_divergence, strict_completion_cascade,
                          strict_nested_chain, travel_force)
+from chan.lineage import (CenterEvent, CenterLineage, CenterVersion,
+                          track_center_lineage)
 
-__version__ = "0.10.6"
+__version__ = "0.11.1"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
@@ -183,6 +185,9 @@ __all__ = [
     "StrictCompletion", "StrictCompletionLevel",
     "scan_strict_divergence", "strict_completion_cascade",
     "strict_nested_chain", "travel_force",
+    # chan.lineage 中枢演化谱系(课20/35)
+    "CenterEvent", "CenterLineage", "CenterVersion",
+    "track_center_lineage",
     # 版本号
     "__version__",
 ]
