@@ -5,8 +5,9 @@ from datetime import datetime, timedelta
 
 from chan import (ConfirmedMove, STRICT_CANDIDATE, STRICT_CONFIRMED,
                    STRICT_INSUFFICIENT, STRICT_REJECTED, StrictScan,
-                   scan_strict_divergence, strict_completion_cascade,
-                   strict_nested_chain, travel_force)
+                   find_first_points, scan_strict_divergence,
+                   strict_completion_cascade, strict_nested_chain,
+                   travel_force)
 
 T = datetime(2025, 1, 1)
 # 完成下跌趋势: A=(88,94)系与B=(70,72)系波动分离, b=u8, c=u12-u14,
@@ -841,6 +842,104 @@ class TestStrictCompletionCascade(unittest.TestCase):
         self.assertEqual(lv['unit_ids'], ['s0', 's1', 's2', 's3', 's4'])
         self.assertIsInstance(lv['confirmed_dt'], str)
         self.assertIsInstance(out['confirmed_dt'], str)
+
+
+def bars(prices=PRICES, n=20):
+    """与sample()同时间戳的线性路径行情: MACD辅助证据输入。"""
+    rows = []
+    for i, (a, b) in enumerate(zip(prices, prices[1:])):
+        for j in range(n):
+            dt = T + timedelta(hours=i * n + j)
+            p = a + (b - a) * j / n
+            rows.append(dict(dt=dt, open=p, high=p, low=p, close=p,
+                             volume=100., closed_dt=dt,
+                             available_dt=dt + timedelta(minutes=1)))
+    dt = T + timedelta(hours=(len(prices) - 1) * n)
+    p = prices[-1]
+    rows.append(dict(dt=dt, open=p, high=p, low=p, close=p, volume=100.,
+                     closed_dt=dt, available_dt=dt + timedelta(minutes=1)))
+    return rows
+
+
+class TestStrictR3Closeout(unittest.TestCase):
+    """§11.6边界清单收口: 平端点触平、迟到历史数据、MACD辅助并列示例。"""
+
+    def sample_with_reference_dip(self, leave_end):
+        """参考段u8单元内下探66回收70设置前低, 离开段低点恰触66。"""
+        prices = list(PRICES)
+        prices[13] = 66
+        prices[15] = leave_end
+        units = []
+        for i, (a, b) in enumerate(zip(prices, prices[1:])):
+            s = T + timedelta(hours=i * 20)
+            e = T + timedelta(hours=(i + 1) * 20)
+            low = 66 if i == 8 else min(a, b)
+            units.append(ConfirmedMove('u%d' % i, 'base',
+                                       'up' if b > a else 'down', s, e,
+                                       a, b, low, max(a, b),
+                                       e + timedelta(minutes=2)))
+        now = T + timedelta(hours=(len(prices) - 1) * 20) + timedelta(days=1)
+        return units, now
+
+    def test_flat_touch_extreme_is_no_new_extreme(self):
+        """平端点触平: 离开段低点恰触前低66不构成新低(课37/61严格
+        超越口径, 触平非创新); 破一位(65)即结构闭合, 等值边界精确。"""
+        units, now = self.sample_with_reference_dip(66)
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        self.assertEqual((r.status, r.reason),
+                         (STRICT_REJECTED, 'no_new_extreme'))
+        self.assertEqual(r.conditions[-1], ('new_extreme', False))
+        self.assertEqual(r.leave_ids, ('u12', 'u13', 'u14'))
+        self.assertEqual(r.price, 66.0)
+        units, now = self.sample_with_reference_dip(65)
+        r = scan_strict_divergence(units, now, 'main').results[0]
+        self.assertEqual((r.status, r.reason),
+                         (STRICT_INSUFFICIENT, 'force_missing'))
+        self.assertEqual(r.price, 65.0)
+
+    def test_late_history_requires_rebuilt_version(self):
+        """迟到历史数据不静默参与: 可见单元须连续前缀, 乱序到达须由
+        调用方重建版本(R3规格边界清单), 按时版本不受影响。"""
+        units, now = sample()
+        late = units[10]._replace(
+            confirmed_dt=units[16].end_dt + timedelta(minutes=2))
+        mixed = list(units)
+        mixed[10] = late
+        with self.assertRaises(ValueError):
+            scan_strict_divergence(mixed, units[15].confirmed_dt, 'main')
+        scan = scan_strict_divergence(units, units[15].confirmed_dt, 'main')
+        self.assertEqual(len(scan.results), 1)
+
+    def test_macd_auxiliary_and_strict_are_separate(self):
+        """§11.6交付物并列示例: 同一样本上MACD辅助候选与严格结构
+        条件互不冒名——辅助输出method=macd_area不赋予严格身份;
+        严格扫描不消费MACD面积, 力度证据仅经显式注入并声明方法
+        身份(四分离)。"""
+        units, now = sample()
+        points = find_first_points(units, bars(), now, 'main')
+        self.assertEqual(len(points), 1)
+        point = points[0]
+        self.assertEqual((point.method, point.kind), ('macd_area', 'buy1'))
+        self.assertGreater(point.reference_area, point.leave_area)
+        scan = scan_strict_divergence(units, now, 'main')
+        self.assertEqual(len(scan.results), 1)
+        r = scan.results[0]
+        self.assertEqual((r.status, r.reason),
+                         (STRICT_INSUFFICIENT, 'force_missing'))
+        self.assertIsNone(r.force_method)
+        self.assertEqual(r.trend_id, point.trend_id)
+
+        def macd_area_force(reference, leave):
+            return (point.reference_area, point.leave_area)
+
+        confirmed = scan_strict_divergence(units, now, 'main',
+                                           macd_area_force, 'macd_area')
+        r2 = confirmed.results[0]
+        self.assertEqual((r2.status, r2.reason),
+                         (STRICT_CONFIRMED, 'force_decline'))
+        self.assertEqual(r2.force_method, 'macd_area')
+        self.assertEqual(r2.force_reference, point.reference_area)
+        self.assertEqual(r2.force_leave, point.leave_area)
 
 
 if __name__ == "__main__":

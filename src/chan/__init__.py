@@ -98,7 +98,7 @@ from chan.strict import (STRICT_CANDIDATE, STRICT_CONFIRMED, STRICT_INSUFFICIENT
                          scan_strict_divergence, strict_completion_cascade,
                          strict_nested_chain, travel_force)
 
-__version__ = "0.10.5"
+__version__ = "0.10.6"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
