@@ -109,6 +109,21 @@ def first_point_contexts(units, first_points, as_of, level):
     return out
 
 
+def _handover_dt(points, point):
+    """同侧后继一类点的最早确认时刻; 课101新锚点接管中阴的移交点。
+
+    只认锚点时间更晚的同类一类点, 取其确认时刻最早者; 跨侧移交与
+    同锚点并存保持显式待判, 不自动停发。返回None表示尚无移交。
+    """
+    out = None
+    for other in points:
+        if other.kind != point.kind or not point.dt < other.dt:
+            continue
+        if out is None or other.confirmed_dt < out:
+            out = other.confirmed_dt
+    return out
+
+
 def analyze_point_chain(units, bars, as_of, level, zero_axis_ratio=0.005):
     """自动一类候选→上下文→二三类条件→底/顶构造的薄组合入口。
 
@@ -116,10 +131,13 @@ def analyze_point_chain(units, bars, as_of, level, zero_axis_ratio=0.005):
     一类由MACD辅助法产生, 因果中枢由确认次级前缀形成。三类输出
     使用一买/一卖后首次中枢; 二三合一另用原趋势中枢。未知中枢时
     底/顶保持构造中; 更大级别重组身份继承不在本入口中。
+    新一类开启新轮次; 同侧后继一类点确认后旧轮中阴被新锚点接管
+    (移交), 其二类点停发, 已确认点位不回写; 三类点与构造判定独立
+    继续(课101中阴结束后只剩三类点)。
     """
     points = find_first_points(units, bars, as_of, level, zero_axis_ratio)
     contexts = first_point_contexts(units, points, as_of, level)
-    visible, _ = _visible_units(units, as_of, level)
+    visible, kind = _visible_units(units, as_of, level)
     thirds, second_points, formations, adjusted = [], [], [], []
     for c in contexts:
         p = c.first_point
@@ -133,7 +151,13 @@ def analyze_point_chain(units, bars, as_of, level, zero_axis_ratio=0.005):
                   for t in related]
         state = formation_state(event, event.center_id, events, as_of)
         formations.append(state)
-        second = c.second_context._replace(ended_dt=state.end_dt)
+        ended = state.end_dt
+        handover = _handover_dt(points, p)
+        if handover is not None and handover < p.confirmed_dt:
+            handover = p.confirmed_dt  # 退化到达序: 移交不早于本轮可见。
+        if handover is not None and (ended is None or _time(handover, kind) < _time(ended, kind)):
+            ended = handover  # 课101: 回升/回落中阴被新锚点接管后停发二类点。
+        second = c.second_context._replace(ended_dt=ended)
         adjusted.append(c._replace(second_context=second))
         centers = {}
         if c.previous_center.confirmed_dt <= p.dt:

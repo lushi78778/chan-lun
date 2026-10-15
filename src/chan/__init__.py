@@ -99,8 +99,9 @@ from chan.strict import (STRICT_CANDIDATE, STRICT_CONFIRMED, STRICT_INSUFFICIENT
                          strict_nested_chain, travel_force)
 from chan.lineage import (CenterEvent, CenterLineage, CenterVersion,
                           track_center_lineage)
+from chan.rounds import Round, RoundChain, track_rounds
 
-__version__ = "0.11.2"
+__version__ = "0.11.3"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
@@ -185,6 +186,8 @@ __all__ = [
     "StrictCompletion", "StrictCompletionLevel",
     "scan_strict_divergence", "strict_completion_cascade",
     "strict_nested_chain", "travel_force",
+    # chan.rounds 反转轮次与移交(课101/108)
+    "Round", "RoundChain", "track_rounds",
     # chan.lineage 中枢演化谱系(课20/35)
     "CenterEvent", "CenterLineage", "CenterVersion",
     "track_center_lineage",
