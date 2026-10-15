@@ -99,9 +99,10 @@ from chan.strict import (STRICT_CANDIDATE, STRICT_CONFIRMED, STRICT_INSUFFICIENT
                          strict_nested_chain, travel_force)
 from chan.lineage import (CenterEvent, CenterLineage, CenterVersion,
                           track_center_lineage)
+from chan.causal_graph import causal_graph_dot
 from chan.rounds import Round, RoundChain, track_rounds
 
-__version__ = "0.11.4"
+__version__ = "0.11.5"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
@@ -191,6 +192,8 @@ __all__ = [
     # chan.lineage 中枢演化谱系(课20/35)
     "CenterEvent", "CenterLineage", "CenterVersion",
     "track_center_lineage",
+    # chan.causal_graph 可视因果图(§11.7 R4)
+    "causal_graph_dot",
     # 版本号
     "__version__",
 ]
