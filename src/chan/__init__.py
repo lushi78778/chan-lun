@@ -100,7 +100,7 @@ from chan.strict import (STRICT_CANDIDATE, STRICT_CONFIRMED, STRICT_INSUFFICIENT
 from chan.lineage import (CenterEvent, CenterLineage, CenterVersion,
                           track_center_lineage)
 
-__version__ = "0.11.1"
+__version__ = "0.11.2"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",

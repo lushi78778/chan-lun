@@ -256,5 +256,126 @@ class TestBoundaries(unittest.TestCase):
         json.dumps(data)
 
 
+class TestExpandedUp(unittest.TestCase):
+    """课20开篇/定理二 higher_level 触发升级事件(0.11.2)。"""
+
+    def test_sample_single_expanded_up_event(self):
+        """A→B 波动重叠触发一次升级: 上层新身份、来源谱系、波动交集。"""
+        units, now = sample()
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        ups = [e for e in lineage.events if e.kind == 'expanded_up']
+        self.assertEqual(len(ups), 1)
+        up = ups[0]
+        self.assertEqual(up.level, 'trend')
+        self.assertEqual(up.center_id, '["trend","u0","u5"]')
+        self.assertEqual(up.version, 0)
+        self.assertEqual(up.source_center_ids,
+                         ('["main","u0"]', '["main","u5"]'))
+        self.assertEqual(up.confirmed_dt, units[7].confirmed_dt)
+        # 同批 formed(rank 0) 先于 expanded_up(rank 2)
+        idx = lineage.events.index(up)
+        self.assertEqual(lineage.events[idx - 1].kind, 'formed')
+        self.assertEqual(lineage.events[idx - 1].center_id, '["main","u5"]')
+        snap = lineage.snapshot('["trend","u0","u5"]', 0)
+        self.assertEqual((snap.zd, snap.zg, snap.gg, snap.dd),
+                         (90.0, 95.0, 120.0, 88.0))  # 交集/并集口径
+        self.assertEqual(snap.level, 'trend')
+        self.assertEqual(snap.unit_ids, tuple('u%d' % i for i in range(8)))
+        self.assertEqual((snap.start_dt, snap.end_dt),
+                         (units[0].start_dt, units[7].end_dt))
+        # 其余关系不触发: down_continue/overlap 无升级事件
+        relations = [e.relation for e in lineage.events
+                     if e.kind == 'formed']
+        self.assertEqual(relations, [None, 'higher_level',
+                                     'down_continue', 'overlap'])
+        self.assertEqual(len(lineage.centers), 13)  # 12 + 1 上层快照
+        self.assertEqual(len(lineage.events), 13)
+
+    def test_expanded_up_disabled_without_upper_level(self):
+        """缺省 upper_level 不产生升级事件, 行为与 0.11.1 一致。"""
+        units, now = sample()
+        lineage = track_center_lineage(units, now, 'main')
+        self.assertEqual(set(e.kind for e in lineage.events),
+                         {'formed', 'extended'})
+        self.assertTrue(all(e.source_center_ids == ()
+                            for e in lineage.events))
+        self.assertEqual(len(lineage.events), 12)
+
+    def test_chained_pairs_two_expanded_up(self):
+        """连续两对波动重叠各登记一次升级, 第二对为零宽上层中枢。"""
+        # u9=70→88 使 C3 首三段 Z 段即触及 C2 波动(88>=88), B→C 亦
+        # higher_level; 上层交集 [88,88] 退化为一点(闭区间端点相等)。
+        prices = [120, 110, 115, 108, 114, 90, 95, 88, 94,
+                  70, 88, 70, 74, 67, 69, 65, 76]
+        units, now = sample(prices)
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        formed = [e for e in lineage.events if e.kind == 'formed']
+        self.assertEqual([e.relation for e in formed],
+                         [None, 'higher_level', 'higher_level'])
+        ups = [e for e in lineage.events if e.kind == 'expanded_up']
+        self.assertEqual([e.center_id for e in ups],
+                         ['["trend","u0","u5"]', '["trend","u5","u9"]'])
+        self.assertEqual(ups[1].source_center_ids,
+                         ('["main","u5"]', '["main","u9"]'))
+        self.assertEqual(ups[1].confirmed_dt, units[11].confirmed_dt)
+        snap2 = lineage.snapshot('["trend","u5","u9"]', 0)
+        self.assertEqual((snap2.zd, snap2.zg), (88.0, 88.0))
+        self.assertEqual((snap2.gg, snap2.dd), (95.0, 70.0))
+        self.assertEqual(snap2.unit_ids,
+                         tuple('u%d' % i for i in range(5, 12)))
+        # 批内定序: formed < expanded_up; 升级后同批无 extended
+        kinds = [e.kind for e in lineage.events]
+        self.assertEqual(kinds, ['formed', 'extended', 'extended',
+                                 'formed', 'expanded_up', 'extended',
+                                 'formed', 'expanded_up', 'extended'])
+
+    def test_mirror_expanded_up(self):
+        """镜像样本升级事件对称: 交集区间按镜像变换。"""
+        units, now = sample([230 - p for p in PRICES])
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        ups = [e for e in lineage.events if e.kind == 'expanded_up']
+        self.assertEqual(len(ups), 1)
+        self.assertEqual(ups[0].center_id, '["trend","u0","u5"]')
+        snap = lineage.snapshot('["trend","u0","u5"]', 0)
+        self.assertEqual((snap.zd, snap.zg, snap.gg, snap.dd),
+                         (135.0, 140.0, 142.0, 110.0))
+
+    def test_zero_rewrite_with_expanded_up(self):
+        """升级事件同样零回写: 早前 as_of 事件为更晚 as_of 严格前缀。"""
+        units, now = sample()
+        prefix = track_center_lineage(units, units[7].confirmed_dt,
+                                      'main', 'trend')
+        full = track_center_lineage(units, now, 'main', 'trend')
+        self.assertEqual(len(prefix.events), 5)  # 含 C2 formed + 升级
+        self.assertEqual(full.events[:5], prefix.events)
+        self.assertEqual(full.centers[:5], prefix.centers)
+        prefix8 = track_center_lineage(units, units[8].confirmed_dt,
+                                       'main', 'trend')
+        self.assertEqual(full.events[:6], prefix8.events)
+
+    def test_upper_level_validation(self):
+        """upper_level 须为输入与 next_level 之上的明示级别名。"""
+        units, now = sample()
+        with self.assertRaises(ValueError):
+            track_center_lineage(units, now, 'main', 'main')
+        with self.assertRaises(ValueError):
+            track_center_lineage(units, now, 'main', 'base')
+        with self.assertRaises(ValueError):
+            track_center_lineage(units, now, 'main', '')
+        empty = track_center_lineage([], now, 'main', 'trend')
+        self.assertEqual((empty.centers, empty.events), ((), ()))
+
+    def test_expanded_up_to_dict(self):
+        """升级事件 to_dict 携带来源谱系列表, 可 JSON 序列化。"""
+        units, now = sample()
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        up = [d for d in lineage.to_dict()['events']
+              if d['kind'] == 'expanded_up'][0]
+        self.assertEqual(up['source_center_ids'],
+                         ['["main","u0"]', '["main","u5"]'])
+        self.assertEqual(up['level'], 'trend')
+        json.dumps(lineage.to_dict())
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -16,21 +16,31 @@ chan.lineage —— 中枢演化谱系(课 20/35, 计划 §11.7)
 口径上重放该状态机(recurse._level_up_traced), 不复制或改变
 公开切分规则。
 
-事件模型(0.11.1 范围):
+事件模型(0.11.2 范围):
   - formed: 中枢首现, 冻结首三段交集 [ZD,ZG](端点连续下与课 20
     ZG=min(g1,g2)/ZD=max(d1,d2) 等价)、Z 段极值 GG/DD、组成与
     证据到达时刻;
   - extended: 延伸(课 20 定理一), 保留形成身份, 产生新快照版本,
     [ZD,ZG] 不变, GG/DD 随 Z 段增长;
-  - 新生关系: 非首个中枢的 formed 事件按课 20 定理二记录与前中枢
-    (形成当时最新快照)的关系 down_continue/up_continue/
+  - expanded_up: 升级(课 20 开篇"一个走势中枢完成前，其波动触及
+    上一个走势中枢或延伸时的某个瞬间波动区间，由此产生更大级别
+    的走势中枢", 与中心定理二 higher_level 分支同一触发): 新中枢
+    取 upper_level 新身份, source_center_ids=参与波动重叠的前后
+    连续同级别中枢; 上层中枢 zd/zg=两来源波动的交集
+    [max(前DD,后DD), min(前GG,后GG)](higher_level 下非空可证:
+    形成三单元首单元必为 Z 段且触及本中枢, 故后DD<=后ZG<前ZD
+    <=前GG 与后GG>=前DD 保证交集非空), gg/dd=来源波动并集口径,
+    组成为前中枢全程至后中枢首三段; 定理二为等级价条件, 递归
+    复合(三个同级别走势类型重叠)的严格验证不在此版本。
+  - 新生关系: 非首个中枢的 formed 事件按课 20 中心定理二记录与前
+    中枢(形成当时最新快照)的关系 down_continue/up_continue/
     higher_level/overlap; 前中枢此后延伸不回改已冻结关系。
-  expanded_up/reorganized 与轮次移交不在本版本(计划 §11.7)。
+  reorganized 重组与轮次移交不在本版本(计划 §11.7)。
 
-定序: 事件按到达批时刻排序; 同一批内 formed 先于 extended, 再按
-中枢身份字典序。同一时刻多单元整批进入, 不虚构批内不同到达时间。
-事件不回写: 更晚 as_of 下已产生事件的种类、身份、版本与顺序不变,
-更早证据不因后到单元改变归属。
+定序: 事件按到达批时刻排序; 同一批内 formed 先于 extended 先于
+expanded_up, 再按中枢身份字典序。同一时刻多单元整批进入, 不虚构
+批内不同到达时间。事件不回写: 更晚 as_of 下已产生事件的种类、
+身份、版本与顺序不变, 更早证据不因后到单元改变归属。
 
 边界: 无三单元重叠不成中枢不产生事件; 零宽中枢(交集退化为一点)
 照常登记; 不足三单元或全部未确认返回空谱系; 可见单元须为连续
@@ -49,11 +59,13 @@ from typing import Any, List, Optional
 from chan._intervals import _range3
 from chan.completion import _visible_units
 from chan.recurse import _level_up_traced, _unit_dir
+from chan.second import _text
 from chan.strict import _identity
 
 _FORMED = 'formed'
 _EXTENDED = 'extended'
-_KIND_RANK = {_FORMED: 0, _EXTENDED: 1}
+_EXPANDED_UP = 'expanded_up'
+_KIND_RANK = {_FORMED: 0, _EXTENDED: 1, _EXPANDED_UP: 2}
 
 
 class CenterVersion(namedtuple('CenterVersionBase',
@@ -79,20 +91,25 @@ class CenterVersion(namedtuple('CenterVersionBase',
 
 class CenterEvent(namedtuple('CenterEventBase',
                              'event_id kind center_id level version '
-                             'prev_center_id relation confirmed_dt')):
+                             'prev_center_id relation confirmed_dt '
+                             'source_center_ids')):
     """中枢演化事件。
 
-    kind: formed=首现(冻结首三段) / extended=延伸(新快照版本);
+    kind: formed=首现(冻结首三段) / extended=延伸(新快照版本) /
+      expanded_up=升级(课 20 波动重叠, 上层中枢新身份);
     version 指向同身份快照; prev_center_id/relation 仅 formed 事件
     携带(课 20 定理二, 以前中枢形成当时最新快照为证据基准),
-    extended 事件为 None。事件不回写: 更晚 as_of 下已产生事件的
-    内容与顺序不变。
+    extended 与 expanded_up 事件为 None; source_center_ids 仅
+    expanded_up 事件携带(参与波动重叠的前后连续同级别中枢身份),
+    其余为空元组。事件不回写: 更晚 as_of 下已产生事件的内容与
+    顺序不变。
     """
     __slots__ = ()
 
     def to_dict(self):
         out = dict(self._asdict())
         out['confirmed_dt'] = str(out['confirmed_dt'])
+        out['source_center_ids'] = list(out['source_center_ids'])
         return out
 
 
@@ -150,21 +167,32 @@ def _relation(prev: Optional[CenterVersion],
     return 'overlap'
 
 
-def track_center_lineage(units, as_of, next_level):
+def track_center_lineage(units, as_of, next_level, upper_level=None):
     """已确认次级单元前缀 -> 中枢事件流与快照版本链(课 20/35)。
 
     units/as_of/next_level 同 confirm_level_up 契约: 同级、时间及
     端点价格连续的已确认单元(ConfirmedMove 或 ConfirmedMoveType)
     连续前缀, 乱序拒绝, 未来价格不读取; next_level 为非空且不同
     于输入的递归相邻级别名, 即新中枢所属级别, 不猜 K 线周期。
+    upper_level: 可选, next_level 之上的递归相邻级别名; 提供时新生
+    关系为课 20 定理二 higher_level 的前后中枢额外产生 expanded_up
+    升级事件(上层中枢新身份、source_center_ids 来源谱系、波动交集
+    区间与确认时刻); 缺省不产生升级事件, 其余行为不变。级别邻接由
+    调用方明示配置, 不猜 K 线周期。
     返回 CenterLineage(centers, events)。内部逐到达批重放
     recurse._level_up_traced, 复杂度 O(n^2) 最坏时间, 输入应是
     走势类型序列, 不是逐笔原始行情。无跨调用缓存。
     """
     visible, _time_kind = _visible_units(units, as_of, next_level)
+    if upper_level is not None:
+        _text(upper_level)
+        if upper_level == next_level:
+            raise ValueError('upper_level须为next_level之上的递归相邻级别名')
+        if visible and upper_level == visible[0].level:
+            raise ValueError('upper_level须为输入级别之上的递归相邻级别名')
     centers = []  # type: List[CenterVersion]
     events = []  # type: List[CenterEvent]
-    state = {}  # center_id -> [最新版本号, 最新延伸索引]
+    state = {}  # center_id -> [最新版本号, 最新延伸索引, 跨度起点索引]
     latest = {}  # center_id -> 最新快照(供新生关系基准)
     prev_center_id = None  # type: Optional[str]
     for stop in range(1, len(visible) + 1):
@@ -186,14 +214,35 @@ def track_center_lineage(units, as_of, next_level):
                                       start, formed_idx, 0, batch_dt)
                     prev = latest.get(prev_center_id) \
                         if prev_center_id is not None else None
+                    relation = _relation(prev, first)
                     centers.append(first)
                     latest[cid] = first
                     batch.append(CenterEvent(
                         _identity([next_level, cid, _FORMED, 0]), _FORMED,
                         cid, next_level, 0, prev_center_id,
-                        _relation(prev, first), batch_dt))
+                        relation, batch_dt, ()))
+                    if relation == 'higher_level' and upper_level is not None:
+                        # expanded_up: 课 20 开篇波动重叠产生更大级别中枢。
+                        # 形成三单元首单元必为 Z 段且触及本中枢区间, 故
+                        # 后DD<=后ZG<前ZD<=前GG 与后GG>=前DD 使两来源波动
+                        # 交集 [max(前DD,后DD), min(前GG,后GG)] 非空。
+                        upper_cid = _identity([upper_level, prev.unit_ids[0],
+                                               first.unit_ids[0]])
+                        span = visible[state[prev_center_id][2]:formed_idx + 1]
+                        snap = CenterVersion(
+                            upper_cid, upper_level, 0,
+                            max(prev.dd, first.dd), min(prev.gg, first.gg),
+                            max(prev.gg, first.gg), min(prev.dd, first.dd),
+                            span[0].start_dt, span[-1].end_dt,
+                            tuple(unit.move_id for unit in span), batch_dt)
+                        centers.append(snap)
+                        batch.append(CenterEvent(
+                            _identity([upper_level, upper_cid, _EXPANDED_UP, 0]),
+                            _EXPANDED_UP, upper_cid, upper_level, 0,
+                            None, None, batch_dt,
+                            (prev.center_id, first.center_id)))
                     prev_center_id = cid
-                    st = [0, formed_idx]
+                    st = [0, formed_idx, start]
                     state[cid] = st
                 if ext > st[1]:
                     # extended: 保留形成身份, 新快照版本(课 20 定理一)
@@ -205,7 +254,7 @@ def track_center_lineage(units, as_of, next_level):
                     batch.append(CenterEvent(
                         _identity([next_level, cid, _EXTENDED, version]),
                         _EXTENDED, cid, next_level, version,
-                        None, None, batch_dt))
+                        None, None, batch_dt, ()))
                     st[0], st[1] = version, ext
                 elif ext < st[1]:
                     raise ValueError('中枢跨度不能收缩, 可见前缀违反连续性')
