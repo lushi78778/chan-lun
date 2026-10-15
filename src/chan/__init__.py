@@ -101,7 +101,7 @@ from chan.lineage import (CenterEvent, CenterLineage, CenterVersion,
                           track_center_lineage)
 from chan.rounds import Round, RoundChain, track_rounds
 
-__version__ = "0.11.3"
+__version__ = "0.11.4"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",

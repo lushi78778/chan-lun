@@ -35,12 +35,23 @@ chan.lineage —— 中枢演化谱系(课 20/35, 计划 §11.7)
   - 新生关系: 非首个中枢的 formed 事件按课 20 中心定理二记录与前
     中枢(形成当时最新快照)的关系 down_continue/up_continue/
     higher_level/overlap; 前中枢此后延伸不回改已冻结关系。
-  reorganized 重组与轮次移交不在本版本(计划 §11.7)。
+  - reorganized: 重组(课 69 "九段可延伸成5分钟中枢, 可不等于5分钟
+    中枢就一定是九段" + 课 70 多样性分解原则/结合律): 同级别中枢
+    延伸跨过 9 个组成单元时, 连续三组三单元(各组看成一次级别走势,
+    区间为组内极值并集)的交集构成高一级别中枢(课 35 三重叠); 新
+    中枢取 upper_level 新身份并携带 basis='nine_segment' 标记与
+    source_center_ids(原同级别中枢), 旧身份不删除且此后继续延伸
+    (课 20 级别延续定理一)。首九单元冻结为上层形成快照, zd/zg 为
+    三组区间交集, gg/dd 为首三次级别走势极值(即首九单元极值);
+    中枢级别由递归层级分辨(课 69), 不是段数。上层中枢此后的延伸
+    与课 70 "等走势走出最自然的选择再继续更合理的划分"的再划分
+    无机械判据, 不在本版本, 保留输入前提。
 
 定序: 事件按到达批时刻排序; 同一批内 formed 先于 extended 先于
-expanded_up, 再按中枢身份字典序。同一时刻多单元整批进入, 不虚构
-批内不同到达时间。事件不回写: 更晚 as_of 下已产生事件的种类、
-身份、版本与顺序不变, 更早证据不因后到单元改变归属。
+expanded_up 先于 reorganized, 再按中枢身份字典序。同一时刻多单元
+整批进入, 不虚构批内不同到达时间。事件不回写: 更晚 as_of 下已产
+生事件的种类、身份、版本与顺序不变, 更早证据不因后到单元改变
+归属。
 
 边界: 无三单元重叠不成中枢不产生事件; 零宽中枢(交集退化为一点)
 照常登记; 不足三单元或全部未确认返回空谱系; 可见单元须为连续
@@ -65,7 +76,9 @@ from chan.strict import _identity
 _FORMED = 'formed'
 _EXTENDED = 'extended'
 _EXPANDED_UP = 'expanded_up'
-_KIND_RANK = {_FORMED: 0, _EXTENDED: 1, _EXPANDED_UP: 2}
+_REORGANIZED = 'reorganized'
+_NINE_SEGMENT = 'nine_segment'
+_KIND_RANK = {_FORMED: 0, _EXTENDED: 1, _EXPANDED_UP: 2, _REORGANIZED: 3}
 
 
 class CenterVersion(namedtuple('CenterVersionBase',
@@ -92,17 +105,21 @@ class CenterVersion(namedtuple('CenterVersionBase',
 class CenterEvent(namedtuple('CenterEventBase',
                              'event_id kind center_id level version '
                              'prev_center_id relation confirmed_dt '
-                             'source_center_ids')):
+                             'source_center_ids basis')):
     """中枢演化事件。
 
     kind: formed=首现(冻结首三段) / extended=延伸(新快照版本) /
-      expanded_up=升级(课 20 波动重叠, 上层中枢新身份);
+      expanded_up=升级(课 20 波动重叠, 上层中枢新身份) /
+      reorganized=重组(课 69 九段延伸 + 课 70 多样性分解, 上层中枢
+      新身份);
     version 指向同身份快照; prev_center_id/relation 仅 formed 事件
-    携带(课 20 定理二, 以前中枢形成当时最新快照为证据基准),
-    extended 与 expanded_up 事件为 None; source_center_ids 仅
-    expanded_up 事件携带(参与波动重叠的前后连续同级别中枢身份),
-    其余为空元组。事件不回写: 更晚 as_of 下已产生事件的内容与
-    顺序不变。
+      携带(课 20 定理二, 以前中枢形成当时最新快照为证据基准),
+      extended 与 expanded_up 事件为 None; source_center_ids 仅
+      expanded_up(参与波动重叠的前后连续同级别中枢身份)与
+      reorganized(原同级别中枢身份)事件携带, 其余为空元组;
+    basis 仅 reorganized 事件携带(多样性分解依据标记, 如
+      'nine_segment'), 其余为 None。事件不回写: 更晚 as_of 下已产
+      生事件的内容与顺序不变。
     """
     __slots__ = ()
 
@@ -167,6 +184,19 @@ def _relation(prev: Optional[CenterVersion],
     return 'overlap'
 
 
+def _nine_range(visible: List[Any], start: int):
+    """课 69/70 三×三重组: 连续三组三单元各成次级别走势
+    (区间为组内极值并集), 返回三组区间交集 (zd, zg)(课 35 三重叠)。
+    """
+    lows = []
+    highs = []
+    for offset in (0, 3, 6):
+        seg = visible[start + offset:start + offset + 3]
+        lows.append(min(unit.low for unit in seg))
+        highs.append(max(unit.high for unit in seg))
+    return max(lows), min(highs)
+
+
 def track_center_lineage(units, as_of, next_level, upper_level=None):
     """已确认次级单元前缀 -> 中枢事件流与快照版本链(课 20/35)。
 
@@ -177,7 +207,10 @@ def track_center_lineage(units, as_of, next_level, upper_level=None):
     upper_level: 可选, next_level 之上的递归相邻级别名; 提供时新生
     关系为课 20 定理二 higher_level 的前后中枢额外产生 expanded_up
     升级事件(上层中枢新身份、source_center_ids 来源谱系、波动交集
-    区间与确认时刻); 缺省不产生升级事件, 其余行为不变。级别邻接由
+    区间与确认时刻), 且同级别中枢延伸跨过 9 个组成单元时产生
+    reorganized 重组事件(课 69 九段延伸 + 课 70 多样性分解, 上层
+    中枢新身份、basis='nine_segment'、首九单元三×三交集快照,
+    旧身份不删除); 缺省两者均不产生, 其余行为不变。级别邻接由
     调用方明示配置, 不猜 K 线周期。
     返回 CenterLineage(centers, events)。内部逐到达批重放
     recurse._level_up_traced, 复杂度 O(n^2) 最坏时间, 输入应是
@@ -195,6 +228,7 @@ def track_center_lineage(units, as_of, next_level, upper_level=None):
     state = {}  # center_id -> [最新版本号, 最新延伸索引, 跨度起点索引]
     latest = {}  # center_id -> 最新快照(供新生关系基准)
     prev_center_id = None  # type: Optional[str]
+    reorganized = set()  # 已产生 reorganized 事件的同级别中枢身份
     for stop in range(1, len(visible) + 1):
         if stop < len(visible) and \
                 visible[stop - 1].confirmed_dt == visible[stop].confirmed_dt:
@@ -220,7 +254,7 @@ def track_center_lineage(units, as_of, next_level, upper_level=None):
                     batch.append(CenterEvent(
                         _identity([next_level, cid, _FORMED, 0]), _FORMED,
                         cid, next_level, 0, prev_center_id,
-                        relation, batch_dt, ()))
+                        relation, batch_dt, (), None))
                     if relation == 'higher_level' and upper_level is not None:
                         # expanded_up: 课 20 开篇波动重叠产生更大级别中枢。
                         # 形成三单元首单元必为 Z 段且触及本中枢区间, 故
@@ -240,7 +274,7 @@ def track_center_lineage(units, as_of, next_level, upper_level=None):
                             _identity([upper_level, upper_cid, _EXPANDED_UP, 0]),
                             _EXPANDED_UP, upper_cid, upper_level, 0,
                             None, None, batch_dt,
-                            (prev.center_id, first.center_id)))
+                            (prev.center_id, first.center_id), None))
                     prev_center_id = cid
                     st = [0, formed_idx, start]
                     state[cid] = st
@@ -254,10 +288,35 @@ def track_center_lineage(units, as_of, next_level, upper_level=None):
                     batch.append(CenterEvent(
                         _identity([next_level, cid, _EXTENDED, version]),
                         _EXTENDED, cid, next_level, version,
-                        None, None, batch_dt, ()))
+                        None, None, batch_dt, (), None))
                     st[0], st[1] = version, ext
                 elif ext < st[1]:
                     raise ValueError('中枢跨度不能收缩, 可见前缀违反连续性')
+                if upper_level is not None and ext - start + 1 >= 9 \
+                        and cid not in reorganized:
+                    # reorganized: 课 69 九段延伸可看成高一级别中枢
+                    # (课 70 多样性分解, 结合律下连续三组三单元划分),
+                    # 旧身份不删除, 此后继续延伸(级别延续定理一)。
+                    reorganized.add(cid)
+                    zd, zg = _nine_range(visible, start)
+                    # 三组交集为空不构成高一级别中枢(课 35 须有交集);
+                    # 延伸前提下各组触及本级中枢区间且经共享端点连通,
+                    # 可证交集非空(至多退化为一点), 空交集为防御分支。
+                    if zd <= zg:
+                        span9 = visible[start:start + 9]
+                        upper_cid = _identity(
+                            [upper_level, _NINE_SEGMENT, span9[0].move_id])
+                        centers.append(CenterVersion(
+                            upper_cid, upper_level, 0, zd, zg,
+                            max(unit.high for unit in span9),
+                            min(unit.low for unit in span9),
+                            span9[0].start_dt, span9[-1].end_dt,
+                            tuple(unit.move_id for unit in span9), batch_dt))
+                        batch.append(CenterEvent(
+                            _identity([upper_level, upper_cid,
+                                       _REORGANIZED, 0]),
+                            _REORGANIZED, upper_cid, upper_level, 0,
+                            None, None, batch_dt, (cid,), _NINE_SEGMENT))
         batch.sort(key=lambda item: (_KIND_RANK[item.kind], item.center_id))
         events.extend(batch)
     return CenterLineage(tuple(centers), tuple(events))

@@ -377,5 +377,113 @@ class TestExpandedUp(unittest.TestCase):
         json.dumps(lineage.to_dict())
 
 
+class TestReorganized(unittest.TestCase):
+    """课69九段延伸+课70多样性分解的重组事件(0.11.4)。"""
+
+    NINE = [120, 110, 115, 108, 114, 112, 109, 116, 111, 113, 110, 117, 111, 114]
+    ZERO = [120, 110, 115, 108, 114, 112, 114, 118, 114, 116]
+
+    def test_nine_segment_reorganized_event(self):
+        """跨过九单元触发一次重组: 上层新身份、三×三交集快照与来源。"""
+        units, now = sample(self.NINE)
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        reorgs = [e for e in lineage.events if e.kind == 'reorganized']
+        self.assertEqual(len(reorgs), 1)
+        event = reorgs[0]
+        self.assertEqual(event.center_id, '["trend","nine_segment","u0"]')
+        self.assertEqual(event.level, 'trend')
+        self.assertEqual(event.version, 0)
+        self.assertEqual(event.source_center_ids, ('["main","u0"]',))
+        self.assertEqual(event.basis, 'nine_segment')
+        self.assertIsNone(event.prev_center_id)
+        self.assertIsNone(event.relation)
+        self.assertEqual(event.confirmed_dt, units[8].confirmed_dt)
+        snap = lineage.snapshot('["trend","nine_segment","u0"]', 0)
+        # 三组区间 [108,120]/[108,114]/[109,116] 交集=[109,114](课35)
+        self.assertEqual((snap.zd, snap.zg, snap.gg, snap.dd),
+                         (109.0, 114.0, 120.0, 108.0))
+        self.assertEqual(snap.unit_ids, tuple('u%d' % i for i in range(9)))
+        self.assertEqual((snap.start_dt, snap.end_dt),
+                         (units[0].start_dt, units[8].end_dt))
+        # 同批 extended(rank 1) 先于 reorganized(rank 3)
+        idx = lineage.events.index(event)
+        self.assertEqual(lineage.events[idx - 1].kind, 'extended')
+        self.assertEqual(lineage.events[idx - 1].version, 6)
+        self.assertEqual(len(lineage.events), 12)
+        self.assertEqual(len(lineage.centers), 12)
+
+    def test_reorganized_requires_upper_level(self):
+        """缺省 upper_level 不产生重组事件, 延伸行为与 0.11.3 一致。"""
+        units, now = sample(self.NINE)
+        lineage = track_center_lineage(units, now, 'main')
+        self.assertTrue(all(e.kind in ('formed', 'extended')
+                            for e in lineage.events))
+        self.assertTrue(all(e.basis is None for e in lineage.events))
+        self.assertEqual(len(lineage.events), 11)
+
+    def test_reorganized_not_fired_below_nine(self):
+        """第八单元处无重组, 第九单元批触发(课69 九段), 前缀零回写。"""
+        units, now = sample(self.NINE)
+        prefix8 = track_center_lineage(units, units[7].confirmed_dt,
+                                       'main', 'trend')
+        full = track_center_lineage(units, now, 'main', 'trend')
+        self.assertTrue(all(e.kind != 'reorganized'
+                            for e in prefix8.events))
+        self.assertEqual(full.events[:len(prefix8.events)], prefix8.events)
+        self.assertEqual(full.centers[:len(prefix8.centers)], prefix8.centers)
+        reorg = [e for e in full.events if e.kind == 'reorganized'][0]
+        self.assertGreater(full.events.index(reorg), len(prefix8.events) - 1)
+
+    def test_lower_identity_continues_after_reorganized(self):
+        """重组后原身份继续延伸(级别延续定理一), 旧身份不删除。"""
+        units, now = sample(self.NINE)
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        lower = [e for e in lineage.events if e.center_id == '["main","u0"]']
+        self.assertEqual([e.kind for e in lower],
+                         ['formed'] + ['extended'] * 10)
+        self.assertEqual([e.version for e in lower], list(range(11)))
+        self.assertEqual(lower[-1].confirmed_dt, units[12].confirmed_dt)
+        v10 = lineage.snapshot('["main","u0"]', 10)
+        self.assertEqual(len(v10.unit_ids), 13)
+
+    def test_reorganized_fired_once(self):
+        """延伸跨过九单元后仅登记一次重组, 不随继续延伸重复。"""
+        units, now = sample(self.NINE)
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        self.assertEqual(len([e for e in lineage.events
+                              if e.kind == 'reorganized']), 1)
+
+    def test_zero_width_upper_center(self):
+        """三组交集退化为一点时照常登记(闭区间含端点, 与课20口径一致)。"""
+        units, now = sample(self.ZERO)
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        reorg = [e for e in lineage.events if e.kind == 'reorganized'][0]
+        snap = lineage.snapshot(reorg.center_id, 0)
+        self.assertEqual((snap.zd, snap.zg), (114.0, 114.0))
+        self.assertEqual((snap.gg, snap.dd), (120.0, 108.0))
+        self.assertEqual(len(lineage.events), 8)  # formed+6ext+reorg
+
+    def test_mirror_reorganized(self):
+        """镜像样本重组事件对称: 交集区间按镜像变换。"""
+        units, now = sample([240 - p for p in self.NINE])
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        reorg = [e for e in lineage.events if e.kind == 'reorganized'][0]
+        snap = lineage.snapshot(reorg.center_id, 0)
+        self.assertEqual((snap.zd, snap.zg, snap.gg, snap.dd),
+                         (126.0, 131.0, 132.0, 120.0))
+
+    def test_reorganized_to_dict(self):
+        """重组事件 to_dict 携带 basis 与来源列表, 可 JSON 序列化。"""
+        units, now = sample(self.NINE)
+        lineage = track_center_lineage(units, now, 'main', 'trend')
+        data = lineage.to_dict()
+        reorg = [d for d in data['events'] if d['kind'] == 'reorganized'][0]
+        self.assertEqual(reorg['basis'], 'nine_segment')
+        self.assertEqual(reorg['source_center_ids'], ['["main","u0"]'])
+        formed = [d for d in data['events'] if d['kind'] == 'formed'][0]
+        self.assertIsNone(formed['basis'])
+        json.dumps(data)
+
+
 if __name__ == '__main__':
     unittest.main()
