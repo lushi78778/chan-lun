@@ -103,6 +103,23 @@ class TestPackageContracts(unittest.TestCase):
             code = next(code for code in examples if marker in code)
             exec(code, {})
 
+    def test_migration_examples_run(self):
+        """MIGRATION.md 迁移指纹示例可独立执行并落盘, 防文档示例漂移。"""
+        import tempfile
+        with open(os.path.join(_ROOT, "MIGRATION.md"), encoding="utf-8") as f:
+            examples = re.findall(r"```python\n(.*?)```", f.read(), re.S)
+        self.assertTrue(examples)
+        cwd = os.getcwd()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                os.chdir(tmp)
+                for code in examples:
+                    exec(code, {})
+                self.assertTrue(os.path.exists(
+                    "fingerprint-{}.json".format(chan.__version__)))
+        finally:
+            os.chdir(cwd)
+
 
 if __name__ == "__main__":
     unittest.main()
