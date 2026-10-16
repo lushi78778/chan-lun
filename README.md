@@ -24,6 +24,7 @@
 | 投资者/使用者：评估这个库能不能用 | [§8 可用范围与正式1.0.0门槛](#8-可用范围与正式1000门槛)、[免责声明](#免责声明) |
 | 开发者：接入行情、调用全部 API | [第二部分](#第二部分开发者视角)：输入契约、模块与公开入口 |
 | 开发者：参与开发、测试、发版 | [§10 从源码开发](#10-从源码开发)、[§17 测试与开发](#17-测试与开发)、[CONTRIBUTING.md](CONTRIBUTING.md) |
+| 查调用细节、键集、原因码、身份契约 | [API.md](API.md)、[§19 证据、身份与常见错误](#19-证据身份与常见错误) |
 | 查某个版本改了什么 | [CHANGELOG.md](CHANGELOG.md) |
 
 ---
@@ -569,7 +570,9 @@ sells = find_sell_points(bis, zss, trend_bc)
 | `zs` | `zs_relation`、`build_expanded_zs`、`classify_trend` | 中枢关系、扩展构造与走势粗分类 |
 
 默认成笔标准是 81 课：`MIN_K_GAP=3`，两个分型中心在无包含序列的
-下标差至少为 4。显式选择 106 课标准：
+下标差至少为 4。标准名可用常量 `BI_STANDARD_81`/`BI_STANDARD_106`
+（值 `'81'`/`'106'`，见 [API.md](API.md) §6）。显式选择 106 课
+标准：
 
 ```python
 from chan import analyze_bars, chan_fx_bi
@@ -1076,6 +1079,70 @@ c 极值超越全趋势先验极值且恰在 c 端点（课37/61）、c 内含�
 与 0.7.5 的 MACD 辅助候选（`find_first_points`）分别：辅助候选不
 因本模块存在而改名严格（课24明示 MACD"不绝对精确"）。
 
+### 15.16 严格区间套链与次级完成级联（0.10.4/0.10.5 起）
+
+```python
+from chan import (scan_strict_divergence, strict_nested_chain,
+                  strict_completion_cascade, travel_force)
+
+# scan 同 §15.15; layers 逐重显式供给相邻下级单元表(级别邻接
+# 由调用方明示, 不按 K 线周期名猜级别)
+chain = strict_nested_chain(
+    scan.results[0], units, [('sub', sub_units)], as_of,
+    force_fn=lambda reference, leave: (travel_force(reference),
+                                       travel_force(leave)),
+    force_method='unit_travel')
+print(chain.depth, chain.complete, chain.break_depth, chain.break_reason)
+
+# 课37"c 必然是次级别的": 对背驰段端点单元逐层复核次级完成
+cascade = strict_completion_cascade(scan.results[0], units,
+                                    [('sub', sub_units)], as_of)
+print(cascade.depth, cascade.complete)
+```
+
+`strict_nested_chain(divergence, units, layers, as_of, force_fn=None,
+force_method=None)`（课61区间套定位/课27定理）返回 `StrictChain`：
+重1为传入的严格背驰结果，重2起每重取上一重背驰段区间内最后一个
+次级中枢、围绕它比较两段力度（课61/课53推广）。每重 status：
+`bc`/`no_new_extreme`/`force_not_declining`（否决即停止下探）、
+`force_missing`/`force_unavailable`（证据缺失继续下探）、
+`no_sub_center`/`no_compare_legs`/`not_covered`（窗口不可建立）。
+`complete` 为最内一重 bc（区间套定位完成）；`break_depth=0` 表示
+父级已否决（`parent_rejected`）；第 k 重单元须与第 k-1 重背驰段
+区间时间首尾相等（否则 `not_covered`），端点价格须对齐（否则报
+价格坐标契约错误）。
+
+`strict_completion_cascade(divergence, units, layers, as_of)`（课
+35/37）对 `divergence` 背驰段末单元（含转折端点）逐层复核：每层
+细级可见前缀自上层端点单元起点起至 `as_of` 证据视野重算完成类型，
+恰覆盖上层端点单元；返回 `StrictCompletion`，`levels` 逐层结果
+（层1起，首个未通过层即止，其余声明层保留原状态），`complete`
+为端点单元被逐层证明次级完成。
+
+### 15.17 中枢演化谱系、反转轮次与可视因果图（0.11.x 起）
+
+```python
+from chan import (track_center_lineage, track_rounds, causal_graph_dot)
+
+# units 同 confirm_level_up 契约; next_level 为新中枢所属级别名
+lineage = track_center_lineage(units, as_of, 'center_level',
+                               upper_level='upper')
+frozen = lineage.snapshot(center_id, version)  # 冻结快照, 不存在报错
+
+# analyze_point_chain 的轮次分组视图(输入契约与其一致)
+chain = track_rounds(units, bars, as_of, 'main')
+for r in chain.rounds:
+    print(r.round_id, r.formation.phase, r.handed_over_dt)
+
+dot = causal_graph_dot(lineage=lineage, round_chain=chain, title='demo')
+```
+
+| 入口 | 返回 | 内容 |
+|---|---|---|
+| `track_center_lineage` | `CenterLineage(centers, events)` | 中枢事件流与快照版本链（课20/35）：`formed`/`extended`/`expanded_up`/`reorganized` 事件按到达批时刻、批内 kind 序、身份字典序排序；旧版本冻结不回写，`snapshot` 按身份+版本号取冻结快照 |
+| `track_rounds` | `RoundChain(rounds, unresolved_move_ids)` | 每个自动一类候选开启一轮（课101/108）：`Round` 含锚点（`round_id` 即 `point_id`）、双中枢、课108构造状态、按 `context_id` 归属的二/三类点与同侧移交时刻 `handed_over_dt`（None=尚未移交）；平端点原样上报不删段拼接 |
+| `causal_graph_dot` | `str`（DOT 文本） | `CenterLineage`/`RoundChain` 的确定性 Graphviz 投影；只投影数据中的身份、关系与时刻，不在图里推导新结论；同输入同输出 |
+
 ## 16. 原图与真实算术回归
 
 包内测试夹具（fixtures）分两族：**原图几何标注**与**真实行情独立标注**。
@@ -1194,6 +1261,53 @@ pandas 容器运行检查；容器通过不代替聚宽实际取数。tag 发布
 - 升级注意：线段相关修正在 0.6.1/0.7.0/0.7.5/0.7.7/0.7.8/0.7.9 多次
   改变旧版线段划分与完成时间（详见[§13](#13-线段边界与时间确认)与
   [CHANGELOG.md](CHANGELOG.md)）；升级前保存旧结果并逐前缀比较。
+
+## 19. 证据、身份与常见错误
+
+公开契约（导出清单、`to_dict()` 键集、常量值域、原因码、身份与
+异常口径）的完整参考见 [API.md](API.md)；本节只给使用要点与排错。
+
+### 证据与否决原因
+
+扫描与条件入口不把"没有结果"混作"没有数据"：
+
+- `scan_first_points`（§15.13）返回 `FirstPointScan(points,
+  exclusions, completed_types)`：`exclusions` 每项
+  `(move_id, 原因码)` 保存每个完成走势被否决的首个条件；
+  `completed_types` 为完成走势数，独立计数。
+- `scan_strict_divergence`（§15.15）返回 `StrictScan(results,
+  skipped, completed_types, open_tail)`：`skipped` 同为
+  `(move_id, 原因码)`；`results` 每项的 `conditions` 逐条件记录
+  `True/False/None`（未决），`status`/`reason` 为四类返回语义与
+  原因码。
+- `strict_nested_chain`（§15.16）每重 `status` 即原因码。
+
+全部原因码值域见 [API.md](API.md) §7；原因码字符串值属于冻结
+契约，新增须排版本登记。0.13.1 起上述容器均有 `to_dict()`，可
+直接 JSON 存档。
+
+### 因果身份
+
+`move_id`（已确认走势）、`point_id`（一类候选）、`context_id`
+（反转上下文，不是数组下标）、`center_id`（因果中枢）分属不同
+身份体系；组合规则、唯一性要求与冻结语义见 [API.md](API.md) §4。
+身份须为非空字符串，重复身份在条件接口中抛 `ValueError`；输入被
+供应方修订时新建输入版本，不静默覆盖旧收据。
+
+### 常见错误
+
+| 报错/现象 | 原因与处理 |
+|---|---|
+| `bars[N]时间元数据无效: 'closed_dt'` | 可用时间门控入口（`analyze_available`、`replay_available`、`find_ma_points` 等）要求 bar 带 `closed_dt`/`available_dt` 元数据；补齐元数据或改用不带门控的入口（§14） |
+| `可见点位身份不能重复` / `可见上下文和中枢身份须唯一` | 同一可见视野内 `point_id`/`context_id`/`center_id` 重复；检查身份生成或数据重复 |
+| `不能跳过锚点后未接线走势或使用不一致价格` | 一类点锚点与可见走势起点时间/价格不一致；确认行情与点位同源同口径 |
+| `比较段与中枢端点须有精确行情, 不近似匹配` | 参与计算的时间点在行情里没有精确 bar；本库不做近似替代，检查行情覆盖 |
+| `离开与首次回试时间和价格须连续` | 三类点输入的走势序列不连续；`ConfirmedMove` 须前尾后首相接 |
+| `注入force_fn时必须以force_method声明方法身份` | 力度注入缺 `force_method`；补非空方法名（§15.15） |
+| `可见行情须为连续前缀, 不允许跳过迟到历史行` | 迟到历史可能重算 EMA；必须声明新输入版本，不能跳过缺口后继续 |
+| `json.dumps` 失败（日期/对象不可序列化） | 用各对象的 `to_dict()`（时间字段已统一 `str()` 化）而不是序列化对象本身 |
+| `import chan` 后无 `__version__` | 导入了同名目录或遮蔽模块；按[§2](#2-安装与环境检查)排查 |
+| 升级后结果与旧版不一致 | 1.0 前允许行为修正（CHANGELOG 标注"行为变化"并附收据）；升级前保存旧结果并逐前缀比较（§5、§18） |
 
 ## 免责声明
 
