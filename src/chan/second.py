@@ -66,6 +66,11 @@ class SecondPoint(namedtuple("SecondPointBase", "kind context_id level dt price 
     also_third只标记给定因果中枢的首次离开回试条件同点成立, 不输出
     独立三类点流; 未提供对应中枢不能标记最强。dt为回试结束端点,
     confirmed_dt为实际可用时间。不是下单指令或收益保证。
+
+    身份口径(0.13.1 成文): 同一 context_id 下, 点位由参与走势身份
+    (first_move_id, pull_move_id) 区分; center_id 仅在 also_third
+    为真时有效(对应二三合一的因果中枢身份), 与 context_id 分属
+    两套身份体系, 不可互相替代或混用。
     """
     __slots__ = ()
 

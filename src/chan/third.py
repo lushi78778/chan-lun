@@ -26,7 +26,13 @@ class ThirdPointContext(namedtuple('ThirdPointContextBase',
 
 class ThirdPoint(namedtuple('ThirdPointBase',
                            'kind context_id center_id level dt price confirmed_dt leave_move_id pull_move_id')):
-    """dt为回试端点, confirmed_dt为全部条件证据的最晚可用时间。"""
+    """dt为回试端点, confirmed_dt为全部条件证据的最晚可用时间。
+
+    身份口径(0.13.1 成文): 事件由 (context_id, leave_move_id,
+    pull_move_id) 唯一区分; center_id 为所属因果中枢身份, 与
+    context_id 分属两套身份体系(一个中枢至多一事件, 两者都不可
+    省略), 不可互相替代或混用。
+    """
     __slots__ = ()
 
     def to_dict(self):

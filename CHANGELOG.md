@@ -37,6 +37,37 @@
 | — | 0.11.1—0.11.5 | R4 中枢演化谱系/升级/轮次移交/重组/可视因果图 | 仅本地提交与本地 tag |
 | — | 0.12.1 | R5 飞吻/唇吻前置的均线第一类候选放开 | 仅本地提交 |
 | — | 0.12.2 | R5 八辅助模块复核与 turn 转折界修正 | 仅本地提交 |
+| — | 0.13.1 | R6 公开导出面/序列化/身份口径收口 | 仅本地提交 |
+
+---
+
+## 0.13.1（2026-10-16）
+
+- 定位：R6 §11.9 第 1—3 条——公开 API 面审计后的导出面、序列化
+  与身份口径收口；不改变任何算法输出。
+- 导出面：补齐模块级与包级 `__all__` 不同步项——nest
+  `REASON_BC/REASON_STRONGER/REASON_NO_EXTREME/REASON_WEAK_SIGN/
+  REASON_NOT_NESTED/REASON_EMPTY`、osc `OSC_UPGRADE_N/WEDGE_MIN_RUN`、
+  zhongyin `UPGRADE_UNITS`、levels `MAX_LEVELS_DEFAULT/
+  MIN_UNITS_FOR_NEXT` 均可从 `chan` 顶层直接引用（与既有
+  TURN_*/STAGE_*/POWER_* 常量同口径）；包级 `__all__` 176→185 项。
+- **行为变化（gap 序列化）**：`Gap.to_dict` 的 `dt_a/dt_b` 由原类型
+  透传改为统一 `str()`（None 保持 None），与全库其余 to_dict 口径
+  一致，datetime 等不可 JSON 序列化类型经转换后可入档；属性本身
+  仍为原类型。`Gap` 补 `__slots__` 冻结字段集，禁止动态属性。
+- 序列化补齐：`FirstPointScan.to_dict`、`StrictScan.to_dict`、
+  `PointChain.to_dict`（含 PointContext 四键嵌套与
+  ConfirmedCenter 时间字段 str 化）新增；容器字段键集作为冻结
+  契约，回归测试固化。
+- 身份口径成文：`SecondPoint`（context_id + 参与走势身份区分，
+  center_id 仅 also_third 时有效）、`ThirdPoint`（
+  (context_id, leave_move_id, pull_move_id) 唯一区分，center_id
+  分属另一套身份体系）；`bi_state` 非法入参返回 None 的读函数
+  口径（与 classify_* 抛 ValueError 不同）入 docstring。
+- 测试：784→788（新增 4：Gap slots/str 序列化、PointChain/
+  FirstPointScan to_dict 契约、StrictScan to_dict 契约、包级
+  工程常量导出）。
+- 发布状态：仅本地提交。
 
 ---
 

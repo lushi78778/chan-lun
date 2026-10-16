@@ -49,10 +49,12 @@ from chan.cross30 import (confirm_buy2_30m, confirm_buy3_30m,
 from chan.gap import Gap, classify_gap, find_gaps
 from chan.decompose import MoveType, same_level_decompose
 from chan.recurse import level_up
-from chan.zhongyin import (ZhongYinResult, boll_bands, boll_bs1_hints,
-                           boll_events, boll_state, track_zhongyin)
-from chan.osc import (OscReport, osc_strength, oscillation_monitor,
-                      zn_next_estimate)
+from chan.zhongyin import (UPGRADE_UNITS, ZhongYinResult, boll_bands,
+                            boll_bs1_hints, boll_events, boll_state,
+                            track_zhongyin)
+from chan.osc import (OSC_UPGRADE_N, OscReport, WEDGE_MIN_RUN,
+                       osc_strength, oscillation_monitor,
+                       zn_next_estimate)
 from chan.biaoli import (BI_TRANSITIONS, SEVERITY_RANKS, bi_state,
                          bi_transition_valid, disease_stage,
                          followup_quality, zhongyin_health)
@@ -66,7 +68,10 @@ from chan.turn import (TURN_BREAK, TURN_CANDIDATES, TURN_EXPANSION,
                        guaranteed_rebound_gap)
 from chan.minor_turn import (STAGE_BREAKOUT, STAGE_STRONG, STAGE_SUB_BS3,
                              STAGE_WITHIN, classify_minor_turn)
-from chan.nest import (BcNestInput, BcNestLevel, NestBcState, nested_bc)
+from chan.nest import (BcNestInput, BcNestLevel, NestBcState,
+                       REASON_BC, REASON_EMPTY, REASON_NO_EXTREME,
+                       REASON_NOT_NESTED, REASON_STRONGER, REASON_WEAK_SIGN,
+                       nested_bc)
 from chan.kiss import (ALIGN_DOWN, ALIGN_UP, KISS_FLY, KISS_LIP, KISS_WET,
                        KissEvent, alignment_series, classify_kiss,
                        find_kisses)
@@ -102,7 +107,7 @@ from chan.lineage import (CenterEvent, CenterLineage, CenterVersion,
 from chan.causal_graph import causal_graph_dot
 from chan.rounds import Round, RoundChain, track_rounds
 
-__version__ = "0.12.2"
+__version__ = "0.13.1"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
@@ -145,9 +150,10 @@ __all__ = [
     "level_up",
     # chan.zhongyin 中阴阶段 + 布林通道辅助判断(课 89/90)
     "ZhongYinResult", "track_zhongyin", "boll_bands", "boll_state",
-    "boll_events", "boll_bs1_hints",
+    "boll_events", "boll_bs1_hints", "UPGRADE_UNITS",
     # chan.osc 中枢震荡监视器(课 92)
     "OscReport", "oscillation_monitor", "osc_strength", "zn_next_estimate",
+    "OSC_UPGRADE_N", "WEDGE_MIN_RUN",
     # chan.biaoli 走势结构的两重表里关系(课 91/93/99)
     "bi_state", "BI_TRANSITIONS", "bi_transition_valid", "disease_stage",
     "SEVERITY_RANKS", "followup_quality", "zhongyin_health",
@@ -165,6 +171,8 @@ __all__ = [
     "classify_minor_turn",
     # chan.nest 多级区间套定位(课 61/37)
     "BcNestInput", "BcNestLevel", "NestBcState", "nested_bc",
+    "REASON_BC", "REASON_STRONGER", "REASON_NO_EXTREME",
+    "REASON_WEAK_SIGN", "REASON_NOT_NESTED", "REASON_EMPTY",
     # chan.kiss 均线吻系统(课 11/12)
     "KISS_FLY", "KISS_LIP", "KISS_WET", "ALIGN_UP", "ALIGN_DOWN",
     "KissEvent", "alignment_series", "find_kisses", "classify_kiss",

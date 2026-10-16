@@ -8,9 +8,11 @@
 
 from __future__ import print_function
 
+import json
 import os
 import sys
 import unittest
+from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "src"))
@@ -113,6 +115,20 @@ class TestFindGaps(unittest.TestCase):
         self.assertEqual(d["upper"], 12.0)
         self.assertIn("up", repr(g))
         self.assertIn("10", repr(g))
+
+    def test_gap_slots_and_dt_str_serialization(self):
+        """0.13.1: __slots__ 冻结字段集; to_dict 时间字段统一 str() 入档"""
+        g = Gap("up", 10.0, 12.0, "d1", "d2", 0, 1)
+        self.assertFalse(hasattr(g, "__dict__"))
+        with self.assertRaises(AttributeError):
+            g.extra = 1
+        t1 = datetime(2025, 1, 2, 9, 30)
+        g2 = Gap("down", 8.0, 9.0, t1, None, 3, 4)
+        d = g2.to_dict()
+        self.assertEqual(d["dt_a"], "2025-01-02 09:30:00")
+        self.assertIsNone(d["dt_b"])
+        json.dumps(d)  # 全部值可 JSON 序列化
+        self.assertTrue(isinstance(d["dt_a"], str))
 
 
 class TestClassifyGap(unittest.TestCase):

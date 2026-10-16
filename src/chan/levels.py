@@ -33,6 +33,8 @@ __all__ = [
     "decompose_levels",
     "level_reading",
     "change_starts_low",
+    "MAX_LEVELS_DEFAULT",
+    "MIN_UNITS_FOR_NEXT",
 ]
 
 #: 课 102: "从 1 分钟一直到年, 对应着 8 个级别"——默认最多上推 8 级。

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """课24/27/37/53/61/101: 严格趋势背驰结构条件与四类返回语义(R3规格§11.6)。"""
+import json
 import unittest
 from datetime import datetime, timedelta
 
@@ -44,6 +45,19 @@ class TestStrictDivergenceSemantics(unittest.TestCase):
         self.assertEqual(r.price, 65.0)
         self.assertGreater(r.confirmed_dt, r.dt)
         self.assertEqual(r.level, 'main')
+
+    def test_scan_to_dict_serialization_contract(self):
+        """0.13.1: StrictScan.to_dict 键集冻结且全部可 JSON 入档。"""
+        units, now = sample()
+        scan = scan_strict_divergence(units, now, 'main')
+        d = scan.to_dict()
+        self.assertEqual(sorted(d), ['completed_types', 'open_tail',
+                                     'results', 'skipped'])
+        json.dumps(d)
+        self.assertEqual(d['results'][0]['status'], STRICT_INSUFFICIENT)
+        self.assertGreaterEqual(d['completed_types'], 1)
+        self.assertEqual(d['skipped'], [[identity, reason]
+                                        for identity, reason in scan.skipped])
 
     def test_mirror_is_sell(self):
         """镜像上涨趋势给卖一, 窗口对称(课37)。"""

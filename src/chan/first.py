@@ -44,6 +44,20 @@ class FirstPointScan(namedtuple('FirstPointScanBase', 'points exclusions complet
     """辅助扫描结果; exclusions保存完成走势身份和未通过的首个条件。"""
     __slots__ = ()
 
+    def to_dict(self):
+        """转 dict(存档/序列化用, 0.13.1)。
+
+        points 逐项 FirstPoint.to_dict; exclusions 每项
+        (move_id, 原因码) 转 [身份, 原因码] 列表; completed_types
+        原样。字段键集为冻结契约, 后续版本不增删改名。
+        """
+        return {
+            'points': [point.to_dict() for point in self.points],
+            'exclusions': [[identity, reason]
+                           for identity, reason in self.exclusions],
+            'completed_types': self.completed_types,
+        }
+
 
 def find_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
     """自动MACD辅助一类候选列表, 完整契约见scan_first_points。"""

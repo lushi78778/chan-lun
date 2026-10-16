@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """课24/27/101/108: 自动辅助一类与两个不同归属中枢, 实际证据时间。"""
+import json
 import unittest
 from datetime import datetime,timedelta
 from chan import (ConfirmedMove, ConfirmedMoveType, ConfirmedCenter, find_first_points, scan_first_points,
@@ -161,3 +162,27 @@ class TestAutomaticFirstChain(unittest.TestCase):
         self.assertEqual(scan.points,[])
         self.assertGreater(scan.completed_types,0)
         self.assertIn('no_zero_axis_pull',[reason for identity,reason in scan.exclusions])
+
+    def test_to_dict_serialization_contracts(self):
+        """0.13.1: PointChain/FirstPointScan.to_dict 键集冻结, 嵌套可入档。"""
+        u,b,now=sample();chain=analyze_point_chain(u,b,now,'main')
+        d=chain.to_dict()
+        self.assertEqual(sorted(d),['contexts','first_points','formations',
+                                    'second_points','third_points','unresolved_move_ids'])
+        json.dumps(d)
+        cd=d['contexts'][0]
+        self.assertEqual(sorted(cd),['causal_center','first_point',
+                                     'previous_center','second_context'])
+        self.assertEqual(cd['previous_center']['confirmed_dt'],
+                         str(chain.contexts[0].previous_center.confirmed_dt))
+        self.assertEqual(cd['causal_center']['center_id'],
+                         chain.contexts[0].causal_center.center_id)
+        self.assertEqual(d['unresolved_move_ids'],
+                         list(chain.unresolved_move_ids))
+        scan=scan_first_points(u,b,now,'main')
+        sd=scan.to_dict()
+        self.assertEqual(sorted(sd),['completed_types','exclusions','points'])
+        self.assertEqual(sd['points'],[p.to_dict() for p in scan.points])
+        self.assertEqual(sd['exclusions'],
+                         [[identity,reason] for identity,reason in scan.exclusions])
+        json.dumps(sd)

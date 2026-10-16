@@ -33,6 +33,46 @@ class PointChain(namedtuple('PointChainBase', 'first_points contexts second_poin
     """
     __slots__ = ()
 
+    def to_dict(self):
+        """转 dict(存档/序列化用, 0.13.1)。
+
+        嵌套对象逐项转 dict: 一/二/三类点用各自 to_dict;
+        contexts 拆为 first_point/second_context/previous_center/
+        causal_center 四键(中枢为 None 保持 None); formations 逐项
+        FormationState.to_dict; unresolved_move_ids 转 list。
+        字段键集为冻结契约, 后续版本不增删改名。
+        """
+        return {
+            'first_points': [point.to_dict() for point in self.first_points],
+            'contexts': [_context_dict(context) for context in self.contexts],
+            'second_points': [point.to_dict() for point in self.second_points],
+            'third_points': [point.to_dict() for point in self.third_points],
+            'formations': [state.to_dict() for state in self.formations],
+            'unresolved_move_ids': list(self.unresolved_move_ids),
+        }
+
+
+def _center_dict(center):
+    """ConfirmedCenter 转 dict; None 保持 None(0.13.1)。"""
+    if center is None:
+        return None
+    out = dict(center._asdict())
+    out['confirmed_dt'] = str(out['confirmed_dt'])
+    return out
+
+
+def _context_dict(context):
+    """PointContext 四键嵌套转 dict; 时间字段统一 str()(0.13.1)。"""
+    second = dict(context.second_context._asdict())
+    for key in ('anchor_dt', 'confirmed_dt', 'ended_dt'):
+        second[key] = None if second[key] is None else str(second[key])
+    return {
+        'first_point': context.first_point.to_dict(),
+        'second_context': second,
+        'previous_center': _center_dict(context.previous_center),
+        'causal_center': _center_dict(context.causal_center),
+    }
+
 
 def _moves(units):
     """不丢平端点走势; 二三类有向接口无法表达则明确报错。"""

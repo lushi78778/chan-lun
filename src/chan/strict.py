@@ -143,6 +143,21 @@ class StrictScan(namedtuple('StrictScanBase',
     """
     __slots__ = ()
 
+    def to_dict(self):
+        """转 dict(存档/序列化用, 0.13.1)。
+
+        results 逐项 StrictDivergence.to_dict; skipped 每项
+        (move_id, 原因码) 转 [身份, 原因码] 列表; completed_types
+        与 open_tail 原样。字段键集为冻结契约。
+        """
+        return {
+            'results': [result.to_dict() for result in self.results],
+            'skipped': [[identity, reason]
+                        for identity, reason in self.skipped],
+            'completed_types': self.completed_types,
+            'open_tail': self.open_tail,
+        }
+
 
 def _identity(parts):
     return json.dumps(list(parts), ensure_ascii=False, separators=(',', ':'))

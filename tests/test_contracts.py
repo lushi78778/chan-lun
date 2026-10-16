@@ -44,6 +44,16 @@ class TestPackageContracts(unittest.TestCase):
             if not name.startswith("_") and origin.startswith("chan."):
                 self.assertIn(name, chan.__all__)
 
+    def test_engineering_constants_exported(self):
+        """0.13.1: 工程阈值/原因码常量包级直出, 调用方不深入子模块。"""
+        for name in ("REASON_BC", "REASON_STRONGER", "REASON_NO_EXTREME",
+                     "REASON_WEAK_SIGN", "REASON_NOT_NESTED", "REASON_EMPTY",
+                     "OSC_UPGRADE_N", "WEDGE_MIN_RUN", "UPGRADE_UNITS",
+                     "MAX_LEVELS_DEFAULT", "MIN_UNITS_FOR_NEXT"):
+            with self.subTest(name=name):
+                self.assertIn(name, chan.__all__)
+                self.assertTrue(hasattr(chan, name))
+
     def test_python36_source_grammar(self):
         """包内所有源码按 3.6 语法解析, 拦截 walrus 等较新语法。"""
         package_dir = os.path.join(_SRC, "chan")

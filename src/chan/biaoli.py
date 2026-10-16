@@ -83,7 +83,9 @@ def bi_state(bi_direction: str,
 
     返回:
         (d, e): d=+1 向上 / -1 向下; e=1 延伸为笔中 / 0 分型构造中。
-        bi_direction 非法时返回 None。
+        bi_direction 或 fx_forming 非法时返回 None(不抛异常;
+        本函数为纯读函数, 与 classify_* 系列抛 ValueError 的
+        入参校验口径不同, 0.13.1 成文)。
 
     映射表:
         up   + None      -> (1, 1)    向上笔延伸中

@@ -78,6 +78,9 @@ class Gap(object):
         index_a / index_b: 前/后两根 K 线在 bars 序列中的下标(int)。
     """
 
+    __slots__ = ("direction", "lower", "upper", "dt_a", "dt_b",
+                 "index_a", "index_b")
+
     def __init__(self, direction: str, lower: float, upper: float,
                  dt_a: Any, dt_b: Any, index_a: int, index_b: int) -> None:
         self.direction = direction
@@ -93,13 +96,18 @@ class Gap(object):
             self.direction, self.lower, self.upper, self.dt_a, self.dt_b)
 
     def to_dict(self) -> Dict[str, Any]:
-        """转 dict(存档/序列化用, 字段与属性一一对应)"""
+        """转 dict(存档/序列化用, 字段与属性一一对应)
+
+        dt_a / dt_b 原类型透传改为统一 str() 转换(0.13.1): 与全库
+        其余 to_dict 口径一致, datetime 等不可 JSON 序列化类型经
+        str() 后可入档; None 保持 None。属性本身仍为原类型。
+        """
         return {
             "direction": self.direction,
             "lower": self.lower,
             "upper": self.upper,
-            "dt_a": self.dt_a,
-            "dt_b": self.dt_b,
+            "dt_a": None if self.dt_a is None else str(self.dt_a),
+            "dt_b": None if self.dt_b is None else str(self.dt_b),
             "index_a": self.index_a,
             "index_b": self.index_b,
         }
