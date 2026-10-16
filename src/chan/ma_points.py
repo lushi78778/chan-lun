@@ -9,12 +9,15 @@
 (课15回复明确飞吻/唇吻也可以), 不把左截断窗口的首次吻当首次。
 
 量化取舍: 用既有find_kisses的差值回撤、续创新极值/转化阈值;
-第一类保守要求第二次及以后已完成湿吻后的同向面积衰减, 并且该
-面积内价格高点和低点均顺趋势移动(课15趋势定义的区间近似),
-没有价格新极值不产生候选。第二类前腿强度默认>=2%, 前腿均量
-不超过此前long_period根均量的2倍, 均为工程参数。面积法不能
-覆盖所有飞/唇吻后的背驰, 即时平均力度预警仍由strength独立提供。
-这些是可复现的保守辅助条件, 不证明最终趋势反转或理论精确点位。
+第一类保守要求第二次及以后已完成吻(飞吻/唇吻/湿吻均可, 课15
+趋势力度与背驰定义只涉及两条均线与走势、无吻种类要求; 课15
+回复"在变动快速的图上, 不出现湿吻也是很正常的")后的同向面积
+衰减, 并且该面积内价格高点和低点均顺趋势移动(课15趋势定义的
+区间近似), 没有价格新极值不产生候选。第二类前腿强度默认>=2%,
+前腿均量不超过此前long_period根均量的2倍, 均为工程参数。
+面积法不能覆盖所有飞/唇吻后的背驰, 即时平均力度预警仍由
+strength独立提供。这些是可复现的保守辅助条件, 不证明最终趋势
+反转或理论精确点位。
 """
 from collections import namedtuple
 from numbers import Integral
@@ -102,8 +105,9 @@ def find_ma_points(bars, as_of, short_period=5, long_period=10, proximity=0.5,
     short_period/long_period是SMA周期; 吻参数与find_kisses同口径。
     min_pre_gain、max_volume_ratio只约束second类; None量比开关
     明确表示不筛量, 不把未知量当正常量。use_avg须bool, 选择面积
-    或平均面积, 两者不混用。first类仅用完整同向面积及湿吻, 不
-    使用当前未封闭面积猜测结束。只作识别, 不持仓、下单或计算收益。
+    或平均面积, 两者不混用。first类仅用完整同向面积, 前置吻不
+    限种类(飞吻/唇吻/湿吻), 不使用当前未封闭面积猜测结束。
+    只作识别, 不持仓、下单或计算收益。
     """
     _parameters(short_period, long_period, proximity, min_depth, flip_confirm,
                 min_pre_gain, max_volume_ratio)
@@ -148,8 +152,10 @@ def find_ma_points(bars, as_of, short_period=5, long_period=10, proximity=0.5,
         if not preceding:
             continue
         kiss = preceding[-1]
+        # 吻种类不限: 课15趋势力度/背驰只由同向面积定义, 课12
+        # "第二次开始都有可能"按缠绕计数不区分飞/唇/湿(课15回复)。
         if (kiss.direction != bc['direction'] or not kiss.resumed or
-                kiss.kiss_index < 2 or kiss.kind != 'wet'):
+                kiss.kiss_index < 2):
             continue  # 不跳过最近吻寻找更早的有利吻, 不使用第一次或未了结吻。
         ref = rows[previous.start_idx:previous.end_idx + 1]
         cur = rows[current.start_idx:current.end_idx + 1]

@@ -60,6 +60,36 @@ class TestMaPoints(unittest.TestCase):
         """趋势初次湿吻后虽力度减弱, 课12不称最后缠绕。"""
         self.assertEqual(points(bars([-10,-8,1,-11,-1,0])), [])
 
+    def test_first_divergence_after_lip_kiss(self):
+        """唇吻前置的同向面积背驰: 课15力度定义无吻种类要求。"""
+        rows = bars([-10,-8,1,-11,-1,-12,1,-9,-1,0])
+        event = points(rows)[0]
+        self.assertEqual(event.kind, 'ma_buy1_candidate')
+        self.assertEqual((event.kiss_index, event.kiss_kind), (2, 'lip'))
+        self.assertEqual((event.reference_strength, event.current_strength), (24., 10.))
+        self.assertEqual(event.confirmed_dt, rows[10]['available_dt'])
+
+    def test_first_divergence_after_fly_kiss(self):
+        """飞吻前置同样构成候选, 快速变动图上不出现湿吻也正常。"""
+        rows = bars([-10,-8,1,-11,-7,-12,1,-9,-1,0])
+        event = points(rows)[0]
+        self.assertEqual((event.kiss_index, event.kiss_kind), (2, 'fly'))
+        self.assertEqual((event.reference_strength, event.current_strength), (30., 10.))
+
+    def test_lip_preceded_divergence_sell_mirror(self):
+        """唇吻前置的卖端镜像不反转买端标签。"""
+        rows = bars([-10,-8,1,-11,-1,-12,1,-9,-1,0], mirror=True)
+        event = points(rows)[0]
+        self.assertEqual(event.kind, 'ma_sell1_candidate')
+        self.assertEqual(event.kiss_kind, 'lip')
+
+    def test_wet_preceded_divergence_unchanged_after_kind_relaxation(self):
+        """放宽吻种类后湿吻前置候选字段不变。"""
+        rows = bars(FIRST)
+        event = points(rows)[0]
+        self.assertEqual((event.kiss_index, event.kiss_kind), (2, 'wet'))
+        self.assertEqual((event.reference_strength, event.current_strength), (21., 13.))
+
     def test_stronger_or_equal_area_is_not_divergence(self):
         """严格弱于才比较成立; 相等或更强不触发first。"""
         for tail in ([-12,-9,0], [-12,-12,-12,0]):
