@@ -2,9 +2,10 @@
 """turn 模块测试: 背驰-转折定理三分类(课 29)
 
 覆盖分支:
-- classify_bc_turn 下跌三分支(BREAK 回区间/EXPANSION 只触 DD/
-  SUB_FLOOR 未及 DD)+ 端点触及边界(==ZG / ==DD);
-- 上涨镜像三分支 + 边界(==ZD / ==GG);
+- classify_bc_turn 下跌三分支(BREAK 回抽进中枢区间/EXPANSION 只触
+  DD/SUB_FLOOR 未及 DD)+ 端点触及边界(==ZD / ==DD)+ 0.12.2 修正区
+  (反弹高点落在 [ZD, ZG) 亦转折);
+- 上涨镜像三分支 + 边界(==ZG / ==GG)+ 修正区(回落低点 (ZD, ZG]);
 - candidates 仅转折时非空;
 - 非法 trend 抛 ValueError;
 - ZS 实例与鸭子对象通吃;
@@ -41,19 +42,26 @@ class TestClassifyDown(unittest.TestCase):
     """trend='down'(下跌背驰, 一买后反弹)三分类"""
 
     def test_break_pull_into_center(self):
-        # 反弹高点回到中枢区间(ZG 之上) -> 转折, 最弱情况排除
+        # 反弹高点回到中枢区间(越过 ZG) -> 转折, 最弱情况排除
         r = classify_bc_turn(_center(), _Pull(8.0, 11.5), "down")
         self.assertEqual(r["kind"], TURN_BREAK)
         self.assertEqual(r["candidates"], TURN_CANDIDATES)
 
-    def test_break_boundary_touch_zg(self):
-        # 端点触及口径: high == ZG 算回到区间
-        r = classify_bc_turn(_center(), _Pull(9.5, 11.0), "down")
+    def test_break_zone_within_center_range(self):
+        # 0.12.2 修正区: 反弹高点落在 [ZD, ZG) 也算回到中枢区间
+        # (课 29 "是否重新回抽最后一个中枢里", 界在 ZD 不在 ZG)
+        r = classify_bc_turn(_center(), _Pull(8.5, 10.5), "down")
+        self.assertEqual(r["kind"], TURN_BREAK)
+        self.assertEqual(r["candidates"], TURN_CANDIDATES)
+
+    def test_break_boundary_touch_zd(self):
+        # 端点触及口径: high == ZD 算回到中枢区间
+        r = classify_bc_turn(_center(), _Pull(8.0, 10.0), "down")
         self.assertEqual(r["kind"], TURN_BREAK)
 
     def test_expansion_only_dd(self):
-        # 只触及 DD(9 <= high < 11) -> 最后中枢级别扩展(最弱反弹)
-        r = classify_bc_turn(_center(), _Pull(8.5, 10.5), "down")
+        # 只触及 DD(9 <= high < 10) -> 最后中枢级别扩展(最弱反弹)
+        r = classify_bc_turn(_center(), _Pull(8.5, 9.5), "down")
         self.assertEqual(r["kind"], TURN_EXPANSION)
         self.assertEqual(r["candidates"], [])
 
@@ -68,13 +76,13 @@ class TestClassifyDown(unittest.TestCase):
         self.assertEqual(r["kind"], TURN_SUB_FLOOR)
 
     def test_expansion_vs_break_distinction(self):
-        # 课 29: 回抽到区间与否是第一/二三种情况的分水岭
+        # 课 29: 是否重新回抽到最后中枢里是扩展/转折的分水岭, 界在 ZD
         c = _center(zd=100.0, zg=110.0, gg=115.0, dd=95.0)
         self.assertEqual(
-            classify_bc_turn(c, _Pull(90.0, 109.9), "down")["kind"],
+            classify_bc_turn(c, _Pull(90.0, 99.9), "down")["kind"],
             TURN_EXPANSION)
         self.assertEqual(
-            classify_bc_turn(c, _Pull(90.0, 110.0), "down")["kind"],
+            classify_bc_turn(c, _Pull(90.0, 100.0), "down")["kind"],
             TURN_BREAK)
 
 
@@ -82,17 +90,24 @@ class TestClassifyUp(unittest.TestCase):
     """trend='up'(上涨背驰, 一卖后回落)镜像三分类"""
 
     def test_break_pull_into_center(self):
-        # 回落低点回到中枢区间(ZD 之下) -> 转折
+        # 回落低点回到中枢区间(穿过 ZD) -> 转折
         r = classify_bc_turn(_center(), _Pull(9.5, 13.0), "up")
         self.assertEqual(r["kind"], TURN_BREAK)
         self.assertEqual(r["candidates"], TURN_CANDIDATES)
 
-    def test_break_boundary_touch_zd(self):
-        r = classify_bc_turn(_center(), _Pull(10.0, 13.0), "up")
+    def test_break_zone_within_center_range(self):
+        # 0.12.2 修正区: 回落低点落在 (ZD, ZG] 也算回到中枢区间
+        r = classify_bc_turn(_center(), _Pull(10.5, 13.0), "up")
+        self.assertEqual(r["kind"], TURN_BREAK)
+        self.assertEqual(r["candidates"], TURN_CANDIDATES)
+
+    def test_break_boundary_touch_zg(self):
+        # 端点触及口径: low == ZG 算回到中枢区间
+        r = classify_bc_turn(_center(), _Pull(11.0, 13.0), "up")
         self.assertEqual(r["kind"], TURN_BREAK)
 
     def test_expansion_only_gg(self):
-        # 只触及 GG(10 < low <= 12) -> 级别扩展(最弱回落)
+        # 只触及 GG(11 < low <= 12) -> 级别扩展(最弱回落)
         r = classify_bc_turn(_center(), _Pull(11.5, 13.0), "up")
         self.assertEqual(r["kind"], TURN_EXPANSION)
 

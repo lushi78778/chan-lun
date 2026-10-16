@@ -44,12 +44,15 @@ __all__ = [
     "oscillation_monitor",
     "zn_next_estimate",
     "osc_strength",
+    "OSC_UPGRADE_N",
+    "WEDGE_MIN_RUN",
 ]
 
 # Zn 数量达 9 即次级别升级提示(课 92/20/69 口径一致)
 OSC_UPGRADE_N = 9
 
-# 楔型判定的最少单调 Zn 个数(含自身)
+# 楔型判定的最少 Zn 样本数(工程阈值: 课 92 只说"缓慢提高"无个数
+# 量化; 楔型本身要求全部 Zn 单调, 见 oscillation_monitor)
 WEDGE_MIN_RUN = 4
 
 
@@ -72,9 +75,9 @@ class OscReport(object):
                      (课 92 必然关系: Zn 终须超越 A 或 B, 否则
                      永无第三类买卖点) / "breaking" 已有超越
         upgrade_hint -- Zn 数达 9, 次级别将升级
-        wedge     -- "rising_wedge": Zn 持续抬升但从未超越 B
-                     (上升楔型诱多, 突然变盘风险); "falling_wedge"
-                     镜像(下降楔型诱空); None 无
+        wedge     -- "rising_wedge": 全部 Zn 持续抬升但从未超越 B
+                     (上升楔型诱多, 突然变盘风险; 非仅尾部单调);
+                     "falling_wedge" 镜像(下降楔型诱空); None 无
         trend_unit_idx -- 次级别为趋势类型(走势类型 kind=up/down)
                      的单元索引(课 92: 趋势类型 + Zn 配合 = 变盘
                      注意); XD 输入无 kind 不判
@@ -127,7 +130,11 @@ def _zn_of(unit):
 
 def osc_strength(report):
     # type: (OscReport) -> str
-    """强弱结论: Zn 在 Z 上/下的占比(课 92 偏强/偏弱)"""
+    """强弱结论: Zn 在 Z 上/下的占比(课 92 偏强/偏弱)
+
+    严格多数(2 倍于对方)为工程口径——原文只说"Zn 在 Z 之上, 证明
+    这个震荡是偏强的, 反之偏弱", 无比例量化; 恰半数报 "balanced"。
+    """
     n = len(report.zns)
     if n == 0:
         return "empty"
@@ -195,7 +202,8 @@ def oscillation_monitor(center, units):
     else:
         status = "in_range"
 
-    # 楔型: 最近 WEDGE_MIN_RUN 个 Zn 单调且全程未超越(课 92 诱多/诱空)
+    # 楔型: 全部 Zn 单调且从未超越 A/B(课 92 诱多/诱空); WEDGE_MIN_RUN
+    # 为最少样本数(工程阈值), 楔型语义不是"仅最近 WEDGE_MIN_RUN 个单调"
     wedge = None  # type: Optional[str]
     if len(zns) >= WEDGE_MIN_RUN:
         vals = [zn for _, zn in zns]
@@ -221,6 +229,9 @@ def zn_next_estimate(units, m=4):
     次级震荡区间的一半位置 = 近 m 个单元的平均半振幅 ->
     下一个震荡高低点估计区间 = (Zn_next - avg_half, Zn_next +
     avg_half)。单元不足 2 个返回 None; m 不足时用全部。
+
+    m=4 为工程默认窗口——原文只说"大致预计其下一个的区间", 无
+    窗口长度量化; 外推为估计值, 非未来数据读取。
     """
     n = len(units)
     if n < 2:

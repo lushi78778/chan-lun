@@ -58,6 +58,7 @@ __all__ = [
     "boll_state",
     "boll_events",
     "boll_bs1_hints",
+    "UPGRADE_UNITS",
 ]
 
 # 中枢参与单元数达 9 即升级提示(课 20/69 九段口径, 与 zs 模块一致)
@@ -76,7 +77,10 @@ class ZhongYinResult(object):
         upgraded    -- 参与单元数达 9 段(中枢升级, 课 89"搞成30分钟
                        中枢就按 30 分钟的第三买卖点处理")
         leave_start -- 离开段首单元索引(挂起未确认), 无则 None
-        end_signal  -- ("bs3", "up"/"down"): 第三类买卖点方向; 未结束 None
+        end_signal  -- ("bs3", "up"/"down"): 第三类买卖点方向; 未结束
+                       None。防御分支 ("bs3", "none") 在输入几何上
+                       不可达(_overlap_center 已覆盖该情形), 仅为
+                       防御性兜底, 正常调用不会出现
         events      -- [(unit_idx, kind)] 事件流:
                        center_formed / extend / leave_pending /
                        return_to_center(离开失败) / upgrade / bs3
@@ -199,7 +203,9 @@ def boll_bands(closes, n=20, k=2.0):
     # type: (List[float], int, float) -> List[Optional[Tuple[float, float, float]]]
     """布林通道: (mid, upper, lower) 滚动 SMA +/- k 倍总体标准差
 
-    前 n-1 根为 None(窗口不满); 纯标准库实现。
+    前 n-1 根为 None(窗口不满); 纯标准库实现。n=20, k=2.0 为布林
+    通道通行工程默认——课 90 只给"布林通道收口/超强区域"的语义,
+    未给周期与倍数参数, 可按级别/品种调整。
     """
     out = []  # type: List[Optional[Tuple[float, float, float]]]
     for i in range(len(closes)):
@@ -244,6 +250,9 @@ def boll_events(closes, n=20, k=2.0, squeeze_win=20, squeeze_ratio=0.6,
             squeeze_ratio 倍以下(课 90: "布林通道的收口, 就是对中阴
             结束时间的最好提示"——比该级别低的某个中阴过程将级别
             扩展或结束, 一般对应第三类买卖点)
+
+    squeeze_win=20 / squeeze_ratio=0.6 / turn_run=2 均为工程默认
+    ——课 90 未量化收口幅度与转向确认期数, 可按级别/品种调整。
     """
     bands = boll_bands(closes, n, k)
     events = []  # type: List[Tuple[int, str]]
@@ -309,6 +318,9 @@ def boll_bs1_hints(closes, n=20, k=2.0):
         新高但仍未回超强区域 -> ("bs1_sell_hint")
     买端镜像: super_down 极值低点 -> 涨回 -> 创新低未回超强 ->
     ("bs1_buy_hint")。辅助判断, 非绝对判断(课 90 原文口径)。
+
+    「有效回到超强区域」的"有效"原文未量化, 实现取单根收盘回到
+    超强区域口径(工程取舍)。
     """
     bands = boll_bands(closes, n, k)
     hints = []  # type: List[Tuple[int, str]]

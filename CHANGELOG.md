@@ -36,8 +36,44 @@
 | — | 0.10.4—0.10.6 | R3 区间套次级确认链/次级走势完成级联/规格收口核验 | 仅本地提交与本地 tag |
 | — | 0.11.1—0.11.5 | R4 中枢演化谱系/升级/轮次移交/重组/可视因果图 | 仅本地提交与本地 tag |
 | — | 0.12.1 | R5 飞吻/唇吻前置的均线第一类候选放开 | 仅本地提交 |
+| — | 0.12.2 | R5 八辅助模块复核与 turn 转折界修正 | 仅本地提交 |
 
 ---
+
+## 0.12.2（2026-10-16）
+
+- 定位：R5 §11.8 第 3/4 条——gap/nest/turn/minor_turn/zhongyin/
+  osc/sector/fxpower 八辅助模块复核（最小输入/级别/完成状态/条件
+  标签/未来依赖），工程阈值逐项说明。
+- **行为变化（turn）**：`classify_bc_turn` 转折判据修正——课 29
+  "是否重新回抽最后一个中枢里"以回抽端点进入中枢区间 [ZD, ZG]
+  为界（触及区间边界即算回到区间），旧版以对侧边界为界偏严：
+  反弹高点落在 [ZD, ZG) / 回落低点落在 (ZD, ZG] 时旧版判
+  TURN_EXPANSION，现判 TURN_BREAK（candidates 随之非空）。
+  差异收据 validation/turn-0122-behavior-diff-2026-10-16.json
+  （旧版经 git HEAD 动态加载，网格逐点对照）。
+- osc：楔型行内注释与实现不一致修正（实现为全部 Zn 单调且从未
+  超越，非"最近 WEDGE_MIN_RUN 个"）；新增头部杂乱尾部抬升不判
+  楔型的区分性回归；`WEDGE_MIN_RUN`/`m=4`/强弱严格多数补工程
+  口径说明。
+- zhongyin：`("bs3","none")` 防御分支（几何不可达）入文档；boll
+  系列 `n=20/k=2.0/squeeze_win=20/squeeze_ratio=0.6/turn_run=2`
+  与"有效回到"单根收盘取舍补工程默认说明（课 90 未量化）。
+- gap：`classify_gap` 补未来依赖说明（向后扫全序列，实时/回放
+  调用方须先按观察时刻截断）。
+- minor_turn：课 44 档 2"更无须理睬"与档 3"筹码较多先出一部分"
+  并存时的优先级取舍入文档（原文未排序，工程保守取 sub_bs3），
+  新增并存回归；counter_move 完成状态要求声明。
+- 导出面：`nest.REASON_*` 六常量、`zhongyin.UPGRADE_UNITS`、
+  `osc.OSC_UPGRADE_N/WEDGE_MIN_RUN` 入各模块 `__all__`；
+  `sector` 补 `__all__`（导出集合不变）。
+- 复核结论：fxpower/sector/nest/zhongyin/osc 无实现与 docstring
+  不一致（除上述修正项）；未来依赖风险集中在 gap.classify_gap
+  调用方截断纪律与 nest 调用方输入，均已入 docstring；sector 有
+  前缀因果测试，其余单次几何/状态机模块无未来读取。
+- 验证：包测试 784 测通过（turn 修正区改断言+新增边界/修正区/
+  镜像测试，osc 楔型区分回归，minor_turn 并存回归）。
+- 发布状态：仅本地提交。
 
 ## 0.12.1（2026-10-16）
 

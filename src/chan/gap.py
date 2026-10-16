@@ -239,6 +239,12 @@ def classify_gap(gap: Gap, bars: List[Dict[str, Any]]) -> Dict[str, Any]:
         gap: find_gaps 输出的缺口对象。
         bars: 与 find_gaps 相同的完整 bar 序列(gap 的下标基于它)。
 
+    未来依赖(重要): 本函数向后扫描缺口之后的**全部** bars 判定
+    回补与回补后新高/新低, fill_index/extreme_value/strength 均由
+    bars 末端决定。实时/回放场景调用方必须先按观察时刻截断 bars,
+    否则结果含未来信息; 传入截至观察时刻的前缀序列即为当下口径
+    ("截至当前未回补"等)。
+
     返回: dict, 字段:
         status: "unfilled"(未回补) / "filled_new_extreme"(回补后
             继续新高或新低) / "filled_no_new_extreme"(回补后不能

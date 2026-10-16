@@ -4,7 +4,7 @@
 覆盖分支:
 - classify_minor_turn trend='up' 四档(未破/未触及次级别中枢/次级别
   三卖/跌破三买回试段高点)+ 端点触及(==)边界 + 优先级(breakout
-  压过 sub_bs3);
+  压过 sub_bs3, sub_bs3 压过 strong);
 - trend='down' 镜像四档 + 边界;
 - sub_center=None 退化(跳过最强档);
 - 非法 trend 抛 ValueError;
@@ -89,6 +89,17 @@ class TestTrendUp(unittest.TestCase):
         # 后出现破位情形再出清)
         r = classify_minor_turn(_TRI_UP, _M(9.9, 11.0), "up", sub_bs3=True)
         self.assertEqual(r["stage"], STAGE_BREAKOUT)
+        self.assertTrue(r["necessary_met"])
+
+    def test_sub_bs3_priority_over_strong(self):
+        # sub_bs3 与 strong 并存(未触及次级别中枢但已现三卖):
+        # 课 44 档 2"更无须理睬"与档 3"筹码较多先出一部分"分属不同
+        # 仓位情形, 原文未排序, 工程保守取 sub_bs3 优先(固化优先级)
+        tri = _M(9.2, 10.0)
+        counter = _M(10.5, 11.2)   # low 10.5 > zg=9.0 未触及中枢
+        r = classify_minor_turn(tri, counter, "up", sub_center=_SUB_UP,
+                                sub_bs3=True)
+        self.assertEqual(r["stage"], STAGE_SUB_BS3)
         self.assertTrue(r["necessary_met"])
 
 

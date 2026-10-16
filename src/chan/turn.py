@@ -82,24 +82,39 @@ def classify_bc_turn(center: Any, first_pull: Any,
         note: 中文说明。
 
     分类规则(trend="down", 反弹端点 high):
-        high >= ZG   -> TURN_BREAK(回抽进中枢, 最弱情况排除);
-        DD <= high < ZG -> TURN_EXPANSION(只触及 DD, 最后中枢级别
-            扩展, 课 29 "背弛后最弱的反弹");
-        high < DD    -> TURN_SUB_FLOOR(定理保证之外, 供核查)。
-    trend="up" 镜像(回落端点 low, ZG/GG 与 ZD/DD 互换)。
+        high >= ZD      -> TURN_BREAK(反弹重新回抽到最后中枢里, 回到
+            中枢区间 [ZD, ZG], 最弱情况排除);
+        DD <= high < ZD -> TURN_EXPANSION(只触及 DD, 未重新回到中枢
+            区间, 最后中枢级别扩展, 课 29 "背弛后最弱的反弹");
+        high < DD       -> TURN_SUB_FLOOR(定理保证之外, 供核查)。
+    trend="up" 镜像(回落端点 low): low <= ZG -> TURN_BREAK; ZG < low
+    <= GG -> TURN_EXPANSION(只触及 GG); low > GG -> TURN_SUB_FLOOR。
+
+    边界口径(课 29): 转折判据为"是否重新回抽最后一个中枢里", 即
+    反弹端点进入中枢区间 [ZD, ZG]——触及区间边界(ZD/ZG)即算回到
+    区间(端点触及口径), 并不要求越过整个区间到对侧。0.12.2 修正了
+    此前以对侧边界(ZG/ZD)为转折界的过严口径: 反弹高点落在
+    [ZD, ZG) / 回落低点落在 (ZD, ZG] 时旧版误判 TURN_EXPANSION,
+    现判 TURN_BREAK。
+
+    first_pull 应为已完成的次级别单元(课 29 判别对象是"反弹中
+    第 1 个前趋势最后一个中枢级别的次级别走势"); 进行中单元端点
+    会随演化漂移, 分类仅以调用方给定端点为准。
     """
     zd, zg, gg, dd = _center_bounds(center)
     if trend == "down":
         # 下跌背驰后看反弹高点(第一波次级别反弹)
         high = float(first_pull.high)
-        if high >= zg:
-            # 课 29: "反弹至少要重新触及最后一个中枢, 这样, 将发生转折"
+        if high >= zd:
+            # 课 29: "反弹至少要重新触及最后一个中枢, 这样, 将发生
+            # 转折" + "是否重新回抽最后一个中枢里"——回到区间 [ZD, ZG]
             return {
                 "kind": TURN_BREAK,
                 "candidates": list(TURN_CANDIDATES),
-                "note": ("第一波次级别反弹回到最后中枢区间, 最弱情况"
-                         "(级别扩展)基本排除; 更大级别盘整或该级别以"
-                         "上反趋势, 区分看突破后是否第三类买点"),
+                "note": ("第一波次级别反弹重新回抽到最后中枢里(回到"
+                         "中枢区间), 最弱情况(级别扩展)基本排除; 更大"
+                         "级别盘整或该级别以上反趋势, 区分看突破后是"
+                         "否第三类买点"),
             }
         if high >= dd:
             # 课 29: "只触及最后一个中枢的 DD=min(dn)的反弹, 就是背弛
@@ -107,8 +122,9 @@ def classify_bc_turn(center: Any, first_pull: Any,
             return {
                 "kind": TURN_EXPANSION,
                 "candidates": [],
-                "note": ("反弹只触及最后中枢 DD 未回区间, 最后中枢将"
-                         "级别扩展(最弱反弹), 反弹力度值得怀疑"),
+                "note": ("反弹只触及最后中枢 DD 未重新回抽到中枢区间"
+                         "里, 最后中枢将级别扩展(最弱反弹), 反弹力度"
+                         "值得怀疑"),
             }
         # 课 29: "该反弹一定触及最后一个中枢的 DD...否则就等于在下面
         # 又至少形成一个新的中枢, 与上中枢是最后一个矛盾"
@@ -119,22 +135,25 @@ def classify_bc_turn(center: Any, first_pull: Any,
                      "完成/数据不完整/中枢识别有误), 请核查"),
         }
     if trend == "up":
-        # 上涨背驰后看回落低点(第一波次级别回落), 镜像
+        # 上涨背驰后看回落低点(第一波次级别回落), 镜像: 回到中枢
+        # 区间 [ZD, ZG] 的界在上沿 ZG
         low = float(first_pull.low)
-        if low <= zd:
+        if low <= zg:
             return {
                 "kind": TURN_BREAK,
                 "candidates": list(TURN_CANDIDATES),
-                "note": ("第一波次级别回落回到最后中枢区间, 最弱情况"
-                         "(级别扩展)基本排除; 更大级别盘整或该级别以"
-                         "上反趋势, 区分看突破后是否第三类卖点"),
+                "note": ("第一波次级别回落重新回抽到最后中枢里(回到"
+                         "中枢区间), 最弱情况(级别扩展)基本排除; 更大"
+                         "级别盘整或该级别以上反趋势, 区分看突破后是"
+                         "否第三类卖点"),
             }
         if low <= gg:
             return {
                 "kind": TURN_EXPANSION,
                 "candidates": [],
-                "note": ("回落只触及最后中枢 GG 未回区间, 最后中枢将"
-                         "级别扩展(最弱回落), 回落力度值得怀疑"),
+                "note": ("回落只触及最后中枢 GG 未重新回抽到中枢区间"
+                         "里, 最后中枢将级别扩展(最弱回落), 回落力度"
+                         "值得怀疑"),
             }
         return {
             "kind": TURN_SUB_FLOOR,

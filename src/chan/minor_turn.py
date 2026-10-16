@@ -72,7 +72,8 @@ def classify_minor_turn(tri_pull: Any, counter_move: Any, trend: str,
             trend="down" 时为三卖回抽段(其低点是关键参照);
         counter_move: 小级别背驰之后形成的次级别反向走势(需有
             low/high 属性)——trend="up" 时为向下走势(小顶背驰后);
-            trend="down" 时为向上走势(小底背驰后);
+            trend="down" 时为向上走势(小底背驰后)。应为已完成单元:
+            进行中走势端点会随演化漂移, 分类仅以调用方给定端点为准;
         trend: 大级别走势方向 "up"(小顶背驰情形)/"down"(小底背驰
             情形);
         sub_center: 反向走势所围绕/对应的最后一个次级别中枢(需有
@@ -82,7 +83,11 @@ def classify_minor_turn(tri_pull: Any, counter_move: Any, trend: str,
             定理的必要条件; 仅有必要没有充分, 课 44)。
 
     返回(dict):
-        stage: 四档之一(优先级 breakout > sub_bs3 > strong > within);
+        stage: 四档之一(优先级 breakout > sub_bs3 > strong > within;
+            sub_bs3 与 strong 并存时取 sub_bs3——课 44 档 2"更无须
+            理睬"与档 3"筹码较多先出一部分"分属不同仓位情形, 原文
+            未直接排序, 工程保守取小转大必要条件满足方优先, 调用
+            方按自身仓位口径取用档位);
         necessary_met: 小转大必要条件是否满足(= sub_bs3, 但出现
             三买卖点并不必然导致大级别转折);
         note: 中文说明。

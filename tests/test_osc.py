@@ -10,6 +10,7 @@
     - 超越可多次: 事件逐条记录(只有最后一次才构成第三类买卖点)
     - Zn 数达 9: upgrade_hint(次级别升级, 课 92/20/69)
     - 上升楔型: Zn 单调抬升但全程未超越 B -> rising_wedge 诱多
+      (全部 Zn 单调, 非仅尾部窗口)
     - 下降楔型镜像 -> falling_wedge 诱空
     - 有超越则不判楔型
     - 次级别趋势类型配合: kind=up/down 计入 trend_unit_idx
@@ -134,6 +135,16 @@ class TestOscillationMonitor(unittest.TestCase):
         units2 = [U(12, 14), U(13, 15), U(12, 14), U(13, 15)]  # 锯齿
         r2 = oscillation_monitor(C, units2)
         self.assertIsNone(r2.wedge)
+
+    def test_wedge_requires_full_monotonic(self):
+        """楔型要求全部 Zn 单调, 非仅最近 WEDGE_MIN_RUN 个:
+        头部杂乱而尾部连续抬升(样本数>=WEDGE_MIN_RUN)不判楔型
+        (固化 0.12.2 注释修正后的全序列单调语义)"""
+        units = [U(14, 16), U(11, 13),   # 头部下行打乱单调
+                 U(10.0, 12.0), U(11.0, 13.0), U(12.0, 14.0),
+                 U(13.0, 15.0)]           # 尾部 4 个连续抬升
+        r = oscillation_monitor(C, units)
+        self.assertIsNone(r.wedge)
 
     def test_trend_unit_idx(self):
         """次级别趋势类型(kind=up/down)计入配合; 盘整/无 kind 不计"""

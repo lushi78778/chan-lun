@@ -50,6 +50,12 @@ __all__ = [
     "BcNestLevel",
     "NestBcState",
     "nested_bc",
+    "REASON_BC",
+    "REASON_STRONGER",
+    "REASON_NO_EXTREME",
+    "REASON_WEAK_SIGN",
+    "REASON_NOT_NESTED",
+    "REASON_EMPTY",
 ]
 
 
