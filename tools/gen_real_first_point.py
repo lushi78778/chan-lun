@@ -16,6 +16,7 @@ bar前缀首次可见冻结。非法索引、角色冲突、前缀漂移、声�
 """
 import argparse
 import json
+import math
 from pathlib import Path
 
 from gen_real_f1_originals import components, digest, foundation, records
@@ -77,8 +78,8 @@ def derive_first_point(case, units, centers, rows, granularity, unit_seen,
     b1 = raw_index(rows, b['end_dt'], granularity, last=True)
     c0 = raw_index(rows, c['start_dt'], granularity)
     c1 = raw_index(rows, c['end_dt'], granularity, last=True)
-    area_b = sum(max(sign * v, 0.0) for v in hist[b0 + 1:b1 + 1])
-    area_c = sum(max(sign * v, 0.0) for v in hist[c0 + 1:c1 + 1])
+    area_b = math.fsum(max(sign * v, 0.0) for v in hist[b0 + 1:b1 + 1])
+    area_c = math.fsum(max(sign * v, 0.0) for v in hist[c0 + 1:c1 + 1])
     divergence = 0 < area_c < area_b
     trend_first = (roles['a']['unit'] if roles['a']
                    else centers['A']['zn'][0])

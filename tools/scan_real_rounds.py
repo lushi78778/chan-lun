@@ -20,6 +20,7 @@ ticks。first_raw_count按逐原始bar前缀首次可见冻结; 日线15:05到�
 import argparse
 from datetime import datetime, timedelta, timezone
 import json
+import math
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -65,8 +66,8 @@ def first_point_fields(item, units, rows, granularity, hist, dif, dea):
     b1 = raw_index(rows, units[b]['end_dt'], granularity, last=True)
     c0 = raw_index(rows, units[c]['start_dt'], granularity)
     c1 = raw_index(rows, units[c]['end_dt'], granularity, last=True)
-    area_b = sum(max(sign * v, 0.0) for v in hist[b0 + 1:b1 + 1])
-    area_c = sum(max(sign * v, 0.0) for v in hist[c0 + 1:c1 + 1])
+    area_b = math.fsum(max(sign * v, 0.0) for v in hist[b0 + 1:b1 + 1])
+    area_c = math.fsum(max(sign * v, 0.0) for v in hist[c0 + 1:c1 + 1])
     trend_first = max(0, item['s'] - 1)
     prior = units[trend_first:item['b_run']['last'] + 1]
     if up:

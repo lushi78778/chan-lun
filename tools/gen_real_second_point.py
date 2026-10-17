@@ -22,6 +22,7 @@ first_raw_count按逐原始bar前缀首次可见冻结；later_break登记腿2
 """
 import argparse
 import json
+import math
 from pathlib import Path
 
 from gen_real_f1_originals import components, digest, foundation, records
@@ -84,7 +85,7 @@ def derive_second_point(case, units, centers, rows, granularity, hist,
     def area(unit):
         a0 = raw_index(rows, unit['start_dt'], granularity)
         a1 = raw_index(rows, unit['end_dt'], granularity, last=True)
-        return (sum(max(sign * v, 0.0) for v in hist[a0 + 1:a1 + 1]),
+        return (math.fsum(max(sign * v, 0.0) for v in hist[a0 + 1:a1 + 1]),
                 (a0, a1))
 
     anchor_area, anchor_span_raw = area(anchor_unit)

@@ -31,6 +31,7 @@ validation/chan-real-first-point-theory-0.9.9.md）。
 
 import argparse
 import json
+import math
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -273,8 +274,8 @@ def analyze(bars, units, closes, dif, dea, hist, path):
             continue
         b0, b1 = dt_index[b_start], dt_index[b_end]
         c0, c1 = dt_index[c_start], dt_index[c_end]
-        area_b = sum(max(sign * v, 0.0) for v in hist[b0 + 1:b1 + 1])
-        area_c = sum(max(sign * v, 0.0) for v in hist[c0 + 1:c1 + 1])
+        area_b = math.fsum(max(sign * v, 0.0) for v in hist[b0 + 1:b1 + 1])
+        area_c = math.fsum(max(sign * v, 0.0) for v in hist[c0 + 1:c1 + 1])
         trend_first = max(0, item['s'] - 1)
         prior = units[trend_first:item['b_run']['last'] + 1]
         if up:
