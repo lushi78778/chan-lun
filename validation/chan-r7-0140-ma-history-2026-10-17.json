@@ -1,0 +1,730 @@
+{
+  "version": "0.14.0",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "files": [
+    {
+      "path": "bars_1d/part-00000.parquet",
+      "sha256": "a8323840c4adad004c48582fc40f76480fc3c23390c1de7d8c20cccc238c9c76"
+    },
+    {
+      "path": "bars_30m/year=2026/part-00000.parquet",
+      "sha256": "1e39722d63052d5520a52b634747539c2c52855537bd5a19bbd7ccdbd45b7b92"
+    }
+  ],
+  "scope": "均线辅助候选真实前缀验收, 工程/算术核对不替代原图点位标注。\n\n十ETF日线2026观察及30m末20交易日, 因子锁定在各序列2026首观察日。\n日线15:00闭合/15:05到达, 30m trade_time视为结束/+1分钟为测试约定。\n源无历史发布版本; 不证明实际时效、理论全部点位、收益或成交有效性。\n",
+  "parameters": {
+    "short_period": 5,
+    "long_period": 10,
+    "min_pre_gain": 0.02,
+    "max_volume_ratio": 2,
+    "proximity": 0.5,
+    "min_depth": 0.2,
+    "flip_confirm": 0.5
+  },
+  "assets": [
+    {
+      "code": "510300.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3445,
+        "observations": 139,
+        "anchor_factor": 1.235,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.235,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 175,
+        "future_poison_checks": 175,
+        "pre_close_checks": 175,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 1.199040866595169e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "510500.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3248,
+        "observations": 139,
+        "anchor_factor": 0.332,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 0.332,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 175,
+        "future_poison_checks": 175,
+        "pre_close_checks": 175,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 9.414691248821327e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "512880.SH",
+      "day": {
+        "period": "1d",
+        "rows": 2422,
+        "observations": 139,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 175,
+        "future_poison_checks": 175,
+        "pre_close_checks": 175,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {
+          "ma_buy1_candidate": 1
+        },
+        "state_snapshot_counts": {
+          "ma_buy1_candidate": 175
+        },
+        "examples": {
+          "ma_buy1_candidate": {
+            "kind": "ma_buy1_candidate",
+            "dt": "2026-03-06 10:00:00",
+            "price": 1.113,
+            "confirmed_dt": "2026-03-06 11:01:00",
+            "pattern": "post_kiss_divergence",
+            "kiss_start_dt": "2026-03-02 11:30:00",
+            "kiss_end_dt": "2026-03-04 10:30:00",
+            "kiss_index": 2,
+            "kiss_kind": "wet",
+            "reference_strength": 0.0948999999999991,
+            "current_strength": 0.006100000000000216,
+            "pre_gain": -0.0,
+            "volume_ratio": null,
+            "reference_start_dt": "2026-03-03 15:00:00",
+            "reference_end_dt": "2026-03-05 10:30:00",
+            "evidence_start_dt": "2026-03-05 15:00:00",
+            "evidence_end_dt": "2026-03-06 10:30:00",
+            "last_kiss_proven": false
+          }
+        },
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 9.103828801926284e-15,
+          "changed_rows": 40,
+          "original_envelope_violations": 11,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-28 10:30:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 14:00:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 15:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 10:30:00",
+            "2026-07-31 11:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "512480.SH",
+      "day": {
+        "period": "1d",
+        "rows": 1731,
+        "observations": 139,
+        "anchor_factor": 1.964,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {
+          "ma_buy2_candidate": 2
+        },
+        "state_snapshot_counts": {
+          "ma_buy2_candidate": 198
+        },
+        "examples": {
+          "ma_buy2_candidate": {
+            "kind": "ma_buy2_candidate",
+            "dt": "2025-12-31 00:00:00",
+            "price": 1.461,
+            "confirmed_dt": "2026-01-07 15:05:00",
+            "pattern": "first_continuation",
+            "kiss_start_dt": "2025-12-29 00:00:00",
+            "kiss_end_dt": "2026-01-07 00:00:00",
+            "kiss_index": 1,
+            "kiss_kind": "fly",
+            "reference_strength": null,
+            "current_strength": null,
+            "pre_gain": 0.023499613030324263,
+            "volume_ratio": 1.109365135459558,
+            "reference_start_dt": null,
+            "reference_end_dt": null,
+            "evidence_start_dt": "2025-12-30 00:00:00",
+            "evidence_end_dt": "2026-01-07 00:00:00",
+            "last_kiss_proven": null
+          }
+        },
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.964,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 175,
+        "future_poison_checks": 175,
+        "pre_close_checks": 175,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {
+          "ma_buy2_candidate": 1
+        },
+        "state_snapshot_counts": {
+          "ma_buy2_candidate": 175
+        },
+        "examples": {
+          "ma_buy2_candidate": {
+            "kind": "ma_buy2_candidate",
+            "dt": "2026-01-20 15:00:00",
+            "price": 1.668,
+            "confirmed_dt": "2026-01-21 13:31:00",
+            "pattern": "first_continuation",
+            "kiss_start_dt": "2026-01-16 11:00:00",
+            "kiss_end_dt": "2026-01-21 13:30:00",
+            "kiss_index": 1,
+            "kiss_kind": "wet",
+            "reference_strength": null,
+            "current_strength": null,
+            "pre_gain": 0.025341492057605493,
+            "volume_ratio": 1.519697133287771,
+            "reference_start_dt": null,
+            "reference_end_dt": null,
+            "evidence_start_dt": "2026-01-16 11:30:00",
+            "evidence_end_dt": "2026-01-21 13:30:00",
+            "last_kiss_proven": null
+          }
+        },
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 2.9753977059954195e-14,
+          "changed_rows": 39,
+          "original_envelope_violations": 9,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 15:00:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 11:30:00",
+            "2026-07-31 10:00:00",
+            "2026-07-31 10:30:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "159915.SZ",
+      "day": {
+        "period": "1d",
+        "rows": 3553,
+        "observations": 139,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 175,
+        "future_poison_checks": 175,
+        "pre_close_checks": 175,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 5.906386491005833e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 5,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 14:30:00",
+            "2026-07-27 15:00:00",
+            "2026-07-30 15:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "513100.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3211,
+        "observations": 139,
+        "anchor_factor": 5.002,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {
+          "ma_buy2_candidate": 1
+        },
+        "state_snapshot_counts": {
+          "ma_buy2_candidate": 59
+        },
+        "examples": {
+          "ma_buy2_candidate": {
+            "kind": "ma_buy2_candidate",
+            "dt": "2026-04-15 00:00:00",
+            "price": 1.856,
+            "confirmed_dt": "2026-05-11 15:05:00",
+            "pattern": "first_continuation",
+            "kiss_start_dt": "2026-04-14 00:00:00",
+            "kiss_end_dt": "2026-05-11 00:00:00",
+            "kiss_index": 1,
+            "kiss_kind": "lip",
+            "reference_strength": null,
+            "current_strength": null,
+            "pre_gain": 0.034829900485998634,
+            "volume_ratio": 1.202577667618129,
+            "reference_start_dt": null,
+            "reference_end_dt": null,
+            "evidence_start_dt": "2026-04-15 00:00:00",
+            "evidence_end_dt": "2026-05-11 00:00:00",
+            "last_kiss_proven": null
+          }
+        },
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1240,
+        "observations": 169,
+        "anchor_factor": 5.002,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 169,
+        "future_poison_checks": 169,
+        "pre_close_checks": 169,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 3.9968028886505635e-15,
+          "changed_rows": 34,
+          "original_envelope_violations": 12,
+          "original_violation_times": [
+            "2026-07-27 10:30:00",
+            "2026-07-27 11:00:00",
+            "2026-07-27 15:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 14:30:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 11:00:00",
+            "2026-07-29 13:30:00",
+            "2026-07-30 14:30:00",
+            "2026-07-31 11:30:00",
+            "2026-07-31 13:30:00",
+            "2026-07-31 14:30:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "518880.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3162,
+        "observations": 139,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 175,
+        "future_poison_checks": 175,
+        "pre_close_checks": 175,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {
+          "ma_buy2_candidate": 1,
+          "ma_sell2_candidate": 1
+        },
+        "state_snapshot_counts": {
+          "ma_buy2_candidate": 175,
+          "ma_sell2_candidate": 175
+        },
+        "examples": {
+          "ma_buy2_candidate": {
+            "kind": "ma_buy2_candidate",
+            "dt": "2026-01-23 14:30:00",
+            "price": 10.6,
+            "confirmed_dt": "2026-01-29 10:01:00",
+            "pattern": "first_continuation",
+            "kiss_start_dt": "2026-01-23 11:30:00",
+            "kiss_end_dt": "2026-01-29 10:00:00",
+            "kiss_index": 1,
+            "kiss_kind": "wet",
+            "reference_strength": null,
+            "current_strength": null,
+            "pre_gain": 0.022459499263622954,
+            "volume_ratio": 0.9175625717977576,
+            "reference_start_dt": null,
+            "reference_end_dt": null,
+            "evidence_start_dt": "2026-01-23 13:30:00",
+            "evidence_end_dt": "2026-01-29 10:00:00",
+            "last_kiss_proven": null
+          },
+          "ma_sell2_candidate": {
+            "kind": "ma_sell2_candidate",
+            "dt": "2026-01-30 13:30:00",
+            "price": 11.236,
+            "confirmed_dt": "2026-02-02 10:31:00",
+            "pattern": "first_continuation",
+            "kiss_start_dt": "2026-01-30 11:30:00",
+            "kiss_end_dt": "2026-02-02 10:30:00",
+            "kiss_index": 1,
+            "kiss_kind": "lip",
+            "reference_strength": null,
+            "current_strength": null,
+            "pre_gain": 0.025915454460037745,
+            "volume_ratio": 1.7525809622118964,
+            "reference_start_dt": null,
+            "reference_end_dt": null,
+            "evidence_start_dt": "2026-01-30 13:30:00",
+            "evidence_end_dt": "2026-02-02 10:30:00",
+            "last_kiss_proven": null
+          }
+        },
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 1.7053025658242404e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 10,
+          "original_violation_times": [
+            "2026-07-27 10:30:00",
+            "2026-07-27 11:00:00",
+            "2026-07-27 11:30:00",
+            "2026-07-27 14:30:00",
+            "2026-07-28 13:30:00",
+            "2026-07-29 13:30:00",
+            "2026-07-29 14:30:00",
+            "2026-07-30 11:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 11:30:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "511010.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3244,
+        "observations": 139,
+        "anchor_factor": 1.027,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.027,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 175,
+        "future_poison_checks": 175,
+        "pre_close_checks": 175,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {
+          "ma_sell1_candidate": 2
+        },
+        "state_snapshot_counts": {
+          "ma_sell1_candidate": 350
+        },
+        "examples": {
+          "ma_sell1_candidate": {
+            "kind": "ma_sell1_candidate",
+            "dt": "2026-02-13 10:00:00",
+            "price": 140.91,
+            "confirmed_dt": "2026-02-13 14:01:00",
+            "pattern": "post_kiss_divergence",
+            "kiss_start_dt": "2026-01-15 11:00:00",
+            "kiss_end_dt": "2026-01-29 11:30:00",
+            "kiss_index": 2,
+            "kiss_kind": "wet",
+            "reference_strength": 0.5219999999999914,
+            "current_strength": 0.4171000000000049,
+            "pre_gain": 0.0,
+            "volume_ratio": null,
+            "reference_start_dt": "2026-02-05 13:30:00",
+            "reference_end_dt": "2026-02-10 11:30:00",
+            "evidence_start_dt": "2026-02-10 14:00:00",
+            "evidence_end_dt": "2026-02-13 13:30:00",
+            "last_kiss_proven": false
+          }
+        },
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 4.547473508864641e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "588000.SH",
+      "day": {
+        "period": "1d",
+        "rows": 1384,
+        "observations": 139,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 175,
+        "future_poison_checks": 175,
+        "pre_close_checks": 175,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {
+          "ma_sell1_candidate": 1,
+          "ma_buy2_candidate": 1
+        },
+        "state_snapshot_counts": {
+          "ma_sell1_candidate": 175,
+          "ma_buy2_candidate": 175
+        },
+        "examples": {
+          "ma_sell1_candidate": {
+            "kind": "ma_sell1_candidate",
+            "dt": "2026-05-12 11:00:00",
+            "price": 1.841,
+            "confirmed_dt": "2026-05-12 11:31:00",
+            "pattern": "post_kiss_divergence",
+            "kiss_start_dt": "2026-04-30 13:30:00",
+            "kiss_end_dt": "2026-05-06 10:00:00",
+            "kiss_index": 3,
+            "kiss_kind": "fly",
+            "reference_strength": 0.19829999999999948,
+            "current_strength": 0.00020000000000020002,
+            "pre_gain": 0.0,
+            "volume_ratio": null,
+            "reference_start_dt": "2026-05-11 09:30:00",
+            "reference_end_dt": "2026-05-12 10:00:00",
+            "evidence_start_dt": "2026-05-12 11:00:00",
+            "evidence_end_dt": "2026-05-12 11:00:00",
+            "last_kiss_proven": false
+          },
+          "ma_buy2_candidate": {
+            "kind": "ma_buy2_candidate",
+            "dt": "2026-06-15 10:00:00",
+            "price": 1.75,
+            "confirmed_dt": "2026-06-17 15:01:00",
+            "pattern": "first_continuation",
+            "kiss_start_dt": "2026-06-12 11:30:00",
+            "kiss_end_dt": "2026-06-17 15:00:00",
+            "kiss_index": 1,
+            "kiss_kind": "wet",
+            "reference_strength": null,
+            "current_strength": null,
+            "pre_gain": 0.021252285191956065,
+            "volume_ratio": 1.3933112705900965,
+            "reference_start_dt": null,
+            "reference_end_dt": null,
+            "evidence_start_dt": "2026-06-12 13:30:00",
+            "evidence_end_dt": "2026-06-17 15:00:00",
+            "last_kiss_proven": null
+          }
+        },
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 3.907985046680551e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 6,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 14:30:00",
+            "2026-07-27 15:00:00",
+            "2026-07-30 14:00:00",
+            "2026-07-31 11:30:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "516160.SH",
+      "day": {
+        "period": "1d",
+        "rows": 1327,
+        "observations": 139,
+        "anchor_factor": 0.309,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "independent_prefix_checks": 139,
+        "future_poison_checks": 139,
+        "pre_close_checks": 139,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {},
+        "state_snapshot_counts": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 0.309,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "independent_prefix_checks": 175,
+        "future_poison_checks": 175,
+        "pre_close_checks": 175,
+        "candidate_record_revisions": 0,
+        "unique_candidates": {
+          "ma_sell1_candidate": 1
+        },
+        "state_snapshot_counts": {
+          "ma_sell1_candidate": 175
+        },
+        "examples": {
+          "ma_sell1_candidate": {
+            "kind": "ma_sell1_candidate",
+            "dt": "2026-05-07 09:30:00",
+            "price": 3.39,
+            "confirmed_dt": "2026-05-07 11:01:00",
+            "pattern": "post_kiss_divergence",
+            "kiss_start_dt": "2026-04-10 13:30:00",
+            "kiss_end_dt": "2026-04-29 14:30:00",
+            "kiss_index": 2,
+            "kiss_kind": "wet",
+            "reference_strength": 0.2911000000000019,
+            "current_strength": 0.23289999999999678,
+            "pre_gain": 0.00574712643678157,
+            "volume_ratio": null,
+            "reference_start_dt": "2026-04-29 11:00:00",
+            "reference_end_dt": "2026-04-30 11:00:00",
+            "evidence_start_dt": "2026-05-06 09:30:00",
+            "evidence_end_dt": "2026-05-07 10:30:00",
+            "last_kiss_proven": false
+          }
+        },
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 2.6645352591003757e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 7,
+          "original_violation_times": [
+            "2026-07-27 14:30:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-30 11:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 14:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "ok": true
+}

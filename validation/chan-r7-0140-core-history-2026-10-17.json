@@ -1,0 +1,894 @@
+{
+  "version": "0.14.0",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "files": [
+    {
+      "path": "bars_1d/part-00000.parquet",
+      "sha256": "a8323840c4adad004c48582fc40f76480fc3c23390c1de7d8c20cccc238c9c76"
+    },
+    {
+      "path": "bars_30m/year=2026/part-00000.parquet",
+      "sha256": "1e39722d63052d5520a52b634747539c2c52855537bd5a19bbd7ccdbd45b7b92"
+    }
+  ],
+  "adjustment": "OHLC * adj_factor[t] / adj_factor[as_of]; 每前缀独立锚定",
+  "scope": "10只ETF日线全历史及2026年30m，计算契约与明确列出的前缀；非全池、非交易有效性验证",
+  "formation_scope": "真实价格派生的旧bs候选输入契约，不验证因果中枢或理论确认",
+  "source_time_scope": "使用存储的历史因子并逐前缀锚定; 数据集不含历史发布版本, 不证明来源当时未修订",
+  "assets": [
+    {
+      "code": "510300.SH",
+      "input_rows": 3445,
+      "bars": 3445,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 1208,
+      "bis81": 253,
+      "bis106": 349,
+      "xds": 34,
+      "zs": 38,
+      "levels": 3,
+      "moves": 71,
+      "higher": 5,
+      "gaps": 216,
+      "fx_power": {
+        "neutral": 395,
+        "severe": 469,
+        "strong": 309,
+        "weak": 35
+      },
+      "ma_break": {
+        "effective": 1207,
+        "none": 1
+      },
+      "macd_below_zero": 1434,
+      "class_no": 9,
+      "kisses": 84,
+      "ma_bc": 201,
+      "legacy_buy_points": 36,
+      "legacy_sell_points": 23,
+      "formation_observation_contracts": 0,
+      "cross30": {
+        "no_exhaustion": 2
+      },
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 253,
+          "signals": 59
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 253,
+          "signals": 59
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 253,
+          "signals": 59
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 1208,
+          "bi:appeared": 253,
+          "buy:appeared": 38,
+          "sell:appeared": 24,
+          "bi:revised": 14,
+          "fx:revised": 12,
+          "buy:withdrawn": 2,
+          "sell:withdrawn": 1
+        },
+        "ma_classes": {
+          "9": 139
+        },
+        "last_fx_ma_break": {
+          "none": 76,
+          "testing": 26,
+          "effective": 37
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {},
+        "skipped_nonmatching_units": 69,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    },
+    {
+      "code": "510500.SH",
+      "input_rows": 3248,
+      "bars": 3248,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 1083,
+      "bis81": 244,
+      "bis106": 318,
+      "xds": 31,
+      "zs": 32,
+      "levels": 3,
+      "moves": 74,
+      "higher": 5,
+      "gaps": 172,
+      "fx_power": {
+        "severe": 433,
+        "neutral": 305,
+        "weak": 33,
+        "strong": 312
+      },
+      "ma_break": {
+        "effective": 1082,
+        "none": 1
+      },
+      "macd_below_zero": 1299,
+      "class_no": 9,
+      "kisses": 33,
+      "ma_bc": 173,
+      "legacy_buy_points": 31,
+      "legacy_sell_points": 22,
+      "formation_observation_contracts": 0,
+      "cross30": {
+        "no_exhaustion": 1
+      },
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 243,
+          "signals": 53
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 244,
+          "signals": 53
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 244,
+          "signals": 53
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 1083,
+          "bi:appeared": 244,
+          "buy:appeared": 31,
+          "sell:appeared": 23,
+          "bi:revised": 14,
+          "fx:revised": 9,
+          "sell:withdrawn": 1
+        },
+        "ma_classes": {
+          "9": 139
+        },
+        "last_fx_ma_break": {
+          "effective": 53,
+          "none": 62,
+          "testing": 24
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {},
+        "skipped_nonmatching_units": 72,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    },
+    {
+      "code": "512880.SH",
+      "input_rows": 2422,
+      "bars": 2422,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 834,
+      "bis81": 183,
+      "bis106": 247,
+      "xds": 27,
+      "zs": 25,
+      "levels": 3,
+      "moves": 53,
+      "higher": 5,
+      "gaps": 113,
+      "fx_power": {
+        "strong": 268,
+        "severe": 291,
+        "neutral": 256,
+        "weak": 19
+      },
+      "ma_break": {
+        "effective": 834
+      },
+      "macd_below_zero": 1247,
+      "class_no": 9,
+      "kisses": 26,
+      "ma_bc": 127,
+      "legacy_buy_points": 21,
+      "legacy_sell_points": 20,
+      "formation_observation_contracts": 0,
+      "cross30": {},
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 180,
+          "signals": 41
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 181,
+          "signals": 41
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 183,
+          "signals": 41
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 834,
+          "bi:appeared": 183,
+          "buy:appeared": 21,
+          "sell:appeared": 20,
+          "bi:revised": 14,
+          "fx:revised": 21
+        },
+        "ma_classes": {
+          "6": 1,
+          "9": 138
+        },
+        "last_fx_ma_break": {
+          "none": 78,
+          "testing": 24,
+          "effective": 37
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {},
+        "skipped_nonmatching_units": 51,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    },
+    {
+      "code": "512480.SH",
+      "input_rows": 1731,
+      "bars": 1731,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 611,
+      "bis81": 132,
+      "bis106": 170,
+      "xds": 19,
+      "zs": 16,
+      "levels": 3,
+      "moves": 39,
+      "higher": 3,
+      "gaps": 85,
+      "fx_power": {
+        "severe": 234,
+        "neutral": 189,
+        "strong": 181,
+        "weak": 7
+      },
+      "ma_break": {
+        "effective": 610,
+        "none": 1
+      },
+      "macd_below_zero": 723,
+      "class_no": 9,
+      "kisses": 100,
+      "ma_bc": 82,
+      "legacy_buy_points": 15,
+      "legacy_sell_points": 7,
+      "formation_observation_contracts": 0,
+      "cross30": {
+        "no_exhaustion": 1
+      },
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 131,
+          "signals": 22
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 132,
+          "signals": 22
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 132,
+          "signals": 22
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 611,
+          "bi:appeared": 132,
+          "buy:appeared": 16,
+          "sell:appeared": 7,
+          "fx:revised": 7,
+          "bi:revised": 12,
+          "buy:withdrawn": 1
+        },
+        "ma_classes": {
+          "9": 139
+        },
+        "last_fx_ma_break": {
+          "effective": 54,
+          "none": 60,
+          "testing": 25
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {},
+        "skipped_nonmatching_units": 37,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    },
+    {
+      "code": "159915.SZ",
+      "input_rows": 3553,
+      "bars": 3553,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 1233,
+      "bis81": 278,
+      "bis106": 346,
+      "xds": 43,
+      "zs": 43,
+      "levels": 4,
+      "moves": 79,
+      "higher": 5,
+      "gaps": 182,
+      "fx_power": {
+        "severe": 503,
+        "strong": 319,
+        "weak": 28,
+        "neutral": 383
+      },
+      "ma_break": {
+        "effective": 1227,
+        "none": 6
+      },
+      "macd_below_zero": 1463,
+      "class_no": 9,
+      "kisses": 116,
+      "ma_bc": 183,
+      "legacy_buy_points": 42,
+      "legacy_sell_points": 28,
+      "formation_observation_contracts": 0,
+      "cross30": {
+        "no_exhaustion": 4,
+        "confirmed": 1
+      },
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 277,
+          "signals": 70
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 278,
+          "signals": 70
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 278,
+          "signals": 70
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 1233,
+          "bi:appeared": 278,
+          "buy:appeared": 43,
+          "sell:appeared": 28,
+          "bi:revised": 11,
+          "fx:revised": 13,
+          "buy:withdrawn": 1
+        },
+        "ma_classes": {
+          "9": 139
+        },
+        "last_fx_ma_break": {
+          "none": 70,
+          "testing": 28,
+          "effective": 41
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {},
+        "skipped_nonmatching_units": 77,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    },
+    {
+      "code": "513100.SH",
+      "input_rows": 3211,
+      "bars": 3211,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 1332,
+      "bis81": 285,
+      "bis106": 369,
+      "xds": 31,
+      "zs": 46,
+      "levels": 3,
+      "moves": 80,
+      "higher": 5,
+      "gaps": 1344,
+      "fx_power": {
+        "strong": 181,
+        "severe": 539,
+        "neutral": 593,
+        "weak": 19
+      },
+      "ma_break": {
+        "effective": 1330,
+        "testing": 1,
+        "none": 1
+      },
+      "macd_below_zero": 820,
+      "class_no": 9,
+      "kisses": 117,
+      "ma_bc": 184,
+      "legacy_buy_points": 45,
+      "legacy_sell_points": 15,
+      "formation_observation_contracts": 0,
+      "cross30": {
+        "confirmed": 2
+      },
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 283,
+          "signals": 60
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 284,
+          "signals": 60
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 285,
+          "signals": 60
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 1332,
+          "bi:appeared": 285,
+          "buy:appeared": 45,
+          "sell:appeared": 15,
+          "bi:revised": 11,
+          "fx:revised": 11
+        },
+        "ma_classes": {
+          "9": 139
+        },
+        "last_fx_ma_break": {
+          "none": 74,
+          "testing": 34,
+          "effective": 31
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {},
+        "skipped_nonmatching_units": 78,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    },
+    {
+      "code": "518880.SH",
+      "input_rows": 3162,
+      "bars": 3162,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 1364,
+      "bis81": 286,
+      "bis106": 375,
+      "xds": 30,
+      "zs": 42,
+      "levels": 3,
+      "moves": 80,
+      "higher": 6,
+      "gaps": 1336,
+      "fx_power": {
+        "neutral": 636,
+        "severe": 550,
+        "strong": 160,
+        "weak": 18
+      },
+      "ma_break": {
+        "effective": 1362,
+        "testing": 1,
+        "none": 1
+      },
+      "macd_below_zero": 1121,
+      "class_no": 9,
+      "kisses": 87,
+      "ma_bc": 160,
+      "legacy_buy_points": 40,
+      "legacy_sell_points": 20,
+      "formation_observation_contracts": 0,
+      "cross30": {},
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 283,
+          "signals": 59
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 284,
+          "signals": 60
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 286,
+          "signals": 60
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 1364,
+          "bi:appeared": 286,
+          "buy:appeared": 40,
+          "sell:appeared": 21,
+          "fx:revised": 10,
+          "bi:revised": 13,
+          "sell:withdrawn": 1
+        },
+        "ma_classes": {
+          "9": 139
+        },
+        "last_fx_ma_break": {
+          "none": 72,
+          "testing": 31,
+          "effective": 36
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {},
+        "skipped_nonmatching_units": 78,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    },
+    {
+      "code": "511010.SH",
+      "input_rows": 3244,
+      "bars": 3244,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 1014,
+      "bis81": 227,
+      "bis106": 305,
+      "xds": 18,
+      "zs": 33,
+      "levels": 3,
+      "moves": 63,
+      "higher": 2,
+      "gaps": 136,
+      "fx_power": {
+        "neutral": 279,
+        "strong": 411,
+        "severe": 316,
+        "weak": 8
+      },
+      "ma_break": {
+        "effective": 1013,
+        "testing": 1
+      },
+      "macd_below_zero": 687,
+      "class_no": 9,
+      "kisses": 109,
+      "ma_bc": 159,
+      "legacy_buy_points": 32,
+      "legacy_sell_points": 6,
+      "formation_observation_contracts": 0,
+      "cross30": {
+        "no_exhaustion": 2
+      },
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 224,
+          "signals": 38
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 225,
+          "signals": 38
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 227,
+          "signals": 38
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 1014,
+          "bi:appeared": 227,
+          "buy:appeared": 32,
+          "sell:appeared": 6,
+          "fx:revised": 15,
+          "bi:revised": 9
+        },
+        "ma_classes": {
+          "1": 4,
+          "2": 3,
+          "9": 132
+        },
+        "last_fx_ma_break": {
+          "effective": 56,
+          "none": 58,
+          "testing": 25
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {},
+        "skipped_nonmatching_units": 61,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    },
+    {
+      "code": "588000.SH",
+      "input_rows": 1384,
+      "bars": 1384,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 465,
+      "bis81": 98,
+      "bis106": 134,
+      "xds": 7,
+      "zs": 12,
+      "levels": 3,
+      "moves": 25,
+      "higher": 2,
+      "gaps": 51,
+      "fx_power": {
+        "strong": 126,
+        "neutral": 142,
+        "severe": 188,
+        "weak": 9
+      },
+      "ma_break": {
+        "effective": 463,
+        "none": 2
+      },
+      "macd_below_zero": 716,
+      "class_no": 9,
+      "kisses": 54,
+      "ma_bc": 65,
+      "legacy_buy_points": 10,
+      "legacy_sell_points": 8,
+      "formation_observation_contracts": 0,
+      "cross30": {
+        "confirmed": 1,
+        "no_exhaustion": 1
+      },
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 97,
+          "signals": 18
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 98,
+          "signals": 19
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 98,
+          "signals": 18
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 465,
+          "bi:appeared": 98,
+          "buy:appeared": 14,
+          "sell:appeared": 9,
+          "bi:revised": 16,
+          "fx:revised": 11,
+          "sell:withdrawn": 1,
+          "buy:withdrawn": 4
+        },
+        "ma_classes": {
+          "9": 139
+        },
+        "last_fx_ma_break": {
+          "effective": 47,
+          "none": 68,
+          "testing": 24
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {
+          "buy2:normal": 1
+        },
+        "skipped_nonmatching_units": 22,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    },
+    {
+      "code": "516160.SH",
+      "input_rows": 1327,
+      "bars": 1327,
+      "dropped_paused": 0,
+      "as_of": "2026-07-31 00:00:00",
+      "fxs": 455,
+      "bis81": 92,
+      "bis106": 119,
+      "xds": 11,
+      "zs": 17,
+      "levels": 3,
+      "moves": 27,
+      "higher": 3,
+      "gaps": 59,
+      "fx_power": {
+        "severe": 187,
+        "neutral": 134,
+        "strong": 118,
+        "weak": 16
+      },
+      "ma_break": {
+        "effective": 454,
+        "none": 1
+      },
+      "macd_below_zero": 728,
+      "class_no": 9,
+      "kisses": 57,
+      "ma_bc": 60,
+      "legacy_buy_points": 11,
+      "legacy_sell_points": 12,
+      "formation_observation_contracts": 0,
+      "cross30": {
+        "no_exhaustion": 2
+      },
+      "prefixes": [
+        {
+          "as_of": "2026-07-03 00:00:00",
+          "bis": 91,
+          "signals": 23
+        },
+        {
+          "as_of": "2026-07-17 00:00:00",
+          "bis": 92,
+          "signals": 23
+        },
+        {
+          "as_of": "2026-07-31 00:00:00",
+          "bis": 92,
+          "signals": 23
+        }
+      ],
+      "replay": {
+        "observations": 139,
+        "start": "2026-01-05 00:00:00",
+        "end": "2026-07-31 00:00:00",
+        "future_price_poison_checks": 139,
+        "macd_scaled_prefix_checks": 417,
+        "changes": {
+          "fx:appeared": 455,
+          "bi:appeared": 92,
+          "buy:appeared": 13,
+          "sell:appeared": 12,
+          "bi:revised": 9,
+          "fx:revised": 19,
+          "buy:withdrawn": 2
+        },
+        "ma_classes": {
+          "9": 139
+        },
+        "last_fx_ma_break": {
+          "none": 67,
+          "testing": 24,
+          "effective": 48
+        },
+        "formation_candidate_contracts": {},
+        "batch_complete_move_revisions": 0
+      },
+      "second_conditions": {
+        "conditions": {},
+        "skipped_nonmatching_units": 25,
+        "scope": "真实分解端点及极值的条件接线; 上下文为验收输入, 非自动理论信号"
+      }
+    }
+  ],
+  "errors": [],
+  "sector": {
+    "mean_class": 9.0,
+    "valid_count": 10,
+    "total_count": 10,
+    "coverage": 1.0,
+    "distribution": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "periods": [
+      5,
+      13,
+      21,
+      34,
+      55,
+      89,
+      144,
+      233
+    ],
+    "confirm": 1
+  },
+  "ok": true
+}

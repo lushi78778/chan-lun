@@ -1,0 +1,130 @@
+{
+  "schema_version": "chan-core-acceptance-v1",
+  "version": "0.9.0",
+  "generated_at": "2026-10-11T19:11:38+08:00",
+  "core_commit": "4f6415f40b712dc1cdfd446460ed7762c29becb1",
+  "baseline_core_commit": "c97ed6fc9fcec961057f8816cb03636620b09f19",
+  "delivery": {
+    "chinese_local_commits": true,
+    "pushed": true,
+    "pushed_range": "c97ed6f..4f6415f main",
+    "tagged": false,
+    "CI_checked": true,
+    "CI_run": "https://github.com/lushi78778/chan-lun/actions/runs/38134176079",
+    "CI_head_sha": "4f6415f40b712dc1cdfd446460ed7762c29becb1",
+    "CI_jobs": {
+      "test (3.13)": "success",
+      "test (3.10)": "success",
+      "legacy": "success",
+      "publish-pypi": "skipped",
+      "release": "skipped"
+    },
+    "CI_api_receipt_sha256": {
+      "runs": "6d81b9aa5868d17e2d4a8f7aab07cfa3101829f8adf3993ebd7e81448db45f13",
+      "jobs": "590219578db60873fbfd511aafebd59152836d0194e93e8853193451abb37fdb"
+    },
+    "Release_checked": false,
+    "PyPI_checked": false,
+    "outer_submodule_pointer_updated": true,
+    "pointer_reason": "核心提交已推送并核验CI, 外层引用随本次提交更新"
+  },
+  "runtime": {
+    "python": "3.13.15",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "pyarrow": "26.0.0",
+    "python36_syntax_contract": true,
+    "python36_old_dependencies_executed": true,
+    "python36_old_dependencies_via": "本次远端CI legacy: python:3.6.15-buster / numpy1.14.6 / pandas0.23.4, 包测试及安装wheel验证通过",
+    "JoinQuant_executed": false
+  },
+  "tests": {
+    "core": {
+      "tests": 595,
+      "seconds": 2.788,
+      "ok": true,
+      "log_sha256": "1d14d26376b6d2dad1e4975f449bbc38d55f479ce0a53a57aa663fd888bd1ac5",
+      "raw_log": "/private/tmp/chan-core-090-final-tests.log",
+      "command": ".venv/bin/python tools/check_project.py --scope core"
+    },
+    "project": {
+      "tests": 961,
+      "seconds": 101.428,
+      "ok": true,
+      "log_sha256": "e1a8779ed94677f122ecaf2729275928b93632d75e74b43c0e2348fc070739d3",
+      "raw_log": "/private/tmp/chan-project-090-final-tests.log",
+      "command": ".venv/bin/python tools/check_project.py"
+    }
+  },
+  "behavior_change": "未修改理论算法或公开行为, 新增真实双路径F1/相邻F2冻结标签和包测试; 版本双处同步0.9.0",
+  "real_theory": {
+    "coverage": "chan-real-coverage-0.9.0.json",
+    "source_cases": 6,
+    "raw_window_rows": 928,
+    "windows_can_overlap": true,
+    "raw_standard_observations": 1856,
+    "f1_path_observations": 3712,
+    "label_fixture": "src/chan/tests/fixtures/real_f1_originals.json",
+    "label_fixture_sha256": "7c8408bf8beaf9f9c492460cb00353856c15dec56951a310de8522b1db9b5d29",
+    "completed_f1": 41,
+    "completed_f1_by_path_and_kind": {
+      "bi:consolidation": 35,
+      "bi:up": 2,
+      "xd:consolidation": 3,
+      "bi:down": 1
+    },
+    "upward_count_means": "同一上涨窗口两标准结果, 不代表两个独立行情区间",
+    "completed_f2": 1,
+    "completed_f2_case": "512880 2016-11-09..2017-08-30 / bi-106",
+    "strict_first_point_cases": 0,
+    "label_generation_uses_algorithm": false,
+    "independent_integer_foundation": true,
+    "manually_frozen_xd_and_f1_boundaries": true,
+    "active_last_bi_excluded_before_xd": true,
+    "endpoint_is_not_confirmation": true,
+    "R2_gate_passed": false,
+    "R3_ready": false
+  },
+  "browser_QA": {
+    "checked_at": "2026-10-11T19:11:38+08:00",
+    "transport": "HTTP 127.0.0.1:8790, only archived HTML served",
+    "sampled_views": [
+      "首页及A窗口",
+      "E上涨窗口图面/横向滚动/确认列",
+      "F下跌窗口图面/F1确认列/相邻F2表"
+    ],
+    "album_articles": 6,
+    "album_svgs": 24,
+    "album_tables": 48,
+    "broken_nav_targets": 0,
+    "body_horizontal_overflow": false,
+    "console_errors_or_warnings": [],
+    "all_plots_visually_inspected": false,
+    "temporary_server_stopped": true,
+    "html_structure_checked": true,
+    "browser_visual_checked": true
+  },
+  "source_hashes": {
+    "src/chan/tests/fixtures/real_f1_originals.json": "7c8408bf8beaf9f9c492460cb00353856c15dec56951a310de8522b1db9b5d29",
+    "doc/validation/chan-real-f1-manual-0.9.0.json": "0418fbdfdef9ce011a4610237fb6b75ca6265ad67c03586da767c8189f7b38a4",
+    "doc/validation/chan-real-512880-day-20160808-20161226-input.json": "ed008db8c7b95b240b37be89e8e195087c1f649cf8411c6753ca7cce27f5d392",
+    "doc/validation/chan-real-512880-day-20250821-20251031-input.json": "5b8bded6718bdaf6ce18da2323f493d3cf46a40060ecf39aa6f320c5be02078b",
+    "doc/validation/chan-real-512880-day-20220420-20221209-input.json": "1e2e3f0c8ac27326ac36b1ce7123294ea8d8809642a847b6b5bbfc4eedc905f4",
+    "doc/validation/chan-real-159915-day-20160505-20161116-input.json": "50e3d143244b1149d148e9773ad9107423466ff91354ee27e6794a29e8ec5c99",
+    "doc/validation/chan-real-512880-day-20180824-20191120-input.json": "749db65b58f409c48b9f7e8b90e6b904dac596ed5400c45bc1026f853c861a80",
+    "doc/validation/chan-real-512880-day-20161109-20170830-input.json": "ebeed5fa73e0374dd3a599cae73bcf4b01da526f2667ccd66fd94de58aa679be",
+    "doc/validation/chan-real-f1-annotations-0.9.0.html": "2cb1bc3fe29a23530d034e21260a184c625054a74a7f7fbfa1fd67b7f54aea19",
+    "doc/validation/chan-real-f1-annotations-0.9.0.json": "475a6a9e5eaea1850d669adde88e144d0a3f6903a8c41b8a05ee84608a09d50f",
+    "doc/validation/chan-real-coverage-0.9.0.json": "4d405c49d184d5ff99e22a5c51663e2e932bf83a46741f08372f9114fbc5a990",
+    "tools/gen_real_f1_originals.py": "364952a1195ddc893e9507fb82ecc0a7dd25a0f7336ac5cb666dcbb6c8902fa5",
+    "tools/build_real_f1_annotations.py": "408970f84f2492861fa11feef6f6598a2e8f873cf84d99d0245158bb6c8a3975",
+    "tests/test_real_f1_assets.py": "b4dc45cfacaf13f7482c9abc814ef9fc7480889f5b0a93ddca4bf01a55317d97"
+  },
+  "limits": [
+    "六窗口证据不推广为全市场或108课全分支验收",
+    "完成XD路径涨/跌F1, 一/二/三类正反例及因果底顶尚缺, R2未全过不放行R3",
+    "日线15:00闭合/15:05到达为工程约定; 历史快照不证明实际历史供应版本",
+    "本轮未做分钟结构独立裁定、聚宽实跑或收益验收",
+    "本轮无tag/Release/PyPI发布; 不继承旧版发布结果"
+  ]
+}

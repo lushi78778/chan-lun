@@ -1,0 +1,14 @@
+{
+  "version": "0.8.0",
+  "algorithm_used_to_generate_labels": false,
+  "cases": 4,
+  "source_hashes": {
+    "src/chan/tests/fixtures/real_xd_originals.json": "9dad4624cc21eae50e002aa99b9cd0ccded61d5f450692631f6695c7fff00b51",
+    "doc/validation/chan-real-512880-day-20160808-20161226-input.json": "ed008db8c7b95b240b37be89e8e195087c1f649cf8411c6753ca7cce27f5d392",
+    "doc/validation/chan-real-512880-day-20250821-20251031-input.json": "5b8bded6718bdaf6ce18da2323f493d3cf46a40060ecf39aa6f320c5be02078b",
+    "doc/validation/chan-real-512880-day-20220420-20221209-input.json": "1e2e3f0c8ac27326ac36b1ce7123294ea8d8809642a847b6b5bbfc4eedc905f4",
+    "doc/validation/chan-real-159915-day-20160505-20161116-input.json": "50e3d143244b1149d148e9773ad9107423466ff91354ee27e6794a29e8ec5c99"
+  },
+  "html_sha256": "336aa47c8adbe9132c8d95cb8907c666dc32179b507838d7181ba172e4de8d78",
+  "scope": "四窗口独立基础算术、两标准笔、第一/第二种完成线段、真实古怪线段及全部原始日前缀; 没有完成F1、中枢或严格点位真值"
+}

@@ -1,0 +1,314 @@
+{
+  "version": "0.7.5",
+  "core_commit": "73e047daac74eb578af55819c67963095c55a4c0",
+  "concept_commits": [
+    "f61a5a2",
+    "5761f6c",
+    "73e047d"
+  ],
+  "scope": "MACD辅助自动一类候选、原趋势末中枢与一类后因果中枢的双身份接线、二三类及底顶组合；所列完整原图组标注，不声明108课全部精确自动实现",
+  "source_courses": [
+    24,
+    27,
+    62,
+    65,
+    67,
+    71,
+    78,
+    81,
+    101,
+    108
+  ],
+  "core_tests": 569,
+  "project_tests": 927,
+  "new_first_chain_tests": 17,
+  "sdist_tests": 569,
+  "first_point_method": "macd_area",
+  "default_zero_axis_ratio_limit": 0.005,
+  "rule": "仅完成的同级趋势参与A/B/C辅助比较；实际可用时间门控。一类候选等待完成与收盘价格证据，不回填至端点。二类强弱看原趋势末中枢，底顶及三类归属一类后首个形成中枢，冻结身份与边界。平端点停止有向条件并公开待判身份，不删除拼接。",
+  "parameter_scope": "0.5%回零门槛是可调工程口径，不是原文数值；MACD辅助候选不替代严格背驰证明。",
+  "original_annotations": {
+    "version": "0.7.5",
+    "pdf_sha256": "0721a63b2213fedf7241fd0ca69757e3dbd89bda58ea30e7df89b2fc447673a5",
+    "source_pages": [
+      473,
+      519,
+      520,
+      521,
+      640,
+      647
+    ],
+    "independent_cases": 28,
+    "fx_bi_cases": 10,
+    "xd_cases": 18,
+    "fixture_hashes": {
+      "fx_bi_originals.json": "859545b37c039866d59dc59588500d184ad11a5728777beaa4c5707714f4fc62",
+      "xd_originals.json": "4259f1e2071bd4f7ed932b23cb5218ff3b94b5cb2626abf52779b26c65ab622a"
+    },
+    "complete_groups": [
+      "课62定义图1—9",
+      "课67编者八种分析补图",
+      "课81点5/7关系三分支更正"
+    ],
+    "pending": [
+      "课65十二题",
+      "课71完整组合图",
+      "课78完整原图",
+      "课77/106实盘图",
+      "真实形态独立理论标注"
+    ],
+    "manifest": "chan-original-annotations-0.7.5.json",
+    "manifest_sha256": "10ccb905e1a89e539547254c4e36d4a230a3473172f4e1b5b56d777959f1b8fb",
+    "html": "chan-original-annotations-0.7.5.html",
+    "html_sha256": "7d86e83cb313193d86dc21ff8b3dc4711060747fb67ffd9add460c56cfb8fa31",
+    "mirror_and_each_prefix": "passed",
+    "browser": {
+      "case_articles": 28,
+      "original_page_images": 6,
+      "broken_anchors": 0,
+      "all_images_loaded": true,
+      "visual_review": "passed"
+    }
+  },
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "real_paths": [
+    {
+      "base_parts": "bi",
+      "receipt": "chan-core-0.7.5-points-bi-final-real-2026-10-10.json",
+      "sha256": "158b52a870f11f0d127aa2e6808157caecf2fee63c6cc479fac3130f56d490fc",
+      "source_files_verified": 37,
+      "day": {
+        "observations": 1390,
+        "completed_f2_types": 30,
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 1390,
+        "future_poison_checks": 1390,
+        "unresolved_flat_types": 2,
+        "points_by_class": [
+          {},
+          {},
+          {}
+        ],
+        "first_exclusions": {
+          "no_new_extreme": 2,
+          "no_directional_compare_legs": 15,
+          "no_comparable_center_tail": 7,
+          "not_trend": 6
+        }
+      },
+      "minute": {
+        "observations": 1744,
+        "completed_f2_types": 12,
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 1744,
+        "future_poison_checks": 1744,
+        "unresolved_flat_types": 0,
+        "points_by_class": [
+          {},
+          {},
+          {}
+        ],
+        "first_exclusions": {
+          "no_directional_compare_legs": 7,
+          "not_trend": 4,
+          "no_comparable_center_tail": 1
+        }
+      }
+    },
+    {
+      "base_parts": "xd",
+      "receipt": "chan-core-0.7.5-points-xd-final-real-2026-10-10.json",
+      "sha256": "17c8cacc21dd88d4347dcd955adcabf762d389f2f88f434c606fcaf31a0a324a",
+      "source_files_verified": 37,
+      "day": {
+        "observations": 1390,
+        "completed_f2_types": 1,
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 1390,
+        "future_poison_checks": 1390,
+        "unresolved_flat_types": 0,
+        "points_by_class": [
+          {},
+          {},
+          {}
+        ],
+        "first_exclusions": {
+          "not_trend": 1
+        }
+      },
+      "minute": {
+        "observations": 1744,
+        "completed_f2_types": 0,
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 1744,
+        "future_poison_checks": 1744,
+        "unresolved_flat_types": 0,
+        "points_by_class": [
+          {},
+          {},
+          {}
+        ],
+        "first_exclusions": {}
+      }
+    }
+  ],
+  "availability_scope": "自动MACD辅助一类/因果中枢/点位链的真实行情与时间接线验收。\n\n使用锁定已知价格锚、固定笔或其完成线段经同级切分声明F1。F1真理论\n仍须人工原图验收, K线周期不等于走势级别。暖机历史只在首观察声明\n已知。行情关闭/到达是测试约定, 不证明真实供应版本及聚宽时效。\n",
+  "nonempty_real_point_chain": "not_observed",
+  "positive_chain_scope": "合成用例覆盖买卖镜像、一二三类、因果中枢、底顶成功/失败；真实窗口候选为空，不能登记真实非空理论验收。",
+  "retained_initial_failure": "chan-core-0.7.5-points-bi-pre-flat-real-2026-10-10.json",
+  "local_build": {
+    "wheel_and_sdist": "passed",
+    "sdist_json_fixtures": 2,
+    "sdist_tests": 569,
+    "package_source_files_equal": 37,
+    "zip_crc": "passed",
+    "isolated_import_and_api_smoke": "passed"
+  },
+  "local_build_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.5-py3-none-any.whl",
+      "sha256": "4df07e850fda40f56a2532ca05628f73e1a0f295b1afad176438b11ea8b4e2ae"
+    },
+    {
+      "file": "chan_lun_core-0.7.5.tar.gz",
+      "sha256": "dc14585e742801b12882614b0621179870550217098c48ead46c5c2411c0965d"
+    }
+  ],
+  "main_ci": {
+    "url": "https://github.com/lushi78778/chan-lun/actions/runs/38064828174",
+    "head_sha": "73e047daac74eb578af55819c67963095c55a4c0",
+    "status": "success",
+    "jobs": [
+      {
+        "name": "test (3.10)",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38064828174/job/114250243477"
+      },
+      {
+        "name": "test (3.13)",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38064828174/job/114250243632"
+      },
+      {
+        "name": "legacy",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38064828174/job/114250320458"
+      },
+      {
+        "name": "publish-pypi",
+        "conclusion": "skipped",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38064828174/job/114250457699"
+      },
+      {
+        "name": "release",
+        "conclusion": "skipped",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38064828174/job/114250457760"
+      }
+    ]
+  },
+  "legacy_runtime": "标签与主分支CI通过 Python3.6.15 / numpy1.14.6 / pandas0.23.4 源码测试及安装wheel冒烟；不替代聚宽3.6.7实跑",
+  "release": "published_verified",
+  "joinquant": "not_run",
+  "mirrors": "not_verified",
+  "pending": [
+    "严格自动一类背驰证明",
+    "真实非空一二三类及因果中枢理论标注",
+    "基础F1真实理论标注及分钟级别映射",
+    "级别重组因果身份继承",
+    "课65十二题",
+    "课71完整组合图",
+    "课78完整原图",
+    "课77/106实盘图",
+    "真实形态独立理论标注"
+  ],
+  "ci": {
+    "url": "https://github.com/lushi78778/chan-lun/actions/runs/38065481432",
+    "head_sha": "73e047daac74eb578af55819c67963095c55a4c0",
+    "status": "success",
+    "jobs": [
+      {
+        "name": "test (3.13)",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38065481432/job/114252129189"
+      },
+      {
+        "name": "test (3.10)",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38065481432/job/114252129363"
+      },
+      {
+        "name": "legacy",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38065481432/job/114252183163"
+      },
+      {
+        "name": "release",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38065481432/job/114252314758"
+      },
+      {
+        "name": "publish-pypi",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38065481432/job/114252314844"
+      }
+    ]
+  },
+  "release_url": "https://github.com/lushi78778/chan-lun/releases/tag/v0.7.5",
+  "pypi_url": "https://pypi.org/project/chan-lun-core/0.7.5/",
+  "published_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.5-py3-none-any.whl",
+      "sha256": "165f315fb00cf2ec996ff50203adc861a2a1db02c579fd08e35c6667c574f7c3",
+      "url": "https://files.pythonhosted.org/packages/da/0f/e6db9fd165679f01eb14f85596f4474053d046c2fb424aefcd40256a04e2/chan_lun_core-0.7.5-py3-none-any.whl"
+    },
+    {
+      "file": "chan_lun_core-0.7.5.tar.gz",
+      "sha256": "ea5ad6e353bfd3e7d30596258f978c9648fd716b0a3a4aca47cda4e62681788c",
+      "url": "https://files.pythonhosted.org/packages/4f/07/739b874a3be3afa1d18526621aef69f619136941bc29c3a9419c89aaa95a/chan_lun_core-0.7.5.tar.gz"
+    }
+  ],
+  "github_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.5-py3-none-any.whl",
+      "digest": "sha256:b75102f21f5a87e6d4be8c6bc737365dbf93751014a823855d6ba25eaacfd55b",
+      "url": "https://github.com/lushi78778/chan-lun/releases/download/v0.7.5/chan_lun_core-0.7.5-py3-none-any.whl"
+    },
+    {
+      "file": "chan_lun_core-0.7.5.tar.gz",
+      "digest": "sha256:4f285ff8998f3c725e4dab1d7e3ae8fbebd5ed7d5ada94b791861f70b433403f",
+      "url": "https://github.com/lushi78778/chan-lun/releases/download/v0.7.5/chan_lun_core-0.7.5.tar.gz"
+    }
+  ],
+  "published_wheel_verification": {
+    "sha256_matches_pypi": true,
+    "zip_crc_ok": true,
+    "package_source_files_equal": 37,
+    "isolated_import_and_api_smoke": "passed"
+  },
+  "published_sdist_verification": {
+    "sha256_matches_pypi": true,
+    "package_source_files_equal": 37,
+    "original_json_fixtures_equal": 2
+  },
+  "published_github_wheel_verification": {
+    "sha256_matches_release": true,
+    "zip_crc_ok": true,
+    "package_source_files_equal": 37,
+    "isolated_import_and_api_smoke": "passed"
+  },
+  "release_verified_at_utc": "2026-10-10 16:00:57 UTC",
+  "release_verified_at_beijing": "2026-10-11 00:00:57 +08:00"
+}

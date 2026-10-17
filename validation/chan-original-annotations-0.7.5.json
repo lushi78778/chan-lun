@@ -1,0 +1,31 @@
+{
+  "version": "0.7.5",
+  "pdf_sha256": "0721a63b2213fedf7241fd0ca69757e3dbd89bda58ea30e7df89b2fc447673a5",
+  "source_pages": [
+    473,
+    519,
+    520,
+    521,
+    640,
+    647
+  ],
+  "independent_cases": 28,
+  "fx_bi_cases": 10,
+  "xd_cases": 18,
+  "fixture_hashes": {
+    "fx_bi_originals.json": "859545b37c039866d59dc59588500d184ad11a5728777beaa4c5707714f4fc62",
+    "xd_originals.json": "4259f1e2071bd4f7ed932b23cb5218ff3b94b5cb2626abf52779b26c65ab622a"
+  },
+  "complete_groups": [
+    "课62定义图1—9",
+    "课67编者八种分析补图",
+    "课81点5/7关系三分支更正"
+  ],
+  "pending": [
+    "课65十二题",
+    "课71完整组合图",
+    "课78完整原图",
+    "课77/106实盘图",
+    "真实形态独立理论标注"
+  ]
+}

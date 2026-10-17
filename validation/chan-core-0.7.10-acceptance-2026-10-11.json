@@ -1,0 +1,242 @@
+{
+  "schema_version": "chan-core-acceptance-v1",
+  "version": "0.7.10",
+  "generated_at": "2026-10-11T11:44:49.859289+08:00",
+  "core_commit": "550324e2b182c88cc5efa9c10fd6e6169805b928",
+  "local_concept_commits": {
+    "0.7.6": "f103e9648e885078ed4da15db4e78023caf621ed",
+    "0.7.7": "9e6d7d05dabea74882e5f22113315e70cc5a7387",
+    "0.7.8": "88e12427e8519234cd8c020b8981f9d66d669e69",
+    "0.7.9": "485ac916f794c92fe74127fbc796fb7e1080ec3d",
+    "0.7.10": "550324e2b182c88cc5efa9c10fd6e6169805b928"
+  },
+  "delivery": {
+    "chinese_local_commits": true,
+    "pushed": false,
+    "tagged": false,
+    "CI_checked": false,
+    "Release_checked": false,
+    "PyPI_checked": false,
+    "next_push_version": "0.8.0",
+    "outer_submodule_pointer_updated": false,
+    "pointer_reason": "子模块提交未推送;待阶段推送验证远端可获取后更新外层引用"
+  },
+  "runtime": {
+    "python": "3.13.15",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "pyarrow": "26.0.0",
+    "python36_syntax_contract": true,
+    "python36_old_dependencies_executed": false,
+    "JoinQuant_executed": false
+  },
+  "tests": {
+    "core": {
+      "tests": 586,
+      "seconds": 1.871,
+      "ok": true,
+      "log_sha256": "9bb19ca41f5c25648b7715136f30738e00f52a6036b6fb6d205ca97f6bf26d1c",
+      "raw_log": "/private/tmp/chan-core-0710-final-tests.log",
+      "command": ".venv/bin/python tools/check_project.py --scope core"
+    },
+    "project": {
+      "tests": 950,
+      "seconds": 102.99,
+      "ok": true,
+      "log_sha256": "ba31f7312354a49c5141445ef822feb697e4e2d335f8edffc138070440c0577d",
+      "raw_log": "/private/tmp/chan-project-0710-final-tests.log",
+      "command": ".venv/bin/python tools/check_project.py"
+    }
+  },
+  "originals": {
+    "cases": 92,
+    "xd_cases": 82,
+    "fx_bi_cases": 10,
+    "figure_reviews": 31,
+    "pdf_pages": [
+      473,
+      504,
+      506,
+      519,
+      520,
+      521,
+      561,
+      562,
+      607,
+      610,
+      611,
+      612,
+      613,
+      616,
+      640,
+      647,
+      869,
+      870,
+      871
+    ],
+    "R1_specified_groups_accounted": true,
+    "historical_raw_OHLC_reproduced": false,
+    "label_generation_uses_algorithm": false,
+    "behavior_change": "0.7.9首反向笔内部包含不提前确认,后继线段破坏在实际观察前缀逆时间传递;旧值与修订依据保留"
+  },
+  "real_engineering": {
+    "source_version": "v2026-07-31-r2",
+    "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+    "ten_assets_day_rows": 26727,
+    "day_observations": 1390,
+    "legacy_loader_30m_scope": "2026年工程样本",
+    "integrity_all_frequency_files": 107,
+    "profile_codes": 10,
+    "full_history_30m_rows": 240559,
+    "selected_complete_minutes_usable": false,
+    "issues": [
+      {
+        "period": "30m",
+        "code": "510300.SH",
+        "check": "material_envelope_violations",
+        "count": 1
+      },
+      {
+        "period": "30m",
+        "code": "159915.SZ",
+        "check": "material_envelope_violations",
+        "count": 9
+      },
+      {
+        "period": "30m",
+        "code": "513100.SH",
+        "check": "invalid_prices",
+        "count": 39
+      },
+      {
+        "period": "30m",
+        "code": "518880.SH",
+        "check": "invalid_prices",
+        "count": 58
+      },
+      {
+        "period": "30m",
+        "code": "518880.SH",
+        "check": "invalid_factors",
+        "count": 45
+      },
+      {
+        "period": "30m",
+        "code": "511010.SH",
+        "check": "invalid_prices",
+        "count": 128
+      }
+    ],
+    "source_files_modified": false,
+    "actual_minute_close_and_arrival_verified": false,
+    "historical_vendor_versions_available": false
+  },
+  "real_theory": {
+    "schema_version": "chan-real-coverage-v1",
+    "version": "0.7.10",
+    "snapshot_scope": "本次独立标签固定输入的证据快照;执行状态唯一维护在正式计划§6",
+    "source_case": "512880-day-20240701-20240802",
+    "source_label_sha256": "b7b3f709e8756adba65ab63d1b335cf233fa7bdeacb96db25bb5d36b52f2bd33",
+    "raw_rows": 25,
+    "raw_observations": 25,
+    "verified": [
+      {
+        "branch": "顺序包含",
+        "independent_cases": [
+          "512880-day-20240701-20240802"
+        ]
+      },
+      {
+        "branch": "上/下分型及右邻首次确认",
+        "independent_cases": [
+          "512880-day-20240701-20240802"
+        ]
+      },
+      {
+        "branch": "81上/下笔及间距否决",
+        "independent_cases": [
+          "512880-day-20240701-20240802"
+        ]
+      },
+      {
+        "branch": "106六K及原始MA5必要条件",
+        "independent_cases": [
+          "512880-day-20240701-20240802"
+        ]
+      },
+      {
+        "branch": "三笔交集与未完成XD反例",
+        "independent_cases": [
+          "512880-day-20240701-20240802"
+        ]
+      }
+    ],
+    "not_verified": [
+      "81/106标准差异",
+      "第一种完成XD",
+      "第二种完成XD",
+      "真实古怪线段",
+      "固定笔路径完成F1的上涨/下跌/盘整及后继证据",
+      "完成线段路径F1与相邻F2",
+      "一类买/卖各两个独立原始区间的成立/不成立",
+      "强/一般/弱二类及二三合一/小转大",
+      "三类成立/触沿/首回试失败/等待完成",
+      "因果底顶成功/失败和升级重组"
+    ],
+    "completed_xd": 0,
+    "completed_f1": 0,
+    "strict_first_points": 0,
+    "R2_gate_passed": false,
+    "R3_ready": false,
+    "source_limits": [
+      "窗口起点固定2024-07-01,仅本窗口算术真值,没有图外走势的分段继承或完成F1真值。",
+      "日线收盘后研究,不声明供应发布时刻;因子均为1,不证明历史供应版本未修订。",
+      "81/106差异分支、完成XD两种破坏、完整F1/F2、点位与因果标签仍需后续独立样本。"
+    ],
+    "not_a_trading_or_return_acceptance": true
+  },
+  "browser_QA": {
+    "original_articles": 123,
+    "original_images": 19,
+    "broken_images": 0,
+    "broken_anchors": 0,
+    "original_visual_checked": [
+      "课67修订前缀说明",
+      "课77复刻反弹分界",
+      "来源假设及标注修订"
+    ],
+    "real_charts": 2,
+    "real_table_rows": [
+      18,
+      7,
+      25,
+      25
+    ],
+    "real_chart_and_text_checked": true
+  },
+  "source_hashes": {
+    "doc/validation/chan-original-annotations-0.7.9.html": "a9608a40ed1521aaf4f9e079b8350fcb94205d7708c1ce89c0dd70b34c3e16e2",
+    "doc/validation/chan-original-annotations-0.7.9.json": "ffe10873ab0a66953e4c068c22b5b12ad597c31736afa607cc8e88989fea05aa",
+    "doc/validation/chan-original-review-0.7.9.json": "5362fc816cb023163f5b05646c4f82dfe9e9df1d1e55297b6641da22c6764670",
+    "doc/validation/chan-core-0.7.9-real-2026-10-11.json": "a1580ab236a5512814d8993aede7e2d90669125fca757e3ba165aa7ab8acec58",
+    "doc/validation/chan-real-sample-index-0.7.9-2026-10-11.json": "e6cbf0e61594261827ea01b8901bf3663707a4bfda67c68b25ed3af4bf49766d",
+    "doc/validation/chan-real-sample-index-0.7.9-2026-10-11-r2.json": "5dc5c151505ab3ec9b5fb92488c70378fcc1a4706d1845004e97d2fb979eb755",
+    "doc/validation/chan-real-512880-day-20240701-20241008-input.json": "19b576c8beae7d04b09a66975e3c6df099fdc6a2ec187abe0b396d05c6006fb4",
+    "doc/validation/chan-real-annotations-0.7.10.html": "2970da27989b6a99aa07942be20f8049156c5094d8596b68e99f9ad0041d995f",
+    "doc/validation/chan-real-annotations-0.7.10.json": "54ec3ff8d5b95899a7380d75e8b9e8028307be175b2df7adee73ecd2e7c1d596",
+    "doc/validation/chan-real-coverage-0.7.10.json": "ddbf1104f7c6505199be2dd0b61831576e0ec4ac4ef0bb2c24a516ed2443eeed",
+    "tools/build_original_annotations.py": "dceab6c93cffcbf5cea82eba64bc73c3f85b750d910119a042828d6aa0b57138",
+    "tools/build_real_annotations.py": "3ec4cafc05aed066775ff55a029fc4ecdc83530784d81e68ebcf61896bf4c494",
+    "tools/index_core_samples.py": "c80dd2615313ef0750715496aef470db342fed97a7702c1c27b93a1e1a426bef",
+    "tests/test_real_sample_index.py": "c2b974b37a34d8518df17b442373611fa29d00a74fff55d5625c963d6bd68176",
+    "src/chan/tests/fixtures/real_foundation.json": "b7b3f709e8756adba65ab63d1b335cf233fa7bdeacb96db25bb5d36b52f2bd33",
+    "src/chan/tests/fixtures/xd_originals.json": "becd85b49544854ce67ea8d4055a128b8b4b6d9ff0959ed17b76f67799490919",
+    "src/chan/tests/test_real_foundation.py": "53c63691b5fe5ec35fa23d2f21eafda225c9e78d5d6215e6e68ce8552a478afb",
+    "src/chan/src/chan/xd.py": "b918ddd4046a4cf512bc9bc4cd4f7688a30c347c0c1a8f875a7c5d96f5b27185"
+  },
+  "limits": [
+    "R2完成F1及真实关键分支未全通过,不进入严格自动识别R3",
+    "局部基础算术不证明全窗口之外的线段继承或历史供应版本",
+    "新小版本仅本地工程/3.6语法与既定真实范围验收,未发布/未执行旧依赖"
+  ]
+}

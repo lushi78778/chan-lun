@@ -1,0 +1,393 @@
+{
+  "version": "0.7.9",
+  "timezone": "Asia/Shanghai",
+  "review_date": "2026-10-11",
+  "figures": [
+    {
+      "id": "71-author-upper-left",
+      "pdf_page": 561,
+      "source_role": "author",
+      "caption": "首笔破坏后先破结束位置",
+      "status": "reviewed_definition",
+      "fixture_refs": [
+        "71-author-first-break-end"
+      ],
+      "scope": "前两张为相对价位复刻;后两张交叉引用定义等价用例,不称逐像素点位相同。"
+    },
+    {
+      "id": "71-author-upper-right",
+      "pdf_page": 561,
+      "source_role": "author",
+      "caption": "首笔破坏后先破开始位置",
+      "status": "reviewed_definition",
+      "fixture_refs": [
+        "71-author-first-break-start"
+      ],
+      "scope": "前两张为相对价位复刻;后两张交叉引用定义等价用例,不称逐像素点位相同。"
+    },
+    {
+      "id": "71-author-lower-left",
+      "pdf_page": 561,
+      "source_role": "author",
+      "caption": "缺口两段,定义分支与67第二种一致",
+      "status": "reviewed_definition",
+      "fixture_refs": [
+        "67-second-gap-return"
+      ],
+      "scope": "前两张为相对价位复刻;后两张交叉引用定义等价用例,不称逐像素点位相同。"
+    },
+    {
+      "id": "71-author-lower-right",
+      "pdf_page": 561,
+      "source_role": "author",
+      "caption": "错误三段示意;按81更正的5/7三分支",
+      "status": "reviewed_definition",
+      "fixture_refs": [
+        "81-equal",
+        "81-higher",
+        "81-lower"
+      ],
+      "scope": "前两张为相对价位复刻;后两张交叉引用定义等价用例,不称逐像素点位相同。"
+    },
+    {
+      "id": "78-editorial-first-a",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第一种情况/a",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-first-a"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-first-b",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第一种情况/b",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-first-b"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-first-c",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第一种情况/c",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-first-c"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-first-d",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第一种情况/d",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-first-d"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-first-e",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第一种情况/e",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-first-e"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-first-f",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第一种情况/f",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-first-f"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-second-a",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第二种情况/a",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-second-a"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-second-b",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第二种情况/b",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-second-b"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-second-c",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第二种情况/c",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-second-c"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-second-d",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第二种情况/d",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-second-d"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-second-e",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第二种情况/e",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-second-e"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-second-f",
+      "pdf_page": 611,
+      "source_role": "editorial",
+      "caption": "编者六图/第二种情况/f",
+      "status": "reviewed_relative_price_oracle",
+      "fixture_refs": [
+        "78-editorial-second-f"
+      ],
+      "scope": "12补图逐折点保留明确不等式;按作者后期定义给出完整/待确认,不自动采纳蓝线实用选择。"
+    },
+    {
+      "id": "78-editorial-standardization",
+      "pdf_page": 612,
+      "source_role": "editorial",
+      "caption": "包含建议与标准化补图",
+      "status": "reviewed_with_method_difference",
+      "fixture_refs": [
+        "78-reply-0-3-8-11"
+      ],
+      "scope": "蓝线/红虚线说明为编者;提前选方向的实用替代法不采用。算法依71/77/78,包络用low/high,端点和证据时间保留。"
+    },
+    {
+      "id": "77-80-83",
+      "pdf_page": 607,
+      "source_role": "author_text_with_editorial_redraw",
+      "caption": "80-83复杂线段",
+      "status": "structure_reviewed_raw_ohlc_missing",
+      "fixture_refs": [
+        "77-composite-rebound",
+        "77-one-stroke-rebound"
+      ],
+      "scope": "原始行情缺失;两条合成复刻仅覆盖正文条件,不当2007年实际数据。81点据78更正为09051101的5268.74,82不变。"
+    },
+    {
+      "id": "106-index",
+      "pdf_page": 869,
+      "source_role": "author",
+      "caption": "6124以来指数与5/13/21/34/55/89/144/233日均线",
+      "status": "figure_reviewed_raw_ohlc_missing",
+      "fixture_refs": [],
+      "scope": "正文关系4778支撑→55/89陷阱→21压制至3000下→55压制反弹→13压制;无法计算原始均线或精确确认时刻。"
+    },
+    {
+      "id": "106-000802",
+      "pdf_page": 870,
+      "source_role": "author_text",
+      "caption": "000802正文第9类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 9,
+      "printed_chart": true,
+      "chart_class": 9,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-000998",
+      "pdf_page": 870,
+      "source_role": "author_text",
+      "caption": "000998正文第9类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 9,
+      "printed_chart": false,
+      "chart_class": null,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-600636",
+      "pdf_page": 870,
+      "source_role": "author_text",
+      "caption": "600636正文第9类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 9,
+      "printed_chart": false,
+      "chart_class": null,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-600139",
+      "pdf_page": 870,
+      "source_role": "author_text",
+      "caption": "600139正文第8类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 8,
+      "printed_chart": false,
+      "chart_class": null,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-600578",
+      "pdf_page": 870,
+      "source_role": "author_text",
+      "caption": "600578正文第7类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 7,
+      "printed_chart": true,
+      "chart_class": 6,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-600607",
+      "pdf_page": 870,
+      "source_role": "author_text",
+      "caption": "600607正文第7类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 7,
+      "printed_chart": false,
+      "chart_class": null,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-600195",
+      "pdf_page": 870,
+      "source_role": "author_text",
+      "caption": "600195正文第6类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 6,
+      "printed_chart": false,
+      "chart_class": null,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-600343",
+      "pdf_page": 870,
+      "source_role": "author_text",
+      "caption": "600343正文第6类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 6,
+      "printed_chart": false,
+      "chart_class": null,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-600737",
+      "pdf_page": 871,
+      "source_role": "author_text",
+      "caption": "600737正文第5类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 5,
+      "printed_chart": false,
+      "chart_class": null,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-000600",
+      "pdf_page": 871,
+      "source_role": "author_text",
+      "caption": "000600正文第5类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 5,
+      "printed_chart": false,
+      "chart_class": null,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "106-上证指数",
+      "pdf_page": 871,
+      "source_role": "author_text",
+      "caption": "上证指数正文第4类",
+      "status": "text_reviewed_raw_ohlc_missing",
+      "text_class": 4,
+      "printed_chart": false,
+      "chart_class": null,
+      "fixture_refs": [],
+      "scope": "只登记截至原文反弹观察日的未曾攻克最小周期;十股票仅000802/600578有本页行情图,其余是正文类别,不恢复报价。"
+    },
+    {
+      "id": "78-author-standardization-continuation",
+      "pdf_page": 613,
+      "source_role": "author",
+      "caption": "标准化的无内部结构部件与首尾连接",
+      "status": "reviewed_definition",
+      "fixture_refs": [
+        "78-reply-0-3-8-11"
+      ],
+      "scope": "611/613正文解释用实际高低区间作标准化分析;实际分界与其时间保持,不虚构内部极值的发生/确认时间。"
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "71-last-figure",
+      "resolution": "课81明确更正:5=7或5低于7为一段,5高于7为三段;不按71原错误图标三段。",
+      "status": "resolved_by_author_erratum"
+    },
+    {
+      "id": "106-600578-class",
+      "pdf_page": 870,
+      "chart": 6,
+      "text": 7,
+      "resolution": "保留6/7冲突,实际算法按反弹至观察日曾攻克均线计算;缺OHLC不裁决当年图注。",
+      "status": "raw_evidence_missing"
+    },
+    {
+      "id": "106-4778-support",
+      "pdf_page": 869,
+      "text_period": 233,
+      "editorial_question_period": 144,
+      "resolution": "正文称233,黄色编者注质疑144;保留两种来源,不把印刷线位置当精确均线计算。",
+      "status": "raw_evidence_missing"
+    },
+    {
+      "id": "78-editorial-early-direction",
+      "pdf_page": 612,
+      "resolution": "编者明确提供提前选方向的实用法;核心采用71/77定义并等待真实反向/后继破坏证据。",
+      "status": "resolved_method_difference"
+    }
+  ],
+  "remaining": [
+    "2007/2008原始OHLC、历史数据修订前后的供应版本缺失;历史图数值复现未验收。",
+    "R2真实原始行情独立全链路标注与非空点位分支。"
+  ]
+}

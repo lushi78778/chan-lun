@@ -1,0 +1,30 @@
+{
+  "label": "518880-5m",
+  "chan_version": "0.13.4",
+  "python": "3.13.15",
+  "pandas": "3.0.5",
+  "system": "Darwin",
+  "machine": "arm64",
+  "ts_code": "518880.SH",
+  "adjusted": true,
+  "n_rows_raw": 124558,
+  "n_bars": 122656,
+  "dropped_invalid_rows": 258,
+  "dt_first": "2013-07-29 09:30:00",
+  "dt_last": "2023-12-29 15:00:00",
+  "structures": {
+    "new_bars": 39267,
+    "fxs": 22487,
+    "bis": 4695,
+    "xds": 568,
+    "bi_zss": 863,
+    "xd_zss": 92
+  },
+  "normalize_seconds": 0.127,
+  "analyze_seconds": 10.844,
+  "replay_step": 1023,
+  "replay_snapshots": 119,
+  "replay_seconds": 469.096,
+  "replay_seconds_per_snapshot": 3.942,
+  "peak_rss_mb": 3853.9
+}

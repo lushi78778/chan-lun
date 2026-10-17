@@ -1,0 +1,150 @@
+{
+  "schema": "chan-core-r7-candidate-acceptance-v1",
+  "version": "0.14.0",
+  "generated_at": "2026-10-17T12:29:05.110581+08:00",
+  "core_commit": "42922174a0a6582748034adf88474da361d4c133",
+  "core_tag": "v0.14.0 (仅本地 tag, 未推送)",
+  "scope": "R7 §11.10 发布候选整体验收: 六层验证在本机对 0.14.0 树实跑; 不含远端推送/CI/Release/PyPI(属正式1.0.0门槛 §11.11.6)",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "dataset_manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "layers": {
+    "1_source_and_annotations": {
+      "passed": true,
+      "audited_files": 32,
+      "categories": {
+        "包内fixtures(R1原图/R2真实标注)": 16,
+        "R2手工标注收据(chan-real-*-manual-*)": 12,
+        "关键否定样本与行为差异收据": 4
+      },
+      "uncommitted_among_audited": "无",
+      "hashes": {
+        "src/chan/tests/fixtures/fx_bi_originals.json": "859545b37c039866d59dc59588500d184ad11a5728777beaa4c5707714f4fc62",
+        "src/chan/tests/fixtures/real_causal_formation.json": "6e72f6931e6cbe957ee40d184c51ab0bf9a666aefd6f9c521333343b7e3dbf5b",
+        "src/chan/tests/fixtures/real_f1_originals.json": "7c8408bf8beaf9f9c492460cb00353856c15dec56951a310de8522b1db9b5d29",
+        "src/chan/tests/fixtures/real_first_point.json": "2c70070c2917c343cdfc182518996bb71bc8c0e6724c3482c22337fc9f337ad7",
+        "src/chan/tests/fixtures/real_foundation.json": "b7b3f709e8756adba65ab63d1b335cf233fa7bdeacb96db25bb5d36b52f2bd33",
+        "src/chan/tests/fixtures/real_second_point.json": "745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6",
+        "src/chan/tests/fixtures/real_strict_trend.json": "ac9101f3cb99de1a9e8612a6366aa87be4e4627664ccf1b4884ffe60fc39ffde",
+        "src/chan/tests/fixtures/real_strict_trend_5m.json": "ba80661f14680f3fd73132536e56ba53d445e367bf8e7eb273645ef8cae79fa7",
+        "src/chan/tests/fixtures/real_strict_trend_completed.json": "ada1e3e92d19a05c7ea95b8e08382a38bd96671ec869357571bcc89e65f1d6bb",
+        "src/chan/tests/fixtures/real_strict_trend_minute.json": "3e16e055249ff7baff9f23ec4f74ef3b699e767905112bfe542d2ecf9b2976d4",
+        "src/chan/tests/fixtures/real_third_point.json": "47ea16850759c3e25f424cc66665cf8302d4d2e5af5998d3da6b2f924488e73c",
+        "src/chan/tests/fixtures/real_third_point_margin0.json": "64c4f4b80eca2f31f262b86c26523ddc9c13d59195ca33a5c5aa5904460c0217",
+        "src/chan/tests/fixtures/real_third_point_xd_margin0.json": "5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01",
+        "src/chan/tests/fixtures/real_xd_f1.json": "3defd45833e0dd5339ffb43e6d3aad7cdf3617887961acedfee03df8204fec0f",
+        "src/chan/tests/fixtures/real_xd_originals.json": "9dad4624cc21eae50e002aa99b9cd0ccded61d5f450692631f6695c7fff00b51",
+        "src/chan/tests/fixtures/xd_originals.json": "becd85b49544854ce67ea8d4055a128b8b4b6d9ff0959ed17b76f67799490919",
+        "doc/validation/chan-real-causal-formation-manual-0.9.11.json": "6d67db37b9a38dcfaefa450752092adb96c443bcaecd6c2ef3f79e18b92322a3",
+        "doc/validation/chan-real-f1-manual-0.9.0.json": "0418fbdfdef9ce011a4610237fb6b75ca6265ad67c03586da767c8189f7b38a4",
+        "doc/validation/chan-real-first-point-manual-0.9.9.json": "29aef6b1f9508aa721afad622b2f89e8b60bab3603aa8d7353b34f94face6a4a",
+        "doc/validation/chan-real-second-point-manual-0.9.10.json": "4ce7a3f6c91dd02169417cf226596e83f398cabfe976dc8ca1460432fbf68f4c",
+        "doc/validation/chan-real-strict-trend-manual-0.9.2.json": "b26ee73e574bb7ccfd98134746fdd6d23d1131a838138f05bf75eaf27b4434ba",
+        "doc/validation/chan-real-strict-trend-manual-0.9.3.json": "47054fed6146a7423321201ba6c9ad898f6864fe80332a8989db6902d62238fd",
+        "doc/validation/chan-real-strict-trend-manual-0.9.4.json": "91d135cbf9579063c81ca271f29bec35f3357797f54529e43f5ff54fe49e6ebe",
+        "doc/validation/chan-real-strict-trend-manual-0.9.6.json": "62a1b2a9e74d3e4d0410d3198f2c013f7251797e46061d0d2d1719dd4527b9f3",
+        "doc/validation/chan-real-third-point-manual-0.9.5.json": "92af82f76633008e79562f7966533e7e21b7fd86cf63ddaad9fcdbe6d5cdd7a7",
+        "doc/validation/chan-real-third-point-manual-0.9.7.json": "df7095a54b5e63492552a8d01de13914885bcb5a0f6df7178dcff67ac23b8a83",
+        "doc/validation/chan-real-third-point-manual-0.9.8.json": "690ad293799e3b0235db5819215b0fda0816355fc7c511a0358295a195c03502",
+        "doc/validation/chan-real-xd-f1-manual-0.9.1.json": "41b2ec9222260285cc0997fe340200559dbf90b10446e4b3543d6edc8d87071e",
+        "doc/validation/chan-real-rounds-discovery-2026-10-16.json": "9365b5630b8225435b6142730be9260d60de918cfb04f0a277401824316ade39",
+        "doc/validation/chan-real-coverage-0.9.1.json": "43978c7001723ca43b6ca2af4ff78ee39861020738a0045511afe1235be25971",
+        "doc/validation/ma-points-0121-behavior-diff-2026-10-16.json": "8f24de7f8db05c1abd0ef01f025cec71af080ba394eab1c0c236f54a52473e90",
+        "doc/validation/chan-real-causal-formation-theory-0.9.11.md": "96422b59978cae470bcc7383cca10537a1e9ae26185325bdfa5c5d2c29b0a3de"
+      },
+      "note": "关键否定样本含 0.11.7 同侧多轮发现扫描负结论收据与 strict-trend 反例标注; 全部 32 文件 sha256 登记且与 git HEAD 一致"
+    },
+    "2_unified_entry": {
+      "passed": true,
+      "core": {
+        "command": ".venv/bin/python tools/check_project.py --scope core",
+        "tests": 797,
+        "seconds": 84.369,
+        "result": "OK"
+      },
+      "project": {
+        "command": ".venv/bin/python tools/check_project.py",
+        "tests": 1263,
+        "seconds": 824.511,
+        "result": "OK",
+        "log_sha256": "270d82faf8486bd64491b5a3951ab2b8d4cda4187cee357fe8fd5502b8695d9b"
+      },
+      "python": "3.13.15"
+    },
+    "3_time_identity": {
+      "passed": true,
+      "note": "原始前缀重算/收盘前/未来毒值/尾部修订/既有确认冻结经七个验收工具重跑; verify_core_history 含 --replay(2026逐日防未来与新二类点条件)",
+      "core_history_replay": "含 future_price_poison_checks / batch_complete_move_revisions / ma_classes 等 2026 逐日回放字段"
+    },
+    "4_real_data": {
+      "passed": true,
+      "receipts": {
+        "chan-r7-0140-completion-history-2026-10-17.json": {
+          "ok": true,
+          "sha256": "e90fc55184e444fedb0a865ceb000e8fe8c14a488bca1a40c081954796bff14a"
+        },
+        "chan-r7-0140-core-available-2026-10-17.json": {
+          "ok": true,
+          "sha256": "7fcdabf1102e739ff6b0c0cd18e973aa20fb4294a3bf2dad47106b26186a3f00"
+        },
+        "chan-r7-0140-core-history-2026-10-17.json": {
+          "ok": true,
+          "sha256": "560fa06362019155b9a8f09f0017f1c2b0ade31a183e8c53fd4dab70fc109cbb"
+        },
+        "chan-r7-0140-fractal-history-2026-10-17.json": {
+          "ok": true,
+          "sha256": "8bec096e9f9a3154141e283a043be8d4673453845676c15211634b9b38ce8573"
+        },
+        "chan-r7-0140-ma-history-2026-10-17.json": {
+          "ok": true,
+          "sha256": "c8ae8002635f0716525cc5853ac13a4fcef43dee3bed6c5c743e7c7d7c7d4c80"
+        },
+        "chan-r7-0140-points-history-2026-10-17.json": {
+          "ok": true,
+          "sha256": "5c7bd0ad4080166452f97ae87b9d600e93bb75560bec0db8b3991b36e5511f77"
+        },
+        "chan-r7-0140-rounds-lineage-2026-10-17.json": {
+          "ok": true,
+          "sha256": "c1e26feae01199da3e4f35ce792348a8b565344920290cbaaccd39074d494185"
+        }
+      },
+      "ten_etf_all_ok": true,
+      "ma_tool_fix": "tools/verify_ma_history.py audit 断言由 kiss_kind==wet 更新为三分类(wet/fly/lip)——0.12.1 放开飞吻/唇吻前置候选(见 ma-points-0121-behavior-diff-2026-10-16.json)后工具首次重跑暴露陈旧断言; 库无回归, 511010.SH/588000.SH 30m fly 候选后续面积/趋势核对全部通过"
+    },
+    "5_environments": {
+      "passed": true,
+      "modern": {
+        "python3.13.15": "统一入口 1263 测 + 隔离 venv 安装 wheel 后 README 快速示例冒烟通过",
+        "python3.10.20": "uv 托管解释器隔离 venv 安装 wheel, README 快速示例冒烟通过, 输出与 3.13 一致"
+      },
+      "legacy": {
+        "container": "python:3.6.15-buster (--platform linux/amd64, Apple Silicon Rosetta)",
+        "dependencies": "numpy==1.14.6 pandas==0.23.4",
+        "command": "python -m unittest discover -s tests -p \"test_*.py\"",
+        "tests": 797,
+        "seconds": 162.337,
+        "result": "OK",
+        "note": "本地容器实跑补齐旧依赖执行; 远端 CI legacy job 属推送后验证"
+      }
+    },
+    "6_distribution": {
+      "passed": true,
+      "wheel": {
+        "file": "chan_lun_core-0.14.0-py3-none-any.whl",
+        "sha256": "9e1154f38362a70099421e41b01656f6e9f9e3cf7a259509f6131e77babb8f57"
+      },
+      "sdist": {
+        "file": "chan_lun_core-0.14.0.tar.gz",
+        "sha256": "819704b1693bc5a349a30095bf561d22c1ce861edf80cf9719cd47fd69cdb49a"
+      },
+      "wheel_source_byte_identical": true,
+      "wheel_modules_compared": 41,
+      "sdist_contents": "tests(16 fixtures)/tools/API.md/MIGRATION.md/ARCHITECTURE.md/CONTRIBUTING.md/README.md/CHANGELOG.md 齐全",
+      "isolated_import_and_readme_example": "3.13.15 与 3.10.20 隔离 venv 安装后 import chan/快速示例输出一致(fx=8,bi=7,xd=1,bi_zss=1)"
+    }
+  },
+  "limits": [
+    "远端 main/tag、CI、Release、官方 PyPI 未执行, 属正式 1.0.0 必过门槛(§11.11.6), 不因本收据冒充",
+    "不证明行情供应方历史未修订; 数据集 manifest sha256 见上",
+    "投资收益、胜率、平台时效与策略有效性不在结构库理论标签范围(§11.10 候选阶段说明)"
+  ]
+}

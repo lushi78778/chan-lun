@@ -1,0 +1,618 @@
+{
+  "version": "0.7.5",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "files": [
+    {
+      "path": "bars_1d/part-00000.parquet",
+      "sha256": "a8323840c4adad004c48582fc40f76480fc3c23390c1de7d8c20cccc238c9c76"
+    },
+    {
+      "path": "bars_30m/year=2026/part-00000.parquet",
+      "sha256": "1e39722d63052d5520a52b634747539c2c52855537bd5a19bbd7ccdbd45b7b92"
+    }
+  ],
+  "base_parts": "bi",
+  "scope": "自动MACD辅助一类/因果中枢/点位链的真实行情与时间接线验收。\n\n使用锁定已知价格锚、固定笔或其完成线段经同级切分声明F1。F1真理论\n仍须人工原图验收, K线周期不等于走势级别。暖机历史只在首观察声明\n已知。行情关闭/到达是测试约定, 不证明真实供应版本及聚宽时效。\n",
+  "assets": [
+    {
+      "code": "510300.SH",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 3445,
+        "anchor_factor": 1.235,
+        "warm_f1": 66,
+        "total_f1": 70,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.235,
+        "warm_f1": 25,
+        "total_f1": 29,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 1.199040866595169e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "510500.SH",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 3248,
+        "anchor_factor": 0.332,
+        "warm_f1": 70,
+        "total_f1": 73,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 0.332,
+        "warm_f1": 19,
+        "total_f1": 23,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 9.414691248821327e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "512880.SH",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 2422,
+        "anchor_factor": 1.0,
+        "warm_f1": 49,
+        "total_f1": 51,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.0,
+        "warm_f1": 15,
+        "total_f1": 18,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 9.103828801926284e-15,
+          "changed_rows": 40,
+          "original_envelope_violations": 11,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-28 10:30:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 14:00:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 15:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 10:30:00",
+            "2026-07-31 11:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "512480.SH",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 1731,
+        "anchor_factor": 1.964,
+        "warm_f1": 34,
+        "total_f1": 37,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.964,
+        "warm_f1": 20,
+        "total_f1": 23,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 2.9753977059954195e-14,
+          "changed_rows": 39,
+          "original_envelope_violations": 9,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 15:00:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 11:30:00",
+            "2026-07-31 10:00:00",
+            "2026-07-31 10:30:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "159915.SZ",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 3553,
+        "anchor_factor": 1.0,
+        "warm_f1": 75,
+        "total_f1": 78,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.0,
+        "warm_f1": 26,
+        "total_f1": 29,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 5.906386491005833e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 5,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 14:30:00",
+            "2026-07-27 15:00:00",
+            "2026-07-30 15:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "513100.SH",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 3211,
+        "anchor_factor": 5.002,
+        "warm_f1": 76,
+        "total_f1": 79,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 169,
+        "rows": 1211,
+        "anchor_factor": 5.002,
+        "warm_f1": 14,
+        "total_f1": 18,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 169,
+        "future_poison_checks": 169,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 3.9968028886505635e-15,
+          "changed_rows": 34,
+          "original_envelope_violations": 12,
+          "original_violation_times": [
+            "2026-07-27 10:30:00",
+            "2026-07-27 11:00:00",
+            "2026-07-27 15:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 14:30:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 11:00:00",
+            "2026-07-29 13:30:00",
+            "2026-07-30 14:30:00",
+            "2026-07-31 11:30:00",
+            "2026-07-31 13:30:00",
+            "2026-07-31 14:30:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "518880.SH",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 3162,
+        "anchor_factor": 1.0,
+        "warm_f1": 76,
+        "total_f1": 78,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.0,
+        "warm_f1": 19,
+        "total_f1": 23,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 1.7053025658242404e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 10,
+          "original_violation_times": [
+            "2026-07-27 10:30:00",
+            "2026-07-27 11:00:00",
+            "2026-07-27 11:30:00",
+            "2026-07-27 14:30:00",
+            "2026-07-28 13:30:00",
+            "2026-07-29 13:30:00",
+            "2026-07-29 14:30:00",
+            "2026-07-30 11:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 11:30:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "511010.SH",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 3244,
+        "anchor_factor": 1.027,
+        "warm_f1": 60,
+        "total_f1": 62,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 175,
+        "rows": 1245,
+        "anchor_factor": 1.027,
+        "warm_f1": 13,
+        "total_f1": 16,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 4.547473508864641e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "588000.SH",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 1384,
+        "anchor_factor": 1.0,
+        "warm_f1": 22,
+        "total_f1": 23,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.0,
+        "warm_f1": 17,
+        "total_f1": 21,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 3.907985046680551e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 6,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 14:30:00",
+            "2026-07-27 15:00:00",
+            "2026-07-30 14:00:00",
+            "2026-07-31 11:30:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "516160.SH",
+      "day": {
+        "period": "1d",
+        "observations": 139,
+        "rows": 1327,
+        "anchor_factor": 0.309,
+        "warm_f1": 23,
+        "total_f1": 25,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 0.309,
+        "warm_f1": 22,
+        "total_f1": 26,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 2.6645352591003757e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 7,
+          "original_violation_times": [
+            "2026-07-27 14:30:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-30 11:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 14:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "ok": true
+}

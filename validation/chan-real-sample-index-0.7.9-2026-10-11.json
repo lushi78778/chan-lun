@@ -1,0 +1,1121 @@
+{
+  "schema_version": "chan-real-sample-v1",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "dataset_version": "v2026-07-31-r2",
+  "generated_at": "2026-10-11T11:29:48.714685+08:00",
+  "sampling_rule": {
+    "periods": [
+      "1d",
+      "30m"
+    ],
+    "codes": [
+      "510300.SH",
+      "510500.SH",
+      "512880.SH",
+      "512480.SH",
+      "159915.SZ",
+      "513100.SH",
+      "518880.SH",
+      "511010.SH",
+      "588000.SH",
+      "516160.SH"
+    ],
+    "window": "all history"
+  },
+  "algorithm_labels_generated": false,
+  "theoretical_acceptance": false,
+  "file_checks": [
+    {
+      "path": "bars_1m/year=2009/part-00000.parquet",
+      "sha256": "e0667df4392843ade7de29e7244c8b2cd769f1303254f6ab65b4e88e4885737c",
+      "size_bytes": 29392311
+    },
+    {
+      "path": "bars_1m/year=2010/part-00000.parquet",
+      "sha256": "5a7404bff2255169aa5efdd85b96e603467a2fbe72e9afc855022b8be576de9b",
+      "size_bytes": 34006033
+    },
+    {
+      "path": "bars_1m/year=2011/part-00000.parquet",
+      "sha256": "487c61834a11a5693691700cfa2eb8effb4be4626c297ef45bb188a221bdf9a1",
+      "size_bytes": 37833483
+    },
+    {
+      "path": "bars_1m/year=2012/part-00000.parquet",
+      "sha256": "84d98091090186d379be9a2cc124838b6e27e3f37104e82fc0b4d4550ca624a2",
+      "size_bytes": 49268288
+    },
+    {
+      "path": "bars_1m/year=2013/part-00000.parquet",
+      "sha256": "b68ae5e6a1d76af2af0a9aa00a83d7b74a54e430543aa22e2ed12f9575a9f983",
+      "size_bytes": 64341171
+    },
+    {
+      "path": "bars_1m/year=2014/part-00000.parquet",
+      "sha256": "336bd95c9c70a2733508c5265c8e6abe9ba7470c7dfdd683642300d10ada7c7e",
+      "size_bytes": 80041835
+    },
+    {
+      "path": "bars_1m/year=2015/part-00000.parquet",
+      "sha256": "5b9abf435922217611f90c522596856fdefffa7c7342981bee711084c99f3161",
+      "size_bytes": 109892044
+    },
+    {
+      "path": "bars_1m/year=2015/part-00001.parquet",
+      "sha256": "11b0178f4a15d391f57f8441bd67feb0b45cad47a78c1735c9195b5ff5926e7c",
+      "size_bytes": 73190528
+    },
+    {
+      "path": "bars_1m/year=2016/part-00000.parquet",
+      "sha256": "ea90998e81db8e9dbd7790c448f3231c177ea159f62b7dc7d6d733249a201789",
+      "size_bytes": 112839652
+    },
+    {
+      "path": "bars_1m/year=2016/part-00001.parquet",
+      "sha256": "98cf402c5ccf132b8466e5225a21bd5ad5dd171bc79de0434d57b29efe92ba4d",
+      "size_bytes": 50813722
+    },
+    {
+      "path": "bars_1m/year=2017/part-00000.parquet",
+      "sha256": "431be95dd414e1927d22b9ac825697e33dfa8583e66f7e1f18003dbd36608bd0",
+      "size_bytes": 118470306
+    },
+    {
+      "path": "bars_1m/year=2017/part-00001.parquet",
+      "sha256": "6e28d6852fffe75ad74db7fd2adb0405b06911ffe1c44b3471e4a1a4c6942698",
+      "size_bytes": 23667901
+    },
+    {
+      "path": "bars_1m/year=2018/part-00000.parquet",
+      "sha256": "0cd4bdabc2f1313471eae34377e8317984b8df33349cde692e2579c0112385aa",
+      "size_bytes": 119734489
+    },
+    {
+      "path": "bars_1m/year=2018/part-00001.parquet",
+      "sha256": "2c8c2d59b339db87b5b2614336ec3f8a95e90f10a2a617cba891bb227cb8f31e",
+      "size_bytes": 22305410
+    },
+    {
+      "path": "bars_1m/year=2019/part-00000.parquet",
+      "sha256": "434247d0fac6fc7c39d1a67a314f4b2c167796358738312c2fa96ca76147c562",
+      "size_bytes": 117739896
+    },
+    {
+      "path": "bars_1m/year=2019/part-00001.parquet",
+      "sha256": "47f036cc79adfa603b34bf054bb2cc0b0206439a2432d137280ce820349dde3a",
+      "size_bytes": 45832012
+    },
+    {
+      "path": "bars_1m/year=2020/part-00000.parquet",
+      "sha256": "92f3bd42997558d9c0fbddf135387997290a397976fb4667b3c1ecd2cccb2c94",
+      "size_bytes": 112991415
+    },
+    {
+      "path": "bars_1m/year=2020/part-00001.parquet",
+      "sha256": "a5ffdd593a5e5563cde883ed35c3f8d2813d77ea869215d1b4f3d67008b816ac",
+      "size_bytes": 114374209
+    },
+    {
+      "path": "bars_1m/year=2020/part-00002.parquet",
+      "sha256": "2ffde1437d28442f994da8eeb94c3ac8de603bb71e5d5e7e5c7fd964ce389dd2",
+      "size_bytes": 16227881
+    },
+    {
+      "path": "bars_1m/year=2021/part-00000.parquet",
+      "sha256": "da89863e4b167d3a3e18639e4d1e60d0235334bc7717eebeca00a16bb8aa45ed",
+      "size_bytes": 111558739
+    },
+    {
+      "path": "bars_1m/year=2021/part-00001.parquet",
+      "sha256": "5d3065de8dddcf14dd905a318f42e4e6256ce04d536e0c9d07f4f6ade8b7b9d6",
+      "size_bytes": 115585681
+    },
+    {
+      "path": "bars_1m/year=2021/part-00002.parquet",
+      "sha256": "fd73ca45bcbaa989bb41bb78bd6898379a52b727652c3e64d8a9e2443964116a",
+      "size_bytes": 76456908
+    },
+    {
+      "path": "bars_1m/year=2022/part-00000.parquet",
+      "sha256": "ae61d5d3e93d57ad54cdbb91db6794040524ca29981f20967bb056017ce1beaf",
+      "size_bytes": 108314262
+    },
+    {
+      "path": "bars_1m/year=2022/part-00001.parquet",
+      "sha256": "1a1e853bfe448f4590d7934bc8669e0459dee988cb8a7bdd4d448dcf294aa495",
+      "size_bytes": 114469507
+    },
+    {
+      "path": "bars_1m/year=2022/part-00002.parquet",
+      "sha256": "55fbb11cbe3e3273807202c34910b9430dd480cd120ab21c9b2833ea551f7f20",
+      "size_bytes": 108066449
+    },
+    {
+      "path": "bars_1m/year=2022/part-00003.parquet",
+      "sha256": "e4e31ebf208290770cbb5966d3aa3bf407801f1b034a1ba1be0ea1b8683d0d33",
+      "size_bytes": 27982037
+    },
+    {
+      "path": "bars_1m/year=2023/part-00000.parquet",
+      "sha256": "e3f69368f9c42856b5231b9eb6e897824aa55520882b921d4e47d31de5aa7661",
+      "size_bytes": 108998815
+    },
+    {
+      "path": "bars_1m/year=2023/part-00001.parquet",
+      "sha256": "1453e936f25a445166e568257420a928b7167899d65df849e6b3633072931afd",
+      "size_bytes": 114804399
+    },
+    {
+      "path": "bars_1m/year=2023/part-00002.parquet",
+      "sha256": "87421936813ad5f06139759cc24510763024e26a920588a6d8fdaf506ac89fc4",
+      "size_bytes": 108155671
+    },
+    {
+      "path": "bars_1m/year=2023/part-00003.parquet",
+      "sha256": "43e95c87a3d5a788dc45f3f463e44b7eed938d9a6cb691845cd3335cc1a005bf",
+      "size_bytes": 49605488
+    },
+    {
+      "path": "bars_1m/year=2024/part-00000.parquet",
+      "sha256": "23ae77244446ea97c0bd764e5b7f535bcff19a82832eb98c3bb228a8fee5c543",
+      "size_bytes": 109434786
+    },
+    {
+      "path": "bars_1m/year=2024/part-00001.parquet",
+      "sha256": "70856e7cfdd96b5e36db01d47cfb992622e37c627ed99578c09a0aeb1c6d109d",
+      "size_bytes": 113811703
+    },
+    {
+      "path": "bars_1m/year=2024/part-00002.parquet",
+      "sha256": "2717e2974f5d5632180c35534648bedb1c9c49d84a32dde6037e23903080c12e",
+      "size_bytes": 113125289
+    },
+    {
+      "path": "bars_1m/year=2024/part-00003.parquet",
+      "sha256": "05ee9ebc6b8c13893285b7128cfbfd3c82bf4b4fc3e1a0fcf540adfdcd27f31c",
+      "size_bytes": 109027751
+    },
+    {
+      "path": "bars_1m/year=2024/part-00004.parquet",
+      "sha256": "aab1218f13076a4434b960cd91b6af7e422f39a2b7ac3019ebc9d418b107eb76",
+      "size_bytes": 28473418
+    },
+    {
+      "path": "bars_1m/year=2025/part-00000.parquet",
+      "sha256": "087beabab09ba7f8d87cdce3f778ef16146487a24889e1aba787269669fea0d7",
+      "size_bytes": 108215513
+    },
+    {
+      "path": "bars_1m/year=2025/part-00001.parquet",
+      "sha256": "accac227e171341e07c656c8832a75382022661c8da66e5b90219bd73f42557a",
+      "size_bytes": 106627837
+    },
+    {
+      "path": "bars_1m/year=2025/part-00002.parquet",
+      "sha256": "f8e0a23b6500caab169188b42f0e1f4732b7dfc898580c999142ce52ea0fae4b",
+      "size_bytes": 116888325
+    },
+    {
+      "path": "bars_1m/year=2025/part-00003.parquet",
+      "sha256": "7df22b4c8d63f86425077474da27ec70ebf04b5616527ac05474af455f0f6076",
+      "size_bytes": 109761436
+    },
+    {
+      "path": "bars_1m/year=2025/part-00004.parquet",
+      "sha256": "9d953bbbf3b9625076f679b0d50e9f43f68618d84b2c42c13f4a14eb66c572f3",
+      "size_bytes": 109851653
+    },
+    {
+      "path": "bars_1m/year=2025/part-00005.parquet",
+      "sha256": "429e7602d20098dc98f9361a1942561260f9d01be8e96d1fd1c05e95a13c80de",
+      "size_bytes": 93061949
+    },
+    {
+      "path": "bars_1m/year=2026/part-00000.parquet",
+      "sha256": "dcd950404ff969c90d3abd5a0beb00b97ccf835d02d6fb5f7c16a6958ed2081c",
+      "size_bytes": 107981226
+    },
+    {
+      "path": "bars_1m/year=2026/part-00001.parquet",
+      "sha256": "09163b94b423332c6ac769fa7e81afd5363ce9d33e94014a9400a1f8b89b0199",
+      "size_bytes": 108803480
+    },
+    {
+      "path": "bars_1m/year=2026/part-00002.parquet",
+      "sha256": "d19256fe84840b2340d5ee4ae4a64327cf26959a24f36ebfe3e110e1a8f6fad9",
+      "size_bytes": 108577946
+    },
+    {
+      "path": "bars_1m/year=2026/part-00003.parquet",
+      "sha256": "ee2ff7b2959b2266881c469967a5eb8f217368cdb2cdf8e3e0c57a291b0b5293",
+      "size_bytes": 106903430
+    },
+    {
+      "path": "bars_1m/year=2026/part-00004.parquet",
+      "sha256": "1f4591ba6c15776ce9d0f5f8f9e96faacc71c83c8d97ce37e74e6163e918a9cb",
+      "size_bytes": 24464841
+    },
+    {
+      "path": "bars_5m/year=2009/part-00000.parquet",
+      "sha256": "e121fd0b7cf9291f4e4704bdbd725e3533bb590108807555fc3403d57a15bd95",
+      "size_bytes": 6888247
+    },
+    {
+      "path": "bars_5m/year=2010/part-00000.parquet",
+      "sha256": "2af7fa15c2d1566efe4bfaa443b98421e8af7efb770867fa734b4a3ca6e3bfbd",
+      "size_bytes": 8417787
+    },
+    {
+      "path": "bars_5m/year=2011/part-00000.parquet",
+      "sha256": "8156e5b963f16e9dfe0dcf984b1c03af68eac3e763f0a84a82835046d8f52e54",
+      "size_bytes": 10762875
+    },
+    {
+      "path": "bars_5m/year=2012/part-00000.parquet",
+      "sha256": "1fbcb4e59ecc114150a01872655da5f5176461f5cb6bc7f29a995ff91f8287e7",
+      "size_bytes": 13566611
+    },
+    {
+      "path": "bars_5m/year=2013/part-00000.parquet",
+      "sha256": "8f4f8b4b682f1d4cde6fd263abc30bf0ffbd0517a3ae6caad833907ffe575c92",
+      "size_bytes": 18342996
+    },
+    {
+      "path": "bars_5m/year=2014/part-00000.parquet",
+      "sha256": "005f1ab3746b0afb5b66d68218dae3a61527c0b998cabff28ad47d7a8a9e76ae",
+      "size_bytes": 22715833
+    },
+    {
+      "path": "bars_5m/year=2015/part-00000.parquet",
+      "sha256": "93cc22602ce13047200b34a9052e0ff5a507505779c0fbed6efb5e3f76307cf2",
+      "size_bytes": 52488662
+    },
+    {
+      "path": "bars_5m/year=2016/part-00000.parquet",
+      "sha256": "783edfdd4857500541b405a0b9461f64323a7954bda0ae25e2306e6a8fabdd93",
+      "size_bytes": 45476952
+    },
+    {
+      "path": "bars_5m/year=2017/part-00000.parquet",
+      "sha256": "233885b963dc09048aadc5bebe8535204d41f5190b911895f60125ab17cb6da6",
+      "size_bytes": 41138193
+    },
+    {
+      "path": "bars_5m/year=2018/part-00000.parquet",
+      "sha256": "e647a095215c3cd2d256f795b9e370e12bd79cab4254e788dc0422f533c931af",
+      "size_bytes": 40530460
+    },
+    {
+      "path": "bars_5m/year=2019/part-00000.parquet",
+      "sha256": "87118959f9c7a7c274356d6e33cfeac40e63537df4646fd144030a001e3c2213",
+      "size_bytes": 46364536
+    },
+    {
+      "path": "bars_5m/year=2020/part-00000.parquet",
+      "sha256": "e03444842d20c6de23535bbc1213fcf7e9f9ac9cc6c3986891d69dc1528fea0c",
+      "size_bytes": 69228805
+    },
+    {
+      "path": "bars_5m/year=2021/part-00000.parquet",
+      "sha256": "12fb2e8abb411368e0b7b75b2b262200acea64fc20481997bb558324a695f1b1",
+      "size_bytes": 88511458
+    },
+    {
+      "path": "bars_5m/year=2022/part-00000.parquet",
+      "sha256": "8065df529e3ce4e3a093d2f5d5ce3a0317b8881d1120d5f84041ca5be05b6a58",
+      "size_bytes": 104259923
+    },
+    {
+      "path": "bars_5m/year=2023/part-00000.parquet",
+      "sha256": "32b89ca2151217266a87adfa3cb3c8b58b2721fc237258ba83f027e8b440a655",
+      "size_bytes": 107375658
+    },
+    {
+      "path": "bars_5m/year=2023/part-00001.parquet",
+      "sha256": "207fd0edd2f1683be9dccdea91991b94a88d40c432498952dc9c3ec595714680",
+      "size_bytes": 3036814
+    },
+    {
+      "path": "bars_5m/year=2024/part-00000.parquet",
+      "sha256": "5769e027d2bfb6913f0e046660bce07c4258e0c1b365bfd2bcec399c0a2481c6",
+      "size_bytes": 108329667
+    },
+    {
+      "path": "bars_5m/year=2024/part-00001.parquet",
+      "sha256": "5913ce2cd96938710d692e423191f6bb46fee699cc2d5d2c803aa0d840d70a69",
+      "size_bytes": 26999476
+    },
+    {
+      "path": "bars_5m/year=2025/part-00000.parquet",
+      "sha256": "4ccb51e4d54fb642c8c89bdf516628cc6ceb9aa318ada4d2b81922e8f15cc946",
+      "size_bytes": 107542431
+    },
+    {
+      "path": "bars_5m/year=2025/part-00001.parquet",
+      "sha256": "ea3b4ef252521ebfa7092f5265a728f36f8ca5db9e86527e894ac419d82081ca",
+      "size_bytes": 70783986
+    },
+    {
+      "path": "bars_5m/year=2026/part-00000.parquet",
+      "sha256": "6858f7507e4cea6b74a22e54c6ce8ffd31beeb369203c653493286feb76f39e4",
+      "size_bytes": 106640009
+    },
+    {
+      "path": "bars_5m/year=2026/part-00001.parquet",
+      "sha256": "e61678f47a4141856944416ed1d177ea969ed5caf506e451738df2c4fdb270ee",
+      "size_bytes": 32495351
+    },
+    {
+      "path": "bars_15m/year=2009/part-00000.parquet",
+      "sha256": "58f80d7e6385fb161e02c11f278487c560deaa767bd213869e8b6af11f88d944",
+      "size_bytes": 3069270
+    },
+    {
+      "path": "bars_15m/year=2010/part-00000.parquet",
+      "sha256": "1d0d81842ad636574d4551ab2707c23ecff1e037a2e9fe963b28dad09277e9a4",
+      "size_bytes": 3653328
+    },
+    {
+      "path": "bars_15m/year=2011/part-00000.parquet",
+      "sha256": "9aaaa25ba844e1d1ba7ab60339f24e367acf777077ce5c362fceeb450c1aee03",
+      "size_bytes": 4782970
+    },
+    {
+      "path": "bars_15m/year=2012/part-00000.parquet",
+      "sha256": "77298feb2a2dccc05ecf65debe1e0f1c83d739d63663e05b575646c79061b3f4",
+      "size_bytes": 6292688
+    },
+    {
+      "path": "bars_15m/year=2013/part-00000.parquet",
+      "sha256": "6c9b651a1237d0582f0a6e8fc99e60cb8ab6cf3b7a127915b49714ea65265e60",
+      "size_bytes": 8368268
+    },
+    {
+      "path": "bars_15m/year=2014/part-00000.parquet",
+      "sha256": "25e3e5fe05767d38ae16c8d8a4ca2d757f3b1e8e1941319c65a454f2f6ca9bc9",
+      "size_bytes": 10723074
+    },
+    {
+      "path": "bars_15m/year=2015/part-00000.parquet",
+      "sha256": "6a6b033feecdd2538dc2ed265da82e89bc31177ba7e66bb6546f3b10d6f672b1",
+      "size_bytes": 23240548
+    },
+    {
+      "path": "bars_15m/year=2016/part-00000.parquet",
+      "sha256": "a98226620bf0cbd56bf8137bb0242ece736a4dd44d98e87671f76b34a76fd47b",
+      "size_bytes": 21319103
+    },
+    {
+      "path": "bars_15m/year=2017/part-00000.parquet",
+      "sha256": "e0cb3417a4f5b9a5897b362cdc91528071b24ca3a2cede87fe5da93872dab0e0",
+      "size_bytes": 20030560
+    },
+    {
+      "path": "bars_15m/year=2018/part-00000.parquet",
+      "sha256": "4740aff70935c054d6479c08e6fa8d08b434908cd94377a2a5cce056a6b6d70f",
+      "size_bytes": 19487139
+    },
+    {
+      "path": "bars_15m/year=2019/part-00000.parquet",
+      "sha256": "4b2a54f1c300c43391269182d7b7649897839170aaa0b99e086f3b0aac25fe75",
+      "size_bytes": 21914839
+    },
+    {
+      "path": "bars_15m/year=2020/part-00000.parquet",
+      "sha256": "e283995d727210710d6dd5dd37e5697fc4afc63fe5ec425225099918b0042490",
+      "size_bytes": 32111329
+    },
+    {
+      "path": "bars_15m/year=2021/part-00000.parquet",
+      "sha256": "0854482e1aef5f4edf3e42e7d77b78e141d021e8eba944b4f5bf354505302dfc",
+      "size_bytes": 39549466
+    },
+    {
+      "path": "bars_15m/year=2022/part-00000.parquet",
+      "sha256": "086c30efeae65efc0012ca68befdcda830e79307b2c48b795558a5c5e79fc738",
+      "size_bytes": 46311298
+    },
+    {
+      "path": "bars_15m/year=2023/part-00000.parquet",
+      "sha256": "be4a6f352bd201f774ab94aa2f64e6e4636f3b5d6012f1abf7484525d94f8d49",
+      "size_bytes": 49665444
+    },
+    {
+      "path": "bars_15m/year=2024/part-00000.parquet",
+      "sha256": "882796a86d63b4197735bc2e90774c76d96a84c7dac52d787253cbdada24b838",
+      "size_bytes": 59348433
+    },
+    {
+      "path": "bars_15m/year=2025/part-00000.parquet",
+      "sha256": "46959d886ba07ddde983fdca6b8143d638b161d6adb72e0887bd9bb04422100f",
+      "size_bytes": 77352980
+    },
+    {
+      "path": "bars_15m/year=2026/part-00000.parquet",
+      "sha256": "098632493d55801ae2d3ddd56ec9275e61aa8f73afab4983a02328dbce1fdb42",
+      "size_bytes": 57137899
+    },
+    {
+      "path": "bars_30m/year=2009/part-00000.parquet",
+      "sha256": "b59b9e47802e4d58eb7c6f2b54a83fab94ba9ea99d2e37f3afe2efc5605a5a1f",
+      "size_bytes": 1623868
+    },
+    {
+      "path": "bars_30m/year=2010/part-00000.parquet",
+      "sha256": "c3f47b8fdc3c38fa1b60167e4c03e99e8940e5620a79dab82cff742ed076c7bb",
+      "size_bytes": 2160213
+    },
+    {
+      "path": "bars_30m/year=2011/part-00000.parquet",
+      "sha256": "42f9fa44582fc192d7f58382913e1907a3c7e5f973e8cc50505275065e3c898e",
+      "size_bytes": 2879334
+    },
+    {
+      "path": "bars_30m/year=2012/part-00000.parquet",
+      "sha256": "44d0ce981352790d278bff56db408222ffccc45b0997e966708df5e5a2bd4d8f",
+      "size_bytes": 3909731
+    },
+    {
+      "path": "bars_30m/year=2013/part-00000.parquet",
+      "sha256": "df884c607f8a31b4df5962b916951a3da5d8cd0ad8c8ad731dbcedc59a45a284",
+      "size_bytes": 5230374
+    },
+    {
+      "path": "bars_30m/year=2014/part-00000.parquet",
+      "sha256": "f3ec5303c47e07c239028ea1b2a160e9496f2d9370a4da8ca1829084254c1928",
+      "size_bytes": 6790734
+    },
+    {
+      "path": "bars_30m/year=2015/part-00000.parquet",
+      "sha256": "075f2b04ab198190267350ac87eab4209dc017a2566665c1e943a40fcf7b68ad",
+      "size_bytes": 13755532
+    },
+    {
+      "path": "bars_30m/year=2016/part-00000.parquet",
+      "sha256": "345d7f2b8c39f39da56cd2119fff69b1b5e0f36e1a1cc7b06d4075c622435e9e",
+      "size_bytes": 12940347
+    },
+    {
+      "path": "bars_30m/year=2017/part-00000.parquet",
+      "sha256": "a9b56916017b5b848f0718b1f1668382cb503b4d17c1f57766f921435b13447c",
+      "size_bytes": 12648714
+    },
+    {
+      "path": "bars_30m/year=2018/part-00000.parquet",
+      "sha256": "80b0527f8049f4c7a5b57534b013787c60ec5c7571602981bcc3e55afe545bc7",
+      "size_bytes": 12271077
+    },
+    {
+      "path": "bars_30m/year=2019/part-00000.parquet",
+      "sha256": "85781654e32936c027ad6e044ab2982c5884c5dc293924df70ff11b44dc8c9b1",
+      "size_bytes": 13926239
+    },
+    {
+      "path": "bars_30m/year=2020/part-00000.parquet",
+      "sha256": "4ed05a08d06a07b9423c1c22c281c9a759aeb43ea7e593bb32353917b171bd5c",
+      "size_bytes": 19007306
+    },
+    {
+      "path": "bars_30m/year=2021/part-00000.parquet",
+      "sha256": "4f64cea6a2febe9ee3bd533ae310ac007c0c25f2cbf66be781adcb30f4780519",
+      "size_bytes": 23358391
+    },
+    {
+      "path": "bars_30m/year=2022/part-00000.parquet",
+      "sha256": "33a1d4c8eac8d344bebf5f7d4443effb6a58c434666b9fa3bcf6c857e7d71a6c",
+      "size_bytes": 27606520
+    },
+    {
+      "path": "bars_30m/year=2023/part-00000.parquet",
+      "sha256": "e57eae914cf95ed6842ac05ad7c5097b9f2299ca742bcf15363d0508f8aed720",
+      "size_bytes": 29868861
+    },
+    {
+      "path": "bars_30m/year=2024/part-00000.parquet",
+      "sha256": "6de85e499cffcf5486041d813b860183310c778db2132c04d234f28eae93434a",
+      "size_bytes": 34881367
+    },
+    {
+      "path": "bars_30m/year=2025/part-00000.parquet",
+      "sha256": "57c6bd387c68b7c31057cd93703df118868eaafd344bb6a30b6bd806b372f7a5",
+      "size_bytes": 44354151
+    },
+    {
+      "path": "bars_30m/year=2026/part-00000.parquet",
+      "sha256": "1e39722d63052d5520a52b634747539c2c52855537bd5a19bbd7ccdbd45b7b92",
+      "size_bytes": 33115464
+    },
+    {
+      "path": "bars_60m/part-00000.parquet",
+      "sha256": "ff758dacf417b543bcd4d3717cf62ad20fc69de24eb94c8749a3d4b3aeee5809",
+      "size_bytes": 107987393
+    },
+    {
+      "path": "bars_60m/part-00001.parquet",
+      "sha256": "a160fcc2209981cb6598a87c7a5bac475ea300f0bcdcf5429efecfb200745d61",
+      "size_bytes": 77599965
+    },
+    {
+      "path": "bars_1d/part-00000.parquet",
+      "sha256": "a8323840c4adad004c48582fc40f76480fc3c23390c1de7d8c20cccc238c9c76",
+      "size_bytes": 77810241
+    }
+  ],
+  "periods": {
+    "1m": {
+      "manifest_rows": 764909219,
+      "files": 46,
+      "min_time": "2009-01-05T09:30:00",
+      "max_time": "2026-07-31T15:00:00",
+      "manifest_null_adj_factor": 2867659
+    },
+    "5m": {
+      "manifest_rows": 153465623,
+      "files": 22,
+      "min_time": "2009-01-05T09:30:00",
+      "max_time": "2026-07-31T15:00:00",
+      "manifest_null_adj_factor": 651014
+    },
+    "15m": {
+      "manifest_rows": 53245076,
+      "files": 18,
+      "min_time": "2009-01-05T09:30:00",
+      "max_time": "2026-07-31T15:00:00",
+      "manifest_null_adj_factor": 194973
+    },
+    "30m": {
+      "manifest_rows": 28190842,
+      "files": 18,
+      "min_time": "2009-01-05T09:30:00",
+      "max_time": "2026-07-31T15:00:00",
+      "manifest_null_adj_factor": 97218
+    },
+    "60m": {
+      "manifest_rows": 15638052,
+      "files": 2,
+      "min_time": "2009-01-05T09:30:00",
+      "max_time": "2026-07-31T15:00:00",
+      "manifest_null_adj_factor": 53960
+    },
+    "1d": {
+      "manifest_rows": 2978307,
+      "files": 1,
+      "min_time": "2009-01-05T00:00:00",
+      "max_time": "2026-07-31T00:00:00",
+      "manifest_null_adj_factor": 7410
+    }
+  },
+  "profiles": {
+    "30m": {
+      "510300.SH": {
+        "rows": 31000,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 1,
+        "material_envelope_violations": 1,
+        "invalid_factors": 0,
+        "zero_volume": 11,
+        "negative_volume": 0,
+        "first_time": "2012-05-28 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      },
+      "510500.SH": {
+        "rows": 29245,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 248,
+        "negative_volume": 0,
+        "first_time": "2013-03-15 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      },
+      "512880.SH": {
+        "rows": 21793,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 11,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 34,
+        "negative_volume": 0,
+        "first_time": "2016-08-08 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      },
+      "512480.SH": {
+        "rows": 15592,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 9,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 26,
+        "negative_volume": 0,
+        "first_time": "2019-06-12 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      },
+      "159915.SZ": {
+        "rows": 31981,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 14,
+        "material_envelope_violations": 9,
+        "invalid_factors": 0,
+        "zero_volume": 48,
+        "negative_volume": 0,
+        "first_time": "2011-12-09 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      },
+      "513100.SH": {
+        "rows": 28879,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 39,
+        "exact_envelope_violations": 12,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 317,
+        "negative_volume": 0,
+        "first_time": "2013-05-15 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      },
+      "518880.SH": {
+        "rows": 28480,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 45
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 58,
+        "exact_envelope_violations": 10,
+        "material_envelope_violations": 0,
+        "invalid_factors": 45,
+        "zero_volume": 175,
+        "negative_volume": 0,
+        "first_time": "2013-07-22 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      },
+      "511010.SH": {
+        "rows": 29182,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 128,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 1333,
+        "negative_volume": 0,
+        "first_time": "2013-03-25 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      },
+      "588000.SH": {
+        "rows": 12460,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 6,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2020-11-16 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      },
+      "516160.SH": {
+        "rows": 11947,
+        "nulls": {
+          "ts_code": 0,
+          "trade_time": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 7,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 1,
+        "negative_volume": 0,
+        "first_time": "2021-02-04 09:30:00",
+        "last_time": "2026-07-31 15:00:00"
+      }
+    },
+    "1d": {
+      "510300.SH": {
+        "rows": 3445,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2012-05-28 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      },
+      "510500.SH": {
+        "rows": 3248,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2013-03-15 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      },
+      "512880.SH": {
+        "rows": 2422,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2016-08-08 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      },
+      "512480.SH": {
+        "rows": 1731,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2019-06-12 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      },
+      "159915.SZ": {
+        "rows": 3553,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2011-12-09 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      },
+      "513100.SH": {
+        "rows": 3211,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2013-05-15 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      },
+      "518880.SH": {
+        "rows": 3162,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2013-07-29 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      },
+      "511010.SH": {
+        "rows": 3244,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2013-03-25 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      },
+      "588000.SH": {
+        "rows": 1384,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2020-11-16 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      },
+      "516160.SH": {
+        "rows": 1327,
+        "nulls": {
+          "ts_code": 0,
+          "trade_date": 0,
+          "open": 0,
+          "high": 0,
+          "low": 0,
+          "close": 0,
+          "vol": 0,
+          "adj_factor": 0
+        },
+        "duplicate_keys": 0,
+        "out_of_order_files": 0,
+        "invalid_prices": 0,
+        "exact_envelope_violations": 0,
+        "material_envelope_violations": 0,
+        "invalid_factors": 0,
+        "zero_volume": 0,
+        "negative_volume": 0,
+        "first_time": "2021-02-04 00:00:00",
+        "last_time": "2026-07-31 00:00:00"
+      }
+    }
+  },
+  "issues": [
+    {
+      "period": "30m",
+      "code": "510300.SH",
+      "check": "material_envelope_violations",
+      "count": 1
+    },
+    {
+      "period": "30m",
+      "code": "159915.SZ",
+      "check": "material_envelope_violations",
+      "count": 9
+    },
+    {
+      "period": "30m",
+      "code": "513100.SH",
+      "check": "invalid_prices",
+      "count": 39
+    },
+    {
+      "period": "30m",
+      "code": "518880.SH",
+      "check": "invalid_prices",
+      "count": 58
+    },
+    {
+      "period": "30m",
+      "code": "518880.SH",
+      "check": "invalid_factors",
+      "count": 45
+    },
+    {
+      "period": "30m",
+      "code": "511010.SH",
+      "check": "invalid_prices",
+      "count": 128
+    }
+  ],
+  "integrity_ok": true,
+  "selected_rows_usable": false,
+  "scope": "全频率文件摘要;仅显式periods和codes的数据行检查,非全2693标的语义验收",
+  "limits": [
+    "时间戳是否为区间开始/结束未实测,不生成closed_dt/available_dt",
+    "0量是否为停牌未知;不删除0量行",
+    "历史发布版本缺失,不证明供应数据当时未修订"
+  ]
+}

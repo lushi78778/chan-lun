@@ -1,0 +1,47 @@
+{
+  "version": "0.9.0",
+  "algorithm_used_to_generate_labels": false,
+  "cases": 6,
+  "window_rows": 928,
+  "raw_standard_observations": 1856,
+  "f1_path_observations": 3712,
+  "completed_f1": {
+    "bi:consolidation": 35,
+    "bi:up": 2,
+    "xd:consolidation": 3,
+    "bi:down": 1
+  },
+  "completed_f2": 1,
+  "source_hashes": {
+    "src/chan/tests/fixtures/real_f1_originals.json": "7c8408bf8beaf9f9c492460cb00353856c15dec56951a310de8522b1db9b5d29",
+    "doc/validation/chan-real-f1-manual-0.9.0.json": "0418fbdfdef9ce011a4610237fb6b75ca6265ad67c03586da767c8189f7b38a4",
+    "doc/validation/chan-real-512880-day-20160808-20161226-input.json": "ed008db8c7b95b240b37be89e8e195087c1f649cf8411c6753ca7cce27f5d392",
+    "doc/validation/chan-real-512880-day-20250821-20251031-input.json": "5b8bded6718bdaf6ce18da2323f493d3cf46a40060ecf39aa6f320c5be02078b",
+    "doc/validation/chan-real-512880-day-20220420-20221209-input.json": "1e2e3f0c8ac27326ac36b1ce7123294ea8d8809642a847b6b5bbfc4eedc905f4",
+    "doc/validation/chan-real-159915-day-20160505-20161116-input.json": "50e3d143244b1149d148e9773ad9107423466ff91354ee27e6794a29e8ec5c99",
+    "doc/validation/chan-real-512880-day-20180824-20191120-input.json": "749db65b58f409c48b9f7e8b90e6b904dac596ed5400c45bc1026f853c861a80",
+    "doc/validation/chan-real-512880-day-20161109-20170830-input.json": "ebeed5fa73e0374dd3a599cae73bcf4b01da526f2667ccd66fd94de58aa679be"
+  },
+  "html_sha256": "2cb1bc3fe29a23530d034e21260a184c625054a74a7f7fbfa1fd67b7f54aea19",
+  "browser_visual_checked": true,
+  "R2_gate_passed": false,
+  "R3_ready": false,
+  "html_structure_checked": true,
+  "browser_QA": {
+    "checked_at": "2026-10-11T19:11:38+08:00",
+    "transport": "HTTP 127.0.0.1:8790, only archived HTML served",
+    "sampled_views": [
+      "首页及A窗口",
+      "E上涨窗口图面/横向滚动/确认列",
+      "F下跌窗口图面/F1确认列/相邻F2表"
+    ],
+    "album_articles": 6,
+    "album_svgs": 24,
+    "album_tables": 48,
+    "broken_nav_targets": 0,
+    "body_horizontal_overflow": false,
+    "console_errors_or_warnings": [],
+    "all_plots_visually_inspected": false,
+    "temporary_server_stopped": true
+  }
+}

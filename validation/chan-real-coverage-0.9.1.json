@@ -1,0 +1,72 @@
+{
+  "schema_version": "chan-real-coverage-v2",
+  "version": "0.9.1",
+  "snapshot_scope": "累计独立F1证据快照；当前进度唯一在正式计划§6",
+  "prior_snapshot": {
+    "file": "chan-real-coverage-0.9.0.json",
+    "sha256": "4d405c49d184d5ff99e22a5c51663e2e932bf83a46741f08372f9114fbc5a990"
+  },
+  "source_cases": [
+    "512880-day-2016-08-08-2016-12-26",
+    "512880-day-2025-08-21-2025-10-31",
+    "512880-day-2022-04-20-2022-12-09",
+    "159915-day-2016-05-05-2016-11-16",
+    "512880-day-2018-08-24-2019-11-20",
+    "512880-day-2016-11-09-2017-08-30",
+    "512880-day-20181008-20191108",
+    "159915-day-20160701-20180411"
+  ],
+  "source_label_sha256": "3defd45833e0dd5339ffb43e6d3aad7cdf3617887961acedfee03df8204fec0f",
+  "window_rows": 1628,
+  "windows_can_overlap": true,
+  "raw_standard_observations": 2556,
+  "f1_path_observations": 4412,
+  "completed_f1": 43,
+  "completed_f1_by_path_and_kind": {
+    "bi:consolidation": 35,
+    "bi:up": 2,
+    "xd:consolidation": 3,
+    "bi:down": 1,
+    "xd:up": 1,
+    "xd:down": 1
+  },
+  "completed_f2": 1,
+  "new_version_scope": {
+    "raw_rows": 700,
+    "standard": "106",
+    "path": "xd",
+    "completed_xds": 14,
+    "completed_f1": 2,
+    "f2_added": 0
+  },
+  "verified": [
+    "两个新窗口完整顺序包含/分型/81及106笔/含活动尾部XD全表",
+    "固定笔构造F1的完成上涨/下跌/盘整, 端点/后继证明/首次确认分离",
+    "完成XD构造F1的完成盘整和残段待定",
+    "相邻F2保留延伸: 盘整完成与上涨等待",
+    "逐原始日前缀稳定, 晚到/未来毒值在字段校验之前截断",
+    "106完成XD路径F1工程up/down各一，14条XD首证明及700原始日前缀",
+    "工程核心方向与完整三段组波动关系分列，严格趋势未由此证明"
+  ],
+  "not_verified": [
+    "严格趋势完整Zn与a+A+b+B+c角色及全部波动分离正例",
+    "严格一类买/卖成立与否决",
+    "二类强/一般/弱，二三合一，小转大",
+    "三类完整首回试守沿/失败/等待",
+    "因果底顶成功/失败，升级重组继承",
+    "新增两例81路径、相邻F2及分钟结构",
+    "旧运行时与供应实际可见时间本版未实跑"
+  ],
+  "label_compiler_imports_chan": false,
+  "first_confirmed_f1_never_rewrites": true,
+  "R2_gate_passed": false,
+  "R3_ready": false,
+  "source_limits": [
+    "仅验收106标准完成XD路径；81及固定笔路径本版不扩充真值。",
+    "同级切分up/down为明示工程构造，不证明严格理论趋势；严格一类点仍无本轮正例。",
+    "原始历史发布版本和实际供应到达未实测；聚宽实跑未验收。",
+    "R2点位正反例、因果底顶仍待标注，不放行R3。",
+    "三段工程组的wave_relation只核该构造组包络，不自动等同原文Z_n的完整a+A+b+B+c角色归属；严格趋势另行标注。"
+  ],
+  "not_a_trading_or_return_acceptance": true
+}

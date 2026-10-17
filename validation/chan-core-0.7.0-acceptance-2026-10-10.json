@@ -1,0 +1,93 @@
+{
+  "version": "0.7.0",
+  "scope": "beta工程与时点验收;正式1.0门槛仍按计划§6保留",
+  "core_tests": 493,
+  "project_tests": 847,
+  "unit_log": "/private/tmp/chan-070-core-tests.log",
+  "project_log": "/private/tmp/chan-070-project-final-tests.log",
+  "day_observations": 1390,
+  "minute_observations": 1744,
+  "confirmed_bi_xd_revisions_in_window": 0,
+  "original_minute_envelope_violations": 60,
+  "max_price_precision_change": 4.547473508864641e-13,
+  "legacy_ci": {
+    "status": "success",
+    "python": "3.6.15",
+    "numpy": "1.14.6",
+    "pandas": "0.23.4",
+    "scope": "Linux容器源码测试与实际安装wheel;不等于聚宽Python3.6.7平台实跑"
+  },
+  "joinquant_actual_runtime": "not_run",
+  "third_points_real_oracle": "not_verified",
+  "automatic_complete_submoves_and_causal_context": "not_implemented",
+  "release": "verified",
+  "core_commit": "7a2332f409a1be75a668aa49dd5983712b62136a",
+  "core_main_push": "verified",
+  "main_ci_url": "https://github.com/lushi78778/chan-lun/actions/runs/38054963665",
+  "main_ci": "success",
+  "source_sha256": {
+    "osc.py": "ba764d646a0421bb0c0e99fc0c7e4771b78285a9ea748fcb2f54e5c74da5f705",
+    "bc.py": "2a5ac331f94349e8e02ab1641f194a2d4e5a2bac1b7fd19a0e90e7d297b90845",
+    "strength.py": "4aebba84caffeee1a5cfbaa033e86d529b1338eda114d09eee6da0e0ff79c391",
+    "turn.py": "43634279af22839d5df529a69d4445e82f49caa5962405f20f5b750fb33a9912",
+    "cross30.py": "e417ed7b181d41cda28e2d3d4bea70f83e3af8d279c1c3c8fd9d09cd984ba85b",
+    "fxpower.py": "5075bdc1dbebf393d33ec380e7ce3dc20b1744a13777ad543d5d84a92f35966f",
+    "xd.py": "52e79dbb85a0242d2884e158e4f58d6342336c9d87be7731e636c6868c237804",
+    "nest.py": "17396515958fcc7e9a2a70f25bb882fc0edcc96cf6447ae4bf11bfd1aafe79c0",
+    "biaoli.py": "d95d3573c4d8ee137e54df7e768948312aa52880adf52afb9613f8e46a0f7cfb",
+    "zhongyin.py": "ccfcc9be80a44521ae4cd2338ef59eb6b44756e312af0e77fd244d7687bdb19e",
+    "analysis.py": "941a658d5f48187f6eed7d82cffca68d133560ddfc8e63f779f94822d975e66a",
+    "decompose.py": "4e7b79b3a3f76a24acf609f12e6cf54cdaf339550bb124d099389b2a51500a18",
+    "_intervals.py": "a412deb262ef35ef7351780303cdc008af147cd98add5cfeead4902400742200",
+    "bi.py": "18e34672ea7e2763bbe39eb2ffac054eb5051510898d75e49603308634c87bc0",
+    "bottom.py": "5017a092e92a2d79163c0fcf7cd6cead8b0c3f89794334be2f9cdaf6ea5bc0f0",
+    "recurse.py": "ee669ee4c525ec1a3a346e6a441e5a46f32131bb8c13b705059c2a9e9e67f6e1",
+    "second.py": "455ddd5d0f94efba3cbda117a97207b0c2988ff54e967241537f87ddf3ebffd4",
+    "__init__.py": "e1b78f4457f04af65916e331cc7f9888731e4fe8e8b688bbbf0ac85c0e01b747",
+    "zs.py": "aa27ed466659f675a4eb90a28777b997b5a877f6f62272a78055fa3c9ab79aff",
+    "replay.py": "46fccaa64060dac93b58488e958f54833e8f81837983ba05e13b6a9b567570d4",
+    "_series.py": "27fef9b0135b84ab53ec64f2e8079a3807f62599a50d4aed4ab7e732ac8de9eb",
+    "bs.py": "548e76a4956f9f97f88466d79e59eda93731ec74fc1d1cd6cab2aaf3b3f0df56",
+    "minor_turn.py": "d1519104d5ccb119e3e6fe1903fc1b8a393f6b6f63284e466122cbeaa06f0950",
+    "kiss.py": "7652fda0a5e5fad057627f10895da3e1c2d2a0d585592d869c1923ed583dacf7",
+    "bars.py": "ef027a76ad02cc489131ccfef91ae24cb0ed574528d2ba050a56e3ec31c92291",
+    "gap.py": "6ba6b235448ca4f5e6fef5026881d575d3dbb8c4cd13edf8dccabd3da39541d9",
+    "levels.py": "0311530af60e08ad10ad714d35e64f2e2a5efaad0c89e259b15c0d4ed6309dde",
+    "fx.py": "935204b94470082df9917f82084f9764969e3031702d4085cd9bb677e5311b75",
+    "sector.py": "fff3c1ad98f82761e2c0c3f4ddc605b9bd0ce0dc15a5c975f52348ef5ef3895f",
+    "third.py": "c9a6c753044b43ba6fa78db9b16fe03bbcdf4c12592dc54104117526ef9ae873",
+    "availability.py": "bd5d49ef4c138c4e60ea3127351602d641dd1ff693e37c5c6d75637a1dc7451f",
+    "macd_guard.py": "b6d27e9d7724fc775256dcd2487355ae615a344adb2846d6627831c73ef50774"
+  },
+  "local_installed_wheel": "isolated_import_passed; all package .py bytes equal source",
+  "build_environment": "Python3.12/setuptools; local test Python3.13 modern dependencies",
+  "source_time_scope": "已测试前缀隔离;实际到达为测试约定,历史供应版本不具备",
+  "tag": "v0.7.0",
+  "tag_ci": "success",
+  "tag_ci_url": "https://github.com/lushi78778/chan-lun/actions/runs/38055243727",
+  "release_url": "https://github.com/lushi78778/chan-lun/releases/tag/v0.7.0",
+  "pypi_url": "https://pypi.org/project/chan-lun-core/0.7.0/",
+  "local_build_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.0-py3-none-any.whl",
+      "sha256": "0dc1979d36129dcfd0247b65853c8c07acb65410da5d9d03e49f4ca1a0dea077"
+    },
+    {
+      "file": "chan_lun_core-0.7.0.tar.gz",
+      "sha256": "f8c6c58b0876643f0a5ef549b72d5ce85b94c51801f26aa6a81e779787a34545"
+    }
+  ],
+  "published_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.0-py3-none-any.whl",
+      "sha256": "b0dfd3c9739c532c9806a7af5829e5a8a6b8d36582f4a1b10f2482c98e667885",
+      "url": "https://files.pythonhosted.org/packages/ef/4f/af71fa5f0e387ee474de9f85ebeba40ee5a9c388b6da33888e3d546cceb3/chan_lun_core-0.7.0-py3-none-any.whl"
+    },
+    {
+      "file": "chan_lun_core-0.7.0.tar.gz",
+      "sha256": "222033e7f2655b53beffc11db482b71d16ecfe39faa2f5b76c509bc7eb06d94a",
+      "url": "https://files.pythonhosted.org/packages/9a/0a/85bef39476e0f1bbdcd4137a904cb99da2d6300f8ec70b1616214266eb85/chan_lun_core-0.7.0.tar.gz"
+    }
+  ],
+  "published_wheel_verification": "official PyPI SHA256 and ZIP CRC passed; 32 package .py files byte-equal current source; isolated wheel import and API smoke passed"
+}

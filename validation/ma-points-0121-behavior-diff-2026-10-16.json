@@ -1,0 +1,90 @@
+{
+  "schema": "ma-points-0121-behavior-diff-v1",
+  "scope": "十ETF日线全历史, 5/10 SMA, 默认参数, 后复权",
+  "per_code": {
+    "510300.SH": {
+      "bars": 3445,
+      "old": 4,
+      "new": 4,
+      "added": 0,
+      "added_kinds": []
+    },
+    "510500.SH": {
+      "bars": 3248,
+      "old": 1,
+      "new": 1,
+      "added": 0,
+      "added_kinds": []
+    },
+    "512880.SH": {
+      "bars": 2422,
+      "old": 2,
+      "new": 2,
+      "added": 0,
+      "added_kinds": []
+    },
+    "512480.SH": {
+      "bars": 1731,
+      "old": 8,
+      "new": 8,
+      "added": 0,
+      "added_kinds": []
+    },
+    "159915.SZ": {
+      "bars": 3553,
+      "old": 8,
+      "new": 8,
+      "added": 0,
+      "added_kinds": []
+    },
+    "513100.SH": {
+      "bars": 3211,
+      "old": 9,
+      "new": 9,
+      "added": 0,
+      "added_kinds": []
+    },
+    "518880.SH": {
+      "bars": 3162,
+      "old": 0,
+      "new": 0,
+      "added": 0,
+      "added_kinds": []
+    },
+    "511010.SH": {
+      "bars": 3244,
+      "old": 1,
+      "new": 3,
+      "added": 2,
+      "added_kinds": [
+        "lip"
+      ]
+    },
+    "588000.SH": {
+      "bars": 1384,
+      "old": 0,
+      "new": 0,
+      "added": 0,
+      "added_kinds": []
+    },
+    "516160.SH": {
+      "bars": 1327,
+      "old": 2,
+      "new": 3,
+      "added": 1,
+      "added_kinds": [
+        "lip"
+      ]
+    }
+  },
+  "total_old": 35,
+  "total_new": 38,
+  "total_added": 3,
+  "added_kinds": {
+    "lip": 3
+  },
+  "invariants": [
+    "旧候选全保留且逐字段一致",
+    "新增候选kiss_kind均为fly/lip"
+  ]
+}

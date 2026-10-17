@@ -1,0 +1,531 @@
+{
+  "version": "0.14.0",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "files": [
+    {
+      "path": "bars_1d/part-00000.parquet",
+      "sha256": "a8323840c4adad004c48582fc40f76480fc3c23390c1de7d8c20cccc238c9c76"
+    },
+    {
+      "path": "bars_30m/year=2026/part-00000.parquet",
+      "sha256": "1e39722d63052d5520a52b634747539c2c52855537bd5a19bbd7ccdbd45b7b92"
+    }
+  ],
+  "availability_scope": "测试约定日线15:00收盘并15:05可用; 30m按存储trade_time视为周期结束并延迟1分钟。源文件无发布到达版本，此约定不证明真实盘中到达或供应数据从未修订。",
+  "adjustment": "每个价格前缀OHLC*factor[t]/factor[as_of];账本另用固定锚比较形态修订",
+  "scope": "10只ETF全部日线冒烟、2026逐日观察及30m末20交易日前缀;非全池、非收益验证",
+  "assets": [
+    {
+      "code": "510300.SH",
+      "daily_rows": 3445,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 34279,
+        "xd": 4413,
+        "xd_center": 997
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 4274,
+        "2": 139
+      },
+      "changes": {
+        "fx:appeared": 1208,
+        "bi:appeared": 253,
+        "buy:appeared": 38,
+        "sell:appeared": 24,
+        "confirmed_bi:appeared": 252,
+        "confirmed_xd:appeared": 33,
+        "formed_xd_center:appeared": 8,
+        "bi:revised": 14,
+        "fx:revised": 12,
+        "buy:withdrawn": 2,
+        "sell:withdrawn": 1
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 1.199040866595169e-13,
+        "changed_rows": 40,
+        "original_envelope_violations": 0,
+        "original_violation_times": []
+      },
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 15453,
+        "xd": 1400,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "510500.SH",
+      "daily_rows": 3248,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 33294,
+        "xd": 4148,
+        "xd_center": 278
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 3731,
+        "2": 417
+      },
+      "changes": {
+        "fx:appeared": 1083,
+        "bi:appeared": 244,
+        "buy:appeared": 31,
+        "sell:appeared": 23,
+        "confirmed_bi:appeared": 243,
+        "confirmed_xd:appeared": 30,
+        "formed_xd_center:appeared": 2,
+        "bi:revised": 14,
+        "fx:revised": 9,
+        "formed_xd_center:revised": 1,
+        "sell:withdrawn": 1
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 9.414691248821327e-14,
+        "changed_rows": 40,
+        "original_envelope_violations": 0,
+        "original_violation_times": []
+      },
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 13010,
+        "xd": 1546,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "512880.SH",
+      "daily_rows": 2422,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 24548,
+        "xd": 3535,
+        "xd_center": 834
+      },
+      "xd_modes_snapshot_counts": {
+        "2": 834,
+        "1": 2701
+      },
+      "changes": {
+        "fx:appeared": 834,
+        "bi:appeared": 183,
+        "buy:appeared": 21,
+        "sell:appeared": 20,
+        "confirmed_bi:appeared": 182,
+        "confirmed_xd:appeared": 26,
+        "formed_xd_center:appeared": 6,
+        "bi:revised": 14,
+        "fx:revised": 21,
+        "formed_xd_center:revised": 1
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 9.103828801926284e-15,
+        "changed_rows": 40,
+        "original_envelope_violations": 11,
+        "original_violation_times": [
+          "2026-07-27 11:00:00",
+          "2026-07-28 10:30:00",
+          "2026-07-28 11:00:00",
+          "2026-07-28 13:30:00",
+          "2026-07-28 14:00:00",
+          "2026-07-28 15:00:00",
+          "2026-07-29 15:00:00",
+          "2026-07-30 13:30:00",
+          "2026-07-31 10:30:00",
+          "2026-07-31 11:00:00",
+          "2026-07-31 15:00:00"
+        ]
+      },
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 10820,
+        "xd": 1008,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "512480.SH",
+      "daily_rows": 1731,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 17611,
+        "xd": 2452,
+        "xd_center": 278
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 2199,
+        "2": 253
+      },
+      "changes": {
+        "fx:appeared": 611,
+        "bi:appeared": 132,
+        "buy:appeared": 16,
+        "sell:appeared": 7,
+        "confirmed_bi:appeared": 131,
+        "confirmed_xd:appeared": 18,
+        "formed_xd_center:appeared": 2,
+        "fx:revised": 7,
+        "bi:revised": 12,
+        "buy:withdrawn": 1
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 2.9753977059954195e-14,
+        "changed_rows": 39,
+        "original_envelope_violations": 9,
+        "original_violation_times": [
+          "2026-07-27 11:00:00",
+          "2026-07-27 15:00:00",
+          "2026-07-28 11:00:00",
+          "2026-07-28 13:30:00",
+          "2026-07-28 15:00:00",
+          "2026-07-29 11:30:00",
+          "2026-07-31 10:00:00",
+          "2026-07-31 10:30:00",
+          "2026-07-31 15:00:00"
+        ]
+      },
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 14633,
+        "xd": 882,
+        "xd_center": 162
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "159915.SZ",
+      "daily_rows": 3553,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 37713,
+        "xd": 5650,
+        "xd_center": 973
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 5143,
+        "2": 507
+      },
+      "changes": {
+        "fx:appeared": 1233,
+        "bi:appeared": 278,
+        "buy:appeared": 43,
+        "sell:appeared": 28,
+        "confirmed_bi:appeared": 277,
+        "confirmed_xd:appeared": 42,
+        "formed_xd_center:appeared": 7,
+        "bi:revised": 11,
+        "fx:revised": 13,
+        "buy:withdrawn": 1,
+        "formed_xd_center:revised": 1
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 5.906386491005833e-14,
+        "changed_rows": 40,
+        "original_envelope_violations": 5,
+        "original_violation_times": [
+          "2026-07-27 11:00:00",
+          "2026-07-27 14:30:00",
+          "2026-07-27 15:00:00",
+          "2026-07-30 15:00:00",
+          "2026-07-31 15:00:00"
+        ]
+      },
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 16664,
+        "xd": 2098,
+        "xd_center": 350
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "513100.SH",
+      "daily_rows": 3211,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 38616,
+        "xd": 4137,
+        "xd_center": 834
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 3303,
+        "2": 834
+      },
+      "changes": {
+        "fx:appeared": 1332,
+        "bi:appeared": 285,
+        "buy:appeared": 45,
+        "sell:appeared": 15,
+        "confirmed_bi:appeared": 284,
+        "confirmed_xd:appeared": 30,
+        "formed_xd_center:appeared": 6,
+        "bi:revised": 11,
+        "fx:revised": 11,
+        "formed_xd_center:revised": 1
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 3.9968028886505635e-15,
+        "changed_rows": 34,
+        "original_envelope_violations": 12,
+        "original_violation_times": [
+          "2026-07-27 10:30:00",
+          "2026-07-27 11:00:00",
+          "2026-07-27 15:00:00",
+          "2026-07-28 13:30:00",
+          "2026-07-28 14:30:00",
+          "2026-07-28 15:00:00",
+          "2026-07-29 11:00:00",
+          "2026-07-29 13:30:00",
+          "2026-07-30 14:30:00",
+          "2026-07-31 11:30:00",
+          "2026-07-31 13:30:00",
+          "2026-07-31 14:30:00"
+        ]
+      },
+      "minute_rows": 1211,
+      "minute_observations": 169,
+      "minute_structure_snapshot_counts": {
+        "bi": 11369,
+        "xd": 1311,
+        "xd_center": 338
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "518880.SH",
+      "daily_rows": 3162,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 38829,
+        "xd": 4031,
+        "xd_center": 417
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 3475,
+        "2": 556
+      },
+      "changes": {
+        "fx:appeared": 1364,
+        "bi:appeared": 286,
+        "buy:appeared": 40,
+        "sell:appeared": 21,
+        "confirmed_bi:appeared": 285,
+        "confirmed_xd:appeared": 29,
+        "formed_xd_center:appeared": 3,
+        "fx:revised": 10,
+        "bi:revised": 13,
+        "sell:withdrawn": 1
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 1.7053025658242404e-13,
+        "changed_rows": 40,
+        "original_envelope_violations": 10,
+        "original_violation_times": [
+          "2026-07-27 10:30:00",
+          "2026-07-27 11:00:00",
+          "2026-07-27 11:30:00",
+          "2026-07-27 14:30:00",
+          "2026-07-28 13:30:00",
+          "2026-07-29 13:30:00",
+          "2026-07-29 14:30:00",
+          "2026-07-30 11:00:00",
+          "2026-07-30 13:30:00",
+          "2026-07-31 11:30:00"
+        ]
+      },
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 14909,
+        "xd": 1442,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "511010.SH",
+      "daily_rows": 3244,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 30546,
+        "xd": 2363,
+        "xd_center": 417
+      },
+      "xd_modes_snapshot_counts": {
+        "2": 556,
+        "1": 1807
+      },
+      "changes": {
+        "fx:appeared": 1014,
+        "bi:appeared": 227,
+        "buy:appeared": 32,
+        "sell:appeared": 6,
+        "confirmed_bi:appeared": 226,
+        "confirmed_xd:appeared": 17,
+        "formed_xd_center:appeared": 3,
+        "fx:revised": 15,
+        "bi:revised": 9
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 4.547473508864641e-13,
+        "changed_rows": 40,
+        "original_envelope_violations": 0,
+        "original_violation_times": []
+      },
+      "minute_rows": 1245,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 10595,
+        "xd": 1006,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "588000.SH",
+      "daily_rows": 1384,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 12994,
+        "xd": 834,
+        "xd_center": 139
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 417,
+        "2": 417
+      },
+      "changes": {
+        "fx:appeared": 465,
+        "bi:appeared": 98,
+        "buy:appeared": 14,
+        "sell:appeared": 9,
+        "confirmed_bi:appeared": 97,
+        "confirmed_xd:appeared": 6,
+        "formed_xd_center:appeared": 1,
+        "bi:revised": 16,
+        "fx:revised": 11,
+        "sell:withdrawn": 1,
+        "buy:withdrawn": 4
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 3.907985046680551e-14,
+        "changed_rows": 40,
+        "original_envelope_violations": 6,
+        "original_violation_times": [
+          "2026-07-27 11:00:00",
+          "2026-07-27 14:30:00",
+          "2026-07-27 15:00:00",
+          "2026-07-30 14:00:00",
+          "2026-07-31 11:30:00",
+          "2026-07-31 15:00:00"
+        ]
+      },
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 13272,
+        "xd": 980,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "516160.SH",
+      "daily_rows": 1327,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 12056,
+        "xd": 1191,
+        "xd_center": 278
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 1191
+      },
+      "changes": {
+        "fx:appeared": 455,
+        "bi:appeared": 92,
+        "buy:appeared": 13,
+        "sell:appeared": 12,
+        "confirmed_bi:appeared": 91,
+        "confirmed_xd:appeared": 9,
+        "formed_xd_center:appeared": 2,
+        "bi:revised": 9,
+        "fx:revised": 19,
+        "buy:withdrawn": 2
+      },
+      "confirmed_structure_revisions": {},
+      "minute_price_precision": {
+        "decimals": 12,
+        "max_absolute_change": 2.6645352591003757e-14,
+        "changed_rows": 40,
+        "original_envelope_violations": 7,
+        "original_violation_times": [
+          "2026-07-27 14:30:00",
+          "2026-07-28 11:00:00",
+          "2026-07-28 13:30:00",
+          "2026-07-30 11:00:00",
+          "2026-07-30 13:30:00",
+          "2026-07-31 14:00:00",
+          "2026-07-31 15:00:00"
+        ]
+      },
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 14412,
+        "xd": 2162,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    }
+  ],
+  "errors": [],
+  "ok": true
+}

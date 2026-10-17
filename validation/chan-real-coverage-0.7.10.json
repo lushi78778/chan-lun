@@ -1,0 +1,64 @@
+{
+  "schema_version": "chan-real-coverage-v1",
+  "version": "0.7.10",
+  "snapshot_scope": "本次独立标签固定输入的证据快照;执行状态唯一维护在正式计划§6",
+  "source_case": "512880-day-20240701-20240802",
+  "source_label_sha256": "b7b3f709e8756adba65ab63d1b335cf233fa7bdeacb96db25bb5d36b52f2bd33",
+  "raw_rows": 25,
+  "raw_observations": 25,
+  "verified": [
+    {
+      "branch": "顺序包含",
+      "independent_cases": [
+        "512880-day-20240701-20240802"
+      ]
+    },
+    {
+      "branch": "上/下分型及右邻首次确认",
+      "independent_cases": [
+        "512880-day-20240701-20240802"
+      ]
+    },
+    {
+      "branch": "81上/下笔及间距否决",
+      "independent_cases": [
+        "512880-day-20240701-20240802"
+      ]
+    },
+    {
+      "branch": "106六K及原始MA5必要条件",
+      "independent_cases": [
+        "512880-day-20240701-20240802"
+      ]
+    },
+    {
+      "branch": "三笔交集与未完成XD反例",
+      "independent_cases": [
+        "512880-day-20240701-20240802"
+      ]
+    }
+  ],
+  "not_verified": [
+    "81/106标准差异",
+    "第一种完成XD",
+    "第二种完成XD",
+    "真实古怪线段",
+    "固定笔路径完成F1的上涨/下跌/盘整及后继证据",
+    "完成线段路径F1与相邻F2",
+    "一类买/卖各两个独立原始区间的成立/不成立",
+    "强/一般/弱二类及二三合一/小转大",
+    "三类成立/触沿/首回试失败/等待完成",
+    "因果底顶成功/失败和升级重组"
+  ],
+  "completed_xd": 0,
+  "completed_f1": 0,
+  "strict_first_points": 0,
+  "R2_gate_passed": false,
+  "R3_ready": false,
+  "source_limits": [
+    "窗口起点固定2024-07-01,仅本窗口算术真值,没有图外走势的分段继承或完成F1真值。",
+    "日线收盘后研究,不声明供应发布时刻;因子均为1,不证明历史供应版本未修订。",
+    "81/106差异分支、完成XD两种破坏、完整F1/F2、点位与因果标签仍需后续独立样本。"
+  ],
+  "not_a_trading_or_return_acceptance": true
+}

@@ -1,0 +1,30 @@
+{
+  "label": "510300-30m",
+  "chan_version": "0.13.4",
+  "python": "3.13.15",
+  "pandas": "3.0.5",
+  "system": "Darwin",
+  "machine": "arm64",
+  "ts_code": "510300.SH",
+  "adjusted": true,
+  "n_rows_raw": 31000,
+  "n_bars": 30988,
+  "dropped_invalid_rows": 1,
+  "dt_first": "2012-05-28 09:30:00",
+  "dt_last": "2026-07-31 15:00:00",
+  "structures": {
+    "new_bars": 20335,
+    "fxs": 9760,
+    "bis": 2191,
+    "xds": 300,
+    "bi_zss": 319,
+    "xd_zss": 42
+  },
+  "normalize_seconds": 0.032,
+  "analyze_seconds": 1.866,
+  "replay_step": 259,
+  "replay_snapshots": 119,
+  "replay_seconds": 95.581,
+  "replay_seconds_per_snapshot": 0.8032,
+  "peak_rss_mb": 1372.1
+}

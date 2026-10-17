@@ -1,0 +1,798 @@
+{
+  "version": "0.7.3",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "files": [
+    {
+      "path": "bars_1d/part-00000.parquet",
+      "sha256": "a8323840c4adad004c48582fc40f76480fc3c23390c1de7d8c20cccc238c9c76"
+    },
+    {
+      "path": "bars_30m/year=2026/part-00000.parquet",
+      "sha256": "1e39722d63052d5520a52b634747539c2c52855537bd5a19bbd7ccdbd45b7b92"
+    }
+  ],
+  "scope": "完成走势递归的真实行情接线与前缀验收, 不替代独立理论标注。\n\n最低层明确选已固定笔或这些笔上的已完成线段, 再由same_level_decompose构造\nF1走势类型; 不将单笔/单线段当ConfirmedMove。F1的真实理论正确性\n未有人工作图标注。暖机历史仅在2026首观察时统一声明已知, 不反推\n历史确认日。之后F1首次观察时间为保守到达证明, 完成后不得修改。\n价格锚锁在2026首观察日因子; 日线15:00闭合/15:05到达和30m结束\n后1分钟为测试约定, 不证明供应版本、聚宽时效、收益或交易有效性。\n",
+  "base_parts": "xd",
+  "assets": [
+    {
+      "code": "510300.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3445,
+        "observations": 139,
+        "anchor_factor": 1.235,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 5,
+        "total_base_count": 5,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.235,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 1,
+        "total_base_count": 1,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 350,
+        "independent_prefix_checks": 350,
+        "before_arrival_checks": 350,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 1.199040866595169e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "510500.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3248,
+        "observations": 139,
+        "anchor_factor": 0.332,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 0,
+        "total_base_count": 0,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 0.332,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 2,
+        "total_base_count": 2,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 350,
+        "independent_prefix_checks": 350,
+        "before_arrival_checks": 350,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 9.414691248821327e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "512880.SH",
+      "day": {
+        "period": "1d",
+        "rows": 2422,
+        "observations": 139,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 4,
+        "total_base_count": 4,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 1,
+        "total_base_count": 1,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 350,
+        "independent_prefix_checks": 350,
+        "before_arrival_checks": 350,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 9.103828801926284e-15,
+          "changed_rows": 40,
+          "original_envelope_violations": 11,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-28 10:30:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 14:00:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 15:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 10:30:00",
+            "2026-07-31 11:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "512480.SH",
+      "day": {
+        "period": "1d",
+        "rows": 1731,
+        "observations": 139,
+        "anchor_factor": 1.964,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 3,
+        "total_base_count": 3,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.964,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 0,
+        "total_base_count": 0,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 350,
+        "independent_prefix_checks": 350,
+        "before_arrival_checks": 350,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 2.9753977059954195e-14,
+          "changed_rows": 39,
+          "original_envelope_violations": 9,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 15:00:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 11:30:00",
+            "2026-07-31 10:00:00",
+            "2026-07-31 10:30:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "159915.SZ",
+      "day": {
+        "period": "1d",
+        "rows": 3553,
+        "observations": 139,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 5,
+        "total_base_count": 5,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 2,
+        "total_base_count": 2,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 350,
+        "independent_prefix_checks": 350,
+        "before_arrival_checks": 350,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 5.906386491005833e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 5,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 14:30:00",
+            "2026-07-27 15:00:00",
+            "2026-07-30 15:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "513100.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3211,
+        "observations": 139,
+        "anchor_factor": 5.002,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 0,
+        "total_base_count": 0,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1240,
+        "observations": 169,
+        "anchor_factor": 5.002,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 2,
+        "total_base_count": 2,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 338,
+        "independent_prefix_checks": 338,
+        "before_arrival_checks": 338,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 3.9968028886505635e-15,
+          "changed_rows": 34,
+          "original_envelope_violations": 12,
+          "original_violation_times": [
+            "2026-07-27 10:30:00",
+            "2026-07-27 11:00:00",
+            "2026-07-27 15:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 14:30:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 11:00:00",
+            "2026-07-29 13:30:00",
+            "2026-07-30 14:30:00",
+            "2026-07-31 11:30:00",
+            "2026-07-31 13:30:00",
+            "2026-07-31 14:30:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "518880.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3162,
+        "observations": 139,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 0,
+        "total_base_count": 0,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 0,
+        "total_base_count": 0,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 350,
+        "independent_prefix_checks": 350,
+        "before_arrival_checks": 350,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 1.7053025658242404e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 10,
+          "original_violation_times": [
+            "2026-07-27 10:30:00",
+            "2026-07-27 11:00:00",
+            "2026-07-27 11:30:00",
+            "2026-07-27 14:30:00",
+            "2026-07-28 13:30:00",
+            "2026-07-29 13:30:00",
+            "2026-07-29 14:30:00",
+            "2026-07-30 11:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 11:30:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "511010.SH",
+      "day": {
+        "period": "1d",
+        "rows": 3244,
+        "observations": 139,
+        "anchor_factor": 1.027,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 0,
+        "total_base_count": 0,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.027,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 0,
+        "total_base_count": 0,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 350,
+        "independent_prefix_checks": 350,
+        "before_arrival_checks": 350,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 4.547473508864641e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "588000.SH",
+      "day": {
+        "period": "1d",
+        "rows": 1384,
+        "observations": 139,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 0,
+        "total_base_count": 0,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 1.0,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 1,
+        "total_base_count": 1,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 350,
+        "independent_prefix_checks": 350,
+        "before_arrival_checks": 350,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 3.907985046680551e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 6,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 14:30:00",
+            "2026-07-27 15:00:00",
+            "2026-07-30 14:00:00",
+            "2026-07-31 11:30:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "516160.SH",
+      "day": {
+        "period": "1d",
+        "rows": 1327,
+        "observations": 139,
+        "anchor_factor": 0.309,
+        "anchor_dt": "2026-01-05 00:00:00",
+        "warm_base_count": 1,
+        "total_base_count": 1,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 278,
+        "independent_prefix_checks": 278,
+        "before_arrival_checks": 278,
+        "price_precision": null
+      },
+      "minute": {
+        "period": "30m",
+        "rows": 1246,
+        "observations": 175,
+        "anchor_factor": 0.309,
+        "anchor_dt": "2026-01-05 09:30:00",
+        "warm_base_count": 3,
+        "total_base_count": 3,
+        "new_base_count": 0,
+        "base_record_revisions": 0,
+        "recursive_record_revisions": 0,
+        "levels": [
+          {
+            "level": "F2",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          },
+          {
+            "level": "F3",
+            "unique_types": {},
+            "snapshot_counts": {},
+            "examples": {}
+          }
+        ],
+        "conversion_snapshots": {},
+        "future_poison_checks": 350,
+        "independent_prefix_checks": 350,
+        "before_arrival_checks": 350,
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 2.6645352591003757e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 7,
+          "original_violation_times": [
+            "2026-07-27 14:30:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-30 11:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 14:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "ok": true
+}

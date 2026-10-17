@@ -1,0 +1,76 @@
+{
+  "version": "0.7.1",
+  "core_commit": "8a2c92b78d750c5432d3693315b94311595e82ab",
+  "scope": "第108课已确认分型区间辅助构造；非完整精确走势/成笔/交易验证",
+  "core_tests": 509,
+  "project_tests": 865,
+  "fractal_boundary_tests": 16,
+  "coordinate_regression_tests": 2,
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "daily_rows": 26727,
+  "observations": 1390,
+  "frozen_fractal_ranges": 514,
+  "prefix_checks": 35884,
+  "future_poison_checks": 35884,
+  "terminal_revisions": 0,
+  "state_snapshot_counts": {
+    "bottom:constructing": 730,
+    "bottom:testing": 140,
+    "bottom:completed": 7947,
+    "top:constructing": 683,
+    "top:failed": 9869,
+    "bottom:failed": 9206,
+    "top:testing": 158,
+    "top:completed": 7151
+  },
+  "snapshot_scope": "累计快照而非独立信号数",
+  "availability_scope": "日线15:00闭合/15:05到达为测试约定；供应历史价格/因子版本未实测",
+  "effective_rule": "连续2次收盘严格越成功边沿；参数可调，非原文成笔定理",
+  "price_anchor": "每个构造确认时因子锁定；原价直接乘factor[t]/factor[构造确认日]，不经观察锚二次转换",
+  "retained_failure": "chan-core-0.7.1-fractal-coordinate-failure-2026-10-10.json；重复坐标转换使513100边沿出现浮点差异并导致终态改写",
+  "joinquant": "not_run",
+  "theory_remaining": "全原图/实际完成次级走势/因果上下文/真实二三类点完整独立标注/均线点位组合仍未全部完成",
+  "local_build": "wheel/sdist通过；33个包.py逐字节相同；公开导出/示例/Python3.6语法与隔离wheel导入通过",
+  "release": "verified",
+  "legacy_runtime": {
+    "status": "success",
+    "python": "3.6.15",
+    "numpy": "1.14.6",
+    "pandas": "0.23.4",
+    "scope": "Linux容器源码测试+实际安装wheel；不等于聚宽3.6.7平台实跑"
+  },
+  "local_build_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.1.tar.gz",
+      "sha256": "0a3b4b4d33c30cb765906e29336c9cdf828d7a7931ac4430c9744d55687df399"
+    },
+    {
+      "file": "chan_lun_core-0.7.1-py3-none-any.whl",
+      "sha256": "98e77d4b95e978126f436ca19dc170abdac015b507a4c0e252863037312317fe"
+    }
+  ],
+  "main_push": "verified",
+  "tag": "v0.7.1",
+  "tag_remote": "verified",
+  "main_ci": "success",
+  "main_ci_url": "https://github.com/lushi78778/chan-lun/actions/runs/38056732595",
+  "tag_ci": "success",
+  "tag_ci_url": "https://github.com/lushi78778/chan-lun/actions/runs/38056817969",
+  "release_url": "https://github.com/lushi78778/chan-lun/releases/tag/v0.7.1",
+  "pypi_url": "https://pypi.org/project/chan-lun-core/0.7.1/",
+  "mirror_sync": "not_verified",
+  "published_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.1-py3-none-any.whl",
+      "sha256": "ea1e189843cdc2ca9ab88222a9ca8778ef3554c82d31ea2eb70b9a5db23fa5f1",
+      "url": "https://files.pythonhosted.org/packages/8e/8d/bae899801f8979ebbda77208babec0c580c17db16d53f4bd126f931d57e3/chan_lun_core-0.7.1-py3-none-any.whl"
+    },
+    {
+      "file": "chan_lun_core-0.7.1.tar.gz",
+      "sha256": "ec6c0b6278df011171dea88da104d81632c52cdddd82f4d4c7b470facde36c29",
+      "url": "https://files.pythonhosted.org/packages/9d/72/ade2a4ad9677ac60c5e60e5b61c023271cf97b50f06aff42b0e49551f584/chan_lun_core-0.7.1.tar.gz"
+    }
+  ],
+  "published_wheel_verification": "官方SHA-256与ZIP通过；33个包.py逐字节等同源代码；隔离导入与新API冒烟通过"
+}

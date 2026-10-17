@@ -1,0 +1,1907 @@
+{
+  "version": "0.7.1",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "files": [
+    {
+      "path": "bars_1d/part-00000.parquet",
+      "sha256": "a8323840c4adad004c48582fc40f76480fc3c23390c1de7d8c20cccc238c9c76"
+    }
+  ],
+  "scope": "只读真实分型区间验收: 前缀冻结区间、独立边界预期与未来隔离。\n\n日线闭合15:00、到达15:05是测试约定, 源数据没有真实交付版本。\n分型右邻合并组经下一无包含K线固定后才登记; 仅观察2026新形成区间。\n每个构造用发现时的因子锁定统一价格坐标, 后续只读取当时前缀因子。\n不验证供应方历史因子版本, 不作收益/成笔/交易平台结论。\n",
+  "confirm": 2,
+  "assets": [
+    {
+      "code": "510300.SH",
+      "daily_rows": 3445,
+      "observations": 139,
+      "frozen_fractal_ranges": 60,
+      "prefix_checks": 4414,
+      "future_poison_checks": 4414,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "bottom:constructing": 86,
+        "bottom:testing": 16,
+        "bottom:completed": 693,
+        "top:constructing": 101,
+        "top:failed": 1362,
+        "bottom:failed": 1447,
+        "top:testing": 21,
+        "top:completed": 688
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2025-12-31 00:00:00",
+            "low": 4.742,
+            "high": 4.848,
+            "confirmed_dt": "2026-01-06 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-06 15:05:00",
+            "end_dt": "2026-01-08 15:05:00",
+            "first_test_dt": "2026-01-07 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.235
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-07 00:00:00",
+            "low": 4.843,
+            "high": 4.927,
+            "confirmed_dt": "2026-01-09 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-09 15:05:00",
+            "end_dt": "2026-01-12 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.235
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-08 00:00:00",
+            "low": 4.843,
+            "high": 4.927,
+            "confirmed_dt": "2026-01-12 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-12 15:05:00",
+            "end_dt": "2026-01-14 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.235
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-13 00:00:00",
+            "low": 4.715808997632203,
+            "high": 4.839601420678769,
+            "confirmed_dt": "2026-01-20 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-20 15:05:00",
+            "end_dt": "2026-01-26 15:05:00",
+            "first_test_dt": "2026-01-23 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.267
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-20 00:00:00",
+            "low": 4.688,
+            "high": 4.769,
+            "confirmed_dt": "2026-01-22 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-22 15:05:00",
+            "end_dt": "2026-01-23 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.267
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-21 00:00:00",
+            "low": 4.688,
+            "high": 4.764,
+            "confirmed_dt": "2026-01-23 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-23 15:05:00",
+            "end_dt": "2026-01-29 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.267
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-23 00:00:00",
+            "low": 4.687,
+            "high": 4.76,
+            "confirmed_dt": "2026-01-27 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-27 15:05:00",
+            "end_dt": "2026-01-30 15:05:00",
+            "first_test_dt": "2026-01-29 15:05:00",
+            "streak": 1,
+            "recovered": false
+          },
+          "anchor_factor": 1.267
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-26 00:00:00",
+            "low": 4.679,
+            "high": 4.76,
+            "confirmed_dt": "2026-01-28 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-28 15:05:00",
+            "end_dt": "2026-01-29 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.267
+        }
+      ]
+    },
+    {
+      "code": "510500.SH",
+      "daily_rows": 3248,
+      "observations": 139,
+      "frozen_fractal_ranges": 49,
+      "prefix_checks": 3246,
+      "future_poison_checks": 3246,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "top:constructing": 61,
+        "top:failed": 953,
+        "bottom:constructing": 64,
+        "bottom:testing": 11,
+        "bottom:completed": 875,
+        "top:testing": 12,
+        "bottom:failed": 641,
+        "top:completed": 629
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-19 00:00:00",
+            "low": 7.974958083832335,
+            "high": 8.484886227544909,
+            "confirmed_dt": "2026-01-21 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-21 15:05:00",
+            "end_dt": "2026-01-22 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 0.334
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-20 00:00:00",
+            "low": 8.201,
+            "high": 8.484886227544909,
+            "confirmed_dt": "2026-01-22 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-22 15:05:00",
+            "end_dt": "2026-01-26 15:05:00",
+            "first_test_dt": "2026-01-23 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 0.334
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-26 00:00:00",
+            "low": 8.437,
+            "high": 8.787,
+            "confirmed_dt": "2026-01-28 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-28 15:05:00",
+            "end_dt": "2026-02-03 15:05:00",
+            "first_test_dt": "2026-02-02 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 0.334
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-27 00:00:00",
+            "low": 8.437,
+            "high": 8.787,
+            "confirmed_dt": "2026-01-30 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-30 15:05:00",
+            "end_dt": "2026-02-02 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 0.334
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-29 00:00:00",
+            "low": 8.232,
+            "high": 8.754,
+            "confirmed_dt": "2026-02-02 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-02-02 15:05:00",
+            "end_dt": "2026-02-06 15:05:00",
+            "first_test_dt": "2026-02-05 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 0.334
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-02-03 00:00:00",
+            "low": 8.045,
+            "high": 8.594,
+            "confirmed_dt": "2026-02-05 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-02-05 15:05:00",
+            "end_dt": "2026-02-26 15:05:00",
+            "first_test_dt": "2026-02-25 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 0.334
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-02-04 00:00:00",
+            "low": 8.045,
+            "high": 8.395,
+            "confirmed_dt": "2026-02-09 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-02-09 15:05:00",
+            "end_dt": "2026-02-10 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 0.334
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-02-06 00:00:00",
+            "low": 8.075,
+            "high": 8.397,
+            "confirmed_dt": "2026-02-10 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-02-10 15:05:00",
+            "end_dt": "2026-02-12 15:05:00",
+            "first_test_dt": "2026-02-11 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 0.334
+        }
+      ]
+    },
+    {
+      "code": "512880.SH",
+      "daily_rows": 2422,
+      "observations": 139,
+      "frozen_fractal_ranges": 53,
+      "prefix_checks": 3723,
+      "future_poison_checks": 3723,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "bottom:constructing": 94,
+        "bottom:testing": 8,
+        "top:constructing": 78,
+        "bottom:completed": 365,
+        "bottom:failed": 1423,
+        "top:testing": 20,
+        "top:completed": 1070,
+        "top:failed": 665
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2025-12-31 00:00:00",
+            "low": 1.211,
+            "high": 1.235,
+            "confirmed_dt": "2026-01-06 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-06 15:05:00",
+            "end_dt": "2026-01-12 15:05:00",
+            "first_test_dt": "2026-01-07 15:05:00",
+            "streak": 2,
+            "recovered": true
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-07 00:00:00",
+            "low": 1.214,
+            "high": 1.288,
+            "confirmed_dt": "2026-01-09 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-09 15:05:00",
+            "end_dt": "2026-01-19 15:05:00",
+            "first_test_dt": "2026-01-16 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-09 00:00:00",
+            "low": 1.228,
+            "high": 1.258,
+            "confirmed_dt": "2026-01-13 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-13 15:05:00",
+            "end_dt": "2026-01-15 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-14 00:00:00",
+            "low": 1.214,
+            "high": 1.275,
+            "confirmed_dt": "2026-01-16 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-16 15:05:00",
+            "end_dt": "2026-01-20 15:05:00",
+            "first_test_dt": "2026-01-19 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-19 00:00:00",
+            "low": 1.198,
+            "high": 1.228,
+            "confirmed_dt": "2026-01-21 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-21 15:05:00",
+            "end_dt": "2026-01-23 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-20 00:00:00",
+            "low": 1.198,
+            "high": 1.21,
+            "confirmed_dt": "2026-01-22 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-22 15:05:00",
+            "end_dt": "2026-01-26 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-21 00:00:00",
+            "low": 1.198,
+            "high": 1.212,
+            "confirmed_dt": "2026-01-23 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-23 15:05:00",
+            "end_dt": "2026-01-27 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-22 00:00:00",
+            "low": 1.197,
+            "high": 1.212,
+            "confirmed_dt": "2026-01-26 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-26 15:05:00",
+            "end_dt": "2026-01-29 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        }
+      ]
+    },
+    {
+      "code": "512480.SH",
+      "daily_rows": 1731,
+      "observations": 139,
+      "frozen_fractal_ranges": 45,
+      "prefix_checks": 3291,
+      "future_poison_checks": 3291,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "top:constructing": 49,
+        "top:failed": 924,
+        "bottom:constructing": 50,
+        "bottom:testing": 12,
+        "bottom:completed": 960,
+        "bottom:failed": 594,
+        "top:testing": 14,
+        "top:completed": 688
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-08 00:00:00",
+            "low": 1.578,
+            "high": 1.638,
+            "confirmed_dt": "2026-01-12 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-12 15:05:00",
+            "end_dt": "2026-01-13 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.964
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-09 00:00:00",
+            "low": 1.578,
+            "high": 1.65,
+            "confirmed_dt": "2026-01-14 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-14 15:05:00",
+            "end_dt": "2026-01-19 15:05:00",
+            "first_test_dt": "2026-01-16 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.964
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-13 00:00:00",
+            "low": 1.578,
+            "high": 1.65,
+            "confirmed_dt": "2026-01-15 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-15 15:05:00",
+            "end_dt": "2026-01-16 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.964
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-14 00:00:00",
+            "low": 1.593,
+            "high": 1.65,
+            "confirmed_dt": "2026-01-16 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-16 15:05:00",
+            "end_dt": "2026-01-20 15:05:00",
+            "first_test_dt": "2026-01-19 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.964
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-22 00:00:00",
+            "low": 1.672,
+            "high": 1.787,
+            "confirmed_dt": "2026-01-28 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-28 15:05:00",
+            "end_dt": "2026-02-03 15:05:00",
+            "first_test_dt": "2026-02-02 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.964
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-27 00:00:00",
+            "low": 1.672,
+            "high": 1.787,
+            "confirmed_dt": "2026-01-29 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-29 15:05:00",
+            "end_dt": "2026-01-30 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.964
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-28 00:00:00",
+            "low": 1.672,
+            "high": 1.785,
+            "confirmed_dt": "2026-01-30 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-30 15:05:00",
+            "end_dt": "2026-02-03 15:05:00",
+            "first_test_dt": "2026-02-02 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.964
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-02-06 00:00:00",
+            "low": 1.559,
+            "high": 1.629,
+            "confirmed_dt": "2026-02-10 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-02-10 15:05:00",
+            "end_dt": "2026-02-13 15:05:00",
+            "first_test_dt": "2026-02-12 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.964
+        }
+      ]
+    },
+    {
+      "code": "159915.SZ",
+      "daily_rows": 3553,
+      "observations": 139,
+      "frozen_fractal_ranges": 51,
+      "prefix_checks": 3599,
+      "future_poison_checks": 3599,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "top:constructing": 80,
+        "top:failed": 1099,
+        "bottom:constructing": 49,
+        "bottom:testing": 10,
+        "bottom:completed": 707,
+        "bottom:failed": 1001,
+        "top:testing": 21,
+        "top:completed": 632
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2025-12-26 00:00:00",
+            "low": 3.182,
+            "high": 3.252,
+            "confirmed_dt": "2026-01-05 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-05 15:05:00",
+            "end_dt": "2026-01-06 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2025-12-31 00:00:00",
+            "low": 3.182,
+            "high": 3.281,
+            "confirmed_dt": "2026-01-06 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-06 15:05:00",
+            "end_dt": "2026-01-08 15:05:00",
+            "first_test_dt": "2026-01-07 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-07 00:00:00",
+            "low": 3.249,
+            "high": 3.336,
+            "confirmed_dt": "2026-01-12 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-12 15:05:00",
+            "end_dt": "2026-01-13 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-09 00:00:00",
+            "low": 3.253,
+            "high": 3.387,
+            "confirmed_dt": "2026-01-13 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-13 15:05:00",
+            "end_dt": "2026-01-20 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-16 00:00:00",
+            "low": 3.267,
+            "high": 3.402,
+            "confirmed_dt": "2026-01-20 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-20 15:05:00",
+            "end_dt": "2026-02-06 15:05:00",
+            "first_test_dt": "2026-02-02 15:05:00",
+            "streak": 2,
+            "recovered": true
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-21 00:00:00",
+            "low": 3.242,
+            "high": 3.369,
+            "confirmed_dt": "2026-01-23 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-23 15:05:00",
+            "end_dt": "2026-01-30 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-26 00:00:00",
+            "low": 3.241,
+            "high": 3.355,
+            "confirmed_dt": "2026-02-02 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-02-02 15:05:00",
+            "end_dt": "2026-02-06 15:05:00",
+            "first_test_dt": "2026-02-05 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-30 00:00:00",
+            "low": 3.241,
+            "high": 3.376,
+            "confirmed_dt": "2026-02-03 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-02-03 15:05:00",
+            "end_dt": "2026-02-04 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        }
+      ]
+    },
+    {
+      "code": "513100.SH",
+      "daily_rows": 3211,
+      "observations": 139,
+      "frozen_fractal_ranges": 58,
+      "prefix_checks": 3723,
+      "future_poison_checks": 3723,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "bottom:constructing": 89,
+        "top:constructing": 56,
+        "bottom:failed": 1270,
+        "top:testing": 19,
+        "top:completed": 971,
+        "top:failed": 782,
+        "bottom:testing": 9,
+        "bottom:completed": 527
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2025-12-31 00:00:00",
+            "low": 1.898,
+            "high": 1.93,
+            "confirmed_dt": "2026-01-06 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-06 15:05:00",
+            "end_dt": "2026-01-09 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 5.002
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-06 00:00:00",
+            "low": 1.907,
+            "high": 1.933,
+            "confirmed_dt": "2026-01-08 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-08 15:05:00",
+            "end_dt": "2026-01-12 15:05:00",
+            "first_test_dt": "2026-01-09 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 5.002
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-09 00:00:00",
+            "low": 1.89,
+            "high": 1.918,
+            "confirmed_dt": "2026-01-13 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-13 15:05:00",
+            "end_dt": "2026-01-19 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 5.002
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-14 00:00:00",
+            "low": 1.891,
+            "high": 1.917,
+            "confirmed_dt": "2026-01-19 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-19 15:05:00",
+            "end_dt": "2026-01-21 15:05:00",
+            "first_test_dt": "2026-01-20 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 5.002
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-21 00:00:00",
+            "low": 1.856,
+            "high": 1.91,
+            "confirmed_dt": "2026-01-26 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-26 15:05:00",
+            "end_dt": "2026-02-02 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 5.002
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-23 00:00:00",
+            "low": 1.856,
+            "high": 1.91,
+            "confirmed_dt": "2026-01-27 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-27 15:05:00",
+            "end_dt": "2026-01-28 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 5.002
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-26 00:00:00",
+            "low": 1.87,
+            "high": 1.91,
+            "confirmed_dt": "2026-01-28 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-28 15:05:00",
+            "end_dt": "2026-02-02 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 5.002
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-28 00:00:00",
+            "low": 1.886,
+            "high": 1.912,
+            "confirmed_dt": "2026-01-30 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-30 15:05:00",
+            "end_dt": "2026-02-03 15:05:00",
+            "first_test_dt": "2026-02-02 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 5.002
+        }
+      ]
+    },
+    {
+      "code": "518880.SH",
+      "daily_rows": 3162,
+      "observations": 139,
+      "frozen_fractal_ranges": 60,
+      "prefix_checks": 4063,
+      "future_poison_checks": 4063,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "bottom:constructing": 139,
+        "bottom:testing": 18,
+        "bottom:completed": 923,
+        "top:constructing": 91,
+        "top:failed": 1034,
+        "top:testing": 22,
+        "top:completed": 851,
+        "bottom:failed": 985
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2025-12-31 00:00:00",
+            "low": 9.196,
+            "high": 9.499,
+            "confirmed_dt": "2026-01-06 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-06 15:05:00",
+            "end_dt": "2026-01-08 15:05:00",
+            "first_test_dt": "2026-01-07 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-06 00:00:00",
+            "low": 9.421,
+            "high": 9.606,
+            "confirmed_dt": "2026-01-08 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-08 15:05:00",
+            "end_dt": "2026-01-12 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-08 00:00:00",
+            "low": 9.474,
+            "high": 9.601,
+            "confirmed_dt": "2026-01-12 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-12 15:05:00",
+            "end_dt": "2026-01-14 15:05:00",
+            "first_test_dt": "2026-01-13 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-14 00:00:00",
+            "low": 9.771,
+            "high": 9.925,
+            "confirmed_dt": "2026-01-19 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-19 15:05:00",
+            "end_dt": "2026-01-20 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-16 00:00:00",
+            "low": 9.82,
+            "high": 10.009,
+            "confirmed_dt": "2026-01-20 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-20 15:05:00",
+            "end_dt": "2026-01-22 15:05:00",
+            "first_test_dt": "2026-01-21 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-21 00:00:00",
+            "low": 9.983,
+            "high": 10.501,
+            "confirmed_dt": "2026-01-23 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-23 15:05:00",
+            "end_dt": "2026-01-26 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-22 00:00:00",
+            "low": 10.23,
+            "high": 10.643,
+            "confirmed_dt": "2026-01-26 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-26 15:05:00",
+            "end_dt": "2026-01-28 15:05:00",
+            "first_test_dt": "2026-01-27 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-29 00:00:00",
+            "low": 10.8,
+            "high": 11.977,
+            "confirmed_dt": "2026-02-02 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-02-02 15:05:00",
+            "end_dt": "2026-02-06 15:05:00",
+            "first_test_dt": "2026-02-03 15:05:00",
+            "streak": 2,
+            "recovered": true
+          },
+          "anchor_factor": 1.0
+        }
+      ]
+    },
+    {
+      "code": "511010.SH",
+      "daily_rows": 3244,
+      "observations": 139,
+      "frozen_fractal_ranges": 41,
+      "prefix_checks": 2482,
+      "future_poison_checks": 2482,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "bottom:constructing": 40,
+        "bottom:testing": 18,
+        "bottom:completed": 938,
+        "top:constructing": 57,
+        "top:failed": 1008,
+        "top:testing": 3,
+        "bottom:failed": 288,
+        "top:completed": 130
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-07 00:00:00",
+            "low": 139.702,
+            "high": 140.025,
+            "confirmed_dt": "2026-01-14 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-14 15:05:00",
+            "end_dt": "2026-01-16 15:05:00",
+            "first_test_dt": "2026-01-15 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.027
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-26 00:00:00",
+            "low": 140.225,
+            "high": 140.398,
+            "confirmed_dt": "2026-01-29 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-29 15:05:00",
+            "end_dt": "2026-01-30 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.027
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-28 00:00:00",
+            "low": 140.308,
+            "high": 140.506,
+            "confirmed_dt": "2026-02-02 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-02-02 15:05:00",
+            "end_dt": "2026-02-06 15:05:00",
+            "first_test_dt": "2026-02-05 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.027
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-30 00:00:00",
+            "low": 140.308,
+            "high": 140.506,
+            "confirmed_dt": "2026-02-04 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-02-04 15:05:00",
+            "end_dt": "2026-02-05 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.027
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-02-03 00:00:00",
+            "low": 140.375,
+            "high": 140.552,
+            "confirmed_dt": "2026-02-06 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-02-06 15:05:00",
+            "end_dt": "2026-02-10 15:05:00",
+            "first_test_dt": "2026-02-09 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.027
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-02-24 00:00:00",
+            "low": 140.703,
+            "high": 140.91,
+            "confirmed_dt": "2026-02-26 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-02-26 15:05:00",
+            "end_dt": "2026-03-04 15:05:00",
+            "first_test_dt": "2026-02-27 15:05:00",
+            "streak": 0,
+            "recovered": true
+          },
+          "anchor_factor": 1.027
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-02-27 00:00:00",
+            "low": 140.595,
+            "high": 140.819,
+            "confirmed_dt": "2026-03-03 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-03-03 15:05:00",
+            "end_dt": "2026-03-05 15:05:00",
+            "first_test_dt": "2026-03-04 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.027
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-03-06 00:00:00",
+            "low": 140.72,
+            "high": 140.94,
+            "confirmed_dt": "2026-03-10 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-03-10 15:05:00",
+            "end_dt": "2026-03-17 15:05:00",
+            "first_test_dt": "2026-03-16 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.027
+        }
+      ]
+    },
+    {
+      "code": "588000.SH",
+      "daily_rows": 1384,
+      "observations": 139,
+      "frozen_fractal_ranges": 53,
+      "prefix_checks": 3971,
+      "future_poison_checks": 3971,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "top:constructing": 67,
+        "bottom:constructing": 58,
+        "top:failed": 1126,
+        "bottom:testing": 17,
+        "bottom:completed": 943,
+        "bottom:failed": 933,
+        "top:testing": 13,
+        "top:completed": 814
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-12 00:00:00",
+            "low": 1.514,
+            "high": 1.596,
+            "confirmed_dt": "2026-01-14 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-14 15:05:00",
+            "end_dt": "2026-01-16 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-13 00:00:00",
+            "low": 1.536,
+            "high": 1.613,
+            "confirmed_dt": "2026-01-15 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-15 15:05:00",
+            "end_dt": "2026-01-22 15:05:00",
+            "first_test_dt": "2026-01-21 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-14 00:00:00",
+            "low": 1.536,
+            "high": 1.613,
+            "confirmed_dt": "2026-01-16 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-16 15:05:00",
+            "end_dt": "2026-01-21 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-15 00:00:00",
+            "low": 1.545,
+            "high": 1.613,
+            "confirmed_dt": "2026-01-20 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-20 15:05:00",
+            "end_dt": "2026-01-22 15:05:00",
+            "first_test_dt": "2026-01-21 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-19 00:00:00",
+            "low": 1.545,
+            "high": 1.609,
+            "confirmed_dt": "2026-01-21 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-21 15:05:00",
+            "end_dt": "2026-01-22 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-20 00:00:00",
+            "low": 1.55,
+            "high": 1.627,
+            "confirmed_dt": "2026-01-22 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-22 15:05:00",
+            "end_dt": "2026-01-28 15:05:00",
+            "first_test_dt": "2026-01-23 15:05:00",
+            "streak": 2,
+            "recovered": true
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-22 00:00:00",
+            "low": 1.556,
+            "high": 1.658,
+            "confirmed_dt": "2026-01-26 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-26 15:05:00",
+            "end_dt": "2026-02-03 15:05:00",
+            "first_test_dt": "2026-02-02 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-23 00:00:00",
+            "low": 1.604,
+            "high": 1.658,
+            "confirmed_dt": "2026-01-27 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-27 15:05:00",
+            "end_dt": "2026-01-29 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 1.0
+        }
+      ]
+    },
+    {
+      "code": "516160.SH",
+      "daily_rows": 1327,
+      "observations": 139,
+      "frozen_fractal_ranges": 44,
+      "prefix_checks": 3372,
+      "future_poison_checks": 3372,
+      "terminal_revisions": 0,
+      "state_snapshot_counts": {
+        "bottom:constructing": 61,
+        "bottom:testing": 21,
+        "bottom:completed": 1016,
+        "top:constructing": 43,
+        "top:failed": 916,
+        "top:testing": 13,
+        "top:completed": 678,
+        "bottom:failed": 624
+      },
+      "terminal_examples": [
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2025-12-31 00:00:00",
+            "low": 2.846,
+            "high": 2.921,
+            "confirmed_dt": "2026-01-06 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-06 15:05:00",
+            "end_dt": "2026-01-08 15:05:00",
+            "first_test_dt": "2026-01-07 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 0.309
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-07 00:00:00",
+            "low": 2.924,
+            "high": 3.014,
+            "confirmed_dt": "2026-01-09 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-09 15:05:00",
+            "end_dt": "2026-01-12 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 0.309
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-08 00:00:00",
+            "low": 2.953,
+            "high": 3.035,
+            "confirmed_dt": "2026-01-12 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-12 15:05:00",
+            "end_dt": "2026-01-19 15:05:00",
+            "first_test_dt": "2026-01-16 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 0.309
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-16 00:00:00",
+            "low": 2.97,
+            "high": 3.086,
+            "confirmed_dt": "2026-01-20 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-20 15:05:00",
+            "end_dt": "2026-01-23 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 0.309
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-01-21 00:00:00",
+            "low": 2.962,
+            "high": 3.073,
+            "confirmed_dt": "2026-01-23 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-01-23 15:05:00",
+            "end_dt": "2026-01-27 15:05:00",
+            "first_test_dt": "2026-01-26 15:05:00",
+            "streak": 2,
+            "recovered": false
+          },
+          "anchor_factor": 0.309
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-01-26 00:00:00",
+            "low": 3.02,
+            "high": 3.209,
+            "confirmed_dt": "2026-01-30 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-01-30 15:05:00",
+            "end_dt": "2026-02-06 15:05:00",
+            "first_test_dt": "2026-02-02 15:05:00",
+            "streak": 2,
+            "recovered": true
+          },
+          "anchor_factor": 0.309
+        },
+        {
+          "fractal": {
+            "kind": "bottom",
+            "dt": "2026-02-02 00:00:00",
+            "low": 2.893,
+            "high": 3.084,
+            "confirmed_dt": "2026-02-04 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "completed",
+            "kind": "bottom",
+            "level": "day",
+            "start_dt": "2026-02-04 15:05:00",
+            "end_dt": "2026-02-26 15:05:00",
+            "first_test_dt": "2026-02-12 15:05:00",
+            "streak": 2,
+            "recovered": true
+          },
+          "anchor_factor": 0.309
+        },
+        {
+          "fractal": {
+            "kind": "top",
+            "dt": "2026-02-04 00:00:00",
+            "low": 2.93,
+            "high": 3.088,
+            "confirmed_dt": "2026-02-06 15:05:00",
+            "level": "day"
+          },
+          "result": {
+            "phase": "failed",
+            "kind": "top",
+            "level": "day",
+            "start_dt": "2026-02-06 15:05:00",
+            "end_dt": "2026-02-12 15:05:00",
+            "first_test_dt": null,
+            "streak": 0,
+            "recovered": false
+          },
+          "anchor_factor": 0.309
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "ok": true
+}

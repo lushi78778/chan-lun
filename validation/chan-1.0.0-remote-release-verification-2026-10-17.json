@@ -1,0 +1,46 @@
+{
+  "schema": "chan-1.0.0-remote-release-verification-v1",
+  "generated_at": "2026-10-17",
+  "scope": "§11.11第6条远端部分执行与核验: main/tag推送、CI(含legacy)、GitHub Release、官方PyPI; 本收据与终审裁定收据chan-1.0.0-gate-adjudication-2026-10-17.json配套, 裁定时未执行的本条内容至此全部核验",
+  "package": {
+    "name": "chan-lun-core",
+    "version": "1.0.0",
+    "release_commit": "392940f (full: 392940f, tag v1.0.0 annotated)",
+    "repo": "github.com/lushi78778/chan-lun",
+    "pre_release_state": "远端main曾@0bc2e1e(0.10.0), tag至v0.10.0; 0.10.1—0.14.0共19提交+1.0.0共20提交随本轮推送"
+  },
+  "push": {
+    "main": "0bc2e1e..392940f (20 commits) 推送成功; 后续CHANGELOG状态收口提交bff1ec3一并推送",
+    "tag": "仅推v1.0.0; 中间本地tag(v0.10.1—v0.14.0及2026-10-11补齐的历史注解tag)保持仅本地登记不推送——任何v* tag推送都会触发发布管线",
+    "outer": "Chan-joinquant-research main随收据与计划更新后推送"
+  },
+  "ci": {
+    "main_push_run": {"id": 39006482162, "head": "392940f", "conclusion": "success", "jobs": ["test(3.10)", "test(3.13)"]},
+    "tag_pipeline_run": {"id": 39006891952, "head": "392940f", "ref": "refs/tags/v1.0.0", "conclusion": "success", "jobs": {"test(3.10)": "success", "test(3.13)": "success", "legacy(python:3.6.15-buster, numpy 1.14.6/pandas 0.23.4, 源码测试+安装wheel核验)": "success", "release": "success", "publish-pypi": "success"}},
+    "monitoring": "公开仓库匿名GitHub API轮询核验"
+  },
+  "github_release": {
+    "url": "https://github.com/lushi78778/chan-lun/releases/tag/v1.0.0",
+    "tag": "v1.0.0", "draft": false, "prerelease": false,
+    "assets": ["chan_lun_core-1.0.0-py3-none-any.whl", "chan_lun_core-1.0.0.tar.gz"],
+    "body_carries_eight_declarations": true,
+    "body_source": ".github/release-notes/v1.0.0.md经release job body_path前置到自动生成注记"
+  },
+  "pypi": {
+    "url": "https://pypi.org/project/chan-lun-core/1.0.0/",
+    "version": "1.0.0", "requires_python": ">=3.6",
+    "files": {"chan_lun_core-1.0.0-py3-none-any.whl": 202987, "chan_lun_core-1.0.0.tar.gz": 1241874},
+    "byte_verification": "PyPI wheel解包内容与本地核验构建wheel逐字节一致(含41模块与dist-info); 发布文件sha256与本地构建不同属预期——CI runner独立uv build的zip容器时间戳差异, 实质内容一致; sdist模块与源码一致(仅__pycache__差异, 非sdist内容)"
+  },
+  "local_pre_verification": {
+    "tests": "核心797测随项目1263测统一入口通过(759.5s, Python 3.13.15), 含版本双处一致契约",
+    "build": "uv build wheel/sdist; 隔离venv安装+tools/verify_installed.py通过, __version__=1.0.0; sdist含16 fixtures与API/CHANGELOG/MIGRATION/README文档",
+    "yaml": "test-and-release.yml修改后YAML解析核验(release job新增Prepare release notes body步骤)"
+  },
+  "gate6_closure": "§11.11第6条六要素全部核验: 最终中文提交(392940f)✓; 远端main/tag✓; CI(含legacy 3.6旧依赖)✓; GitHub Release✓; 官方PyPI✓。第1—5条见终审裁定收据。1.0.0正式发布完成。",
+  "post_release_obligations": [
+    "数据延长后重跑多轮发现扫描(tools/verify_rounds_lineage扩展窗口), 样本出现后按R2流程独立标注多轮真实正例并补移交样本",
+    "聚宽3.6.7平台实跑与30m时效/复权对齐实测保持独立平台验收项",
+    "1.0.x后续修正按CHANGELOG行为变化口径登记"
+  ]
+}

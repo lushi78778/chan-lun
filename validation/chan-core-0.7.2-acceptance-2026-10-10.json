@@ -1,0 +1,97 @@
+{
+  "version": "0.7.2",
+  "core_commit": "e8bbe1022fbb923f37823fe5119f75d555ec1659",
+  "scope": "均线版保守辅助候选组合；非精确中枢版点位、非交易/获利验证",
+  "core_tests": 529,
+  "project_tests": 887,
+  "ma_boundary_tests": 20,
+  "shared_anchor_regression_tests_added": 2,
+  "day_observations": 1390,
+  "minute_observations": 1744,
+  "candidate_record_revisions": 0,
+  "unique_2026_candidates": {
+    "day": {
+      "ma_buy2_candidate": 3
+    },
+    "minute": {
+      "ma_buy1_candidate": 1,
+      "ma_buy2_candidate": 3,
+      "ma_sell2_candidate": 1,
+      "ma_sell1_candidate": 2
+    }
+  },
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "original_source_pages": "PDF42/43页课12原文与茅台图；课11、15完整文本与相关回复核对",
+  "rule": "first:第二及以后完成湿吻后的封闭面积变弱且价格双极值顺移；second:已观察转化的首次中继+前腿强度/量能过滤",
+  "future_scope": "先按实际到达截断再算SMA/吻/面积；不回填面积末端；不预测最后一吻",
+  "availability_scope": "均线辅助候选真实前缀验收, 工程/算术核对不替代原图点位标注。\n\n十ETF日线2026观察及30m末20交易日, 因子锁定在各序列2026首观察日。\n日线15:00闭合/15:05到达, 30m trade_time视为结束/+1分钟为测试约定。\n源无历史发布版本; 不证明实际时效、理论全部点位、收益或成交有效性。\n",
+  "theory_oracle_scope": "真实样本核对工程算术与前缀；茅台原图独立报价点位/全部吻类型背驰/即时点位组合尚未完成",
+  "local_build": "wheel/sdist通过；34个包.py与wheel逐字节一致，隔离wheel导入/API冒烟通过",
+  "joinquant": "not_run",
+  "release": "published_verified",
+  "legacy_runtime": "CI通过：Python3.6.15 / numpy1.14.6 / pandas0.23.4，源码测试及安装wheel冒烟；不替代聚宽Python3.6.7实跑",
+  "local_build_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.2-py3-none-any.whl",
+      "sha256": "1ef4f191da1bb5371b2a47bfc63c46a08d92bc13afbb2a2dc67267b767b85a66"
+    },
+    {
+      "file": "chan_lun_core-0.7.2.tar.gz",
+      "sha256": "d7826aff3b98fc00e31ae352b414ce4f0bdc757494a64ad0e3a88d6190134b34"
+    }
+  ],
+  "ci": {
+    "url": "https://github.com/lushi78778/chan-lun/actions/runs/38058499129",
+    "head_sha": "e8bbe1022fbb923f37823fe5119f75d555ec1659",
+    "status": "success",
+    "jobs": [
+      {
+        "name": "test (3.10)",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38058499129/job/114231764739"
+      },
+      {
+        "name": "test (3.13)",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38058499129/job/114231764861"
+      },
+      {
+        "name": "legacy",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38058499129/job/114231818900"
+      },
+      {
+        "name": "publish-pypi",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38058499129/job/114231915630"
+      },
+      {
+        "name": "release",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38058499129/job/114231915639"
+      }
+    ]
+  },
+  "release_url": "https://github.com/lushi78778/chan-lun/releases/tag/v0.7.2",
+  "pypi_url": "https://pypi.org/project/chan-lun-core/0.7.2/",
+  "published_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.2-py3-none-any.whl",
+      "sha256": "7474b0a7c25e302ec5ab944085cfbb872e5561fb1b883c1c36ec1ae0c9f4ea1f",
+      "url": "https://files.pythonhosted.org/packages/29/00/4f3c9ecf0cd8dfd1cdd0f0c5cba2e4eb62a3539084d2dfc2f2c554b4333f/chan_lun_core-0.7.2-py3-none-any.whl"
+    },
+    {
+      "file": "chan_lun_core-0.7.2.tar.gz",
+      "sha256": "1b09444174a636c2c6ee70b952a43c74814c3c802d4d8a0c4183445a57493261",
+      "url": "https://files.pythonhosted.org/packages/a1/e7/bd3e1ffd4f15e4a1fddb6673433ea2f15b838b61c04a6d985041eff835ce/chan_lun_core-0.7.2.tar.gz"
+    }
+  ],
+  "published_wheel_verification": {
+    "sha256_matches_pypi": true,
+    "zip_crc_ok": true,
+    "package_source_files_equal": 34,
+    "isolated_import_and_api_smoke": "passed"
+  },
+  "mirrors": "not_verified"
+}

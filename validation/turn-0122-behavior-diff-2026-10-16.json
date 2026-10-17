@@ -1,0 +1,634 @@
+{
+  "schema": "turn-0122-behavior-diff-v1",
+  "scope": "classify_bc_turn 三分类逐点对照: 合成中枢 ZD=10/ZG=11/GG=12/DD=9, 反弹高点/回落低点 8.0..13.0 步长 0.1 + 精确边界",
+  "old_code": "git show HEAD:src/chan/turn.py (0.12.1, 578f0f8) 动态加载",
+  "new_code": "源码路径加载 (0.12.2)",
+  "summary": {
+    "down_points": 51,
+    "down_changed": 10,
+    "down_changed_range": "[ZD, ZG) = [10.0, 11.0)",
+    "down_changed_kind": "expansion -> turn",
+    "up_points": 51,
+    "up_changed": 10,
+    "up_changed_range": "(ZD, ZG] = (10.0, 11.0]",
+    "up_changed_kind": "expansion -> turn",
+    "unchanged_assert": "翻转区域恰为修正区(逐点断言), 未翻转点old/new 分类逐点一致, 翻转方向全部 expansion->turn",
+    "usage_note": "classify_bc_turn 无冻结研究脚本/策略管线依赖, 导出面与 tools/verify_core_history.py 验证工具为使用面; candidates 仅 turn 非空, 翻转点的 candidates 由 [] 变为 [consolidation, counter_trend]"
+  },
+  "down_cases": [
+    {
+      "endpoint": 8.0,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 8.1,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 8.2,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 8.3,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 8.4,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 8.5,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 8.6,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 8.7,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 8.8,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 8.9,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 9.0,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 9.1,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 9.2,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 9.3,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 9.4,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 9.5,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 9.6,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 9.7,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 9.8,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 9.9,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 10.0,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.1,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.2,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.3,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.4,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.5,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.6,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.7,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.8,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.9,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 11.0,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 11.1,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 11.2,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 11.3,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 11.4,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 11.5,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 11.6,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 11.7,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 11.8,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 11.9,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.0,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.1,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.2,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.3,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.4,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.5,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.6,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.7,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.8,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 12.9,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 13.0,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    }
+  ],
+  "up_cases": [
+    {
+      "endpoint": 8.0,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 8.1,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 8.2,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 8.3,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 8.4,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 8.5,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 8.6,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 8.7,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 8.8,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 8.9,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.0,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.1,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.2,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.3,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.4,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.5,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.6,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.7,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.8,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 9.9,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 10.0,
+      "old_kind": "turn",
+      "new_kind": "turn",
+      "changed": false
+    },
+    {
+      "endpoint": 10.1,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.2,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.3,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.4,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.5,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.6,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.7,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.8,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 10.9,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 11.0,
+      "old_kind": "expansion",
+      "new_kind": "turn",
+      "changed": true
+    },
+    {
+      "endpoint": 11.1,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 11.2,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 11.3,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 11.4,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 11.5,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 11.6,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 11.7,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 11.8,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 11.9,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 12.0,
+      "old_kind": "expansion",
+      "new_kind": "expansion",
+      "changed": false
+    },
+    {
+      "endpoint": 12.1,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 12.2,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 12.3,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 12.4,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 12.5,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 12.6,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 12.7,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 12.8,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 12.9,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    },
+    {
+      "endpoint": 13.0,
+      "old_kind": "sub_floor",
+      "new_kind": "sub_floor",
+      "changed": false
+    }
+  ]
+}

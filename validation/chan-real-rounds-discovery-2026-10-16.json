@@ -1,0 +1,405 @@
+{
+  "schema_version": "chan-real-rounds-discovery-v1",
+  "annotation": "discovery_scan_not_labels",
+  "generated_at": "2026-10-16T01:46:07.527111+08:00",
+  "question": "笔级月首日起点连续真实窗口内是否存在同侧多轮(≥2个成立一类点, 含移交)样本",
+  "tool": "tools/scan_real_rounds.py",
+  "criteria": {
+    "level": "bi(R2标注口径, 单元=固定笔, 价格0.001 ticks)",
+    "strict_trend": "0.9.9冻结口径(scan_strict_v3): A闭合+b+B离开冻结+c+证明段, 波动严格分离gap>0",
+    "first_point": "0.9.9口径: 背驰(0<area_c<area_b)+新极值; MACD(12,26,9)窗口首行起EMA",
+    "formation": "0.9.11口径: 证明段起贪心引发中枢+0.9.5三类尝试几何; 允许constructing结局",
+    "factor": "恒1",
+    "envelope": "OHLC包络有效(原始报价不修正)"
+  },
+  "scope": {
+    "window_starts": "自然月首日(既有R2 fixture口径)",
+    "window_span": "[起点,+36月]截2026-07-31",
+    "codes": [
+      "510300.SH",
+      "510500.SH",
+      "512880.SH",
+      "512480.SH",
+      "159915.SZ",
+      "513100.SH",
+      "518880.SH",
+      "511010.SH",
+      "588000.SH",
+      "516160.SH"
+    ],
+    "periods": [
+      "1d",
+      "60m",
+      "30m",
+      "5m"
+    ],
+    "dataset": "etf-history/v2026-07-31-r2"
+  },
+  "grids": [
+    {
+      "name": "1d全月首日起点穷举",
+      "method": "10标的全部月首日起点x+36月窗, 内存切片",
+      "windows_scanned": 591,
+      "windows_with_rounds": 11,
+      "windows_factor_excluded": 715,
+      "max_same_side_rounds": 1
+    },
+    {
+      "name": "30m/60m/5m归档起点+36月",
+      "method": "0.9.9发现归档全部bi级唯一起点101组合x+36月窗",
+      "combos": 101,
+      "windows_scanned": 62,
+      "windows_with_rounds": 26,
+      "factor_excluded": 14,
+      "extract_failed": 25,
+      "max_same_side_rounds": 1
+    },
+    {
+      "name": "提取失败组合补扫",
+      "method": "25个失败组合按终点回退重试(2026-01-31等)",
+      "windows_scanned": 16,
+      "unavailable": 9,
+      "max_same_side_rounds": 1
+    },
+    {
+      "name": "同侧锚对合并窗",
+      "method": "0.9.9归档10组同标的同侧锚对的自然合并窗",
+      "pairs": 10,
+      "max_same_side_rounds": 1
+    }
+  ],
+  "rounds_inventory": [
+    {
+      "code": "159915.SZ",
+      "period": "1d",
+      "start": "2015-12-01",
+      "end": "2018-12-01",
+      "side": "buy1",
+      "first_dt": "2016-03-30 15:05:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "1d",
+      "start": "2021-04-01",
+      "end": "2024-04-01",
+      "side": "sell1",
+      "first_dt": "2021-08-06 15:05:00",
+      "outcome": "constructing"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "30m",
+      "start": "2019-12-01",
+      "end": "2022-12-01",
+      "side": "sell1",
+      "first_dt": "2019-12-12 14:01:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "30m",
+      "start": "2020-03-01",
+      "end": "2023-03-01",
+      "side": "buy1",
+      "first_dt": "2020-03-20 14:31:00",
+      "outcome": "completed"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "30m",
+      "start": "2022-05-01",
+      "end": "2025-05-01",
+      "side": "sell1",
+      "first_dt": "2022-05-24 09:31:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "30m",
+      "start": "2024-02-01",
+      "end": "2026-01-31",
+      "side": "sell1",
+      "first_dt": "2024-02-22 14:31:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "60m",
+      "start": "2019-03-01",
+      "end": "2022-03-01",
+      "side": "buy1",
+      "first_dt": "2019-05-30 15:01:00",
+      "outcome": "completed"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "60m",
+      "start": "2019-08-01",
+      "end": "2022-08-01",
+      "side": "sell1",
+      "first_dt": "2019-09-03 11:31:00",
+      "outcome": "completed"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "60m",
+      "start": "2021-04-01",
+      "end": "2024-04-01",
+      "side": "sell1",
+      "first_dt": "2021-05-13 09:31:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "60m",
+      "start": "2021-08-01",
+      "end": "2024-08-01",
+      "side": "buy1",
+      "first_dt": "2021-09-09 15:01:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "159915.SZ",
+      "period": "60m",
+      "start": "2023-08-01",
+      "end": "2026-01-31",
+      "side": "buy1",
+      "first_dt": "2023-08-29 10:31:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "512880.SH",
+      "period": "1d",
+      "start": "2017-09-01",
+      "end": "2020-09-01",
+      "side": "buy1",
+      "first_dt": "2018-01-02 15:05:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "512880.SH",
+      "period": "30m",
+      "start": "2016-10-01",
+      "end": "2019-10-01",
+      "side": "sell1",
+      "first_dt": "2016-11-01 10:01:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "512880.SH",
+      "period": "30m",
+      "start": "2021-03-01",
+      "end": "2024-03-01",
+      "side": "buy1",
+      "first_dt": "2021-03-17 14:01:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "512880.SH",
+      "period": "30m",
+      "start": "2024-05-01",
+      "end": "2026-01-31",
+      "side": "buy1",
+      "first_dt": "2024-06-07 09:31:00",
+      "outcome": "completed"
+    },
+    {
+      "code": "512880.SH",
+      "period": "5m",
+      "start": "2026-03-01",
+      "end": "2026-07-24",
+      "side": "buy1",
+      "first_dt": "2026-03-06 11:26:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "512880.SH",
+      "period": "60m",
+      "start": "2019-10-01",
+      "end": "2022-10-01",
+      "side": "buy1",
+      "first_dt": "2019-12-03 11:31:00",
+      "outcome": "completed"
+    },
+    {
+      "code": "512880.SH",
+      "period": "60m",
+      "start": "2024-05-01",
+      "end": "2026-01-31",
+      "side": "buy1",
+      "first_dt": "2024-06-21 14:01:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "512880.SH",
+      "period": "60m",
+      "start": "2025-11-01",
+      "end": "2026-01-31",
+      "side": "buy1",
+      "first_dt": "2025-12-10 11:31:00",
+      "outcome": "constructing"
+    },
+    {
+      "code": "516160.SH",
+      "period": "60m",
+      "start": "2021-02-01",
+      "end": "2024-02-01",
+      "side": "buy1",
+      "first_dt": "2021-03-30 11:31:00",
+      "outcome": "completed"
+    },
+    {
+      "code": "518880.SH",
+      "period": "1d",
+      "start": "2018-10-01",
+      "end": "2021-10-01",
+      "side": "sell1",
+      "first_dt": "2019-03-12 15:05:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "518880.SH",
+      "period": "1d",
+      "start": "2018-11-01",
+      "end": "2021-11-01",
+      "side": "sell1",
+      "first_dt": "2019-03-12 15:05:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "518880.SH",
+      "period": "1d",
+      "start": "2019-11-01",
+      "end": "2022-11-01",
+      "side": "sell1",
+      "first_dt": "2020-03-10 15:05:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "518880.SH",
+      "period": "1d",
+      "start": "2022-07-01",
+      "end": "2025-07-01",
+      "side": "sell1",
+      "first_dt": "2023-01-06 15:05:00",
+      "outcome": "constructing"
+    },
+    {
+      "code": "518880.SH",
+      "period": "1d",
+      "start": "2022-08-01",
+      "end": "2025-08-01",
+      "side": "sell1",
+      "first_dt": "2023-01-06 15:05:00",
+      "outcome": "constructing"
+    },
+    {
+      "code": "518880.SH",
+      "period": "1d",
+      "start": "2023-01-01",
+      "end": "2026-01-01",
+      "side": "sell1",
+      "first_dt": "2023-05-25 15:05:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "518880.SH",
+      "period": "1d",
+      "start": "2023-02-01",
+      "end": "2026-02-01",
+      "side": "sell1",
+      "first_dt": "2023-05-25 15:05:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "518880.SH",
+      "period": "60m",
+      "start": "2020-07-01",
+      "end": "2023-07-01",
+      "side": "sell1",
+      "first_dt": "2020-08-14 11:31:00",
+      "outcome": "completed"
+    },
+    {
+      "code": "518880.SH",
+      "period": "60m",
+      "start": "2023-02-01",
+      "end": "2026-02-01",
+      "side": "sell1",
+      "first_dt": "2023-04-12 15:01:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "588000.SH",
+      "period": "1d",
+      "start": "2021-07-01",
+      "end": "2024-07-01",
+      "side": "buy1",
+      "first_dt": "2022-02-07 15:05:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "588000.SH",
+      "period": "30m",
+      "start": "2022-08-01",
+      "end": "2025-08-01",
+      "side": "sell1",
+      "first_dt": "2022-08-18 15:01:00",
+      "outcome": "completed"
+    },
+    {
+      "code": "588000.SH",
+      "period": "30m",
+      "start": "2025-03-01",
+      "end": "2026-01-31",
+      "side": "buy1",
+      "first_dt": "2025-04-03 10:31:00",
+      "outcome": "failed"
+    },
+    {
+      "code": "588000.SH",
+      "period": "30m",
+      "start": "2025-06-01",
+      "end": "2026-01-31",
+      "side": "buy1",
+      "first_dt": "2025-06-27 09:31:00",
+      "outcome": "constructing"
+    },
+    {
+      "code": "588000.SH",
+      "period": "60m",
+      "start": "2022-08-01",
+      "end": "2025-08-01",
+      "side": "buy1",
+      "first_dt": "2022-09-16 10:31:00",
+      "outcome": "completed"
+    },
+    {
+      "code": "588000.SH",
+      "period": "60m",
+      "start": "2024-03-01",
+      "end": "2026-01-31",
+      "side": "buy1",
+      "first_dt": "2024-04-19 14:01:00",
+      "outcome": "failed"
+    }
+  ],
+  "rounds_inventory_total": 35,
+  "windows_with_rounds_total": 35,
+  "max_same_side_rounds": 1,
+  "conclusion": "全数据集笔级月首日起点连续窗内未发现同侧多轮样本; R4多轮真实标注保持未实现, 不调宽判据凑正例, 不以实现输出冒充独立标注",
+  "structural_evidence": [
+    "单元分割路径依赖: 窗起点决定走势单元边界, 合并窗内第二个同侧严格趋势常被第一轮中阴吸收(例: 518880 1d 2022-08-01→2023-09-01窗内H1轮(2023-02-23锚)被round 1引发中枢吸收, 中枢zn=[13,15,17,19], gg=4335即2023-04高点)",
+    "严格分离判据苛刻: 512880 1d 2018年2-4月第二下跌段A.dd=942与B.gg=947, gap=-5<0, 波动严格分离失败",
+    "走势单元级全数据集仅512480 1m一个真实一类点(0.11.6回放收据, 窗口内无同侧后继故无移交)"
+  ],
+  "caveats": [
+    "月首日起点为既有R2 fixture口径, 非月首日起点未穷举",
+    "窗长上限36月(人工标注负担上限), 更长窗未扫描",
+    "因子非1窗(1d 715个/归档组合14个)与包络无效窗排除在fixture口径外",
+    "2026-02后30m/60m源数据存在OHLC包络违规行, 补扫以2026-01-31终点覆盖; 9组合源数据不可用(早期缺口或末端坏行)",
+    "5m仅2026分区, 样本量小",
+    "数据延长后可用tools/scan_real_rounds.py重跑发现扫描"
+  ]
+}

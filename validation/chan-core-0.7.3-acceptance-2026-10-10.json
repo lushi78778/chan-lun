@@ -1,0 +1,127 @@
+{
+  "version": "0.7.3",
+  "core_commit": "30be523c3f5b570abff63ede2ccd6282d22a7927",
+  "scope": "已确认基础类型到相邻上层类型的f2完成与时间接线;不证明自动原始行情理论识别或交易有效性",
+  "core_tests": 549,
+  "project_tests": 907,
+  "completion_boundary_tests": 20,
+  "observations_per_f1_path": {
+    "day": 1390,
+    "minute": 1744
+  },
+  "verified_f1_paths": [
+    "bi",
+    "xd"
+  ],
+  "f1_base_totals": {
+    "day": 576,
+    "minute": 226
+  },
+  "f1_new_in_observation_window": {
+    "day": 25,
+    "minute": 36
+  },
+  "bi_f2_unique_types": {
+    "day": {
+      "up": 15,
+      "down": 9,
+      "consolidation": 6
+    },
+    "minute": {
+      "up": 3,
+      "down": 5,
+      "consolidation": 4
+    }
+  },
+  "f2_count_scope": "包括暖机历史在首观察时声明已知的完成记录,不是2026新增信号或收益样本",
+  "f3_real_nonempty": "not_observed",
+  "xd_f2_f3_real_nonempty": "not_observed",
+  "base_record_revisions": 0,
+  "recursive_record_revisions": 0,
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "source": "课35/84/102原文与课38/39切分对照;PDF669页第84课f1/f2及级别非时间定义原页复核",
+  "rule": "已确认基础类型按实际到达批执行允许延伸的f2, 首次complete冻结, 组成与完整确认前缀分开",
+  "availability_scope": "完成走势递归的真实行情接线与前缀验收, 不替代独立理论标注。\n\n最低层明确选已固定笔或这些笔上的已完成线段, 再由same_level_decompose构造\nF1走势类型; 不将单笔/单线段当ConfirmedMove。F1的真实理论正确性\n未有人工作图标注。暖机历史仅在2026首观察时统一声明已知, 不反推\n历史确认日。之后F1首次观察时间为保守到达证明, 完成后不得修改。\n价格锚锁在2026首观察日因子; 日线15:00闭合/15:05到达和30m结束\n后1分钟为测试约定, 不证明供应版本、聚宽时效、收益或交易有效性。\n",
+  "future_scope": "未来单元仅读确认时间, 不读价格/身份/结构; 输入历史版本由调用方提供",
+  "theory_oracle_scope": "最低层f1、原图递归全部边界、分钟级别映射与因果上下文未有人工作图标注;普通f2等价与时间账本不替代理论验收",
+  "local_build": {
+    "wheel_and_sdist": "passed",
+    "package_source_files_equal": 35,
+    "zip_crc": "passed",
+    "isolated_import_and_api_smoke": "passed"
+  },
+  "joinquant": "not_run",
+  "release": "published_verified",
+  "legacy_runtime": "CI通过：Python3.6.15 / numpy1.14.6 / pandas0.23.4，源码测试及安装wheel冒烟；不替代聚宽Python3.6.7实跑",
+  "mirrors": "not_verified",
+  "local_build_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.3-py3-none-any.whl",
+      "sha256": "acdf1660390dfbed3666a5e328b3230fe89b91e5b94b4575d7f59158c9c77033"
+    },
+    {
+      "file": "chan_lun_core-0.7.3.tar.gz",
+      "sha256": "7a507190109c50b44fd7132832c24f0528442647d4c8fbc7e54d5c7af0023141"
+    }
+  ],
+  "ci": {
+    "url": "https://github.com/lushi78778/chan-lun/actions/runs/38060579270",
+    "head_sha": "30be523c3f5b570abff63ede2ccd6282d22a7927",
+    "status": "success",
+    "jobs": [
+      {
+        "name": "test (3.10)",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38060579270/job/114237848391"
+      },
+      {
+        "name": "test (3.13)",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38060579270/job/114237848632"
+      },
+      {
+        "name": "legacy",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38060579270/job/114237920240"
+      },
+      {
+        "name": "publish-pypi",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38060579270/job/114238035379"
+      },
+      {
+        "name": "release",
+        "conclusion": "success",
+        "url": "https://github.com/lushi78778/chan-lun/actions/runs/38060579270/job/114238035462"
+      }
+    ]
+  },
+  "release_url": "https://github.com/lushi78778/chan-lun/releases/tag/v0.7.3",
+  "pypi_url": "https://pypi.org/project/chan-lun-core/0.7.3/",
+  "published_artifacts": [
+    {
+      "file": "chan_lun_core-0.7.3-py3-none-any.whl",
+      "sha256": "3405577cdd5329035f51572e95c8fae2a1452e70f201bd7e5aff05eed2ed2ec5",
+      "url": "https://files.pythonhosted.org/packages/0c/ec/5167ba25cc4c5a11342dcde7aeb3ce4530ba3e56d8bf27a48ac81be4cd05/chan_lun_core-0.7.3-py3-none-any.whl"
+    },
+    {
+      "file": "chan_lun_core-0.7.3.tar.gz",
+      "sha256": "24ca25c59e8a649201c2edfbdd12c49b093b68073a8b8ca0013c12cb022fd32c",
+      "url": "https://files.pythonhosted.org/packages/5d/57/686f23e5b38a4e88cdc3ecc74f89c41461068179a78cc59f916b848f367e/chan_lun_core-0.7.3.tar.gz"
+    }
+  ],
+  "published_wheel_verification": {
+    "sha256_matches_pypi": true,
+    "zip_crc_ok": true,
+    "package_source_files_equal": 35,
+    "isolated_import_and_api_smoke": "passed"
+  },
+  "core_documentation_commit": "d80093cfbec10692d216cc72651b626c5408dd13",
+  "documentation_change_scope": "仅README两处镜像版本/Release安装链接;已发布算法35个包源码无变化;本地README契约5项通过",
+  "documentation_ci": {
+    "url": "https://github.com/lushi78778/chan-lun/actions/runs/38060925728",
+    "head_sha": "d80093cfbec10692d216cc72651b626c5408dd13",
+    "status": "success"
+  }
+}

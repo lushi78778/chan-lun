@@ -1,0 +1,719 @@
+{
+  "version": "0.7.5",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "files": [
+    {
+      "path": "bars_1d/part-00000.parquet",
+      "sha256": "a8323840c4adad004c48582fc40f76480fc3c23390c1de7d8c20cccc238c9c76"
+    },
+    {
+      "path": "bars_30m/year=2026/part-00000.parquet",
+      "sha256": "1e39722d63052d5520a52b634747539c2c52855537bd5a19bbd7ccdbd45b7b92"
+    }
+  ],
+  "base_parts": "xd",
+  "scope": "自动MACD辅助一类/因果中枢/点位链的真实行情与时间接线验收。\n\n使用锁定已知价格锚、固定笔或其完成线段经同级切分声明F1。F1真理论\n仍须人工原图验收, K线周期不等于走势级别。暖机历史只在首观察声明\n已知。行情关闭/到达是测试约定, 不证明真实供应版本及聚宽时效。\n",
+  "assets": [
+    {
+      "code": "510300.SH",
+      "day": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 3445,
+        "anchor_factor": 1.235,
+        "warm_f1": 8,
+        "total_f1": 9,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.235,
+        "warm_f1": 2,
+        "total_f1": 2,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 1.199040866595169e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "510500.SH",
+      "day": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 3248,
+        "anchor_factor": 0.332,
+        "warm_f1": 7,
+        "total_f1": 7,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 0.332,
+        "warm_f1": 2,
+        "total_f1": 2,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 9.414691248821327e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "512880.SH",
+      "day": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 2422,
+        "anchor_factor": 1.0,
+        "warm_f1": 7,
+        "total_f1": 7,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.0,
+        "warm_f1": 1,
+        "total_f1": 1,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 9.103828801926284e-15,
+          "changed_rows": 40,
+          "original_envelope_violations": 11,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-28 10:30:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 14:00:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 15:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 10:30:00",
+            "2026-07-31 11:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "512480.SH",
+      "day": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 1731,
+        "anchor_factor": 1.964,
+        "warm_f1": 4,
+        "total_f1": 4,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.964,
+        "warm_f1": 0,
+        "total_f1": 0,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 2.9753977059954195e-14,
+          "changed_rows": 39,
+          "original_envelope_violations": 9,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 15:00:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 11:30:00",
+            "2026-07-31 10:00:00",
+            "2026-07-31 10:30:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "159915.SZ",
+      "day": {
+        "completed_f2_types": 1,
+        "first_exclusions": {
+          "not_trend": 1
+        },
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 3553,
+        "anchor_factor": 1.0,
+        "warm_f1": 11,
+        "total_f1": 12,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.0,
+        "warm_f1": 2,
+        "total_f1": 2,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 5.906386491005833e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 5,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 14:30:00",
+            "2026-07-27 15:00:00",
+            "2026-07-30 15:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "513100.SH",
+      "day": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 3211,
+        "anchor_factor": 5.002,
+        "warm_f1": 7,
+        "total_f1": 8,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 169,
+        "rows": 1211,
+        "anchor_factor": 5.002,
+        "warm_f1": 2,
+        "total_f1": 2,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 169,
+        "future_poison_checks": 169,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 3.9968028886505635e-15,
+          "changed_rows": 34,
+          "original_envelope_violations": 12,
+          "original_violation_times": [
+            "2026-07-27 10:30:00",
+            "2026-07-27 11:00:00",
+            "2026-07-27 15:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-28 14:30:00",
+            "2026-07-28 15:00:00",
+            "2026-07-29 11:00:00",
+            "2026-07-29 13:30:00",
+            "2026-07-30 14:30:00",
+            "2026-07-31 11:30:00",
+            "2026-07-31 13:30:00",
+            "2026-07-31 14:30:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "518880.SH",
+      "day": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 3162,
+        "anchor_factor": 1.0,
+        "warm_f1": 8,
+        "total_f1": 8,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.0,
+        "warm_f1": 1,
+        "total_f1": 1,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 1.7053025658242404e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 10,
+          "original_violation_times": [
+            "2026-07-27 10:30:00",
+            "2026-07-27 11:00:00",
+            "2026-07-27 11:30:00",
+            "2026-07-27 14:30:00",
+            "2026-07-28 13:30:00",
+            "2026-07-29 13:30:00",
+            "2026-07-29 14:30:00",
+            "2026-07-30 11:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 11:30:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "511010.SH",
+      "day": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 3244,
+        "anchor_factor": 1.027,
+        "warm_f1": 3,
+        "total_f1": 3,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 175,
+        "rows": 1245,
+        "anchor_factor": 1.027,
+        "warm_f1": 0,
+        "total_f1": 0,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 4.547473508864641e-13,
+          "changed_rows": 40,
+          "original_envelope_violations": 0,
+          "original_violation_times": []
+        }
+      }
+    },
+    {
+      "code": "588000.SH",
+      "day": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 1384,
+        "anchor_factor": 1.0,
+        "warm_f1": 1,
+        "total_f1": 1,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 1.0,
+        "warm_f1": 1,
+        "total_f1": 1,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 3.907985046680551e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 6,
+          "original_violation_times": [
+            "2026-07-27 11:00:00",
+            "2026-07-27 14:30:00",
+            "2026-07-27 15:00:00",
+            "2026-07-30 14:00:00",
+            "2026-07-31 11:30:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    },
+    {
+      "code": "516160.SH",
+      "day": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "1d",
+        "observations": 139,
+        "rows": 1327,
+        "anchor_factor": 0.309,
+        "warm_f1": 2,
+        "total_f1": 2,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 139,
+        "future_poison_checks": 139,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": null
+      },
+      "minute": {
+        "completed_f2_types": 0,
+        "first_exclusions": {},
+        "unresolved_flat_types": 0,
+        "period": "30m",
+        "observations": 175,
+        "rows": 1246,
+        "anchor_factor": 0.309,
+        "warm_f1": 3,
+        "total_f1": 3,
+        "points": [
+          {},
+          {},
+          {}
+        ],
+        "causal_centers": 0,
+        "point_revisions": 0,
+        "base_revisions": 0,
+        "center_revisions": 0,
+        "prefix_checks": 175,
+        "future_poison_checks": 175,
+        "formation_snapshots": {},
+        "examples": {},
+        "price_precision": {
+          "decimals": 12,
+          "max_absolute_change": 2.6645352591003757e-14,
+          "changed_rows": 40,
+          "original_envelope_violations": 7,
+          "original_violation_times": [
+            "2026-07-27 14:30:00",
+            "2026-07-28 11:00:00",
+            "2026-07-28 13:30:00",
+            "2026-07-30 11:00:00",
+            "2026-07-30 13:30:00",
+            "2026-07-31 14:00:00",
+            "2026-07-31 15:00:00"
+          ]
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "source_sha256": {
+    "__init__.py": "18cb43e48afcff1b5a288b25d91c280fe88d7da618452285f2245814b9f67d9d",
+    "_intervals.py": "a412deb262ef35ef7351780303cdc008af147cd98add5cfeead4902400742200",
+    "_series.py": "27fef9b0135b84ab53ec64f2e8079a3807f62599a50d4aed4ab7e732ac8de9eb",
+    "analysis.py": "941a658d5f48187f6eed7d82cffca68d133560ddfc8e63f779f94822d975e66a",
+    "availability.py": "bd5d49ef4c138c4e60ea3127351602d641dd1ff693e37c5c6d75637a1dc7451f",
+    "bars.py": "ef027a76ad02cc489131ccfef91ae24cb0ed574528d2ba050a56e3ec31c92291",
+    "bc.py": "2a5ac331f94349e8e02ab1641f194a2d4e5a2bac1b7fd19a0e90e7d297b90845",
+    "bi.py": "18e34672ea7e2763bbe39eb2ffac054eb5051510898d75e49603308634c87bc0",
+    "biaoli.py": "d95d3573c4d8ee137e54df7e768948312aa52880adf52afb9613f8e46a0f7cfb",
+    "bottom.py": "5017a092e92a2d79163c0fcf7cd6cead8b0c3f89794334be2f9cdaf6ea5bc0f0",
+    "bs.py": "548e76a4956f9f97f88466d79e59eda93731ec74fc1d1cd6cab2aaf3b3f0df56",
+    "completion.py": "4fbe49ea7d71aea29d515a90a39caa0e8c9f21791bc300be473c29cda51317a0",
+    "cross30.py": "e417ed7b181d41cda28e2d3d4bea70f83e3af8d279c1c3c8fd9d09cd984ba85b",
+    "decompose.py": "4e7b79b3a3f76a24acf609f12e6cf54cdaf339550bb124d099389b2a51500a18",
+    "first.py": "27e1f56c602fd48761c52b49627377304914f9bc8e32d27da8b142cd432b92d8",
+    "fractal_range.py": "f4e599c3abf1c3462db5ebc1c55d1143b47b8e959140d5cb332e9b034fda71be",
+    "fx.py": "935204b94470082df9917f82084f9764969e3031702d4085cd9bb677e5311b75",
+    "fxpower.py": "5075bdc1dbebf393d33ec380e7ce3dc20b1744a13777ad543d5d84a92f35966f",
+    "gap.py": "6ba6b235448ca4f5e6fef5026881d575d3dbb8c4cd13edf8dccabd3da39541d9",
+    "kiss.py": "7652fda0a5e5fad057627f10895da3e1c2d2a0d585592d869c1923ed583dacf7",
+    "levels.py": "0311530af60e08ad10ad714d35e64f2e2a5efaad0c89e259b15c0d4ed6309dde",
+    "ma_points.py": "28f2d51dd2e9c394681ae975abf6f6269e65c24d6d8d8ae612f846bbcc75a8da",
+    "macd_guard.py": "b6d27e9d7724fc775256dcd2487355ae615a344adb2846d6627831c73ef50774",
+    "minor_turn.py": "d1519104d5ccb119e3e6fe1903fc1b8a393f6b6f63284e466122cbeaa06f0950",
+    "nest.py": "17396515958fcc7e9a2a70f25bb882fc0edcc96cf6447ae4bf11bfd1aafe79c0",
+    "osc.py": "ba764d646a0421bb0c0e99fc0c7e4771b78285a9ea748fcb2f54e5c74da5f705",
+    "point_chain.py": "b58e1f3823951e52c493c8e0b562407180c82ebbeab3c311fb1fb9411908aa0b",
+    "recurse.py": "6d0ecd0fec21644c250008b1de910d0e44c3d9c0e7ad5f3e2397b1d22712e781",
+    "replay.py": "46fccaa64060dac93b58488e958f54833e8f81837983ba05e13b6a9b567570d4",
+    "second.py": "455ddd5d0f94efba3cbda117a97207b0c2988ff54e967241537f87ddf3ebffd4",
+    "sector.py": "fff3c1ad98f82761e2c0c3f4ddc605b9bd0ce0dc15a5c975f52348ef5ef3895f",
+    "strength.py": "4aebba84caffeee1a5cfbaa033e86d529b1338eda114d09eee6da0e0ff79c391",
+    "third.py": "c9a6c753044b43ba6fa78db9b16fe03bbcdf4c12592dc54104117526ef9ae873",
+    "turn.py": "43634279af22839d5df529a69d4445e82f49caa5962405f20f5b750fb33a9912",
+    "xd.py": "3924bfbba705c69f4f54562a2a6d10e882c3e991385db85605dc998f568f56dd",
+    "zhongyin.py": "ccfcc9be80a44521ae4cd2338ef59eb6b44756e312af0e77fd244d7687bdb19e",
+    "zs.py": "aa27ed466659f675a4eb90a28777b997b5a877f6f62272a78055fa3c9ab79aff"
+  },
+  "ok": true
+}

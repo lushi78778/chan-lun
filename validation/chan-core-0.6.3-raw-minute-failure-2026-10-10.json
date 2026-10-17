@@ -1,0 +1,156 @@
+{
+  "version": "0.6.3",
+  "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+  "manifest_sha256": "3b62af118f6e6d32d245bb8c692c0f2d02554dfac1fbd6cb81a33165e0cab4d6",
+  "files": [
+    {
+      "path": "bars_1d/part-00000.parquet",
+      "sha256": "a8323840c4adad004c48582fc40f76480fc3c23390c1de7d8c20cccc238c9c76"
+    },
+    {
+      "path": "bars_30m/year=2026/part-00000.parquet",
+      "sha256": "1e39722d63052d5520a52b634747539c2c52855537bd5a19bbd7ccdbd45b7b92"
+    }
+  ],
+  "availability_scope": "测试约定日线15:00收盘并15:05可用; 30m按存储trade_time视为周期结束并延迟1分钟。源文件无发布到达版本，此约定不证明真实盘中到达或供应数据从未修订。",
+  "adjustment": "每个价格前缀OHLC*factor[t]/factor[as_of];账本另用固定锚比较形态修订",
+  "scope": "10只ETF全部日线冒烟、2026逐日观察及30m末20交易日前缀;非全池、非收益验证",
+  "assets": [
+    {
+      "code": "510300.SH",
+      "daily_rows": 3445,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 34279,
+        "xd": 2780,
+        "xd_center": 556
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 2780
+      },
+      "changes": {
+        "fx:appeared": 1208,
+        "bi:appeared": 253,
+        "buy:appeared": 38,
+        "sell:appeared": 24,
+        "confirmed_bi:appeared": 252,
+        "confirmed_xd:appeared": 20,
+        "formed_xd_center:appeared": 4,
+        "bi:revised": 14,
+        "fx:revised": 12,
+        "buy:withdrawn": 2,
+        "sell:withdrawn": 1
+      },
+      "confirmed_structure_revisions": {},
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 15453,
+        "xd": 1050,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "510500.SH",
+      "daily_rows": 3248,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 33294,
+        "xd": 139
+      },
+      "xd_modes_snapshot_counts": {
+        "1": 139
+      },
+      "changes": {
+        "fx:appeared": 1083,
+        "bi:appeared": 244,
+        "buy:appeared": 31,
+        "sell:appeared": 23,
+        "confirmed_bi:appeared": 243,
+        "confirmed_xd:appeared": 1,
+        "bi:revised": 14,
+        "fx:revised": 9,
+        "sell:withdrawn": 1
+      },
+      "confirmed_structure_revisions": {},
+      "minute_rows": 1246,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 13010,
+        "xd": 1546,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    },
+    {
+      "code": "511010.SH",
+      "daily_rows": 3244,
+      "daily_observations": 139,
+      "pre_close_exclusions": 139,
+      "future_poison_checks": 139,
+      "structural_snapshot_counts": {
+        "bi": 30546,
+        "xd": 278
+      },
+      "xd_modes_snapshot_counts": {
+        "2": 139,
+        "1": 139
+      },
+      "changes": {
+        "fx:appeared": 1014,
+        "bi:appeared": 227,
+        "buy:appeared": 32,
+        "sell:appeared": 6,
+        "confirmed_bi:appeared": 226,
+        "confirmed_xd:appeared": 2,
+        "fx:revised": 15,
+        "bi:revised": 9
+      },
+      "confirmed_structure_revisions": {},
+      "minute_rows": 1245,
+      "minute_observations": 175,
+      "minute_structure_snapshot_counts": {
+        "bi": 10595,
+        "xd": 599,
+        "xd_center": 175
+      },
+      "minute_confirmed_revisions": {}
+    }
+  ],
+  "errors": [
+    {
+      "code": "512880.SH",
+      "error": "ValueError('bars[1208]: OHLC 须满足 low <= open/close <= high')"
+    },
+    {
+      "code": "512480.SH",
+      "error": "ValueError('bars[1208]: OHLC 须满足 low <= open/close <= high')"
+    },
+    {
+      "code": "159915.SZ",
+      "error": "ValueError('bars[1208]: OHLC 须满足 low <= open/close <= high')"
+    },
+    {
+      "code": "513100.SH",
+      "error": "ValueError('bars[1178]: OHLC 须满足 low <= open/close <= high')"
+    },
+    {
+      "code": "518880.SH",
+      "error": "ValueError('bars[1207]: OHLC 须满足 low <= open/close <= high')"
+    },
+    {
+      "code": "588000.SH",
+      "error": "ValueError('bars[1208]: OHLC 须满足 low <= open/close <= high')"
+    },
+    {
+      "code": "516160.SH",
+      "error": "ValueError('bars[1212]: OHLC 须满足 low <= open/close <= high')"
+    }
+  ],
+  "ok": false
+}

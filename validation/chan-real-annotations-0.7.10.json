@@ -1,0 +1,11 @@
+{
+  "version": "0.7.10",
+  "algorithm_used_to_generate_labels": false,
+  "cases": 1,
+  "source_hashes": {
+    "src/chan/tests/fixtures/real_foundation.json": "b7b3f709e8756adba65ab63d1b335cf233fa7bdeacb96db25bb5d36b52f2bd33",
+    "doc/validation/chan-real-512880-day-20240701-20241008-input.json": "19b576c8beae7d04b09a66975e3c6df099fdc6a2ec187abe0b396d05c6006fb4"
+  },
+  "html_sha256": "2970da27989b6a99aa07942be20f8049156c5094d8596b68e99f9ad0041d995f",
+  "scope": "独立基础算术及全部原始前缀;没有完成XD/F1或严格点位真值"
+}

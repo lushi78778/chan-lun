@@ -1,0 +1,269 @@
+{
+  "schema_version": "chan-historical-tags-v1",
+  "checked_at": "2026-10-11T19:18:34+08:00",
+  "scope": "补齐缺失历史小版本tag; 已存在标签原值保留",
+  "local_created_count": 25,
+  "local_tags": [
+    {
+      "version": "0.1.11",
+      "commit": "ca7b51f01d29510fa26ef403bd3094f1a56b6321",
+      "init_path": "src/chan/__init__.py",
+      "subject": "chan 0.1.11: 缺口三分类(课77)——缺口识别/回补判定/力度三分类",
+      "existing_tag_commit": null,
+      "tag": "v0.1.11",
+      "tag_object": "59e6a9dc08242c062add6191bd5e2aba11a94a3b",
+      "pushed": false
+    },
+    {
+      "version": "0.1.12",
+      "commit": "b0ea2d1ce216dffa4cd8e30c7d55282188197aa5",
+      "init_path": "src/chan/__init__.py",
+      "subject": "chan 0.1.12: 中枢状态机(课20/69/70)——前后中枢关系判定/高级别中枢扩展/九段延伸升级/中枢事件流",
+      "existing_tag_commit": null,
+      "tag": "v0.1.12",
+      "tag_object": "12f1ec1eee2c8eb97ba50dd95a211a3d9dc75d5f",
+      "pushed": false
+    },
+    {
+      "version": "0.1.13",
+      "commit": "ae36bb20ff5f898f3ba2c207c9c1e6ef07b58938",
+      "init_path": "src/chan/__init__.py",
+      "subject": "chan 0.1.13: 同级别分解(课38/39)——走势类型序列/三段重叠中枢/不延伸切分",
+      "existing_tag_commit": null,
+      "tag": "v0.1.13",
+      "tag_object": "788d464d70e30ead567c2949003a890cd1428329",
+      "pushed": false
+    },
+    {
+      "version": "0.2.1",
+      "commit": "17e378b72ceaf18c28ab475aa35445f8c17a8181",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增 zhongyin 模块: 中阴阶段与布林通道辅助判断(课 89/90)",
+      "existing_tag_commit": null,
+      "tag": "v0.2.1",
+      "tag_object": "dde7355ecc7f2ebb6339abf76caef21126d4eb2f",
+      "pushed": false
+    },
+    {
+      "version": "0.2.2",
+      "commit": "7f02ce21c645a3c4cd31876a5909457c706918b1",
+      "init_path": "src/chan/__init__.py",
+      "subject": "中枢震荡监视器(课 92): 震荡中轴 Z 与次级震荡中轴 Zn 序列监视",
+      "existing_tag_commit": null,
+      "tag": "v0.2.2",
+      "tag_object": "d451a6c86f39b05ff67b19909c886eab85d4d041",
+      "pushed": false
+    },
+    {
+      "version": "0.2.3",
+      "commit": "e0a2dfae7fb345e5a0ca5600e48116a93d8add7f",
+      "init_path": "src/chan/__init__.py",
+      "subject": "表里关系(课91/93/99): 笔定理四状态+连接约束+双级别病情矩阵+中阴健康度",
+      "existing_tag_commit": null,
+      "tag": "v0.2.3",
+      "tag_object": "33aab8e00276970db150da9c6ce021c27c7b783a",
+      "pushed": false
+    },
+    {
+      "version": "0.3.1",
+      "commit": "b47121c88774834ee0a7956bf06526ce58b1cc04",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增 strength 模块: 趋势力度与平均力度(课 15)",
+      "existing_tag_commit": null,
+      "tag": "v0.3.1",
+      "tag_object": "0b1a56c3b1e638b219f6c87c3784554ba2af5bd1",
+      "pushed": false
+    },
+    {
+      "version": "0.3.2",
+      "commit": "efa041062c95ecda1cf7ccbd182b5eb228b4c5f5",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增 turn 模块: 背驰-转折定理三分类(课 29)",
+      "existing_tag_commit": null,
+      "tag": "v0.3.2",
+      "tag_object": "906797aae3686e2b2aebdbd45c2739a34ec7405d",
+      "pushed": false
+    },
+    {
+      "version": "0.3.3",
+      "commit": "83df1fa94a5abe60a44d7baf60ad8da3211a5ef6",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增 minor_turn 模块: 小级别背驰引发大级别转折(课 44/53)",
+      "existing_tag_commit": null,
+      "tag": "v0.3.3",
+      "tag_object": "148f1aa6d2cef5bcf3a87f16b3e235dbcbd18db2",
+      "pushed": false
+    },
+    {
+      "version": "0.4.1",
+      "commit": "c6203343a587179c8d1f9c4b82d051dd4f5208dd",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增 kiss 模块: 均线吻系统(课 11/12), 版本 0.4.1",
+      "existing_tag_commit": null,
+      "tag": "v0.4.1",
+      "tag_object": "1fcb0cb50acb41585d1547a7c6a681d22894646b",
+      "pushed": false
+    },
+    {
+      "version": "0.4.2",
+      "commit": "12a3a1bdc4b9573a99d5bc900e3eea0c65d6cb41",
+      "init_path": "src/chan/__init__.py",
+      "subject": "完成分型力度判断（课79/82），版本0.4.2",
+      "existing_tag_commit": null,
+      "tag": "v0.4.2",
+      "tag_object": "7c7cb94d30f90d94a75558b8e0b76dd914e1fc01",
+      "pushed": false
+    },
+    {
+      "version": "0.4.3",
+      "commit": "7c6811da8cc506a1143a96ce10fdd12f31f401d4",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增106课可选笔标准，版本0.4.3",
+      "existing_tag_commit": null,
+      "tag": "v0.4.3",
+      "tag_object": "de26d79adcbee447c31679123cc86027e68734a7",
+      "pushed": false
+    },
+    {
+      "version": "0.4.4",
+      "commit": "cbe9d8c180fc33b59bdae056036b060872fd13eb",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增MACD零轴防狼术（课103），版本0.4.4",
+      "existing_tag_commit": null,
+      "tag": "v0.4.4",
+      "tag_object": "f703d705af3eadb6885b80151545e906b0d470b1",
+      "pushed": false
+    },
+    {
+      "version": "0.4.5",
+      "commit": "1e703302875e139ec5c12cb30412b3aecf535a85",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增底部与顶部构造状态（课108），版本0.4.5",
+      "existing_tag_commit": null,
+      "tag": "v0.4.5",
+      "tag_object": "8cdd70e878ee14659dde235a279478f64fe79a2e",
+      "pushed": false
+    },
+    {
+      "version": "0.5.1",
+      "commit": "575e021c0c891681878dcc0665189075db81dc37",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增按观察时点分析与候选修订账本，版本0.5.1",
+      "existing_tag_commit": null,
+      "tag": "v0.5.1",
+      "tag_object": "26320192062b3b2fc5c3d8a50a9e315a86da1e62",
+      "pushed": false
+    },
+    {
+      "version": "0.5.2",
+      "commit": "f3d6b31a0320fa5f232766aa55e4395b34163faa",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增课53与101二类点条件判定及确认时间约束，版本0.5.2",
+      "existing_tag_commit": null,
+      "tag": "v0.5.2",
+      "tag_object": "81e15623b8b27ada6820885a3918cd3a219ea7a3",
+      "pushed": false
+    },
+    {
+      "version": "0.6.1",
+      "commit": "91e19f7268e2f5b528fc025e583680bea843f6c4",
+      "init_path": "src/chan/__init__.py",
+      "subject": "按原图修正线段分界、缺口确认与区间范围，版本0.6.1",
+      "existing_tag_commit": null,
+      "tag": "v0.6.1",
+      "tag_object": "f9a486700cceaed325b15d856189f396f6ec980b",
+      "pushed": false
+    },
+    {
+      "version": "0.6.2",
+      "commit": "564462b1730d932131506744f0eda37e42ab4801",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增收盘与到达时间门控及保守结构确认，版本0.6.2",
+      "existing_tag_commit": null,
+      "tag": "v0.6.2",
+      "tag_object": "9b57bb2270b16d689cdddb1e623fc1c0d45273ba",
+      "pushed": false
+    },
+    {
+      "version": "0.6.3",
+      "commit": "f5911fd7e8c6719cb5481c797d8e92dde791ba41",
+      "init_path": "src/chan/__init__.py",
+      "subject": "补齐已确认次级走势的首次三类点条件判定，版本0.6.3",
+      "existing_tag_commit": null,
+      "tag": "v0.6.3",
+      "tag_object": "22f43b98fd034e09c72f7380db1fd6acf7f82e5b",
+      "pushed": false
+    },
+    {
+      "version": "0.7.4",
+      "commit": "f61a5a23574939e5cfe2ba60eb2d09871e0d5064",
+      "init_path": "src/chan/__init__.py",
+      "subject": "新增自动一类辅助候选及双中枢因果点位链",
+      "existing_tag_commit": null,
+      "tag": "v0.7.4",
+      "tag_object": "27c8c120156f63a3b97f423b51cbc0873a9914d4",
+      "pushed": false
+    },
+    {
+      "version": "0.7.6",
+      "commit": "f103e9648e885078ed4da15db4e78023caf621ed",
+      "init_path": "src/chan/__init__.py",
+      "subject": "补齐课65十二题与两图比较原图标注，版本0.7.6",
+      "existing_tag_commit": null,
+      "tag": "v0.7.6",
+      "tag_object": "d520c1d51f70b1c44b52f65faef376d535b6f693",
+      "pushed": false
+    },
+    {
+      "version": "0.7.7",
+      "commit": "9e6d7d05dabea74882e5f22113315e70cc5a7387",
+      "init_path": "src/chan/__init__.py",
+      "subject": "补齐课71组合原图与分界包含回归，版本0.7.7",
+      "existing_tag_commit": null,
+      "tag": "v0.7.7",
+      "tag_object": "5bcf1d223654899ac8652eef17625c510578e1f7",
+      "pushed": false
+    },
+    {
+      "version": "0.7.8",
+      "commit": "88e12427e8519234cd8c020b8981f9d66d669e69",
+      "init_path": "src/chan/__init__.py",
+      "subject": "补齐课78古怪线段及原图时间边界，版本0.7.8",
+      "existing_tag_commit": null,
+      "tag": "v0.7.8",
+      "tag_object": "69bbd7b4c67e53da63c67bda92f9b70315b73338",
+      "pushed": false
+    },
+    {
+      "version": "0.7.9",
+      "commit": "485ac916f794c92fe74127fbc796fb7e1080ec3d",
+      "init_path": "src/chan/__init__.py",
+      "subject": "补齐课77及78补图并修正包含后的提前完成，版本0.7.9",
+      "existing_tag_commit": null,
+      "tag": "v0.7.9",
+      "tag_object": "1887151c6e36877dd0f75d704c8644c11c4c3039",
+      "pushed": false
+    },
+    {
+      "version": "0.7.10",
+      "commit": "550324e2b182c88cc5efa9c10fd6e6169805b928",
+      "init_path": "src/chan/__init__.py",
+      "subject": "建立真实日线独立基础标注与全部观察前缀，版本0.7.10",
+      "existing_tag_commit": null,
+      "tag": "v0.7.10",
+      "tag_object": "011e2c01ce7b6d5193edc4696273b2ad6a679192",
+      "pushed": false
+    }
+  ],
+  "stage_tags_already_pushed": {
+    "v0.8.0": "c97ed6fc9fcec961057f8816cb03636620b09f19",
+    "v0.9.0": "4f6415f40b712dc1cdfd446460ed7762c29becb1"
+  },
+  "historical_small_tags_pushed": false,
+  "version_contract": "每个新tag锚定首次双处版本一致的概念提交; 不改已有标签或历史源码",
+  "workflow_event_reference": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push",
+  "historical_small_tags_publication": "25个本地tag保留, 历史小版本暂不推送或发布",
+  "all_existing_remote_refs_preserved": true,
+  "all_25_historical_small_tags_absent_from_remote": true,
+  "remote_tag_snapshot_sha256": "ee7d5936c7d47055e1f4c7fc5c160ff56202f6ef6b835462249535953ba07463"
+}

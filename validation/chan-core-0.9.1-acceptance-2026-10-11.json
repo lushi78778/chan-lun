@@ -1,0 +1,82 @@
+{
+  "version": "0.9.1",
+  "generated_at": "2026-10-11T20:10:57.633351+08:00",
+  "core_commit": "e0356851ee6bd375329318d18b7d861b83380490",
+  "core_version_both_places_consistent": true,
+  "public_algorithm_behavior_changed": false,
+  "core_docstring_scope_corrected": "F1核心移位kind不等于zs_relation全部波动分离；课20严格趋势必须另证",
+  "checks": {
+    "core": {
+      "command": ".venv/bin/python tools/check_project.py --scope core",
+      "tests": 601,
+      "seconds": 3.246,
+      "passed": true,
+      "log_sha256": "f211ed9022152164011a9ac22610d0c702d386400b347e247589ad1dbf4d32c4"
+    },
+    "project": {
+      "command": ".venv/bin/python tools/check_project.py",
+      "tests": 969,
+      "seconds": 102.214,
+      "passed": true,
+      "log_sha256": "bd3c0ce0281e8e9bb3a22c86ccf955c00e98b91d854f61165ed27fabd556ffa2"
+    }
+  },
+  "python": "3.13.15",
+  "python36_syntax_checked": true,
+  "python36_old_dependencies_executed_this_version": false,
+  "new_public_wheel_installed": false,
+  "real_data": {
+    "dataset": "/Volumes/MacData/lushi/Documents/code/javaCode/stock-etf-api/data/etf-history/v2026-07-31-r2",
+    "windows": 2,
+    "raw_rows": 700,
+    "standard": "106",
+    "path": "xd",
+    "completed_xds": 14,
+    "completed_f1": {
+      "up": 1,
+      "down": 1
+    },
+    "all_original_prefixes_checked": true,
+    "independent_manual_labels_compared": true,
+    "future_poison_checked": true,
+    "delayed_proof_checked": true,
+    "vendor_actual_arrival_proven": false
+  },
+  "manual_review_resolution": "XD5候选BI26与左BI24重叠[1734,1753]，无缺口；原审计草稿错误不影响事件，主人工表已修正。",
+  "browser_visual_checked": true,
+  "source_hashes": {
+    "src/chan/tests/fixtures/real_xd_f1.json": "3defd45833e0dd5339ffb43e6d3aad7cdf3617887961acedfee03df8204fec0f",
+    "tools/gen_real_xd_f1.py": "23b85e8f9f2d4e7d21aba0f6d9a1659c98c0d67c72caa2fe1823043073d598fa",
+    "tools/build_real_xd_f1_annotations.py": "5baf2e6cd4e729b854660900fd37c0be05aadb44c5756224fb76280ffb11b123",
+    "tests/test_real_xd_f1_assets.py": "e5969a99886dd43a3f741a52b0f91ce29b7c64d3251302aa288bfa7125a159ad",
+    "doc/validation/chan-real-coverage-0.9.1.json": "43978c7001723ca43b6ca2af4ff78ee39861020738a0045511afe1235be25971",
+    "doc/validation/chan-real-xd-f1-annotations-0.9.1.html": "035fe2fa7814757814d7f4afe24bf3b840aafdd97f0606e7041caf0c44d92787",
+    "doc/validation/chan-real-xd-f1-annotations-0.9.1.json": "168689d91ea2dcd128455e05d4c6035829fc8ed45e09a2c4cf1738694075a184",
+    "doc/validation/chan-real-xd-f1-discovery-0.9.1.json": "be409f6be7e04c8988f68af39d84381fd6742230b13bb1f3624570f152715923",
+    "doc/validation/chan-real-xd-f1-independent-review-0.9.1.json": "5837bed6a161f877a52f98e4f7063ed35be52b369dac72d8c248f27738e9bc4c",
+    "doc/validation/chan-real-xd-f1-manual-0.9.1.json": "41b2ec9222260285cc0997fe340200559dbf90b10446e4b3543d6edc8d87071e",
+    "doc/validation/chan-real-xd-f1-theory-0.9.1.md": "ca90d78a4799c53a48d6804723cc19163863af424e5cda0395d69e0bfcfaf55f",
+    "doc/validation/chan-real-159915-day-20160701-20180411-input.json": "6b5115873436ad733bbbb6451f4b14feab38409389d37eb608a6ed523a85635f",
+    "doc/validation/chan-real-512880-day-20181008-20191108-input.json": "9c8648f4ac33ab2283d64da0190ba062e4fae9e3a32f28ffa7dd357160f5bb61"
+  },
+  "delivery": {
+    "core_local_commit": true,
+    "pushed": false,
+    "tag_created": false,
+    "release_published": false,
+    "pypi_published": false,
+    "outer_gitlink_retained": "9a3e7557ba1f99cd673b188086c89eceb380c42b",
+    "historical_local_tags_unchanged": true
+  },
+  "R2_gate_passed": false,
+  "R3_ready": false,
+  "joinquant_executed": false,
+  "limits": [
+    "仅验收106标准完成XD路径；81及固定笔路径本版不扩充真值。",
+    "同级切分up/down为明示工程构造，不证明严格理论趋势；严格一类点仍无本轮正例。",
+    "原始历史发布版本和实际供应到达未实测；聚宽实跑未验收。",
+    "R2点位正反例、因果底顶仍待标注，不放行R3。",
+    "三段工程组的wave_relation只核该构造组包络，不自动等同原文Z_n的完整a+A+b+B+c角色归属；严格趋势另行标注。"
+  ],
+  "html_rebuild_byte_equal": true
+}

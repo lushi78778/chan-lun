@@ -1,0 +1,99 @@
+{
+ "schema_version": "chan-core-acceptance-v1",
+ "version": "0.8.0",
+ "generated_at": "2026-10-11T14:23:52+08:00",
+ "core_commit": "c97ed6fc9fcec961057f8816cb03636620b09f19",
+ "local_concept_commits": {
+  "0.7.6": "f103e9648e885078ed4da15db4e78023caf621ed",
+  "0.7.7": "9e6d7d05dabea74882e5f22113315e70cc5a7387",
+  "0.7.8": "88e12427e8519234cd8c020b8981f9d66d669e69",
+  "0.7.9": "485ac916f794c92fe74127fbc796fb7e1080ec3b",
+  "0.7.10": "550324e2b182c88cc5efa9c10fd6e6169805b928",
+  "0.8.0": "c97ed6fc9fcec961057f8816cb03636620b09f19"
+ },
+ "delivery": {
+  "chinese_local_commits": true,
+  "pushed": true,
+  "pushed_range": "73e047d..c97ed6f main",
+  "tagged": false,
+  "CI_checked": true,
+  "CI_run": "https://github.com/lushi78778/chan-lun/actions/runs/38117426557",
+  "Release_checked": false,
+  "PyPI_checked": false,
+  "outer_submodule_pointer_updated": true,
+  "pointer_reason": "核心提交已推送且远端CI通过后, 外层引用随本次提交更新"
+ },
+ "runtime": {
+  "python": "3.13.15",
+  "numpy": "2.5.2",
+  "pandas": "3.0.5",
+  "pyarrow": "26.0.0",
+  "python36_syntax_contract": true,
+  "python36_old_dependencies_executed": true,
+  "python36_old_dependencies_via": "远端CI python:3.6.15-buster容器(legacy job)通过",
+  "JoinQuant_executed": false
+ },
+ "tests": {
+  "core": {
+   "tests": 590,
+   "seconds": 2.239,
+   "ok": true,
+   "log_sha256": "12da6dfd13fcd90c7455365f7a0a3c74a5cb6b76bcd2d8c32da32346fbef3c1b",
+   "raw_log": "/private/tmp/chan-core-080-final-tests.log",
+   "command": ".venv/bin/python tools/check_project.py --scope core"
+  },
+  "project": {
+   "tests": 954,
+   "seconds": 98.686,
+   "ok": true,
+   "log_sha256": "5642a4471bc78f611ea50cd9f63b9862e40435e8bd308441904d67c7cdd11e6d",
+   "raw_log": "/private/tmp/chan-project-080-final-tests.log",
+   "command": ".venv/bin/python tools/check_project.py"
+  }
+ },
+ "originals": {
+  "cases": 92,
+  "xd_cases": 82,
+  "fx_bi_cases": 10,
+  "figure_reviews": 31,
+  "R1_specified_groups_accounted": true,
+  "historical_raw_OHLC_reproduced": false,
+  "label_generation_uses_algorithm": false,
+  "behavior_change": "0.8.0未修改原图标注与结构算法, 仅新增四窗口真实独立线段标注"
+ },
+ "real_theory": {
+  "coverage": "chan-real-coverage-0.8.0.json",
+  "source_cases": 4,
+  "raw_rows": 428,
+  "raw_observations": 856,
+  "label_fixture": "src/chan/tests/fixtures/real_xd_originals.json",
+  "label_fixture_sha256": "9dad4624cc21eae50e002aa99b9cd0ccded61d5f450692631f6695c7fff00b51",
+  "completed_xd": 8,
+  "completed_f1": 0,
+  "strict_first_points": 0,
+  "branches_newly_verified": ["81/106标准差异", "第一种完成XD", "第二种完成XD", "真实古怪线段"],
+  "label_generation_uses_algorithm": false,
+  "human_adjudication_before_comparison": true
+ },
+ "browser_QA": {
+  "album_articles": 4,
+  "album_svgs": 8,
+  "album_prefix_table_rows": 428,
+  "html_structure_checked": true,
+  "browser_visual_checked": false
+ },
+ "source_hashes": {
+  "src/chan/tests/fixtures/real_xd_originals.json": "9dad4624cc21eae50e002aa99b9cd0ccded61d5f450692631f6695c7fff00b51",
+  "doc/validation/chan-real-512880-day-20160808-20161226-input.json": "ed008db8c7b95b240b37be89e8e195087c1f649cf8411c6753ca7cce27f5d392",
+  "doc/validation/chan-real-512880-day-20250821-20251031-input.json": "5b8bded6718bdaf6ce18da2323f493d3cf46a40060ecf39aa6f320c5be02078b",
+  "doc/validation/chan-real-512880-day-20220420-20221209-input.json": "1e2e3f0c8ac27326ac36b1ce7123294ea8d8809642a847b6b5bbfc4eedc905f4",
+  "doc/validation/chan-real-159915-day-20160505-20161116-input.json": "50e3d143244b1149d148e9773ad9107423466ff91354ee27e6794a29e8ec5c99",
+  "doc/validation/chan-real-annotations-0.8.0.html": "336aa47c8adbe9132c8d95cb8907c666dc32179b507838d7181ba172e4de8d78",
+  "doc/validation/chan-real-annotations-0.8.0.json": "5efb4050ba7e5a8de7a648e6fb2ba452cd3a5c950a82df2417c3b94750b387e0"
+ },
+ "limits": [
+  "R2完成F1、一/二/三类与因果底顶未通过, 不进入R3",
+  "四窗口独立标注不证明窗口外走势继承或历史供应版本未修订",
+  "本轮无tag/Release/PyPI发布, CI覆盖现代与3.6.15旧依赖容器, 聚宽实跑未执行"
+ ]
+}

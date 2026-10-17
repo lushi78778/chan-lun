@@ -1,0 +1,33 @@
+{
+  "version": "0.9.1",
+  "source_hashes": {
+    "src/chan/tests/fixtures/real_xd_f1.json": "3defd45833e0dd5339ffb43e6d3aad7cdf3617887961acedfee03df8204fec0f",
+    "doc/validation/chan-real-xd-f1-manual-0.9.1.json": "41b2ec9222260285cc0997fe340200559dbf90b10446e4b3543d6edc8d87071e",
+    "doc/validation/chan-real-512880-day-20181008-20191108-input.json": "9c8648f4ac33ab2283d64da0190ba062e4fae9e3a32f28ffa7dd357160f5bb61",
+    "doc/validation/chan-real-159915-day-20160701-20180411-input.json": "6b5115873436ad733bbbb6451f4b14feab38409389d37eb608a6ed523a85635f"
+  },
+  "html_sha256": "035fe2fa7814757814d7f4afe24bf3b840aafdd97f0606e7041caf0c44d92787",
+  "cases": 2,
+  "window_rows": 700,
+  "completed_xds": 14,
+  "completed_f1": {
+    "up": 1,
+    "down": 1
+  },
+  "strict_trend_proven": false,
+  "R2_gate_passed": false,
+  "R3_ready": false,
+  "algorithm_used_to_generate_labels": false,
+  "browser_visual_checked": true,
+  "browser_check": {
+    "method": "127.0.0.1临时HTTP与in-app browser实际截图/AX表检查",
+    "checked": [
+      "两图左右端原始蜡烛及蓝线",
+      "核心区间/工程分类与等待尾部",
+      "第七XD后继证明和紫色首次确认线",
+      "up/down两F1确认表与14条XD证据表",
+      "窄视口横向滚动及表格可读性"
+    ],
+    "vendor_availability_proven": false
+  }
+}

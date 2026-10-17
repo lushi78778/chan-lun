@@ -1,0 +1,148 @@
+{
+  "schema_version": "chan-stage-release-v1",
+  "checked_at": "2026-10-11T19:24:10+08:00",
+  "versions": {
+    "0.8.0": {
+      "commit": "c97ed6fc9fcec961057f8816cb03636620b09f19",
+      "tag": "v0.8.0",
+      "tag_object": "1ecbfdd1193f6d04e2233938a971d715d55325a6",
+      "tag_pushed": true,
+      "CI_run": "https://github.com/lushi78778/chan-lun/actions/runs/38134826904",
+      "CI_jobs": {
+        "test (3.13)": "success",
+        "test (3.10)": "success",
+        "legacy": "success",
+        "publish-pypi": "success",
+        "release": "success"
+      },
+      "CI_api_sha256": "6d91bc3379f8fdcaddbf121ec0e4045ebd76cf655726b84fecb88fb44871c43b",
+      "Release": "https://github.com/lushi78778/chan-lun/releases/tag/v0.8.0",
+      "Release_published_at": "2026-10-11T19:15:46+08:00",
+      "PyPI": "https://pypi.org/project/chan-lun-core/0.8.0/",
+      "artifacts": [
+        {
+          "source": "pypi",
+          "filename": "chan_lun_core-0.8.0-py3-none-any.whl",
+          "bytes": 171657,
+          "sha256": "ff32bbe8fc4ca429085b20e21d0ed6985c7a8a29143e9751e0a5040695c92881",
+          "archive_integrity": true,
+          "all_package_python_files_match_commit": true,
+          "fixtures_match_commit": null
+        },
+        {
+          "source": "pypi",
+          "filename": "chan_lun_core-0.8.0.tar.gz",
+          "bytes": 328905,
+          "sha256": "eb53b1eba40b7aa1664f99656f2294f1981f28546a618d0085b1ae4ab94d3da1",
+          "archive_integrity": true,
+          "all_package_python_files_match_commit": true,
+          "fixtures_match_commit": true
+        },
+        {
+          "source": "release",
+          "filename": "chan_lun_core-0.8.0-py3-none-any.whl",
+          "bytes": 171657,
+          "sha256": "f2b92a6a6b20c2e4c3de4d065a9e0cf62acdc814546f51f2a7093b61068034d6",
+          "archive_integrity": true,
+          "all_package_python_files_match_commit": true,
+          "fixtures_match_commit": null
+        },
+        {
+          "source": "release",
+          "filename": "chan_lun_core-0.8.0.tar.gz",
+          "bytes": 328880,
+          "sha256": "d23a49439eb90a3134c43327dd0c3635713a2328455ec74514eedeed2cba96f4",
+          "archive_integrity": true,
+          "all_package_python_files_match_commit": true,
+          "fixtures_match_commit": true
+        }
+      ],
+      "compared_package_python_files": 37,
+      "compared_sdist_fixtures": 4,
+      "release_and_pypi_unpacked_files_identical": true,
+      "isolated_public_wheel_import": true,
+      "isolated_log_sha256": "06d9878eeb1a6a7293ae64eb3d1550a6ce85ff1522f5a56a3f26efb866c9c1f9",
+      "isolated_import_output": "installed wheel OK: 0.8.0 /private/tmp/chan-tag-artifacts-2026-10-11/080/pypi/chan_lun_core-0.8.0-py3-none-any.whl/chan/__init__.py",
+      "initial_acceptance": "chan-core-0.8.0-acceptance-2026-10-11.json"
+    },
+    "0.9.0": {
+      "commit": "4f6415f40b712dc1cdfd446460ed7762c29becb1",
+      "tag": "v0.9.0",
+      "tag_object": "2907d9d6ab6fcdd989cb328e770628a9b18508b6",
+      "tag_pushed": true,
+      "CI_run": "https://github.com/lushi78778/chan-lun/actions/runs/38134826903",
+      "CI_jobs": {
+        "test (3.10)": "success",
+        "test (3.13)": "success",
+        "legacy": "success",
+        "release": "success",
+        "publish-pypi": "success"
+      },
+      "CI_api_sha256": "bc076d5c6713672ebe4298112d047c3b877d2b1caf6b35a8882d951d46288f35",
+      "Release": "https://github.com/lushi78778/chan-lun/releases/tag/v0.9.0",
+      "Release_published_at": "2026-10-11T19:15:41+08:00",
+      "PyPI": "https://pypi.org/project/chan-lun-core/0.9.0/",
+      "artifacts": [
+        {
+          "source": "pypi",
+          "filename": "chan_lun_core-0.9.0-py3-none-any.whl",
+          "bytes": 172696,
+          "sha256": "2e2850c2b456b91706cf1db16d13db5017cc75864125780551ad471687625dfb",
+          "archive_integrity": true,
+          "all_package_python_files_match_commit": true,
+          "fixtures_match_commit": null
+        },
+        {
+          "source": "pypi",
+          "filename": "chan_lun_core-0.9.0.tar.gz",
+          "bytes": 396351,
+          "sha256": "6a14f7a9d89c7fe11ab644158cf904ad735561c21ed2ac223ad98def92581ebc",
+          "archive_integrity": true,
+          "all_package_python_files_match_commit": true,
+          "fixtures_match_commit": true
+        },
+        {
+          "source": "release",
+          "filename": "chan_lun_core-0.9.0-py3-none-any.whl",
+          "bytes": 172696,
+          "sha256": "8fb2480673d38074aac18ab1445c269fa11af24565ef5abac15ef8263af37c02",
+          "archive_integrity": true,
+          "all_package_python_files_match_commit": true,
+          "fixtures_match_commit": null
+        },
+        {
+          "source": "release",
+          "filename": "chan_lun_core-0.9.0.tar.gz",
+          "bytes": 396299,
+          "sha256": "72c9af13a0c075ce7c8924efebd0123ee5ff7bfef82fa44aa1dcef5f12c8d08e",
+          "archive_integrity": true,
+          "all_package_python_files_match_commit": true,
+          "fixtures_match_commit": true
+        }
+      ],
+      "compared_package_python_files": 37,
+      "compared_sdist_fixtures": 5,
+      "release_and_pypi_unpacked_files_identical": true,
+      "isolated_public_wheel_import": true,
+      "isolated_log_sha256": "44898629382d7c03b734892e53d040675a6bbb92503eed4e05ebb339d6e5ce90",
+      "isolated_import_output": "installed wheel OK: 0.9.0 /private/tmp/chan-tag-artifacts-2026-10-11/090/pypi/chan_lun_core-0.9.0-py3-none-any.whl/chan/__init__.py",
+      "initial_acceptance": "chan-core-0.9.0-acceptance-2026-10-11.json"
+    }
+  },
+  "historical_small_versions_publication": "仅补25个本地tag, 历史小版本暂不推送或发布",
+  "does_not_prove_R2_or_formal_1_0_ready": true,
+  "JoinQuant_executed": false,
+  "aliyun_mirror_sync_checked": false,
+  "documentation_followup_commit": "9a3e7557ba1f99cd673b188086c89eceb380c42b",
+  "documentation_contract_tests": {
+    "tests": 5,
+    "seconds": 0.837,
+    "ok": true,
+    "command": ".venv/bin/python tools/check_project.py --scope core --pattern test_contracts.py"
+  },
+  "documentation_CI": {
+    "head_sha": "9a3e7557ba1f99cd673b188086c89eceb380c42b",
+    "CI_run": "https://github.com/lushi78778/chan-lun/actions/runs/38135511616",
+    "conclusion": "success"
+  }
+}

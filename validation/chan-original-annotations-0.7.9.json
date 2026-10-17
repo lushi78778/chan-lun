@@ -1,0 +1,39 @@
+{
+  "version": "0.7.9",
+  "pdf_sha256": "0721a63b2213fedf7241fd0ca69757e3dbd89bda58ea30e7df89b2fc447673a5",
+  "source_pages": [
+    473,
+    504,
+    506,
+    519,
+    520,
+    521,
+    561,
+    562,
+    607,
+    610,
+    611,
+    612,
+    613,
+    616,
+    640,
+    647,
+    869,
+    870,
+    871
+  ],
+  "independent_cases": 92,
+  "fx_bi_cases": 10,
+  "xd_cases": 82,
+  "figure_reviews": 31,
+  "source_hashes": {
+    "src/chan/tests/fixtures/fx_bi_originals.json": "859545b37c039866d59dc59588500d184ad11a5728777beaa4c5707714f4fc62",
+    "src/chan/tests/fixtures/xd_originals.json": "becd85b49544854ce67ea8d4055a128b8b4b6d9ff0959ed17b76f67799490919",
+    "doc/validation/chan-original-review-0.7.9.json": "5362fc816cb023163f5b05646c4f82dfe9e9df1d1e55297b6641da22c6764670"
+  },
+  "pending": [
+    "2007/2008原始OHLC、历史数据修订前后的供应版本缺失;历史图数值复现未验收。",
+    "R2真实原始行情独立全链路标注与非空点位分支。"
+  ],
+  "algorithm_used_to_generate_labels": false
+}
