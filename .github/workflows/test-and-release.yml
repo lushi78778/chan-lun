@@ -66,9 +66,17 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: Build sdist + wheel
         run: uv build
+      - name: Prepare release notes body
+        # 按 tag 提供发布说明正文(如 .github/release-notes/v1.0.0.md);
+        # 无对应文件时给默认占位, body 空正文 + generate_release_notes
+        # 仍会生成自动注记。
+        run: |
+          NOTES=".github/release-notes/${{ github.ref_name }}.md"
+          if [ -f "$NOTES" ]; then cp "$NOTES" release_body.md; else printf '发布说明见仓库 CHANGELOG.md。\n' > release_body.md; fi
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: release_body.md
           # 只传构建产物(避免把 uv 生成的 dist/.gitignore 当资产上传)
           files: |
             dist/*.whl
