@@ -23,7 +23,11 @@ def distribution_info():
         except metadata.PackageNotFoundError:
             return None
         return {"version": dist.version, "location": str(dist.locate_file(""))}
-    import pkg_resources
+    try:
+        import pkg_resources
+    except ImportError:
+        # python -S 或无 setuptools 环境没有 pkg_resources, 视为无发行元数据。
+        return None
     try:
         dist = pkg_resources.get_distribution("chan-lun-core")
     except pkg_resources.DistributionNotFound:
