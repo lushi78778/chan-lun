@@ -153,7 +153,20 @@ jobs:
         run: python tools/release_artifacts.py verify --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
       - name: Prepare release notes body
         run: |
-          python -c 'import os,pathlib; p=pathlib.Path(".github/release-notes")/(os.environ["RELEASE_TAG"]+".md"); pathlib.Path("release_body.md").write_text(p.read_text() if p.exists() else "发布说明见仓库 CHANGELOG.md。\n")'
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["RELEASE_TAG"][1:]
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          pattern = r"(?ms)^## " + re.escape(version) + r"(?:[（(][^\n]*|[ \t][^\n]*)?\n(.*?)(?=^## |\Z)"
+          match = re.search(pattern, changelog)
+          if not match or not match.group(1).strip():
+              raise ValueError("CHANGELOG lacks release notes for " + version)
+          body = "# chan-lun-core " + version + "\n\n" + match.group(1).strip() + "\n"
+          Path("release_body.md").write_text(body, encoding="utf-8")
+          PY
       - uses: softprops/action-gh-release@v2
         with:
           body_path: release_body.md
