@@ -35,7 +35,7 @@
 
 发行名 chan-lun-core，导入名 chan。独立仓库采用 src 布局，本模块位于
 仓库根的 src/chan/__init__.py；__version__ 与 pyproject.toml 版本保持一致。
-完整分层与职责见 ARCHITECTURE.md，输入输出契约见 API.md。
+完整分层与职责见 docs/architecture.md，输入输出契约见 docs/api.md。
 """
 
 from chan.bars import BAR_KEYS, bars_to_df, normalize_bars, validate_bars
@@ -112,7 +112,7 @@ from chan.lineage import (CenterEvent, CenterLineage, CenterVersion,
 from chan.causal_graph import causal_graph_dot
 from chan.rounds import Round, RoundChain, track_rounds
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",

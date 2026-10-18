@@ -1,0 +1,118 @@
+{
+  "schema": "chan-documentation-layout-v1",
+  "verified_at": "2026-10-18T17:10:49.217358+08:00",
+  "baseline_commit": "b84b54c2ba94e598c211dd800853cdf2e620ed4e",
+  "state": "local_uncommitted_working_tree",
+  "version": "1.0.0",
+  "layout": {
+    "moves": {
+      "API.md": "docs/api.md",
+      "ARCHITECTURE.md": "docs/architecture.md",
+      "MIGRATION.md": "docs/migration.md",
+      "docs/项目治理评估-2026-10-18.md": "docs/archive/项目治理评估-2026-10-18.md",
+      "docs/项目治理整改收口-2026-10-18.md": "docs/archive/项目治理整改收口-2026-10-18.md"
+    },
+    "rewritten": [
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/docs/architecture.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/docs/api.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/docs/migration.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/README.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/CONTRIBUTING.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/AGENTS.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/docs/usage.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/docs/缠论理论逐一实现计划.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/docs/archive/项目治理整改收口-2026-10-18.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/docs/README.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/docs/archive/项目治理评估-2026-10-18.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan/docs/installation.md",
+      "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/README.md"
+    ],
+    "original_progress_sha256": "f0e49e625fec3cc55b245a02c90fba63dcc240752bb9230a3774a411a5f517ea"
+  },
+  "checks": {
+    "source_package": {
+      "passed": 814,
+      "seconds": 61.749,
+      "log_sha256": "145cb9309161934f4ab0d9ac8c15de796e48fd6efa4459fc505f072535f5d3b6"
+    },
+    "sdist_package": {
+      "passed": 814,
+      "seconds": 62.07,
+      "log_sha256": "3aca0ed1e2b5f0af11e003ab0a5cbb537d3e856c46c18b789e83006d28817896"
+    },
+    "layout": {
+      "documents": 19,
+      "local_links": 208,
+      "failures": [],
+      "root_markdown": [
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "README.md"
+      ],
+      "algorithm_ast_unchanged": 41,
+      "progress_section_6_unchanged": true,
+      "progress_sha256": "f0e49e625fec3cc55b245a02c90fba63dcc240752bb9230a3774a411a5f517ea",
+      "version_and_fixtures_unchanged": true,
+      "updated_engineering_python36_grammar": true
+    },
+    "artifacts": {
+      "wheel": "/private/tmp/chan-doc-layout-20261018/dist/chan_lun_core-1.0.0-py3-none-any.whl",
+      "sdist": "/private/tmp/chan-doc-layout-20261018/dist/chan_lun_core-1.0.0.tar.gz",
+      "modules_identical": 41,
+      "documentation_identical": [
+        "README.md",
+        "AGENTS.md",
+        "CONTRIBUTING.md",
+        "CHANGELOG.md",
+        "MANIFEST.in",
+        "docs/README.md",
+        "docs/api.md",
+        "docs/architecture.md",
+        "docs/migration.md",
+        "docs/usage.md",
+        "docs/installation.md",
+        "docs/archive/项目治理评估-2026-10-18.md",
+        "docs/archive/项目治理整改收口-2026-10-18.md",
+        "tests/test_contracts.py",
+        "tests/test_release_artifacts.py",
+        "tools/release_artifacts.py"
+      ],
+      "validation_excluded": true,
+      "old_root_documents_absent": true,
+      "release_artifact_inspection": true,
+      "readme_metadata_identical": true,
+      "artifacts": {
+        "chan_lun_core-1.0.0-py3-none-any.whl": "071c6ec38a9c43d094e57edbac95b0164ace11cfdf4fed4337e23ed9f0719468",
+        "chan_lun_core-1.0.0.tar.gz": "467ebd5d21d40e4be169fbd382b4433a45ba1436eab1a636c6fbad9b8d409bfc"
+      }
+    },
+    "wheel_isolated_import": true,
+    "git_diff_check": true
+  },
+  "scope": [
+    "参考正文统一到 docs，历史治理快照归档",
+    "相对链接、迁移示例读取位置与源码包必需文档同步",
+    "仅修改包内导航 docstring，41 模块可执行 AST 不变",
+    "外层 README 仅同步文档入口链接"
+  ],
+  "preserved": [
+    "原有标签",
+    "双处版本号",
+    "正式计划 §6 原文",
+    "包 fixtures 与原始验证资产",
+    "既有历史验收收据"
+  ],
+  "not_run": [
+    "仓库资产全量重验",
+    "旧解释器旧依赖容器",
+    "聚宽平台",
+    "远端 CI 或发布验证"
+  ],
+  "delivery": {
+    "commit_created": false,
+    "tags_created_moved_deleted": false,
+    "pushed": false,
+    "release_or_pypi_publication": false
+  }
+}

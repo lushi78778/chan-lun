@@ -1,13 +1,13 @@
 # chan-lun-core 发行配置；仓库采用 src 布局，Python 导入名为 chan。
 # version 与 src/chan/__init__.py 的 __version__ 保持一致。
 [build-system]
-# >=77 支持 PEP 639 的 license = "MIT" 字符串形式(生成 License-Expression)
-requires = ["setuptools>=77"]
+# PEP 639 的 license 表达式与 license-files 支持基线。
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "chan-lun-core"
-version = "1.0.0"
+version = "1.0.1"
 description = "缠论结构识别与理论辅助计算库。输入单标的、单周期的行情或结构序列，输出分型、笔、线段、中枢、背驰、买卖点，以及多级分解和辅助状态。算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。"
 readme = "README.md"
 requires-python = ">=3.6"
@@ -60,3 +60,20 @@ package-dir = {"" = "src"}
 where = ["src"]
 include = ["chan", "chan.*"]
 namespaces = false
+
+[tool.ruff]
+# 只检查名称错误；Python 3.6 语法由包契约测试单独检查。
+target-version = "py37"
+
+[tool.ruff.lint]
+select = ["F821", "F822", "F823"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/chan"]
+relative_files = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+fail_under = 94

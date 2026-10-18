@@ -1,6 +1,15 @@
-# 独立核心库开发环境：Python 3.10+；在仓库根安装。
-# 运行时依赖下限由 pyproject.toml 维护，不用于升级聚宽旧环境。
+# 独立核心库开发/CI 的直接依赖基线；Python 3.10+，不用于聚宽旧环境。
+# Python 要求按官方发行元数据分组；传递依赖版本保留在验收/CI 日志。
 -e .
-numpy>=1.24
-pandas>=1.5
-build>=1.2
+numpy==2.2.6; python_version < "3.12"
+numpy==2.5.2; python_version >= "3.12"
+pandas==2.3.3; python_version < "3.11"
+pandas==3.0.5; python_version >= "3.11"
+setuptools==84.0.0
+build==1.6.1
+coverage[toml]==7.16.2
+ruff==0.17.1
+twine==7.0.0
+# cmark 基线兼容两套开发解释器，避免 md extra 切换到新的 Rust 构建链。
+readme-renderer[md]==44.0
+cmarkgfm==2024.11.20

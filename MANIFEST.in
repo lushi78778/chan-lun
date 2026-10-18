@@ -1,6 +1,3 @@
-include ARCHITECTURE.md
-include API.md
-include MIGRATION.md
 include CHANGELOG.md
 include CONTRIBUTING.md
 include AGENTS.md

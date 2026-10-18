@@ -9,10 +9,12 @@ import ast
 from email.parser import Parser
 import hashlib
 import json
+from html.parser import HTMLParser
 from pathlib import Path
 import re
 import tarfile
 import zipfile
+from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = "release-manifest.json"
@@ -62,7 +64,9 @@ def inspect_artifact(path, version):
                 raise ValueError("sdist 元数据不唯一")
             text = archive.extractfile(metadata[0]).read().decode("utf-8")
             relative = [n.split("/", 1)[1] for n in names if "/" in n]
-        required = {"AGENTS.md", "API.md", "CONTRIBUTING.md", "README.md",
+        required = {"AGENTS.md", "CONTRIBUTING.md", "README.md",
+                    "docs/README.md", "docs/api.md", "docs/architecture.md",
+                    "docs/migration.md", "docs/usage.md", "docs/installation.md",
                     "tools/check_core.py", "tools/release_artifacts.py"}
         if not required.issubset(set(relative)):
             raise ValueError("sdist 缺少包验收或协作文件")
@@ -74,6 +78,44 @@ def inspect_artifact(path, version):
     name = re.sub(r"[-_.]+", "-", metadata.get("Name", "")).lower()
     if name != "chan-lun-core" or metadata.get("Version") != version:
         raise ValueError("产物元数据版本/名称不一致: {}".format(path.name))
+    return metadata
+
+
+def check_descriptions(root, dist):
+    """现代构建环境真实渲染两种产物描述；缺少渲染器不能算通过。"""
+    from readme_renderer.markdown import render
+
+    class Links(HTMLParser):
+        def __init__(self):
+            HTMLParser.__init__(self)
+            self.hrefs = []
+            self.ids = set()
+
+        def handle_starttag(self, tag, attrs):
+            self.ids.update(value for key, value in attrs if key == "id")
+            if tag == "a":
+                self.hrefs.extend(value for key, value in attrs if key == "href")
+
+    version = source_version(root)
+    for path in artifacts(dist):
+        metadata = inspect_artifact(path, version)
+        if metadata.get("Description-Content-Type") != "text/markdown":
+            raise ValueError("产物描述须声明 text/markdown")
+        html = render(metadata.get_payload())
+        if not html:
+            raise ValueError("Markdown 未实际渲染；检查 readme-renderer[md]")
+        links = Links()
+        links.feed(html)
+        if not links.hrefs:
+            raise ValueError("产物描述缺少导航链接")
+        for href in links.hrefs:
+            url = urlsplit(href)
+            if url.fragment and not (url.scheme or url.netloc or url.path or url.query):
+                if unquote(url.fragment) not in links.ids:
+                    raise ValueError("产物描述页内锚点不存在")
+            elif url.scheme != "https" or not url.netloc:
+                raise ValueError("产物描述链接须使用 HTTPS 绝对地址或有效页内锚点")
+    return version
 
 
 def artifacts(dist):
@@ -126,7 +168,7 @@ def verify(root, dist, commit=None, tag=None):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("check-source", "seal", "verify"))
+    parser.add_argument("command", choices=("check-source", "check-description", "seal", "verify"))
     parser.add_argument("--root", default=str(ROOT))
     parser.add_argument("--dist", default=str(ROOT / "dist"))
     parser.add_argument("--commit")
@@ -138,6 +180,8 @@ def main(argv=None):
             version = source_version(args.root)
             check_tag(version, args.tag)
             print("source version OK:", version)
+        elif args.command == "check-description":
+            print("description OK:", check_descriptions(args.root, args.dist))
         else:
             action = seal if args.command == "seal" else verify
             record = action(args.root, args.dist, args.commit, args.tag)

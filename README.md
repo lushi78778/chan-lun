@@ -2,74 +2,39 @@
 
 缠论结构识别与理论辅助计算库。输入单标的、单周期的行情或结构序列，
 输出分型、笔、线段、中枢、背驰、买卖点，以及多级分解和辅助状态。
-算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
+算法用 Python 实现，第三方运行依赖只有 numpy 与 pandas；MACD 内置计算。
 
-- 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`1.0.0`。该版本已发布到 GitHub Release 与 PyPI；
-  后续工程维护单独登记，不重发既有版本。安装环境以 `chan.__version__` 为准。
-- 版本更迭的完整记录见 [CHANGELOG.md](CHANGELOG.md)（每版定位、主要
-  变化、行为变化与发布状态）。
-- 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
-- 许可证：[MIT](LICENSE)。
-
-本库负责结构与指标计算。行情下载、交易日历、复权、跨周期取数、组合管理、
-调度和下单由调用方负责。跨级别与跨成员接口由调用方分别提供已对齐的
-输入，不按分钟周期自动推断理论级别。批量入口每次重算所提供的完整前缀。
-
-## 阅读路线
-
-| 你是谁 / 要做什么 | 阅读位置 |
+| 项目 | 约定 |
 |---|---|
-| 投资者/使用者：第一次用这个库 | [第一部分 §1—§3](#第一部分投资者视角)：能做什么、安装、快速开始 |
-| 投资者/使用者：读懂结果、避免未来函数 | [§4—§7](#4-读懂计算结果)：结果字段、时间语义、买卖点边界、使用守则 |
-| 投资者/使用者：评估这个库能不能用 | [§8 可用范围与证据边界](#8-10-的可用范围与证据边界)、[免责声明](#免责声明) |
-| 开发者：接入行情、调用全部 API | [第二部分](#第二部分开发者视角)：输入契约、模块与公开入口 |
-| 开发者：参与开发、测试、发版 | [§10 从源码开发](#10-从源码开发)、[§17 测试与开发](#17-测试与开发)、[CONTRIBUTING.md](CONTRIBUTING.md) |
-| 查调用细节、键集、原因码、身份契约 | [API.md](API.md)、[§19 证据、身份与常见错误](#19-证据身份与常见错误) |
-| 从 0.7.x/0.8.x 升级到1.x | [MIGRATION.md](MIGRATION.md)、[§18 版本与发布](#18-版本与发布) |
-| 维护仓库、查目录与工具职责 | [文档与目录索引](docs/README.md)、[工程工具](tools/README.md)、[资产工具](validation/tools/README.md) |
-| 查某个版本改了什么 | [CHANGELOG.md](CHANGELOG.md) |
+| 发行名 / 导入名 | `chan-lun-core` / `chan` |
+| 当前源码版本 | `1.0.1`（待发布）；安装环境以 `chan.__version__` 和实际导入路径为准 |
+| 运行兼容目标 | Python 3.6、numpy 1.14、pandas 0.23 及以上；验证范围见下文 |
+| 开发与构建 | Python 3.10+，使用本仓库 `requirements-dev.txt` |
+| 仓库 / 许可证 | [lushi78778/chan-lun](https://github.com/lushi78778/chan-lun) / [MIT](https://github.com/lushi78778/chan-lun/blob/main/LICENSE) |
 
----
+本库维护算法、公开契约、包测试及仓库验收资产。调用方负责行情获取、交易日历、
+复权、标的和周期管理、策略调度、组合风控与下单。跨级别和板块接口需要调用方
+提供多组已对齐的输入；理论级别由结构关系和输入声明确定，不按分钟周期自动映射。
 
-# 第一部分：投资者视角
+## 阅读入口
 
-## 1. 这个库是什么、能做什么
+下列链接指向仓库当前主干文档，安装版本及升级差异按版本记录核对。
 
-这是一个**缠论结构计算库**：你把行情给它，它把缠论概念算成明确的
-数据对象。它负责"结构是什么"，不负责"该不该买"；信号解释、仓位、
-风控和下单由你决定。
+| 要完成的事 | 入口 |
+|---|---|
+| 安装并完成第一次计算 | [安装](https://github.com/lushi78778/chan-lun/blob/main/README.md#%E5%AE%89%E8%A3%85)、[快速开始](https://github.com/lushi78778/chan-lun/blob/main/README.md#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B) |
+| 根据现有数据选择接口 | [按输入选择入口](https://github.com/lushi78778/chan-lun/blob/main/README.md#%E6%8C%89%E8%BE%93%E5%85%A5%E9%80%89%E6%8B%A9%E5%85%A5%E5%8F%A3) |
+| 接入自己的行情、分步计算或使用辅助模块 | [使用指南](https://github.com/lushi78778/chan-lun/blob/main/docs/usage.md) |
+| 排查 Notebook 安装、版本或同名目录遮蔽 | [安装与环境排错](https://github.com/lushi78778/chan-lun/blob/main/docs/installation.md) |
+| 查字段、身份、原因码、空值与兼容规则 | [API 契约](https://github.com/lushi78778/chan-lun/blob/main/docs/api.md) |
+| 了解架构、维护代码或执行验收 | [架构](https://github.com/lushi78778/chan-lun/blob/main/docs/architecture.md)、[开发流程](https://github.com/lushi78778/chan-lun/blob/main/CONTRIBUTING.md)、[目录索引](https://github.com/lushi78778/chan-lun/blob/main/docs/README.md) |
+| 查理论实现进度与真实证据 | [正式计划 §6](https://github.com/lushi78778/chan-lun/blob/main/docs/%E7%BC%A0%E8%AE%BA%E7%90%86%E8%AE%BA%E9%80%90%E4%B8%80%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92.md#6-%E5%AE%9E%E7%8E%B0%E6%B8%85%E5%8D%95%E8%BF%9B%E5%BA%A6%E8%A1%A8%E5%94%AF%E4%B8%80%E8%BF%9B%E5%BA%A6%E7%BB%B4%E6%8A%A4%E5%A4%84)、[验收记录](https://github.com/lushi78778/chan-lun/blob/main/validation/README.md) |
+| 长期维护与剩余工作的次序 | [正式计划 §12](https://github.com/lushi78778/chan-lun/blob/main/docs/%E7%BC%A0%E8%AE%BA%E7%90%86%E8%AE%BA%E9%80%90%E4%B8%80%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92.md#12-1x-%E9%95%BF%E6%9C%9F%E7%BB%B4%E6%8A%A4%E4%B8%8E%E5%89%A9%E4%BD%99%E5%B7%A5%E4%BD%9C2026-10-18-%E8%B5%B7) |
+| 评估版本升级 | [迁移指南](https://github.com/lushi78778/chan-lun/blob/main/docs/migration.md)、[变更记录](https://github.com/lushi78778/chan-lun/blob/main/CHANGELOG.md) |
 
-### 能力一览
+## 安装
 
-| 能力 | 入口 | 输出 |
-|---|---|---|
-| K 线包含处理与分型 | `chan_fx_bi` | 无包含 K 线、三 K 分型 |
-| 笔（81 课 / 106 课两种标准） | `find_bis`、`chan_fx_bi(bars, standard="106")` | 笔对象列表 |
-| 线段 | `find_xds` | 线段对象，区分两种破坏方式 |
-| 中枢与走势分类 | `find_zs`、`classify_trend` | 中枢对象、走势类型、事件流 |
-| 背驰（MACD 辅助） | `find_trend_bc`、`find_pan_bc` | 趋势/盘整背驰候选 |
-| 三类买卖点（笔级简化） | `find_buy_points`、`find_sell_points` | 一/二/三类事件 |
-| 二/三类点条件判定 | `find_second_points`、`find_third_points` | 消费已确认走势的精确条件接口 |
-| MACD 辅助一类候选 | `find_first_points`、`scan_first_points` | 一类候选与否决诊断 |
-| 点位链与底/顶构造 | `analyze_point_chain`、`formation_state`、`fractal_range_state` | 完整点位链、构造状态 |
-| 按观察时点计算（防未来） | `analyze_at`、`analyze_available`、`replay_bars`、`replay_available` | 历史可见状态与修订账本 |
-| 辅助系统 | 中阴、BOLL、震荡监视、吻、均线九类、板块强弱等 | 辅助状态与提示 |
-
-### 它不是什么
-
-- **不是策略引擎**：不会自动产生"完整精确的交易信号"，多数点位输出
-  是候选或条件判定，需要你提供已确认的走势上下文。
-- **不下载数据、不下单**：行情来源、复权、跨周期对齐、调度全部由
-  调用方负责。
-- **没有收益承诺**：结构与时间验收不代替策略研究；详见[免责声明](#免责声明)。
-- **理论覆盖有边界**：当前 `bs` 是笔级简化识别，不等同于第 101 课的
-  完整精确定义；一类点、实际走势完成和因果级别的自动识别仍在补强。
-
-## 2. 安装与环境检查
-
-### 普通 Python 环境
-
+安装示例使用已发布的 `1.0.0`；源码待发布版本与可安装版本分别核验。
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
@@ -77,101 +42,23 @@ python -m pip install 'chan-lun-core==1.0.0'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
-`pip` 发行名与 `import` 名不同，不要安装名为 `chan` 的其他发行包来替代。
-依赖下限为 Python 3.6、numpy 1.14、pandas 0.23。现代本地开发环境与
-聚宽旧环境分开准备，兼容性验证范围见[§17 测试与开发](#17-测试与开发)。
+发行名与导入名不同。安装后的包应来自预期环境，工作区中的 `chan.py` 或同名
+目录可能遮蔽它。Notebook 安装后若此前已导入过包，应重启内核再核对。
+聚宽、离线 wheel 安装和导入诊断见[安装指南](https://github.com/lushi78778/chan-lun/blob/main/docs/installation.md)。
 
-### 聚宽研究 Notebook
+运行依赖下限与现代开发依赖分别管理。旧 Python 环境优先安装已构建的 wheel；
+`requirements-dev.txt` 用于维护和构建，不用于升级平台内置环境。源码版本相同
+不代表提交或发行产物相同，工程维护和发布记录分别核验。
 
-一个安装单元格，保留换行：
+## 快速开始
 
-```python
-import sys
-!{sys.executable} -m pip install --user chan-lun-core==1.0.0 --no-cache-dir
-```
-
-如果当前镜像尚未提供 `1.0.0`，可继续使用已经安装并可导入的版本。
-镜像同步时间不由本库控制；版本不可获取时不要把安装失败当成算法错误。
-如能访问 GitHub Release，也可安装指定 wheel：
+下面生成单标的、单周期的合成行情，无需行情账号，复制后即可运行：
 
 ```python
-import sys
-!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v1.0.0/chan_lun_core-1.0.0-py3-none-any.whl
-```
-
-离线时，先下载该 wheel 并上传到 Notebook 能读取的目录，再用当前解释器
-对实际文件绝对路径执行 `-m pip install --user /绝对路径/文件.whl`。
-保持已有 numpy/pandas，不为安装本库升级聚宽内置环境。
-
-安装后若此前已导入过 `chan`，重启内核，再在新的单元格确认：
-
-```python
-import sys
-import chan
-
-print("python:", sys.version.split()[0])
-print("chan version:", chan.__version__)
-print("chan file:", chan.__file__)
-print("has find_bis:", hasattr(chan, "find_bis"))
-```
-
-各版本能力速查：`0.4.0` 可以使用其已有基础链与理论模块；`analyze_bars`、
-行情校验和分型力度从 `0.4.2` 起可用，106 课笔标准从 `0.4.3` 起可用，
-MACD 防狼从 `0.4.4` 起可用，底/顶构造从 `0.4.5` 起可用，板块强弱从
-`0.5.0` 起可用，观察时点接口从 `0.5.1` 起可用，二类点条件接口从
-`0.5.2` 起可用，实际可用时间门控从 `0.7.0` 起可用，自动一类候选与
-点位链从 `0.7.4` 起可用。`0.9.1`、`0.10.0` 与 `1.0.0` 已发布到 PyPI；
-`0.9.2`—`0.9.11` 为本地概念 tag，未单独发布，随 `0.10.0` 统一交付。
-本文示例按当前源码版本 `1.0.0` 编写，并随契约测试自动执行。
-冻结研究脚本的原有版本要求另行保留。
-
-### `chan.__version__` 不存在时
-
-先确认实际导入对象，不要给错误模块手工补版本号：
-
-```python
-import sys
-import chan
-
-print("python:", sys.version.split()[0])
-print("file:", getattr(chan, "__file__", None))
-print("path:", list(getattr(chan, "__path__", [])))
-print("spec:", getattr(chan, "__spec__", None))
-print("version:", getattr(chan, "__version__", None))
-print("has find_bis:", hasattr(chan, "find_bis"))
-```
-
-| 现象 | 含义与处理 |
-|---|---|
-| `file=None`、`origin='namespace'`，路径为工作目录 `/home/jquser/chan` | 导入了同名目录形成的命名空间包。用当前内核解释器安装 `chan-lun-core`，重启内核后再查 |
-| 文件来自工作区的 `chan.py` 或其他 `chan/__init__.py` | 有同名模块遮蔽。检查导入路径和该文件用途，消除遮蔽后重新启动 |
-| 文件来自 `site-packages/chan/__init__.py`，但版本或入口不符合预期 | 检查当前解释器的安装元数据、安装版本及内核缓存 |
-| `ModuleNotFoundError` | 当前解释器找不到包；用同一解释器安装，而不是其他终端中的 pip |
-
-聚宽 Python 3.6 可额外检查安装元数据：
-
-```python
-import pkg_resources
-
-try:
-    dist = pkg_resources.get_distribution("chan-lun-core")
-    print("installed:", dist.version, dist.location)
-except pkg_resources.DistributionNotFound:
-    print("chan-lun-core: 未安装")
-```
-
-元数据说明发行包已安装，不单独证明 `import chan` 加载了它。
-本仓库提供 `tools/diagnose_chan.py`，可同时核对运行时路径、
-版本、安装元数据和关键公开入口。
-
-## 3. 快速开始
-
-下面使用合成行情，完整复制后即可运行，无需行情账号：
-
-```python
-import math
 import json
+import math
 from datetime import datetime, timedelta
+
 import pandas as pd
 from chan import normalize_bars, analyze_bars
 
@@ -186,1143 +73,215 @@ df = pd.DataFrame({
 
 bars = normalize_bars(df)
 result = analyze_bars(bars)
-print("as_of:", result.as_of)
-print("分型/笔/线段:", len(result.fxs), len(result.bis), len(result.xds))
-print("笔级中枢:", len(result.bi_zss))
-print("买点:", result.buy_points)
-print("卖点:", result.sell_points)
+summary = {
+    "as_of": str(result.as_of),
+    "fxs": len(result.fxs),
+    "bis": len(result.bis),
+    "xds": len(result.xds),
+    "bi_zss": len(result.bi_zss),
+    "xd_zss": len(result.xd_zss),
+    "buy_points": len(result.buy_points),
+    "sell_points": len(result.sell_points),
+}
+print(json.dumps(summary, ensure_ascii=False, indent=2))
 snapshot = result.to_dict()
 json_text = json.dumps(snapshot, ensure_ascii=False, allow_nan=False)
 ```
 
-合成数据只演示调用方法，不保证每类结构或信号都会出现。
-`analyze_bars` 提供基础链默认参数；需要自定义 MACD、背驰参数、三买力度
-门槛或辅助模块时，使用各模块函数组合（见[§15 模块与公开入口](#15-模块与公开入口)）。
+按当前默认参数，摘要为：
 
-接入自己的行情前，先读[§11 行情输入契约](#11-行情输入契约)；用结果做
-历史研究前，先读[§5 时间语义](#5-时间语义结构时间不是交易时间)。
+```json
+{
+  "as_of": "2025-06-09 00:00:00",
+  "fxs": 8,
+  "bis": 7,
+  "xds": 1,
+  "bi_zss": 1,
+  "xd_zss": 0,
+  "buy_points": 0,
+  "sell_points": 0
+}
+```
 
-## 4. 读懂计算结果
+这个输入识别出分型、笔和线段，笔级中枢与线段级中枢分别统计；买卖候选为空
+是正常结果，不表示程序失败，也不证明价格安全或全部理论分支已经检查。
+示例只用于说明调用与结果，不是行情案例或策略验证。
 
-### `AnalysisResult`
+`analyze_bars` 组合基础识别链，默认采用 81 课笔标准。需要 106 课标准时用
+`analyze_bars(bars, bi_standard="106")`。自定义 MACD、背驰、买卖点参数或使用
+严格条件、递归、谱系及其他辅助模块时，按[模块示例](https://github.com/lushi78778/chan-lun/blob/main/docs/usage.md#6-%E6%A8%A1%E5%9D%97%E4%B8%8E%E5%85%AC%E5%BC%80%E5%85%A5%E5%8F%A3)
+另行组合；这些能力不会全部由 `analyze_bars` 自动执行。
 
-| 字段 | 内容 |
+## 输入与结果
+
+标准输入是时间严格递增、唯一的 dict 列表或元组，每条包含
+`dt/open/high/low/close/volume`。OHLC 必须有限且严格为正，成交量有限且非负，
+并满足 `low <= open/close <= high`。一个序列对应一个标的、一个周期及同一价格基准。
+
+DataFrame 可先经 `normalize_bars` 映射列名、转数值并排序；它默认剔除
+`volume == 0` 且 `high == low` 的行。该适配不代替行情校验。
+`analyze_bars` 会校验输入；底层函数各有前提，直接组合时可先调用
+`validate_bars`。重复时间、缺失值、复权、时区与停牌处理方式须由调用方明确。
+完整规则见[行情输入契约](https://github.com/lushi78778/chan-lun/blob/main/docs/usage.md#1-%E8%A1%8C%E6%83%85%E8%BE%93%E5%85%A5%E5%A5%91%E7%BA%A6)。
+
+`AnalysisResult` 按级别保留结果：
+
+| 字段 | 含义 |
 |---|---|
-| `as_of` | 最后一根输入 bar 的时间；空输入为 None |
-| `new_bars`、`fxs`、`bis`、`xds` | 无包含 K 线、分型、笔、线段的对象列表 |
-| `bi_zss`、`xd_zss` | 分别由笔和线段得到的中枢，明确分开 |
+| `as_of` | 最后一根输入 bar 的时间；空输入为 `None` |
+| `new_bars`、`fxs`、`bis`、`xds` | 包含处理后的 K 线、分型、笔和线段 |
+| `bi_zss` / `xd_zss` | 分别由笔 / 线段构造的中枢 |
 | `bi_trends` | 笔级中枢的走势分类 |
-| `trend_bc`、`pan_bc` | 使用笔级中枢和笔序列的背驰候选 |
-| `buy_points`、`sell_points` | 同一笔级口径的买卖点事件列表 |
-| `dif`、`dea`、`hist` | 与原始 bars 等长的 numpy 数组，默认参数 12/26/9 |
+| `trend_bc` / `pan_bc` | 笔级趋势 / 盘整背驰候选 |
+| `buy_points` / `sell_points` | 基础链的笔级简化买卖候选 |
+| `dif`、`dea`、`hist` | 与原始输入 bars 等长的 MACD 数组，默认 12/26/9 |
 
-结果字段不可重新绑定，但内部列表、数组和结构对象可以修改。
-每次批量计算独立分配结果；`.to_dict()` 生成深拷贝，将时间转为字符串、
-数组转为列表，适合 JSON 存档。不要把任意底层对象都当成统一 JSON schema。
+结果字段不能重新绑定，内部列表、数组与结构对象仍可修改。每次批量计算独立
+分配结果，`AnalysisResult.to_dict()` 生成独立的 JSON 可写快照。底层对象按各自
+契约序列化，例如 `NewBar.to_dict()` 保留原时间类型，不能据此假定任意对象均可
+直接 `json.dumps`。
 
-### 结构对象速览
-
-| 对象 | 关键字段 | 含义 |
-|---|---|---|
-| `NewBar` | `elements` | 包含处理后的 K 线；`elements` 记录原始 bar 下标 |
-| `FX` | `bar_index` | 分型；`bar_index` 是无包含序列下标 |
-| `BI` | `direction`、起止时间/值、高低点 | 笔；`direction` 为 `up/down` |
-| `XD` | `mode`、`gg/dd`、`complete`、`evidence_dt` | 线段；`mode` 为情况 1/2，`gg/dd` 表达内部极值 |
-| `ZS` | `zd/zg`、`gg/dd`、`start_dt/end_dt/direction`、`extended_9` | 中枢；`zd/zg` 为边界，`gg/dd` 为构成波动极值 |
-
-## 5. 时间语义：结构时间不是交易时间
-
-这是使用本库最重要的一节。**分型的中心 K 线时间、笔端点时间、买卖点
-`dt` 表示结构所在位置，不自动等于当时可识别或可成交的时刻。**
-
-- 分型需要右邻确认，包含合并还可能延长确认等待。
-- 未完成的笔、线段和上推结构尾部会随新数据修订。
-- `as_of` 只表示输入截止，不证明最后一根 bar 已经收盘。
-- 候选的"首次出现"不是"永久确认"：固定输入版本的账本记录过末笔修订
-  和买卖候选撤销，首次出现可能被后续数据撤回。
-
-历史回放应逐前缀重算，或读取当时存下的可见快照：
+空行情也是合法输入：
 
 ```python
 from chan import analyze_bars
 
-observed = []
-for stop in range(1, len(bars) + 1):
-    current = analyze_bars(bars[:stop])
-    observed.append((current.as_of, current.to_dict()))
+empty = analyze_bars([])
+assert empty.as_of is None
+assert empty.bis == []
+assert empty.buy_points == []
 ```
 
-上例说明正确的可见性边界，长样本需要自行控制存储和计算量。
-对完整样本最终结果仅按结构端点 `dt` 过滤，不能还原历史可见状态。
+字段 `None`、空结果、条件否决与证据不足有不同含义。扫描入口还可返回
+`exclusions`、`skipped`、`conditions` 和 `completed_types`，用于解释未产生点位的
+原因；它们的范围见 [API](https://github.com/lushi78778/chan-lun/blob/main/docs/api.md#9-%E7%A9%BA%E5%80%BC%E4%B8%8E%E5%BE%85%E5%88%A4%E8%AF%AD%E4%B9%89) 与[排错指南](https://github.com/lushi78778/chan-lun/blob/main/docs/usage.md#7-%E8%AF%81%E6%8D%AE%E8%BA%AB%E4%BB%BD%E4%B8%8E%E5%B8%B8%E8%A7%81%E9%94%99%E8%AF%AF)。
 
-更正式的按观察时点入口（`analyze_at`/`replay_bars`）与实际可用时间
-门控（`analyze_available`）见[§12](#12-按观察时点计算与追踪修订)和
-[§14](#14-按收盘与到达时间观察)。
+## 按输入选择入口
 
-### 复权与取数截止
-
-取数截止与前复权基准均锚定观察日；聚宽可能填充未来日期行情，调用方需
-钳制 `end_date` 并再次过滤返回时间。跨周期数据也按对应观察时刻截断。
-本库不复权：若复权因子随观察时点变化，应分别构造各时点的行情前缀。
-
-## 6. 买卖点：候选、条件判定与理论边界
-
-本库的点位能力分两层，不要混淆：
-
-### 第一层：笔级简化识别（`bs` 模块）
-
-`find_buy_points`/`find_sell_points` 在笔级结构上运行，输出候选事件：
-
-| 点类型 | 当前识别条件 |
-|---|---|
-| 一买/一卖 | 下跌/上涨趋势背驰；当前取首个方向匹配的趋势背驰锚点 |
-| 二买/二卖 | 一类点后首次回调/反弹，不破对应一类点极值 |
-| 三买/三卖 | 离开中枢后首次回抽/反抽守边界，并比较离开与回拉力度 |
-
-三类点回抽恰好触边界可接受。默认力度比较使用保留两位小数的比值
-`> 1`；传入 `min_power_ratio=n` 改为 `>= n`。阈值属于工程参数。
-信号公共字段为 `type/dt/price/basis/zs_idx`；事件按判定顺序返回，
-需要时间排序时由调用方显式排序。
-
-**理论覆盖边界**：这一层是笔级简化，不等同于第 101 课的完整精确定义。
-第 101 课允许二买低于一买的弱情形，现有"不破一类点"门槛尚未覆盖；
-一类点、实际走势完成和因果级别的自动识别仍需补强，不能只删除旧
-价格门槛扩大输出。
-
-### 第二层：精确条件接口（消费已确认走势）
-
-这些入口要求你先证明输入（已确认结束的次级走势、当时已知的中枢），
-它们只做条件判定，不会把笔级候选自动升级为理论事件：
-
-| 入口 | 判定内容 |
-|---|---|
-| `find_second_points` | 课53/101 二类点：弱二类点、小转大无本级一类点、因果中枢二三合一 |
-| `find_third_points` | 三类点：整个首回试区间守 ZG/ZD（触沿允许），同一中枢只输出第一个成立点 |
-| `find_first_points` | 课24 MACD 辅助一类候选（不是严格背驰证明） |
-| `scan_first_points` | 无候选时的第一项否决诊断，可复核 |
-| `confirm_level_up` | 已确认走势类型逐证据到达递归 |
-| `analyze_point_chain` | 完整点位链：引发中枢三类点驱动第108课底/顶构造 |
-| `formation_state` | 同级同因果中枢首次三类点结束的底/顶构造状态 |
-| `fractal_range_state` | 第108课分型区间辅助构造状态（与 `formation_state` 分别命名，不能互换） |
-
-调用示例与完整契约见[§15](#15-模块与公开入口)。
-
-## 7. 使用守则
-
-- **端点时间 ≠ 确认时间**：任何历史研究先做逐前缀回放或读取当时快照；
-  严禁用全样本 `complete=True` 给历史端点倒填确认时间。
-- **输入只放当时可见的数据**：盘中不要把未收盘 bar 当已收盘；存在
-  延迟时用 `analyze_available` 明确 `closed_dt`/`available_dt`。
-- **聚宽取数钳制**：`end_date` 钳制到观察日并再次过滤返回日期；
-  申万行业指数可能 18:00 后更新，30m 时效需实测。
-- **固定版本**：安装固定版本号；升级前先读 [CHANGELOG.md](CHANGELOG.md)
-  的"行为变化"条目，保存旧结果并逐前缀比较。
-- **候选不是确认**：不把候选首次出现解释为可交易信号；没有确认依据
-  的候选保持候选。
-- **区分两套口径**：笔级简化候选与精确条件接口的结果分别命名、分别
-  存档，不互相冒充。
-
-## 8. 1.0 的可用范围与证据边界
-
-1.0.0 可用于离线结构研究、实际可用前缀分析、候选/确认结构账本，
-以及已确认次级走势条件下的点位、递归和因果谱系判定。公开契约遵循
-[API.md](API.md) 的 1.x 规则；发布与理论门槛见正式计划 §6、§11.11。
-
-随版继续保留同侧多轮独立真实样本缺口、课77历史OHLC和课106图文歧义、
-工程辅助阈值及输入方级别/供应版本证明等边界。候选需要明确的确认依据，
-输入历史未被事后修订不能仅由快照证明。聚宽平台实跑与策略研究单独验收。
-
-
----
-
-# 第二部分：开发者视角
-
-## 9. 组织方式与架构
-
-采用**数据对象＋纯函数＋组合入口**，按职责组织：
-
-| 层 | 代表入口 | 职责 |
+| 你已经具备的输入 / 目的 | 入口 | 结果与前提 |
 |---|---|---|
-| 行情适配与校验 | `normalize_bars`、`validate_bars` | 转换数据格式、检查原始行情契约 |
-| 结构与结果对象 | `NewBar`、`FX`、`BI`、`XD`、`ZS`、`AnalysisResult` | 表达结构、持有结果、提供具名字段 |
-| 计算函数 | `find_bis`、`find_zs`、`level_up` 等 | 接收明确输入并计算结果，不持有跨调用分析状态 |
-| 组合入口 | `analyze_bars`、`analyze_at`、`analyze_available` | 连接基础识别链，区分笔级和线段级结果 |
+| 单标的单周期原始行情 | `analyze_bars` | 基础结构、笔级候选和指标；只计算提供的前缀 |
+| 已保证收盘的行情与历史观察时点 | `analyze_at`、`replay_bars` | 先按时间截断，再计算；回放追踪出现、修订与撤销 |
+| 含收盘与实际到达时间的行情 | `analyze_available`、`replay_available` | 按 `closed_dt/available_dt` 门控；回放另给保守结构观察 |
+| 需要自定义基础链参数 | `chan_fx_bi`、`find_xds`、`find_zs`、`find_*_bc` 等 | 显式分步组合；保持笔级与线段级输入一致 |
+| 已确认次级走势与反转 / 中枢上下文 | `find_second_points`、`find_third_points` | 已确认输入上的条件判定，保留必要证据时间 |
+| 已确认次级走势与对应行情 | `find_first_points`、`scan_first_points`、`analyze_point_chain` | MACD 辅助一类候选及组合链；候选性质沿链保留 |
+| 已确认走势、相邻级别与力度方法 | `scan_strict_divergence`、`strict_nested_chain`、`strict_completion_cascade` | 严格结构与显式证据判定；力度方法和级别声明仍是输入前提 |
+| 已确认类型的递归完成、中枢演化与轮次 | `confirm_level_up`、`track_center_lineage`、`track_rounds` | 完成证据、稳定身份、版本链和轮次移交 |
+| 均线、分型区间或成员状态等专项输入 | 各辅助模块 | 返回定义内的状态或候选；阈值性质见模块说明 |
 
-结构对象已有必要的面向对象表达。一个算法对应一个带 `calculate()` 的类，
-不会自动改善其职责和可测试性，因此现阶段保持函数组合。
-`track_zs`、`formation_state` 等函数可以计算历史状态，但不会在多次调用间
-自动保存上一轮状态。
+公开入口经 `import chan` 或 `from chan import ...` 使用；完整导出以
+`chan.__all__` 为准，字段与稳定性以 [API](https://github.com/lushi78778/chan-lun/blob/main/docs/api.md) 为准。
 
-当前没有 `update/reset` 实时分析器、共享缓存、行情源基类或策略框架。
-以后如需实时增量处理，须另行定义未收盘 bar 更新、同时间替换、历史修订、
-确认事件和缓存失效，再逐前缀与批量实现比较。
-详见 [ARCHITECTURE.md](ARCHITECTURE.md)。
+笔级简化买卖候选、已确认输入上的条件判定、严格结构判定和工程辅助状态分别
+解释。将任意笔或线段包装为 `ConfirmedMove`，不能证明它是真实完成的次级走势。
+`confirmed` 也须结合所属接口的条件、力度方法与证据理解，不能统一视为理论证明
+或交易指令。输入、示例与模块边界见[使用指南](https://github.com/lushi78778/chan-lun/blob/main/docs/usage.md#5-%E5%80%99%E9%80%89%E4%B8%8E%E6%9D%A1%E4%BB%B6%E5%88%A4%E5%AE%9A)。
 
-## 10. 从源码开发
+## 时间、回放与证据边界
 
-本仓库采用 src-layout。包文件在仓库根的 `src/chan/`，不是仓库根本身。
+**结构位置、证据确认时间、行情可用时间分别记录。** 分型中心、笔端点和点位
+`dt` 表达结构位置；`as_of` 表达输入截止，并不证明末根 bar 已收盘。
+`XD.evidence_dt` 是最后证据笔的端点，也不能当作实际行情确认时间。
 
-```bash
-# 在独立 chan-lun 仓库根运行，使用现代开发解释器
-python -m pip install -r requirements-dev.txt  # Python 3.10+ 开发环境
-python tools/check_core.py
-python tools/check_core.py --scope validation  # 完整 Git checkout 的资产验收
-```
-
-完整 Chan 工作区中，本仓库在 `src/chan/`，安装命令为
-`python -m pip install -e ./src/chan`。如果显式设置源码导入路径，应该是
-工作区的 `src/chan/src`，不是外层 `src` 或 `src/chan`。
-构建后端要求现代 setuptools；旧 Python 环境优先安装已构建的 wheel。
-
-开发分层、原文核验、概念版本和交付流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-
-## 11. 行情输入契约
-
-### 标准原始 bar
-
-输入为按时间严格递增的 dict 列表或元组，每条至少含六个字段：
-
-```python
-bars = [
-    {"dt": "2026-01-05", "open": 10.0, "high": 10.8,
-     "low": 9.8, "close": 10.5, "volume": 1000.0},
-    {"dt": "2026-01-06", "open": 10.5, "high": 11.0,
-     "low": 10.2, "close": 10.7, "volume": 1200.0},
-]
-```
-
-| 字段/条件 | 契约 |
-|---|---|
-| `dt` | 严格递增、唯一，整段序列使用一致的时间类型与表示 |
-| `open/high/low/close` | 有限、严格为正的数值；布尔值不作为价格 |
-| 价格包络 | `low <= open/close <= high` |
-| `volume` | 有限且非负；单位由调用方统一 |
-| 额外字段 | 可存在；批量入口只复制标准 OHLCV 和时间 |
-| 空序列 | 合法；批量入口返回空结构，`as_of=None` |
-
-支持 `date/datetime/pandas.Timestamp`；datetime 的 UTC 偏移需保持一致。
-字符串可用 `YYYY-MM-DD`，或带秒的 `YYYY-MM-DD HH:MM:SS[.微秒]` /
-`YYYY-MM-DDTHH:MM:SS[.微秒]`。同一序列不要混用日期与时间、空格与 T、
-不同小数精度或不同类型；字符串形式不支持时区后缀。
-
-```python
-from chan import validate_bars
-
-validate_bars(bars)  # 合法时无返回值；坏数据抛出异常
-```
-
-`validate_bars` 不排序、不填充、不去重，不静默删除坏行。
-错误容器使用 `TypeError`，不符合行情契约的行使用 `ValueError` 并指出位置。
-底层算法未统一执行完整校验，直接调用时由调用方保证契约。
-正价格限制与当前相对价格力度口径一致；零价、负价资产需要先定义适用口径。
-
-### DataFrame 适配
-
-```python
-from chan import normalize_bars, bars_to_df
-
-bars = normalize_bars(
-    df, dt_col="date", open_col="open", high_col="high",
-    low_col="low", close_col="close", volume_col="volume",
-    drop_paused=True,
-)
-restored_df = bars_to_df(bars)
-```
-
-有 `dt_col` 列时取该列，否则取 index；OHLCV 转为 float，并按时间排序。
-默认停牌判据是 `volume == 0` 且 `high == low`，满足时剔除。
-`normalize_bars` 是格式适配，不代替完整校验；重复时间、NaN 和价格包络
-仍须由 `validate_bars` 或 `analyze_bars` 检查。
-
-标的、周期、时区、前复权基准、成交量单位及 bar 是否收盘均由调用方管理。
-多标的表须先分组；日线和分钟线分别形成各自的序列。
-包含处理后的 `NewBar` 是形态对象，其首开末收可能落在合并形态区间之外，
-不要把原始 OHLC 包络校验直接用于它。
-
-## 12. 按观察时点计算与追踪修订
-
-`analyze_at`（0.5.1 起）先筛选原始 `dt<=cutoff` 行情，再计算包含、MACD
-和结构。截止值与行情时间使用相同类型、字符串格式和 UTC 偏移。未来
-OHLCV 不参与计算；完整时间索引仍须有效且严格递增。返回的 `as_of` 是
-最后可见行情时间，可能早于请求截止。行情是否收盘由调用方保证。
+历史计算先确定观察时点可见的输入，再计算结构。已经保证收盘的离线行情可以用：
 
 ```python
 from chan import analyze_at, replay_bars
 
-# bars 已按本观察时点可用的复权因子处理, 并且只包含已收盘bar。
+# 复用快速开始的 bars；真实接入时由调用方保证相应时点的收盘与价格基准。
 cutoff = bars[-1]["dt"]
-current = analyze_at(bars, cutoff, bi_standard="106")
-for snapshot in replay_bars(bars, observations=[row["dt"] for row in bars[-20:]]):
-    for change in snapshot.changes:
-        print(change.kind, change.field, change.first_seen, change.observed_dt)
+current = analyze_at(bars, cutoff)
+for observed in replay_bars(bars, observations=[cutoff]):
+    print(observed.observed_dt, len(observed.changes))
 ```
 
-`replay_bars` 逐个观察时间独立计算并返回 `ReplaySnapshot`，记录分型、
-笔和旧买卖候选的 `appeared/revised/withdrawn`。`first_seen` 仅是当前
-观察网格首次出现时间，不能当作理论确认时间。未完成末笔可能被同向
-新极值替换；候选撤销保留在账本中。输入历史版本改变时重新建账本。
-账本身份适用于固定输入序列，不是跨重采样或数据修订的全局中枢身份。
+盘中或存在数据延迟时，应提供收盘与实际到达时间，使用
+[`analyze_available`](https://github.com/lushi78778/chan-lun/blob/main/docs/usage.md#4-%E6%8C%89%E6%94%B6%E7%9B%98%E4%B8%8E%E5%88%B0%E8%BE%BE%E6%97%B6%E9%97%B4%E8%A7%82%E5%AF%9F)。调用方还须按相应观察
+时刻截断跨周期输入，并使用当时可得的复权基准；库不下载行情或复权。
 
-本入口不复权。若复权因子随观察时点变化，应分别构造各时点的行情前缀
-后调用 `analyze_at`，不能拿最终复权行情假定其当时可用。跨周期数据也
-须按同一实际观察时间截断。完整样本计算后按结构端点筛选不满足此契约。
+固定输入历史版本、固定观察时点时，视野之外的未来价格不应影响当前结果。
+观察时点推进后，未完成尾部和候选允许修订或撤销；`first_seen` 只代表在给定
+观察网格中首次出现。用全样本最终结果按端点时间过滤，无法还原历史可见状态。
+回放规则与账本身份见[时间指南](https://github.com/lushi78778/chan-lun/blob/main/docs/usage.md#2-%E6%8C%89%E8%A7%82%E5%AF%9F%E6%97%B6%E7%82%B9%E8%AE%A1%E7%AE%97%E4%B8%8E%E8%BF%BD%E8%B8%AA%E4%BF%AE%E8%AE%A2)。
 
-## 13. 线段边界与时间确认
+当前使用边界包括：同侧多轮独立真实样本缺口、课 77 历史 OHLC 缺失和课 106
+图文歧义、辅助模块的工程阈值，以及调用方对最低类型、级别和供应历史版本的
+证明责任。接口实现、真实样本覆盖、平台可运行和策略有效性是不同结论。
+当前理论能力与剩余缺口只在[正式计划 §6](https://github.com/lushi78778/chan-lun/blob/main/docs/%E7%BC%A0%E8%AE%BA%E7%90%86%E8%AE%BA%E9%80%90%E4%B8%80%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92.md#6-%E5%AE%9E%E7%8E%B0%E6%B8%85%E5%8D%95%E8%BF%9B%E5%BA%A6%E8%A1%A8%E5%94%AF%E4%B8%80%E8%BF%9B%E5%BA%A6%E7%BB%B4%E6%8A%A4%E5%A4%84)
+维护；分支证据和随版声明见[验收记录](https://github.com/lushi78778/chan-lun/blob/main/validation/README.md)。
 
-`find_xds` 不足三笔返回空列表；首三笔须重叠，不能把一笔当未完成线段。
-`XD.complete` 表示给定笔序列下破坏定义成立；`mode` 只区分两种破坏方式。
-`evidence_dt/evidence_end_index` 为最后证据笔的端点，不等于实际行情确认时间。
-完成段的 `gg/dd` 仅覆盖自身构成笔，后续确认笔另记证据；缺口的第二序列
-从假设转折点完整收集，未成立时新极值使旧假设撤销。分界前后不跨界包含。
+## 项目结构与维护
 
-历史行为修正（升级时注意，详见 [CHANGELOG.md](CHANGELOG.md)）：
+本仓库独立开发和验收，采用 src 布局；也可由研究项目作为 Git 子模块引用。
+仓库根的 `src/chan/` 是可安装包，仓库本身不是运行时包目录。
 
-- 0.6.1/0.7.0：按原图修正线段分界、缺口确认与区间范围，会改变线段
-  及线段级中枢结果；已发布版本和冻结脚本不自动升级。
-- 0.7.5：修正特殊包含和内部极值线段。
-- 0.7.7：`find_xds` 修正假设转折后首次包含方向，按第 71 课检验局部转折。
-- 0.7.8：第 65/78 课反向三笔穿越旧段起价的破坏证据允许旧段的极值在
-  内部；完成区间仍使用该段全部真实极值，后继确认笔不计入旧段区间。
-- 0.7.9：修正首反向笔内部包含造成的提前完成——一笔反弹仍待确认，
-  反向方向已选择或后继线段已破坏后才完成。逆时间传递的两段使用实际
-  后继证据时间；旧版部分线段的完成时间和分界会变化，回放须从原始
-  行情前缀重新计算。
-
-平端点的完成类型仍能参与递归和中枢形成。自动点位组合通过
-`unresolved_move_ids` 显式报告它，当前轮次的有向二/三类判定在首个
-平端点前停止，保留此前结果；不会猜方向或删段后拼接。
-
-包测试 `fixtures/xd_originals.json` 用相对价位保留课67/71/81原图不等式，
-不声称恢复原图的真实行情。原图完整覆盖仍在正式计划登记。
-
-## 14. 按收盘与到达时间观察
-
-`analyze_at` 的 dt 过滤适合调用方已保证全部 bar 收盘的离线前缀。用于
-盘中或存在数据延迟时，使用 `analyze_available`，每根原始 bar 增加两个
-字段：`closed_dt` 是本周期结束时间，`available_dt` 是本版本行情可用时间。
-日期标签、收盘时间和到达时间须满足 `dt <= closed_dt <= available_dt`。
-缺字段报错，不会退回日期标签；本库不推断交易日历或供应历史版本。
-
-```python
-from datetime import datetime
-from chan import analyze_available, replay_available
-
-# dt是交易日标签; 当日日线在15:05才成为这个输入版本的可用数据。
-available_bars = [dict(dt=datetime(2026, 7, 31),
-                       closed_dt=datetime(2026, 7, 31, 15),
-                       available_dt=datetime(2026, 7, 31, 15, 5),
-                       open=4.0, high=4.2, low=3.9, close=4.1, volume=1000)]
-assert analyze_available(available_bars, datetime(2026, 7, 31, 14)).as_of is None
-visible = analyze_available(available_bars, datetime(2026, 7, 31, 15, 5))
-for observed in replay_available(available_bars):
-    print(observed.observed_dt, observed.result.as_of)
-    print([item.to_dict() for item in observed.structures])
+```text
+.
+├── pyproject.toml       # 包元数据、运行依赖与包发现配置
+├── requirements-dev.txt # 现代开发与构建依赖
+├── src/chan/           # 算法、数据对象、公开导出与运行时版本
+├── tests/              # 自包含包测试；fixtures 为最小冻结输入与预期
+├── tools/              # 包测试、诊断、产物检查与基准工具
+├── docs/               # 用法、架构导航、正式计划与治理文档
+├── validation/         # 仓库验收资产、资产测试与数据工具
+└── .github/            # CI 与随版声明
 ```
 
-`replay_available` 独立重算每个实际可用前缀，保留原分型/笔/旧 bs 候选变更，
-并记录保守结构链：后继笔出现后固定前笔；只用这些笔确认线段；三个已确认
-线段形成线段构造层中枢。末笔和未完成线段不进入保守确认结构。
-`StructureObservation.first_seen` 是该观察网格首次确认可见时间，不是端点
-或下单时刻；中枢延伸另有修订记录。`structures` 不包含自动一类点上下文，
-也不能直接把其中一笔或一条线段转换为 `ConfirmedMove`。
-候选 `buy_points/sell_points` 仍采用旧笔级算法，保留其独立近似范围。
-
-调用方必须提前截断传入分钟行情，确认函数不会替调用方统一裁剪所有输入。
-取到信号之后的行情可能改变分型确认与末端结构。
-
-## 15. 模块与公开入口
-
-公开函数和结果类可直接 `from chan import ...`，也可从所属模块导入。
-完整导出清单是 `chan.__all__`；以下按用途列出主要入口，阈值和边界细节
-见函数 docstring 与模块测试。
-
-### 15.1 基础识别链：分型、笔、线段、中枢
-
-对快速开始的同一个 `df`，可分步运行：
-
-```python
-from chan import (
-    normalize_bars, validate_bars, chan_fx_bi, find_xds, find_zs,
-    classify_trend, macd_series, find_trend_bc, find_pan_bc,
-    find_buy_points, find_sell_points,
-)
-
-# 1. 行情 DataFrame -> 标准 bar 列表
-bars = normalize_bars(df)
-validate_bars(bars)
-new_bars, fxs, bis = chan_fx_bi(bars)
-xds = find_xds(bis)
-zss = find_zs(bis)
-segment_zss = find_zs(xds)
-trends = classify_trend(zss)
-dif, dea, hist = macd_series(bars)
-trend_bc = find_trend_bc(bis, zss, bars, hist=hist)
-pan_bc = find_pan_bc(bis, zss, bars, hist=hist)
-buys = find_buy_points(bis, zss, trend_bc)
-sells = find_sell_points(bis, zss, trend_bc)
-```
-
-| 模块 | 入口/对象 | 用法与边界 |
-|---|---|---|
-| `bars` | `BAR_KEYS`、`normalize_bars`、`bars_to_df`、`validate_bars` | 原始行情适配与校验 |
-| `analysis` | `analyze_bars`、`AnalysisResult` | 基础链批量组合 |
-| `fx` | `remove_includes`、`find_fxs`、`NewBar`、`FX` | 先按顺序处理包含，再识别三 K 分型 |
-| `bi` | `find_bis`、`chan_fx_bi`、`BI` | 分步或一次返回 `(new_bars, fxs, bis)` |
-| `xd` | `find_xds`、`chan_bis_xds`、`XD` | 特征序列识别线段，支持第一种情况及缺口确认 |
-| `zs` | `find_zs`、`track_zs`、`ZS`、`ZsEvent` | 返回中枢，或 `(zss, events)` 事件流 |
-| `zs` | `zs_relation`、`build_expanded_zs`、`classify_trend` | 中枢关系、扩展构造与走势粗分类 |
-
-默认成笔标准是 81 课：`MIN_K_GAP=3`，两个分型中心在无包含序列的
-下标差至少为 4。标准名可用常量 `BI_STANDARD_81`/`BI_STANDARD_106`
-（值 `'81'`/`'106'`，见 [API.md](API.md) §6）。显式选择 106 课
-标准：
-
-```python
-from chan import analyze_bars, chan_fx_bi
-
-new_bars_106, fxs_106, bis_106 = chan_fx_bi(bars, standard="106")
-result_106 = analyze_bars(bars, bi_standard="106")
-```
-
-106 课要求两个完整三 K 分型至少六个无包含 K 线单位，中心端点区间触及
-方向相应的原始 MA5；默认间隔为 2。直接调用 `find_bis(..., standard="106",
-ma5=...)` 时，MA5 必须按每个包含组最后原始下标对齐。
-`min_k_gap` 可另设间隔，但不能取消 106 课六 K 单位等条件。
-
-`ZS.zd/zg` 为中枢边界，`gg/dd` 为构成波动的最高/最低点；另有
-`start_dt/end_dt/direction/xd_count/extended_9`。
-`classify_trend` 分组保留 `zs_list`，顶层 `zd/zg` 是组内首个中枢。
-`track_zs` 事件反映形成、延伸、九段升级、完成与新生，其事件 `dt`
-仍取源单元端点，不自动提供实际确认时间。
-
-边界约定因概念而异：`zs` 的初始三段要求 `ZD < ZG`；同级分解和
-递归使用闭区间交集，`ZD == ZG` 可计为交集。不要跨模块抹平这些差异。
-
-### 15.2 背驰与买卖点
-
-| 模块 | 入口 | 内容 |
-|---|---|---|
-| `bc` | `ema`、`macd_series`、`segment_area` | EMA、MACD 与段内柱面积 |
-| `bc` | `find_trend_bc`、`find_pan_bc` | 趋势/盘整背驰候选，可复用 `hist` |
-| `bs` | `find_buy_points`、`find_sell_points` | 第一、二、三类事件 |
-
-MACD 返回 `(dif, dea, hist)`，`hist = 2 * (dif - dea)`。
-趋势背驰使用相应趋势与创新极值条件下的柱面积比较；盘整背驰另有位置
-过滤参数 `max_dev=0.15`。这些是当前量化识别口径。
-
-不传 `trend_bc` 时只识别第三类。三类点另有
-`power_ratio/zs_zd/zs_zg/pull_start_dt/pull_end_dt/pull_start/pull_end`；
-二买有 `b1_price`，二卖有 `s1_price`。`zs_idx` 是本次列表的局部索引，
-不能用作长期中枢身份。
-
-理论覆盖边界与两层口径的区别见[§6](#6-买卖点候选条件判定与理论边界)；
-`second` 提供已确认次级走势及上下文的独立条件入口（下节）。
-
-### 15.3 已确认次级走势的二类点（0.5.2 起）
-
-`find_second_points` 是课53/101 的条件判定入口，独立于旧 `find_buy_points`
-和 `find_sell_points`。它接收已经确认结束的次级走势，允许二买低于一买，
-支持小转大没有本级一类点的上下文，并可识别给定因果中枢的二三合一。
-每个反转独立使用稳定 `context_id`，只取第一次反弹和紧接的第一次回试。
-
-```python
-from chan import ConfirmedMove, SecondPointContext, find_second_points
-
-# 条件输入示例：调用方已确认这两个次级走势，以及本级一买上下文。
-# 这些对象不是由任意两笔自动转换而来。
-moves = [
-    ConfirmedMove("rise", "sub", "up", "2026-01-01", "2026-01-03",
-                  10, 15, 10, 15, "2026-01-04"),
-    ConfirmedMove("pull", "sub", "down", "2026-01-03", "2026-01-05",
-                  15, 9, 9, 15, "2026-01-06"),
-]
-context = SecondPointContext("cycle-A", "buy", "main", "sub",
-                             "2026-01-01", 10, "2026-01-02")
-assert find_second_points(moves, [context], "2026-01-05") == []
-point = find_second_points(moves, [context], "2026-01-06")[0]
-assert point.strength == "weak"
-assert point.dt == "2026-01-05"          # 回试端点
-assert point.confirmed_dt == "2026-01-06"  # 可用时间
-```
-
-| 输入 | 契约 |
+| 交付形态 | 范围 |
 |---|---|
-| `ConfirmedMove` | 次级走势的稳定身份、级别、方向、端点价、全程极值及实际确认时间；未完成尾部不输入 |
-| `SecondPointContext` | 一类点或小转大反转锚点、目标/次级级别及上下文确认时间；`ended_dt` 是本次中阴结束的确认时间 |
-| `centers` | 可选 `context_id -> ConfirmedCenter`，须为反转前已形成的同级因果中枢；缺省不判最强合一 |
-| `ConfirmedDivergence` | 小转大回试创新极值分支所需的盘整背驰证据，按走势身份、级别、方向关联 |
-
-输出 `SecondPoint` 保留端点及最晚必要证据的确认时间。原中枢向上首次
-离开后回试全程低点不破 ZG 可标 `also_third=True`，卖点镜像；无额外
-力度比门槛。后续中阴结束不会删除此前成立的二类点，但结束后才确认
-的点被排除。小转大回试创新低/高时须有当时已确认的盘整背驰证据。
-
-本条件入口不自动识别一类点、走势完成、级别邻接或因果中枢；自动 MACD
-辅助接线见[§15.13](#1513-自动一类候选与因果点位链074)。它也不将旧
-笔级候选直接升级为精确点。调用方需用当时前缀/存档确定这些输入；
-严禁用全样本 `complete=True` 给历史端点倒填确认时间。
-
-### 15.4 已确认次级走势的三类点
-
-`find_third_points` 与 `find_second_points` 共用 `ConfirmedMove` 输入契约，
-但独立返回三类点。只消费真实完成的次级走势与当时已知中枢；不会将
-笔级候选直接升级为理论事件。整个首回试区间必须守 ZG/ZD，触沿允许，
-不加旧笔级算法的力度比门槛。同一中枢只输出第一个成立的三类点。
-
-```python
-from chan import ConfirmedMove, ConfirmedCenter, ThirdPointContext, find_third_points
-third_moves = [
-    ConfirmedMove("leave", "sub", "up", "2026-01-02", "2026-01-04",
-                  11, 14, 11, 14, "2026-01-05"),
-    ConfirmedMove("return", "sub", "down", "2026-01-04", "2026-01-06",
-                  14, 12, 12, 14, "2026-01-07"),
-]
-third_context = ThirdPointContext("cycle", "main", "sub",
-    ConfirmedCenter("center", "main", 10, 12, "2026-01-01"))
-assert find_third_points(third_moves, [third_context], "2026-01-06") == []
-third_points = find_third_points(third_moves, [third_context], "2026-01-07")
-assert third_points[0].kind == "buy3"
-assert third_points[0].confirmed_dt == "2026-01-07"
-```
-
-输入须包含从该中枢形成起的完整后续走势，不能截掉首回试后把第二次
-回试冒充首次。保守口径要求中枢在离开起点前已确认可见；更晚才确认的
-中枢不会追认历史离开。次级走势的完成、级别邻接、因果中枢仍由调用方
-证明；当前尚不是从 K 线自动识别全部三类点的引擎。
-
-### 15.5 完成走势类型的递归确认（0.7.3）
-
-`confirm_level_up` 只接受已确认的 `ConfirmedMove` 或完整的
-`ConfirmedMoveType`，按实际确认时间逐批重算可见前缀。调用方按明确 f1
-规则冻结的最低层完整类型也可用后者表示，保留类型、中枢和进入方向。
-它沿用允许中枢延伸的 `level_up` 规则，输出已完成走势，未完成尾部和
-无中枢残段不输出。输入须同级、同一冻结价格版本，时间及端点价格连续；
-乱序确认或缺段报错。原始笔、线段、裸 `MoveType.complete` 不带这些
-证明，不能直接输入。
-
-下面只演示调用方已经确认的最低层类型序列；合成端点不构成最低层识别器。
-
-```python
-from datetime import datetime, timedelta
-from chan import ConfirmedMove, confirm_level_up
-completion_prices = [10, 14, 11, 15, 13, 18, 16, 20, 14]
-t0 = datetime(2026, 1, 1)
-completion_units = [
-    ConfirmedMove("u%d" % i, "base", "up" if b > a else "down",
-                  t0 + timedelta(days=i), t0 + timedelta(days=i+1),
-                  a, b, min(a, b), max(a, b), t0 + timedelta(days=i+2))
-    for i, (a, b) in enumerate(zip(completion_prices, completion_prices[1:]))
-]
-assert confirm_level_up(completion_units, t0 + timedelta(days=8), "L1") == []
-completion_result = confirm_level_up(completion_units, t0 + timedelta(days=9), "L1")
-assert completion_result[0].end_dt == t0 + timedelta(days=7)
-assert completion_result[0].confirmed_dt == t0 + timedelta(days=9)
-assert len(completion_result[0].unit_ids) == 7
-assert len(completion_result[0].evidence_ids) == 8
-next_result = confirm_level_up(completion_result, t0 + timedelta(days=9), "L2")
-assert next_result == []  # 单个已完成类型不足以形成上一级中枢。
-point_move = completion_result[0].to_confirmed_move()
-assert point_move.direction == "up"
-```
-
-`unit_ids` 是组成单元，`evidence_ids` 是首次完成时的全部可见次级前缀，
-包含可能位于端点之后的完成证据。`confirmed_dt` 取该批证据到达时间，
-不能改成端点日或只取组成单元的最晚确认；较晚才调用也保留较早证据时间。
-输出无可变嵌套，既有完成结果不随输入增长改变。各次调用须使用同一身份、
-坐标和输入版本；供应修订要另存版本，本入口不存历史行情。
-
-`direction` 是原 f2 进入方向，可为 `None`；`to_confirmed_move()` 以端点
-净涨跌表示二/三类点所需的整体回抽方向，保留确认时间和全程极值。
-平端点盘整显式报错，不能跳过后拼接两侧走势；它仍可参与结构递归。
-转换不生成一类点、背驰、反转上下文或因果中枢。级别名由递归相邻关系
-声明；继续递归时保留完整 `ConfirmedMoveType`，不要转换后丢失类型及
-进入方向。级别不对应固定分钟时长。
-
-### 15.6 同级分解、级别递归与状态
-
-```python
-from chan import same_level_decompose, level_up, decompose_levels, level_reading
-
-moves = same_level_decompose(bis)
-higher_moves = level_up(moves)
-levels = decompose_levels(bis, max_levels=8)
-reading = level_reading(levels, at_dt=bars[-1]["dt"]) if bars else []
-```
-
-| 模块 | 主要入口 | 内容与解释 |
-|---|---|---|
-| `decompose` | `MoveType`、`same_level_decompose` | 固定三段中枢的同级分解；不把中枢延伸混入切分 |
-| `recurse` | `level_up` | 次级单元递归聚合，处理延伸与更高级别结构 |
-| `completion` | `ConfirmedMoveType`、`confirm_level_up` | 已确认类型逐到达前缀递归，冻结组成、中枢、完成证据与确认时刻 |
-| `levels` | `LevelDecomposition`、`decompose_levels`、`level_reading`、`change_starts_low` | 多级分解、指定端点时间读数、上下级方向改变自洽性 |
-| `zhongyin` | `ZhongYinResult`、`track_zhongyin` | 中阴阶段：进入、中枢形成及结束状态 |
-| `zhongyin` | `boll_bands`、`boll_state`、`boll_events`、`boll_bs1_hints` | BOLL 辅助事件与一类点提示 |
-| `osc` | `OscReport`、`oscillation_monitor`、`osc_strength`、`zn_next_estimate` | 中枢震荡统计、力度及数值估计 |
-| `biaoli` | `bi_state`、`bi_transition_valid`、`disease_stage`、`followup_quality`、`zhongyin_health` | 笔四状态、合法迁移、双级状态与震荡强弱 |
-
-同级分解与递归是不同规则，不能互相替换。`MoveType.complete=False`
-表示尾部尚未完成，`kind='incomplete'` 表示没有形成完整走势类别，
-两种标记不能混为一谈。
-
-**类型口径**：`same_level_decompose` 的 `kind='up'/'down'` 表示明示
-同级切分规则中的中枢核心 ZD/ZG 同向移位；`complete=True` 表示当前
-输入的后继结束证据已具备。这两个字段不独立证明课 20 严格趋势或
-背驰。`zs_relation` 另比较完整波动 DD/GG，两种口径不可混用。
-
-`decompose_levels` 第 1 级保留输入单元，以后逐级上推；序号不自动对应
-1 分钟/5 分钟/日线等时间周期。`level_reading` 按起止端点的闭区间读数，
-历史可见性仍要先做前缀计算。
-
-震荡监视器的 `center` 是 `(zd, zg)`，单元需有价格区间与方向属性。
-BOLL 阈值和震荡估计都是辅助口径，BOLL 提示不等同于 `bs` 的确认事件。
-双级"病情"和"健康"标签相对原走势方向解释，不自动映射为开平仓动作。
-
-### 15.7 力度、转折和均线吻
-
-| 模块 | 主要入口 | 输入/输出职责 |
-|---|---|---|
-| `strength` | `sma_series`、`ma_areas`、`MaArea`、`find_ma_bc`、`avg_strength_state`、`MaStrengthState` | 两条均线差值面积、同向力度比较、形成中的平均力度 |
-| `turn` | `classify_bc_turn`、`guaranteed_rebound_gap` | 背驰后转折三分类与回拉幅度条件 |
-| `minor_turn` | `classify_minor_turn` | 小级别背驰引发大级别转折的阶段分类 |
-| `kiss` | `alignment_series`、`classify_kiss`、`find_kisses`、`KissEvent` | 两均线体位与飞吻/唇吻/湿吻，保留吻次序和量能原料 |
-| `gap` | `Gap`、`find_gaps`、`classify_gap` | 原始 K 线缺口与基于可见后续行情的力度分类 |
-
-`strength` 的短长均线等长，`sma_series` 暖机段为 None；输入价格需完整。
-`find_ma_bc` 比较已闭合的同向均线面积，`use_avg=True` 使用平均力度。
-`avg_strength_state` 可描述形成中的面积，不应作为已完成背驰替代品。
-
-`find_kisses(short, long, volumes=None, proximity=0.5, min_depth=0.2,
-flip_confirm=0.5)` 返回吻事件。`alignment_series` 的 `up/down` 分别表示
-短线在长线上方/下方；触零也算湿吻。三个默认比例是对定性描述的量化，
-吻本身不自动生成买卖点，需要配合价格结构和背驰。
-
-`classify_bc_turn` 接收原中枢、后续回拉、原趋势方向；`classify_minor_turn`
-还可接收次级中枢和三类点信息。分类保留必要条件与充分证据的区别。
-缺口最终如何回补依赖后续输入；回放时只能使用当时已知行情。
-
-### 15.8 固定两级与任意多级区间套
-
-```python
-from chan import confirm_buy3_event_30m
-
-# 以下变量由调用方提供：evt 为三买事件，bars30 为截止目标观察时刻的30m行情
-# result30 = confirm_buy3_event_30m(evt, bars30, stale_days=3,
-#                                 min_prev_swing_ratio=0.002)
-```
-
-| 入口 | 作用 |
-|---|---|
-| `find_run_exhaustion` | 指定方向运行段的内部力度衰减 |
-| `confirm_buy3_30m`、`confirm_sell3_30m` | 三买/三卖回拉内部背驰与中枢边界确认 |
-| `confirm_buy3_event_30m`、`confirm_sell3_event_30m` | 接收 `bs` 事件，自动取边界与 `pull_end_dt`，缺失时取 `dt` |
-| `confirm_buy2_30m` | 30m 底分型及一买价格守位的轻量确认 |
-| `nested_bc`、`BcNestInput`、`BcNestLevel`、`NestBcState` | 任意多级候选段嵌套与力度判定 |
-
-固定 30m 确认使用段首末 DIF 摆动，端点各顺延两根 K 线吸收 EMA 惯性；
-MACD 柱面积只作参考。常见返回状态为 `confirmed/weak/no_exhaustion/broke/
-stale/no_data`；找不到相应运行段时也可能出现 `none`。
-`note` 给出解释，其他字段按判定路径提供，不能假定每次都有完整力度数据。
-
-库默认 `stale_days=1`（自然日）；历史研究脚本可能明确采用 3。
-`min_prev_swing_ratio` 默认为 None；设值后要求对照力度达到最低规模。
-三买 `zg_tol`、三卖 `zd_tol` 是保留参数，目前不影响判定；实际弱确认
-容忍由 `weak_tol` 控制。二买采用 `pierce_tol`，不套用三买的离开段逻辑。
-
-任意多级 `nested_bc(inputs, strength_fn=None)` 从大级别到小级别接收
-候选段链；默认力度为 MACD 柱面积，也可注入 `strength_fn(bars, move)`。
-区间不嵌套、未创新极值或力度未衰减等都会使链断开；结果 `complete`
-表示给定证据链成立。`BcNestInput.center` 仅用于记录，中枢因果关系和
-趋势前提需要调用方核对。
-
-### 15.9 分型力度、均线突破与 MACD 防狼
-
-| 模块 | 入口/对象 | 结果 |
-|---|---|---|
-| `fxpower` | `classify_fx_power`、`classify_fx`、`FxPowerResult` | 三K形态 `weak/neutral/strong/severe` 及包含标签 |
-| `fxpower` | `ma_break_state`、`MaBreakState` | 收盘相对均线的 `none/testing/effective` 历史确认 |
-| `macd_guard` | `macd_below_zero`、`macd_guard_series` | DIF 与 DEA 都严格小于零为 True，有效其他值为 False，缺测为 None |
-
-`classify_fx_power(b1, b2, b3, direction='top', long_body=0.35,
-small_body=0.15, shadow=0.25)` 假定三 K 分型已由调用方确定；底分型镜像。
-三个比例是形态量化阈值，不是原文给出的通用数值。
-`classify_fx(fx, new_bars)` 是已有分型对象的便捷入口；NewBar 实体是
-包含组首开末收的近似，精细原始形态分析优先使用原始 K 线。
-
-`ma_break_state(closes, mas, direction, confirm=2)` 的观察序列从分型
-右邻之后开始；均线先在完整历史上计算再对齐截取。有效突破需连续指定
-根数的收盘严格越线，缺测中断连续计数。一旦有效，后续回归不会取消
-历史有效记录；有效前的恢复可表现为假突破。
-
-```python
-from chan import macd_below_zero, macd_guard_series
-
-assert macd_below_zero(-0.2, -0.1) is True
-assert macd_below_zero(0.0, -0.1) is False
-assert macd_guard_series([-0.2, None], [-0.1, -0.1]) == [True, None]
-```
-
-触零或跨轴只说明负区判据不成立，不等于重新站稳，也不自动产生买入许可。
-
-### 15.10 底部与顶部构造
-
-```python
-from chan import FormationEvent, formation_state
-
-# confirmed_dt 来自逐前缀识别或当时存档，不是全样本结构端点
-first = FormationEvent("buy1", "2026-01-05", "day")
-events = [FormationEvent("buy3", "2026-01-12", "day", "center-A")]
-state = formation_state(first, "center-A", events, as_of="2026-01-10")
-assert state.in_formation
-assert formation_state(first, "center-A", events, "2026-01-12").phase == "completed"
-```
-
-`FormationEvent(kind, confirmed_dt, level, center_id=None)` 支持
-`buy1/sell1/buy3/sell3`，`level` 为非空级别名；三类点需要稳定的中枢身份。
-一类点尚不可见时等待，可见后进入构造。同级、同因果中枢的首次三类点
-结束该轮构造：底部由三买完成、三卖失败，顶部镜像。
-
-函数只消费 `as_of` 之前实际确认的事件；未来事件不参与当前判定。
-终态保持，同一确认时刻的相冲突三类事件需先去重或消歧，否则拒绝判定。
-一类点与因果中枢的关联由调用方提供；分型箱体的粗略底部定义不混入
-这个精确走势构造状态。结果类为 `FormationState`。
-
-### 15.11 分型区间的底部／顶部构造（第108课）
-
-`fractal_range_state` 消费已确认并冻结的 `ConfirmedFractalRange`，返回
-`waiting / constructing / testing / completed / failed`。底部盘中严格跌破
-区间最低点即失败；连续 `confirm` 根收盘严格高于上沿则成功，顶部镜像。
-默认 `confirm=2` 是"有效站住"的工程约定，原文没有规定次数。触沿不算破位，
-也不计成功次数；未确认的收盘越沿被收回后重新计数。首次终态冻结，后续反向
-价格不改写旧构造；新分型另建区间。这是辅助状态，不返回买卖信号或成笔证明。
-
-```python
-from datetime import datetime, timedelta
-from chan import ConfirmedFractalRange, fractal_range_state
-fractal_box = ConfirmedFractalRange("bottom", datetime(2026, 7, 1), 10, 12,
-                                    datetime(2026, 7, 2, 15, 5), "day")
-range_bars = []
-for day, close in [(3, 13), (4, 14)]:
-    dt = datetime(2026, 7, day)
-    range_bars.append(dict(dt=dt, open=close, high=close+1, low=11,
-                           close=close, volume=100,
-                           closed_dt=dt+timedelta(hours=15),
-                           available_dt=dt+timedelta(hours=15, minutes=5)))
-assert fractal_range_state(fractal_box, range_bars,
-                           datetime(2026, 7, 3, 15, 5)).phase == "testing"
-range_state = fractal_range_state(fractal_box, range_bars,
-                                  datetime(2026, 7, 4, 15, 5))
-assert range_state.phase == "completed"
-assert range_state.end_dt == datetime(2026, 7, 4, 15, 5)
-```
-
-区间可取当时 `FX.low / FX.high` 的三根包含处理后 K 线总范围，调用方应明确
-选取方式并冻结价格版本，不能从完整历史挑选最终分型回填过去。分型中间
-K 线的 `dt` 不是确认时间。确认时间由当时观察或存档提供；保守做法为右邻
-合并组被后续无包含 K 线固定后再登记。该入口不自动判断月线分型已形成。
-
-后续行情必须同标的、同周期、同价格基准，携带收盘/到达时间；在分型确认
-之前已闭合的行不计入其后构造。状态入口要求可见行的到达时间非降序，
-乱序交付或历史修订须由调用方先形成对应版本快照。价格依据所选观察日
-可得因子，不使用最新复权箱体配旧行情。这里的分型区间与 `formation_state`
-使用一类点及因果中枢的精确走势定义分别命名，不能互换。
-
-### 15.12 均线版辅助候选（第11、12、15课）
-
-`find_ma_points` 从实际已到达的原始行情计算 SMA、吻和封闭面积，返回
-`ma_buy1_candidate / ma_sell1_candidate / ma_buy2_candidate / ma_sell2_candidate`。
-这些名称与中枢版点位分开；结果不保证反转，也不直接用于下单。
-
-- `post_kiss_divergence`：第二次及以后已完成湿吻后的同向面积衰减，
-  同时本段价格高点和低点均顺趋势移动。封闭面积取下一根相交行情到达时确认，
-  不能按面积末端提前使用。`last_kiss_proven=False`，不回看未来挑最后一次。
-- `first_continuation`：已经观察到体位转化之后的首次已完成同体位中继；
-  接受飞吻、唇吻和湿吻，不要求先出现本模块的一类候选。窗口直接始于某体位
-  而没有转化证据时不声称"第一次"。默认前腿涨跌强度至少 2%，前腿均量不超过
-  此前长均线周期均量的 2 倍；可配置，`max_volume_ratio=None` 明确关闭量能过滤。
-
-原文未规定吻的数值边界、前腿强度和放量阈值；本接口沿用 `find_kisses`
-的量化参数并保留调整入口。第一类为保守封闭面积法，不覆盖飞吻／唇吻后的
-全部背驰或尚未结束的即时预警，后者见 `avg_strength_state`。价格趋势采用
-同向面积腿的高低区间近似，不宣称已经完成精确走势类型划分。
-
-```python
-from datetime import datetime, timedelta
-from chan import find_ma_points
-# 1/2周期仅为易核对的演示，实际参数按所研究周期选择。
-ma_point_bars = []
-closes = [500.0]
-for diff in [-10, -8, 1, -11, -10, 1, -12, -1, 0]:
-    closes.append(closes[-1] + 2*diff)
-for i, close in enumerate(closes):
-    dt = datetime(2026, 1, 1) + timedelta(days=i)
-    ma_point_bars.append(dict(dt=dt, open=close, close=close,
-                              high=close+1, low=close-1, volume=1,
-                              closed_dt=dt+timedelta(hours=15),
-                              available_dt=dt+timedelta(hours=15, minutes=5)))
-ma_candidates = find_ma_points(ma_point_bars, datetime(2026, 1, 10, 15, 5),
-                                short_period=1, long_period=2)
-assert ma_candidates[0].kind == "ma_buy1_candidate"
-assert ma_candidates[0].dt == datetime(2026, 1, 9)
-assert ma_candidates[0].confirmed_dt == datetime(2026, 1, 10, 15, 5)
-assert ma_candidates[0].to_dict()["last_kiss_proven"] is False
-```
-
-`dt / price` 是证据区间内最早的最低／最高点，`confirmed_dt` 是所需证据的
-实际到达时刻，两者不同。只截断当时已关闭并已到达的行情，再计算均线；
-调用方负责同标的、同周期、同价格基准及供应历史版本，到达时间非降序。
-当时已产生的候选是历史判定事实，后续行情不会把它改为"最终反转成功"。
-
-### 15.13 自动一类候选与因果点位链（0.7.4）
-
-`find_first_points(units, bars, as_of, level)` 消费与
-`confirm_level_up` 同契约的已确认次级走势，自动寻找已经完成的上涨/
-下跌，追溯最后两个中枢、连接段与离开段，输出 `FirstPoint`。
-`bars` 必须提供 `closed_dt`、`available_dt`，所有走势端点须在行情中
-精确对应。行情和结构均先按实际到达时间截断。确认晚于离开段端点时，
-返回的 `confirmed_dt` 保留这段等待时间。
-
-这是第 24 课的 **MACD 辅助一类候选**，`method='macd_area'`，不是严格
-背驰证明。它要求中枢周围波动区间严格分离、最后段创新极值、同向柱
-面积减弱、B 双线回拉零轴。面积采用 `(start,end]`，共用端点不重复计数；
-"零轴附近"默认量化为双线幅值/收盘价不超过 0.5%，可通过
-`zero_axis_ratio` 调整，原文没有该数值。单中枢盘整背驰、未完成走势、
-内部极值发生时间未知、零宽中枢等不输出。基础类型真实性、供应版本和
-复权价格坐标仍由输入负责；EMA 暖机从所给历史第一根开始。
-
-```python
-# units: 连续的ConfirmedMove或ConfirmedMoveType，不是单笔/单线段
-# bars: 同坐标行情，带closed_dt和available_dt
-points = chan.find_first_points(units, bars, as_of, level='F2')
-chain = chan.analyze_point_chain(units, bars, as_of, level='F2')
-print(chain.first_points, chain.second_points, chain.third_points)
-print(chain.formations)
-```
-
-`first_point_contexts` 自动生成每轮 `SecondPointContext`，并区分两个归属：
-
-| 字段 | 用途与可见证据 |
-|---|---|
-| `previous_center` | 原趋势最后中枢；第 101 课二三合一只在它反转前已知时判定 |
-| `causal_center` | 一类候选锚点之后连续次级走势的首次三段重叠中枢；确认取三段实际证据和点位最晚到达时间 |
-
-形成时的中枢边界和身份冻结，尚未形成时为 `None`；零宽交集不能用
-现有三类接口表达，不跳过去改选后面的中枢。`analyze_point_chain` 是薄组合
-入口，用引发中枢的首次三类点驱动第 108 课底/顶构造，用原趋势中枢判
-二三合一；一类候选性质继续沿整个链传递。
-
-`scan_first_points` 返回 `FirstPointScan(points, exclusions, completed_types)`，
-在没有候选时可查看完成类型的首个否决条件。它区分盘整、比较段不足、
-中枢波动区间重叠、未创新极值、内部极值时间未知、价格证据待到达、
-面积没有减弱、未回零轴和零宽中枢。尚未完成的类型不在否决列表中。
-这使"没有候选"可以复核，而不把它解释成全部理论分支验证通过。
-
-更大级别重组的中枢身份继承、严格区间套一类证明及真实基础类型人工
-验收仍在正式计划跟进。
-
-### 15.14 均线九类与板块强弱
-
-```python
-from chan import ma_strength_class, sector_strength
-
-# 原始历史保留 SMA 暖机；start_index 标记当时确定的本轮反弹起点
-a = ma_strength_class([10.0] * 233 + [12.0, 9.0], start_index=233)
-b = ma_strength_class([10.0] * 235, start_index=233)
-report = sector_strength({"asset-A": a, "asset-B": b})
-assert (a.class_no, b.class_no, report.mean_class) == (9, 1, 5.0)
-```
-
-`ma_strength_class(closes, start_index, periods=MA_PERIODS, confirm=1)`
-默认采用 `(5, 13, 21, 34, 55, 89, 144, 233)` 八条 SMA，得到九个类别。
-默认攻克标准为一次收盘严格高于相应均线，可通过 `confirm` 调整。
-保留本轮已攻克历史，后续回落不自动降类；下一轮由调用方明确起点。
-
-已有均线可用 `classify_ma_strength(closes, ma_by_period, start_index,
-confirm=1)`。`MaClassResult` 记录类别、各均线状态和攻克位置。
-缺测不当作"从未攻克"；无法判定类别时 `class_no=None`。
-
-`sector_strength` 接收唯一成员标识到 `MaClassResult` 的映射，返回
-`SectorStrength`。成员必须使用相同周期与确认标准；调用方还须保证
-观察日期、复权、时间周期和反弹起点定义一致。
-均值只统计已知类别，需要同时查看 `coverage/valid_count/total_count`；
-空板块或无有效成员时均值为 None，不填成第 1 类或 0。
-
-### 15.15 严格趋势背驰结构条件（0.10.1 起，0.10.2 力度注入）
-
-```python
-from chan import scan_strict_divergence, travel_force
-
-# units 是与 confirm_level_up 同契约的已确认连续前缀
-# 力度方法可选注入, 必须声明方法身份
-scan = scan_strict_divergence(
-    units, as_of, 'main',
-    force_fn=lambda reference, leave: (travel_force(reference),
-                                       travel_force(leave)),
-    force_method='unit_travel')
-for r in scan.results:
-    print(r.kind, r.status, r.reason, r.conditions, r.force_method)
-```
-
-`scan_strict_divergence(units, as_of, level, force_fn=None,
-force_method=None)` 只判结构必要条件，力度方法显式注入。完成趋势
-输出四类语义之一：`candidate`（开放尾部趋势，课61"先假设进入背驰
-段"，同一尾部起点同一身份，完成后落为最终语义；不评估力度）、
-`confirmed`（结构闭合 + 注入力度减弱；力度方法保留自身身份与
-局限，不冒充理论证明）、`insufficient_evidence`（结构闭合但必需
-证据缺失：力度未注入/方法不可用/内部极值时间未知/零宽中枢）、
-`rejected`（中枢波动重叠、无新极值、c 无末中枢三类点、注入力度
-不减，保留首个否决条件）。结构否决先于力度评估。
-
-结构条件四项：趋势存在（课27/37）、中枢周围波动严格分离（课20/61）、
-c 极值超越全趋势先验极值且恰在 c 端点（课37/61）、c 内含末中枢
-次级别三类点（课37）。每项结果保留趋势/中枢/比较段单元身份、力度
-方法身份与力度值、最晚确认时刻。`force_fn(reference, leave)` 返回
-`(reference_force, leave_force)` 数值对，返回 None 表示不可用；
-注入时必须以 `force_method` 声明非空方法身份。`travel_force` 为
-内置示例力度（单元行程和），是工程示例度量，不称走势真实力度。
-与 0.7.5 的 MACD 辅助候选（`find_first_points`）分别：辅助候选不
-因本模块存在而改名严格（课24明示 MACD"不绝对精确"）。
-
-### 15.16 严格区间套链与次级完成级联（0.10.4/0.10.5 起）
-
-```python
-from chan import (scan_strict_divergence, strict_nested_chain,
-                  strict_completion_cascade, travel_force)
-
-# scan 同 §15.15; layers 逐重显式供给相邻下级单元表(级别邻接
-# 由调用方明示, 不按 K 线周期名猜级别)
-chain = strict_nested_chain(
-    scan.results[0], units, [('sub', sub_units)], as_of,
-    force_fn=lambda reference, leave: (travel_force(reference),
-                                       travel_force(leave)),
-    force_method='unit_travel')
-print(chain.depth, chain.complete, chain.break_depth, chain.break_reason)
-
-# 课37"c 必然是次级别的": 对背驰段端点单元逐层复核次级完成
-cascade = strict_completion_cascade(scan.results[0], units,
-                                    [('sub', sub_units)], as_of)
-print(cascade.depth, cascade.complete)
-```
-
-`strict_nested_chain(divergence, units, layers, as_of, force_fn=None,
-force_method=None)`（课61区间套定位/课27定理）返回 `StrictChain`：
-重1为传入的严格背驰结果，重2起每重取上一重背驰段区间内最后一个
-次级中枢、围绕它比较两段力度（课61/课53推广）。每重 status：
-`bc`/`no_new_extreme`/`force_not_declining`（否决即停止下探）、
-`force_missing`/`force_unavailable`（证据缺失继续下探）、
-`no_sub_center`/`no_compare_legs`/`not_covered`（窗口不可建立）。
-`complete` 为最内一重 bc（区间套定位完成）；`break_depth=0` 表示
-父级已否决（`parent_rejected`）；第 k 重单元须与第 k-1 重背驰段
-区间时间首尾相等（否则 `not_covered`），端点价格须对齐（否则报
-价格坐标契约错误）。
-
-`strict_completion_cascade(divergence, units, layers, as_of)`（课
-35/37）对 `divergence` 背驰段末单元（含转折端点）逐层复核：每层
-细级可见前缀自上层端点单元起点起至 `as_of` 证据视野重算完成类型，
-恰覆盖上层端点单元；返回 `StrictCompletion`，`levels` 逐层结果
-（层1起，首个未通过层即止，其余声明层保留原状态），`complete`
-为端点单元被逐层证明次级完成。
-
-### 15.17 中枢演化谱系、反转轮次与可视因果图（0.11.x 起）
-
-```python
-from chan import (track_center_lineage, track_rounds, causal_graph_dot)
-
-# units 同 confirm_level_up 契约; next_level 为新中枢所属级别名
-lineage = track_center_lineage(units, as_of, 'center_level',
-                               upper_level='upper')
-frozen = lineage.snapshot(center_id, version)  # 冻结快照, 不存在报错
-
-# analyze_point_chain 的轮次分组视图(输入契约与其一致)
-chain = track_rounds(units, bars, as_of, 'main')
-for r in chain.rounds:
-    print(r.round_id, r.formation.phase, r.handed_over_dt)
-
-dot = causal_graph_dot(lineage=lineage, round_chain=chain, title='demo')
-```
-
-| 入口 | 返回 | 内容 |
-|---|---|---|
-| `track_center_lineage` | `CenterLineage(centers, events)` | 中枢事件流与快照版本链（课20/35）：`formed`/`extended`/`expanded_up`/`reorganized` 事件按到达批时刻、批内 kind 序、身份字典序排序；旧版本冻结不回写，`snapshot` 按身份+版本号取冻结快照 |
-| `track_rounds` | `RoundChain(rounds, unresolved_move_ids)` | 每个自动一类候选开启一轮（课101/108）：`Round` 含锚点（`round_id` 即 `point_id`）、双中枢、课108构造状态、按 `context_id` 归属的二/三类点与同侧移交时刻 `handed_over_dt`（None=尚未移交）；平端点原样上报不删段拼接 |
-| `causal_graph_dot` | `str`（DOT 文本） | `CenterLineage`/`RoundChain` 的确定性 Graphviz 投影；只投影数据中的身份、关系与时刻，不在图里推导新结论；同输入同输出 |
-
-## 16. 原图与真实算术回归
-
-包内测试夹具（fixtures）分两族：**原图几何标注**与**真实行情独立标注**。
-通用原则：每组记录来源（原 PDF 页/图名或数据集与摘要）、完整输入、
-人工预期、理由及必要确认前缀；预期先冻结后与库输出对比，不是从算法
-输出生成预期；上/下镜像和全部逐笔前缀进入回归；编译器脚本不导入
-chan、拒绝覆盖输出、fixture 两遍编译逐字节一致；逐前缀回放与未来
-毒值（前缀中加入未来数据不得改变既有结论）必须通过。
-
-### 原图几何标注
-
-`fixtures/fx_bi_originals.json` 和 `fixtures/xd_originals.json` 共 92 组
-独立相对价格标注。第 62 课定义图 1—9、第 67 课编者八种分析补图及
-第 81 课点 5/7 关系的三分支更正均覆盖；还包括第 65 课十二题/两图、
-第 71 课作者条件与编者组合、第 78 课古怪/回复区/分析补图和第 77 课
-条件结构复刻。第 67/71/78 课的作者原文与编者分析分开引用；课 77
-结构复刻不声称恢复原始行情。课 106 历史均线图面核对留在外层来源
-登记，缺 OHLC 时不反造报价。
-
-### 真实行情独立标注
-
-真实数据使用 ETF 历史数据集 `v2026-07-31-r2` 的代表 ETF（512880、
-159915、518880、588000 等），按观察日锚定复权、核验文件 SHA-256；
-整数价格按 0.001 格点核验；人工推导与库输出 100% 一致后冻结。
-
-| 版本 | 夹具/资产 | 覆盖 |
-|---|---|---|
-| 0.7.10 | `real_foundation.json` | 512880 25 根真实日线：人工合并/分型/81/106 笔及未完成 XD；全部 25 个原始日前缀 |
-| 0.8.0 | `real_xd_originals.json` | 四窗口 428 行真实线段：81/106 分叉、第一/第二种完成 XD、真实古怪线段 |
-| 0.9.0 | `real_f1_originals.json` | 六窗口 928 行两条 F1 路径与相邻 F2：固定笔 F1 38（盘整 35/上涨 2/下跌 1）、完成 XD 盘整 F1 3 |
-| 0.9.1 | `real_xd_f1.json` | 两个自然起点完成 XD 构造 F1 窗口（700 根日线、14 条完成 XD、工程 F1 up/down 各 1） |
-| 0.9.2—0.9.6 | `real_strict_trend*.json` | 严格趋势 Zn 与 a+A+b+B+c 完整角色、完成首例 C1/D1/X1/Y1（方向×路径四格闭合） |
-| 0.9.5/0.9.7/0.9.8 | 三类点夹具 | 三类买卖点成立/否决/pending 与触沿允许（margin=0）成立、xd 级触沿样本 |
-| 0.9.9 | 一类点夹具 | 一类买卖点成立（B1/C1）与不成立（no_divergence/no_new_extreme）正反例 |
-| 0.9.10 | 二类点夹具 | 二类买卖点六窗：最弱/一般/最强（二三合一）三档正反例 |
-| 0.9.11 | 因果底顶夹具 | 底/顶部完成/失败四格闭合，引发中枢与结局映射 |
-
-F1 的两条最低操作构造规则：
-
-- **F1-bi**：逐原始日前缀重新识别笔，排除仍可延伸的末笔，以固定笔进行
-  `same_level_decompose` 的无延伸切分。仅含中枢且后继已确认结束的类型
-  才冻结为 F1，单笔不直接包装为完成走势。
-- **F1-xd**：从上述固定笔重新计算线段，仅使用 `complete=True` 的 XD，
-  再做同级切分；活动 XD、仅有分型确认但后继笔尚未固定的证明均等待。
-
-这些标注仅证明各自窗口和冻结口径，不单独证明严格自动一类、因果继承
-或整体验收；也不直接充当已完成走势类型；`same_level_decompose` 的 `kind/complete` 字段
-口径见[§15.6](#156-同级分解级别递归与状态)。详细裁定算术、窗口台账
-与测试清单一律登记在本仓库正式计划 §9 的对应版本锚点。
-
-## 17. 测试与开发
-
-### 源码测试
-
-在独立包仓库根运行：
+| wheel | 可安装算法包、发行元数据与许可证；不含仓库验收资产 |
+| sdist | 包源码、包测试与最小 fixtures、工程工具及维护文档；不含 `validation/` |
+| 完整仓库 | 另含 `validation/` 的原始输入、独立标注、收据和资产工具 |
+| 维护者私有材料 | 108 课 PDF、逐课原文及笔记；理论核验须显式提供，不随仓库分发 |
+
+算法与包测试分别以 `src/chan/`、`tests/` 为真源；工程入口在 `tools/`，资产工具
+在 `validation/tools/`。独立包开发不读取外层研究项目。研究集成与平台接线由
+调用方另行验收，冻结脚本和历史产物保留各自版本。
+
+在核心库仓库根准备现代开发环境后执行：
 
 ```bash
-python -m pip install -r requirements-dev.txt  # Python 3.10+ 开发环境
-python tools/check_core.py  # 自包含包测试，sdist 可运行
-python tools/check_core.py --scope validation  # 仓库资产验收，不随发行包
-# 定向检查公开契约和 README 示例
-python -m unittest discover -s tests -p 'test_contracts.py'
+python -m pip install -r requirements-dev.txt
+python tools/check_core.py                              # 自包含包测试
+python tools/check_core.py --pattern test_contracts.py   # 文档示例与工程契约
+python tools/check_core.py --scope validation            # 完整仓库资产验收
+python tools/check_core.py --scope all                   # 两层合跑
 ```
 
-测试覆盖理论定义分支、退化输入、时间状态、组合入口等价性、输入与
-快照隔离、公开导出、版本一致和 Python 3.6 语法。README 的基础链、
-批量入口、构造状态和板块强弱示例随契约测试执行——修改 README 示例
-必须保持可执行且与输出断言一致。
+包测试可从解包 sdist 执行；资产验收需要完整仓库，缺失输入或空测试集明确失败。
+README 和使用指南的基础链、回放及独立辅助示例随契约测试执行。文档移动或示例
+修改时，须同步示例定位和源码包内容，保持相同的执行验证。
 
-`tests/` 只依赖随 sdist 分发的源码与 fixtures。`validation/tests/` 独立
-维护原始包、人工表、独立重建及工具适配验收；仓库可用 `--scope all`
-执行两层。wheel/sdist 不含 `validation/` 或需要它的开发验收工具。
-
-### 安装产物验证
-
-源码测试主动使用本仓库源码，不能证明 wheel 包含了全部文件。
-构建并安装 wheel 后另行运行隔离检查：
-
-```bash
-python -m pip install build
-python -m build
-python -m pip install --force-reinstall --no-deps dist/chan_lun_core-1.0.0-py3-none-any.whl
-python -I tools/verify_installed.py
-```
-
-检查导入路径来自安装位置、运行时与元数据版本一致、公开入口完整及
-代表性计算可运行。`-I` 避免源码路径使漏打包问题被掩盖。
-不要在源码安装环境中把常规 `import chan` 的成功当成产物验收。
-
-### 验证范围与交付
-
-CI 在 Python 3.10/3.13 构建及验收，并增加 Python 3.6/旧 numpy 与
-pandas 容器运行检查；容器通过不代替聚宽实际取数。tag 发布另有 Release
-和 PyPI 步骤。Python 3.6 语法检查、现代依赖本地运行、旧解释器旧依赖
-实跑、聚宽取数、真实行情、报告显示和研究有效性是不同层次的验证，
-任一项通过不代替其他项。
-
-聚宽已确认 `0.4.0` 可安装并导入，但这不代替全部新增算法在该环境的实跑。
-新的辅助结果不会自动接入冻结研究脚本或改变策略参数。
-
-真实行情验收使用 ETF 历史数据集 `v2026-07-31-r2`，核对 manifest 与
-所读文件 SHA-256，按观察时点锚定复权。独立标注窗口、工具回放和后续
-R7 整体验收各有明确范围，见 [仓库证据索引](validation/README.md)；
-早期全模块冒烟未出现某类点位，不等于后续独立窗口仍缺该分支。
-当前随版缺口见 §8。数据源没有历史发布版本，不能由快照证明历史因子
-从未事后修订；本地验收也不能替代聚宽实际取数与策略有效性验证。
-
-开发分层、原文核验、概念版本和交付流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-理论进度唯一维护在本仓库 [实现计划](docs/缠论理论逐一实现计划.md) §6；
-本 README 维护用法，版本历史维护在 [CHANGELOG.md](CHANGELOG.md)，
-不另设理论完成状态表。
-
-## 18. 版本与发布
-
-- 版本号在 `pyproject.toml` 与 `src/chan/__init__.py` 双处一致，由
-  `test_contracts.py` 检查；1.x 按 [API.md](API.md#1x-版本规则) 区分主、次、
-  修订版本。公开行为变化须在 [CHANGELOG.md](CHANGELOG.md) 登记并保留差异证据。
-- 阶段 tag 始终指向该版已验收的源码提交；本地 tag、远端推送、CI、
-  Release/PyPI 分别核验，不把本地完成写成已发布。
-- 升级注意：线段相关修正在 0.6.1/0.7.0/0.7.5/0.7.7/0.7.8/0.7.9 多次
-  改变旧版线段划分与完成时间（详见[§13](#13-线段边界与时间确认)与
-  [CHANGELOG.md](CHANGELOG.md)）；升级前保存旧结果并逐前缀比较。
-- 跨版本升级（0.7.x/0.8.x → 1.x）的行为变化时间线与可运行
-  指纹对比示例见 [MIGRATION.md](MIGRATION.md)。
-
-## 19. 证据、身份与常见错误
-
-公开契约（导出清单、`to_dict()` 键集、常量值域、原因码、身份与
-异常口径）的完整参考见 [API.md](API.md)；本节只给使用要点与排错。
-
-### 证据与否决原因
-
-扫描与条件入口不把"没有结果"混作"没有数据"：
-
-- `scan_first_points`（§15.13）返回 `FirstPointScan(points,
-  exclusions, completed_types)`：`exclusions` 每项
-  `(move_id, 原因码)` 保存每个完成走势被否决的首个条件；
-  `completed_types` 为完成走势数，独立计数。
-- `scan_strict_divergence`（§15.15）返回 `StrictScan(results,
-  skipped, completed_types, open_tail)`：`skipped` 同为
-  `(move_id, 原因码)`；`results` 每项的 `conditions` 逐条件记录
-  `True/False/None`（未决），`status`/`reason` 为四类返回语义与
-  原因码。
-- `strict_nested_chain`（§15.16）每重 `status` 即原因码。
-
-全部原因码值域见 [API.md](API.md) §7；原因码字符串值属于冻结
-契约，新增须排版本登记。0.13.1 起上述容器均有 `to_dict()`，可
-直接 JSON 存档。
-
-### 因果身份
-
-`move_id`（已确认走势）、`point_id`（一类候选）、`context_id`
-（反转上下文，不是数组下标）、`center_id`（因果中枢）分属不同
-身份体系；组合规则、唯一性要求与冻结语义见 [API.md](API.md) §4。
-身份须为非空字符串，重复身份在条件接口中抛 `ValueError`；输入被
-供应方修订时新建输入版本，不静默覆盖旧收据。
-
-### 常见错误
-
-| 报错/现象 | 原因与处理 |
+| 验证层 | 能证明的范围 |
 |---|---|
-| `bars[N]时间元数据无效: 'closed_dt'` | 可用时间门控入口（`analyze_available`、`replay_available`、`find_ma_points` 等）要求 bar 带 `closed_dt`/`available_dt` 元数据；补齐元数据或改用不带门控的入口（§14） |
-| `可见点位身份不能重复` / `可见上下文和中枢身份须唯一` | 同一可见视野内 `point_id`/`context_id`/`center_id` 重复；检查身份生成或数据重复 |
-| `不能跳过锚点后未接线走势或使用不一致价格` | 一类点锚点与可见走势起点时间/价格不一致；确认行情与点位同源同口径 |
-| `比较段与中枢端点须有精确行情, 不近似匹配` | 参与计算的时间点在行情里没有精确 bar；本库不做近似替代，检查行情覆盖 |
-| `离开与首次回试时间和价格须连续` | 三类点输入的走势序列不连续；`ConfirmedMove` 须前尾后首相接 |
-| `注入force_fn时必须以force_method声明方法身份` | 力度注入缺 `force_method`；补非空方法名（§15.15） |
-| `可见行情须为连续前缀, 不允许跳过迟到历史行` | 迟到历史可能重算 EMA；必须声明新输入版本，不能跳过缺口后继续 |
-| `json.dumps` 失败（日期/对象不可序列化） | 用各对象的 `to_dict()`（时间字段已统一 `str()` 化）而不是序列化对象本身 |
-| `import chan` 后无 `__version__` | 导入了同名目录或遮蔽模块；按[§2](#2-安装与环境检查)排查 |
-| 升级后结果与旧版不一致 | 按 1.x 兼容规则登记行为修正（CHANGELOG 标注差异并附收据）；升级前保存旧结果并逐前缀比较（§5、§18） |
+| Python 3.6 语法检查 | 包源码符合目标语法；不能代替旧解释器和旧依赖实跑 |
+| 现代环境包测试 | 理论分支、输入边界、API、回放与组合契约在该环境下通过 |
+| 旧解释器 / 旧依赖实跑 | 对应环境的运行结果；不能代替平台取数与数据时效验证 |
+| wheel / 解包 sdist | 安装导入与源码分发完整性；单独检查产物而非仅从源码导入 |
+| 原文与独立真实标注 | 所核验定义、样本和价格版本的证据；不扩大到未覆盖分支 |
+| 平台与策略验证 | 调用方环境、取数、调度和研究结论的专项证据 |
 
-## 免责声明
+CI 定义现代 Python 3.10 / 3.13、Python 3.6 旧依赖及仓库资产验收，并分别检查
+wheel 与解包 sdist；某次提交是否通过，以该提交的运行记录为准。仓库历史结果见
+[验收索引](https://github.com/lushi78778/chan-lun/blob/main/validation/README.md)，不把旧测试数量写成当前全量通过结论。
 
-本库仅用于研究与学习。缠论信号是对价格结构的客观描述，**不构成任何
-投资建议**；交易有风险，使用本库产生的一切后果由使用者自行承担。
+目录和文档职责见 [docs/README.md](https://github.com/lushi78778/chan-lun/blob/main/docs/README.md)。架构、原文核验、开发流程与
+工程命令分别维护在 [ARCHITECTURE](https://github.com/lushi78778/chan-lun/blob/main/docs/architecture.md)、[CONTRIBUTING](https://github.com/lushi78778/chan-lun/blob/main/CONTRIBUTING.md)、
+[AGENTS](https://github.com/lushi78778/chan-lun/blob/main/AGENTS.md) 与[工具索引](https://github.com/lushi78778/chan-lun/blob/main/tools/README.md)，README 不另维护开发规则或理论进度表。
 
-## 许可证
+## 版本与升级
 
-MIT，见 [LICENSE](LICENSE)。
+1.x 的公开入口、字段、时间、身份及异常契约见 [API](https://github.com/lushi78778/chan-lun/blob/main/docs/api.md#1x-%E7%89%88%E6%9C%AC%E8%A7%84%E5%88%99)。算法
+修正需要固定输入与逐前缀差异证据；输入历史被修订或候选随新证据变化，按对应
+输入版本和时间契约解释。升级前保留旧结果，按[迁移指南](https://github.com/lushi78778/chan-lun/blob/main/docs/migration.md)逐项核对。
+
+版本号在 `pyproject.toml` 与 `src/chan/__init__.py` 保持一致。工程治理按变更影响
+纳入修订、次或主版本；只有内部维护的提交可暂不发布，已发布产物不覆盖。本地提交、标签、远端推送、CI、GitHub
+Release 和 PyPI 分别核验；已有标签保持原指向，新增阶段标签须有明确的交付或
+复现价值，推送单独评估。版本事实见 [CHANGELOG](https://github.com/lushi78778/chan-lun/blob/main/CHANGELOG.md)，历史收据保留当时记录。
+
+## 许可证与使用责任
+
+本项目采用 [MIT](https://github.com/lushi78778/chan-lun/blob/main/LICENSE) 许可证。计算结果用于结构研究与辅助分析，不构成投资
+建议；交易决策、风控与执行由调用方负责。

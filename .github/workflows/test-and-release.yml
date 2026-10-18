@@ -22,10 +22,18 @@ jobs:
         with:
           python-version: "3.10"
       - uses: astral-sh/setup-uv@v5
+      - name: Install the pinned development baseline
+        run: |
+          uv pip install --system -r requirements-dev.txt
+          uv pip freeze
       - name: Check tag and source version before building
         run: python tools/release_artifacts.py check-source --tag "$RELEASE_TAG"
       - name: Build candidate once
-        run: uv build
+        run: python -m build --no-isolation
+      - name: Check package description before sealing
+        run: |
+          python -m twine check --strict dist/*.whl dist/*.tar.gz
+          python tools/release_artifacts.py check-description
       - name: Seal candidate metadata and digests
         run: python tools/release_artifacts.py seal --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
       - uses: actions/upload-artifact@v4
@@ -56,15 +64,24 @@ jobs:
       - name: Verify candidate before installation
         run: python tools/release_artifacts.py verify --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
       - name: Install sealed wheel
-        run: uv pip install --system dist/*.whl
+        run: |
+          uv pip install --system -r requirements-dev.txt
+          uv pip install --system --force-reinstall --no-deps dist/*.whl
       - name: Verify installed wheel in isolation
         run: python -I tools/verify_installed.py
-      - name: Run self-contained package tests from sdist
+      - name: Run static checks and package coverage from sdist
         run: |
           mkdir -p "$RUNNER_TEMP/chan-sdist"
           tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/chan-sdist"
           cd "$RUNNER_TEMP/chan-sdist"/chan_lun_core-*
-          python tools/check_core.py -v
+          python -m ruff check --no-cache src/chan tools tests
+          python -m coverage run --data-file "$RUNNER_TEMP/chan-core.coverage" tools/check_core.py -v
+          python -m coverage report --data-file "$RUNNER_TEMP/chan-core.coverage"
+          python -m coverage json --data-file "$RUNNER_TEMP/chan-core.coverage" -o "$RUNNER_TEMP/chan-core-coverage.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: ${{ runner.temp }}/chan-core-coverage.json
 
   validation:
     needs: build
@@ -86,7 +103,10 @@ jobs:
       - name: Verify and install candidate for repository asset checks
         run: |
           python tools/release_artifacts.py verify --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
-          uv pip install --system dist/*.whl
+          uv pip install --system -r requirements-dev.txt
+          uv pip install --system --force-reinstall --no-deps dist/*.whl
+      - name: Check repository validation tools
+        run: python -m ruff check --no-cache validation/tools validation/tests
       - name: Run independent repository asset validation
         run: python tools/check_core.py --scope validation -v
 

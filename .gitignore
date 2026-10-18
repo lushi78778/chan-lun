@@ -9,3 +9,7 @@ build/
 __pycache__/
 *.py[cod]
 .DS_Store
+
+# 本地质量检查产物
+.coverage*
+.ruff_cache/

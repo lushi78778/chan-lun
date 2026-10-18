@@ -1,0 +1,92 @@
+{
+  "schema": "chan-documentation-governance-v1",
+  "verified_at": "2026-10-18T17:00:14.979283+08:00",
+  "scope": "README 项目入口与配套文档职责治理，不改变算法和实际 API 行为",
+  "state": "local_uncommitted_working_tree",
+  "baseline": {
+    "baseline_commit": "b84b54c2ba94e598c211dd800853cdf2e620ed4e",
+    "version": "1.0.0",
+    "algorithm_modules_unchanged": 41,
+    "fixtures_unchanged": 16,
+    "pyproject_unchanged": true,
+    "formal_plan_unchanged": true,
+    "formal_plan_sha256": "d7bfabef3a600393d6ce48398ca977e09d47ebff98e86025cf47703287a6e868",
+    "existing_validation_unchanged_before_receipt": true,
+    "local_tag_count": 80
+  },
+  "changes": [
+    "README 重写为定位、入门输出解释、输入与结果、API 选择、时间语义、项目结构和验证边界",
+    "详细用法和安装排错分别放 docs/usage.md、docs/installation.md；进度、契约和版本事实由各自真源维护",
+    "修正 XD 证据端点、底层序列化、未来数据隔离、独立预期冻结、均线候选前置吻和过时能力说明",
+    "示例执行定位随文档迁移，保留基础链等价与独立辅助示例验证；新增 README 展示摘要、空输入和回放核对"
+  ],
+  "environment": {
+    "python": "3.13.15",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5"
+  },
+  "checks": {
+    "source_package": {
+      "command": "../../.venv/bin/python tools/check_core.py",
+      "cwd": "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/src/chan",
+      "passed": 813,
+      "seconds": 61.128
+    },
+    "sdist_package": {
+      "command": "/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/.venv/bin/python tools/check_core.py",
+      "cwd": "/private/tmp/chan-readme-governance-20261018/unpacked/chan_lun_core-1.0.0",
+      "passed": 813,
+      "seconds": 61.489,
+      "log_sha256": "4d45a8767081fa3dfde3089d9b3a1d8054d891acb1fb3e029fd37c81a4e8111c"
+    },
+    "wheel_isolated_import": {
+      "passed": true,
+      "command": "../../.venv/bin/python -I tools/verify_installed.py /private/tmp/chan-readme-governance-20261018/dist/chan_lun_core-1.0.0-py3-none-any.whl"
+    },
+    "documentation": {
+      "documents": 9,
+      "local_links": 107,
+      "failures": []
+    },
+    "artifacts": {
+      "wheel": "/private/tmp/chan-readme-governance-20261018/dist/chan_lun_core-1.0.0-py3-none-any.whl",
+      "sdist": "/private/tmp/chan-readme-governance-20261018/dist/chan_lun_core-1.0.0.tar.gz",
+      "modules_identical": 41,
+      "documentation_identical": [
+        "README.md",
+        "API.md",
+        "ARCHITECTURE.md",
+        "CONTRIBUTING.md",
+        "MIGRATION.md",
+        "CHANGELOG.md",
+        "docs/README.md",
+        "docs/usage.md",
+        "docs/installation.md",
+        "tests/README.md",
+        "tests/test_contracts.py",
+        "tests/test_api_contract.py"
+      ],
+      "validation_excluded": true,
+      "readme_metadata_identical": true,
+      "artifacts": {
+        "chan_lun_core-1.0.0-py3-none-any.whl": "3fd3f046bd54264c5a4671167bb6dfe1ae071ca18c4ce95de0237d8915e72ae5",
+        "chan_lun_core-1.0.0.tar.gz": "0f81619b4384a457856aa2c3235e71a03943e07719faa0edf41d860e3ddc2018"
+      }
+    },
+    "updated_tests_python36_grammar": true,
+    "git_diff_check": true
+  },
+  "not_run": [
+    "仓库资产全量重验",
+    "旧解释器旧依赖容器",
+    "聚宽平台",
+    "远端 CI 或发布验证"
+  ],
+  "delivery": {
+    "commit_created": false,
+    "tags_created_moved_deleted": false,
+    "pushed": false,
+    "release_or_pypi_publication": false,
+    "outer_repository_files_changed": false
+  }
+}

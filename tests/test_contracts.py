@@ -6,18 +6,24 @@
 """
 
 import ast
-import math
+import json
 import os
 import re
 import sys
 import unittest
-from datetime import datetime, timedelta
+from urllib.parse import unquote, urlsplit
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _SRC = os.path.join(_ROOT, "src")
 sys.path.insert(0, _SRC)
 
 import chan  # noqa: E402
+
+
+def _python_examples(relative_path):
+    """文档示例按其维护位置读取；路径也须在解包 sdist 中存在。"""
+    with open(os.path.join(_ROOT, relative_path), encoding="utf-8") as f:
+        return re.findall(r"```python\n(.*?)```", f.read(), re.S)
 
 
 class TestPackageContracts(unittest.TestCase):
@@ -70,43 +76,60 @@ class TestPackageContracts(unittest.TestCase):
                     ast.parse(source, filename=name)
 
     def test_readme_pipeline_runs(self):
-        """公开快速示例以合成行情运行, 拦截返回值误用与级别接线错误。"""
-        import pandas as pd
-
+        """入门实际输出与展示一致，指南分步链仍与批量入口等价。"""
         with open(os.path.join(_ROOT, "README.md"), encoding="utf-8") as f:
-            examples = re.findall(r"```python\n(.*?)```", f.read(), re.S)
+            readme = f.read()
+        namespace = {}
+        for code in _python_examples("README.md"):
+            exec(code, namespace)
+        displayed = json.loads(re.search(r"```json\n(.*?)```", readme, re.S).group(1))
+        self.assertEqual(namespace["summary"], displayed)
+        self.assertEqual(json.loads(namespace["json_text"]), namespace["snapshot"])
+        self.assertEqual(namespace["current"].to_dict(), namespace["snapshot"])
+        self.assertEqual(namespace["observed"].result.to_dict(), namespace["snapshot"])
+
+        examples = _python_examples(os.path.join("docs", "usage.md"))
         pipeline = next(code for code in examples if "# 1. 行情 DataFrame" in code)
-        closes = [20.0 + 3.0 * math.sin(i / 6.0) + i / 80.0 for i in range(160)]
-        frame = pd.DataFrame({
-            "open": closes, "close": closes,
-            "high": [price + 0.3 for price in closes],
-            "low": [price - 0.3 for price in closes],
-            "volume": [1000.0] * len(closes),
-        }, index=[datetime(2025, 1, 1) + timedelta(days=i) for i in range(160)])
-        namespace = {"df": frame}
         exec(pipeline, namespace)
         self.assertTrue(namespace["bis"])
         self.assertIsInstance(namespace["buys"], list)
         self.assertIsInstance(namespace["sells"], list)
-        batch_example = next(code for code in examples if "snapshot = result.to_dict()" in code)
-        exec(batch_example, namespace)
         self.assertEqual([bi.to_dict() for bi in namespace["result"].bis],
                          [bi.to_dict() for bi in namespace["bis"]])
-        self.assertEqual(namespace["snapshot"]["as_of"], str(frame.index[-1]))
+        self.assertEqual(namespace["snapshot"]["as_of"], str(namespace["df"].index[-1]))
 
     def test_readme_auxiliary_examples_run(self):
         """新辅助API的文档示例必须可独立执行, 防确认时间与成员口径误用。"""
-        with open(os.path.join(_ROOT, "README.md"), encoding="utf-8") as f:
-            examples = re.findall(r"```python\n(.*?)```", f.read(), re.S)
+        examples = _python_examples(os.path.join("docs", "usage.md"))
         for marker in ["first = FormationEvent", "report = sector_strength",
                        "context = SecondPointContext", "available_bars =", "third_moves =", "fractal_box =", "ma_point_bars =", "completion_prices ="]:
             code = next(code for code in examples if marker in code)
             exec(code, {})
 
+    def test_readme_links_work_outside_repository(self):
+        """README 同时进入 PyPI 长描述，链接不能依赖仓库目录作为基址。"""
+        with open(os.path.join(_ROOT, "README.md"), encoding="utf-8") as f:
+            targets = re.findall(r"\[[^\]]*\]\(([^)]+)\)", f.read())
+        self.assertTrue(targets)
+        prefix = "/lushi78778/chan-lun/blob/main/"
+        for target in targets:
+            with self.subTest(target=target):
+                url = urlsplit(target)
+                self.assertEqual(url.scheme, "https")
+                self.assertTrue(url.netloc)
+                if url.netloc == "github.com" and url.path.startswith(prefix):
+                    relative = unquote(url.path[len(prefix):])
+                    # 仓库资产索引只在线访问；包测试不读取 validation。
+                    if relative == "validation/README.md":
+                        continue
+                    path = os.path.realpath(os.path.join(_ROOT, relative))
+                    self.assertTrue(path.startswith(_ROOT + os.sep))
+                    self.assertTrue(os.path.isfile(path), path)
+
     def test_migration_examples_run(self):
-        """MIGRATION.md 迁移指纹示例可独立执行并落盘, 防文档示例漂移。"""
+        """迁移指南中的指纹示例可独立执行并落盘，防文档示例漂移。"""
         import tempfile
-        with open(os.path.join(_ROOT, "MIGRATION.md"), encoding="utf-8") as f:
+        with open(os.path.join(_ROOT, "docs", "migration.md"), encoding="utf-8") as f:
             examples = re.findall(r"```python\n(.*?)```", f.read(), re.S)
         self.assertTrue(examples)
         cwd = os.getcwd()

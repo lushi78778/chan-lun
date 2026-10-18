@@ -1,8 +1,9 @@
 # 公开 API 与行为契约
 
 适用版本：1.x（契约建立于 0.13.x 的 R6 冻结阶段，1.0.0 沿用）。本文件是**契约参考**：回答
-"能调用什么、返回什么、什么算稳定"。用法教程见 [README.md](README.md)，分层与输入契约见
-[ARCHITECTURE.md](ARCHITECTURE.md)，仓库职责见 [目录索引](docs/README.md)。
+"能调用什么、返回什么、什么算稳定"。入门见 [README.md](../README.md)，详细用法见
+[使用指南](usage.md)，分层与输入契约见
+[ARCHITECTURE.md](architecture.md)，仓库职责见 [目录索引](README.md)。
 理论进度唯一维护在实现计划 §6。
 
 ## 1. 冻结范围与变更规则
@@ -12,12 +13,14 @@
 | 导出名与 `__all__` | 冻结 | 只增不减不改名；删除须升主版本 |
 | `to_dict()` 键集 | 冻结 | 只增不改名不删；新增须另排版本并登记 |
 | 常量/枚举字符串值 | 冻结 | 值即协议，禁止改值重命名 |
-| 时间字段语义 | 冻结 | `str()` 化口径、None 语义不变 |
+| 时间字段语义 | 冻结 | 各对象的时间转换与 None 语义保持，具体见 §3、§5 |
 | 异常类型 | 冻结 | `ValueError`/`TypeError` 分类不变 |
 | 算法输出 | 按版本登记 | 相同输入与参数在同版内可复现；算法修正须旧/新逐点差异收据与 CHANGELOG，不将候选尾部修订当作兼容破坏 |
 | 模块私有成员（`_` 开头） | 无契约 | 不向调用方保证稳定性；库内共享数学模块按架构约定使用 |
 
 ### 1.x 版本规则
+
+按 [SemVer 2.0.0](https://semver.org/lang/zh-CN/) 评估变更，版本号与实际发布状态分别记录。
 
 - 主版本：删除或重命名公开入口/字段，改变时间含义、空值含义、参数默认
   语义或异常分类等不兼容契约；提供迁移说明和行为差异证据。
@@ -26,7 +29,9 @@
 - 修订版本：修复实现偏离既有文档契约的缺陷。即使修正算法输出，也须保留
   旧/新固定样本与逐前缀差异收据、解释影响范围并写入 CHANGELOG；若修正
   本身需要改变公开契约，则按主版本处理。
-- 仅工程治理或说明文档维护可独立提交，不自动升包版本或重发已有产物。
+- 兼容的打包、安装、发行说明或文档错误修正可纳入修订版本；工程治理随
+  实际影响迭代 1.x。仅内部维护可独立提交暂不发布，不为每笔提交机械升版；
+  已发布版本的内容与标签保持不变。
 - 输入被修订、参数改变、未完成尾部按新证据演进，按既有输入版本和时间
   契约解释；它们与同一输入的实现回归分别记录。
 
@@ -40,11 +45,12 @@
 
 | 层 | 模块 | 代表入口 | 输入 | 性质 |
 |---|---|---|---|---|
-| 行情与基础结构 | `bars` `fx` `bi` `xd` `zs` `bc` | `normalize_bars` `find_fxs` `find_bis` `find_xds` `find_zs` | 原始 bar 序列 | 结构识别 |
+| 行情与基础结构 | `bars` `fx` `bi` `xd` `zs` `bc` | `normalize_bars` `find_fxs` `find_bis` `find_xds` `find_zs` | 原始行情及各入口要求的上游结构 | 结构识别 |
 | 批量组合与回放 | `analysis` `replay` `availability` | `analyze_bars` `analyze_at` `replay_bars` `analyze_available` | bar 序列(+观察时点) | 接线组合 |
 | 三类买卖点候选 | `bs` | `find_buy_points` `find_sell_points` | 笔级结构 | 笔级简化候选 |
 | 两级辅助核对 | `cross30` | `confirm_buy3_30m` `confirm_sell3_30m` | 日线事件/边界与截断的 30m 行情 | 工程条件满足，不自动认定严格理论确认 |
-| 严格条件接口 | `first` `second` `third` `strict` `point_chain` `completion` `bottom` `fractal_range` | `scan_first_points` `find_second_points` `find_third_points` `scan_strict_divergence` `analyze_point_chain` | 调用方已确认的次级走势 | 条件判定，不自动升级 |
+| 已确认走势上的条件与组合 | `first` `second` `third` `strict` `point_chain` `completion` | `scan_first_points` `find_second_points` `find_third_points` `scan_strict_divergence` `analyze_point_chain` | 已确认次级走势及各入口要求的行情、上下文或力度方法 | 辅助候选、条件判定和组合分别解释 |
+| 构造状态 | `bottom` `fractal_range` | `formation_state` `fractal_range_state` | 已确认事件，或已确认分型区间及后续可用行情 | 事件构造与分型区间辅助状态分别解释 |
 | 因果谱系与诊断 | `lineage` `rounds` `causal_graph` | `track_center_lineage` `track_rounds` `causal_graph_dot` | 走势/单元序列 | 事件谱系 |
 | 理论辅助模块 | `gap` `kiss` `strength` `turn` `minor_turn` `zhongyin` `osc` `biaoli` `levels` `sector` `fxpower` `macd_guard` `ma_points` `nest` `decompose` `recurse` | `classify_gap` `find_kisses` `classify_bc_turn` `track_zhongyin` `oscillation_monitor` `decompose_levels` … | 各模块声明的最小输入 | 课理论工程化，阈值已声明 |
 
@@ -52,17 +58,18 @@
 
 | 字段 | 含义 | 序列化 |
 |---|---|---|
-| `dt` | 结构所在位置（分型中心 K、笔端点、bar 时间） | `str()` |
+| `dt` | 结构所在位置（分型中心 K、笔端点、bar 时间） | 依对象契约；`NewBar` 的例外见 §5 |
 | `start_dt` / `end_dt` | 走势/段/中枢起止结构时间 | `str()` |
 | `closed_dt` | bar 收盘时刻（输入元数据） | `str()` |
 | `available_dt` | 行情实际到达时刻（实际可用时间门控） | `str()` |
 | `confirmed_dt` | 全部被消费证据的最晚到达/成立时刻，不早于任何证据 | `str()` |
 | `ended_dt` | 中阴/上下文实际结束确认时刻；未知为 `None` | `str()` 或 `None` |
 | `as_of` | 输入截止观察时刻；空输入为 `None` | `str()` 或 `None` |
-| `evidence_dt` | 线段成立证据时刻 | `str()` |
+| `evidence_dt` | XD 最后一笔证据的端点；不等于实际行情确认时间 | `str()` 或 `None` |
 
 **结构时间 ≠ 确认时间 ≠ 可用时间**。按端点时间过滤全样本结果不能
-还原历史可见状态；回放必须逐前缀重算或读当时快照（详见 README §5）。
+还原历史可见状态；回放必须逐前缀重算或读当时快照，见
+[时间与回放指南](usage.md#2-按观察时点计算与追踪修订)。
 
 ## 4. 身份体系
 
@@ -81,9 +88,15 @@
 
 ## 5. 序列化契约（`to_dict()` 键集冻结）
 
-统一口径：时间字段 `str()` 化（`None` 保持 `None`）；输出可直接
-`json.dumps`；键集为冻结契约，由 `tests/test_api_contract.py` 与
-各模块测试固化。属性本身保持原类型，`to_dict()` 不回写。
+各对象的 `to_dict()` 键集与字段类型由 `tests/test_api_contract.py` 和模块测试
+固化，不要求所有底层对象共用一个 JSON schema。属性本身保持原类型，
+序列化不回写对象。
+
+`AnalysisResult.to_dict()` 将时间转为字符串、数组转为列表，并生成独立的
+JSON 可写快照。底层 `NewBar.to_dict()` 则保留原始 `dt` 类型，只复制
+`elements`；若 `dt` 是 datetime/Timestamp，调用方须自行转换，或通过
+`AnalysisResult.to_dict()` 存档。不能将任意底层对象或其 dict 一概视为可直接
+`json.dumps`。其他对象的时间和空值转换按下表、各类 docstring 与模块测试执行。
 
 核心链键集（0.13.1 快照）：
 
@@ -173,4 +186,4 @@ docstring 与模块测试。
 - 工程阈值（`WEDGE_MIN_RUN`、boll 参数、`fxpower` 档位等）已逐项
   声明理论/工程性质（见各模块 docstring 与《辅助模块能力与证据
   矩阵》）。
-- 已发布版本保留；升级前保存旧结果并逐前缀比较（README §5）。
+- 已发布版本保留；升级前保存旧结果并逐前缀比较，见[迁移指南](migration.md)。

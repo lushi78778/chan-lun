@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """候选版公开 API 契约快照(0.13.2, R6 §11.9 第 1—3 条)。
 
-API.md 是人读契约, 本文件是机器可查快照: 导出清单、常量值域与
+docs/api.md 是人读契约, 本文件是机器可查快照: 导出清单、常量值域与
 核心链 to_dict 键集。任一快照变化必须另排版本并在 CHANGELOG
 登记(行为变化附差异收据), 不允许静默修改; 新增导出须同步更新
-本快照与 API.md。
+本快照与 docs/api.md。
 """
 
 import math
@@ -120,7 +120,7 @@ FROZEN_CONSTANTS = {
     "REASON_EMPTY": "empty",
 }
 
-#: 核心链 to_dict 键集冻结快照(API.md §5)。
+#: 核心链 to_dict 键集冻结快照(docs/api.md §5)。
 FROZEN_KEY_SETS = {
     "AnalysisResult": ["as_of", "bi_trends", "bi_zss", "bis",
                        "buy_points", "dea", "dif", "fxs", "hist",
@@ -143,7 +143,7 @@ FROZEN_KEY_SETS = {
 
 
 def sine_bars():
-    """与 README §3 同源合成行情(160 根日线)。"""
+    """与 README 快速开始同源的合成行情(160 根日线)。"""
     closes = [20.0 + 3.0 * math.sin(i / 6.0) + i / 80.0
               for i in range(160)]
     frame = pd.DataFrame({
@@ -175,7 +175,7 @@ class TestExportSnapshot(unittest.TestCase):
 
 
 class TestCoreChainKeySets(unittest.TestCase):
-    """核心链 to_dict 键集冻结(API.md §5 表)。"""
+    """核心链 to_dict 键集冻结(docs/api.md §5 表)。"""
 
     @classmethod
     def setUpClass(cls):
