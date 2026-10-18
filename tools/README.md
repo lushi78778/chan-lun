@@ -4,6 +4,18 @@
 验收收据与冻结输入包统一归档在 `../validation/`, 收据链说明见
 [validation/README.md](../validation/README.md)。
 
+## 独立工程验收
+
+`python tools/check_core.py` 默认运行自包含包测试，支持
+`--pattern test_模块.py` 与 `-v`。入口也可用绝对路径从其他目录启动，
+明确使用本仓库源码并将相同源码路径传给子进程；不读取外层项目。
+仓库资产验收使用 `--scope validation`，两层合跑使用 `--scope all`；
+`validation/`、其测试和相关数据工具不随 wheel/sdist 分发。
+`release_artifacts.py check-source/seal/verify` 负责标签、产物元数据和摘要
+闭环；它只核验，不执行构建或发布。
+包安装检查使用 `python tools/diagnose_chan.py`，wheel 隔离检查使用
+`python -I tools/verify_installed.py`，两类检查与源码验收分别记录。
+
 ## 真实行情验收（verify_*）
 
 | 工具 | 用途 | 示例 |

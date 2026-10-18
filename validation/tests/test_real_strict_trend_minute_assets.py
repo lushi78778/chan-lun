@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""0.9.6完成严格趋势5m粒度标注的来源、独立编译与人工表防错契约。"""
+"""0.9.4完成严格趋势分钟粒度标注的来源、独立编译与人工表防错契约。"""
 import ast
 import copy
 import importlib.util
@@ -10,10 +10,10 @@ import sys
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'tools/gen_real_strict_trend.py'
-MANUAL = ROOT / 'validation/chan-real-strict-trend-manual-0.9.6.json'
-FIXTURE = ROOT / 'tests/fixtures/real_strict_trend_5m.json'
+MANUAL = ROOT / 'validation/chan-real-strict-trend-manual-0.9.4.json'
+FIXTURE = ROOT / 'tests/fixtures/real_strict_trend_minute.json'
 
 
 def compiler():
@@ -21,7 +21,7 @@ def compiler():
     sys.path.insert(0, str(ROOT / 'tools'))
     try:
         spec = importlib.util.spec_from_file_location(
-            'real_strict_trend_5m_compiler', TOOL)
+            'real_strict_trend_minute_compiler', TOOL)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
@@ -38,7 +38,7 @@ def packet_of(case):
     return path, json.loads(path.read_text())
 
 
-class TestRealStrictTrend5mAssets(unittest.TestCase):
+class TestRealStrictTrendMinuteAssets(unittest.TestCase):
     def test_frozen_sources_and_independent_rebuild(self):
         """原始包与人工表保真；重复编译逐字节一致且不能覆盖证据。"""
         tool = compiler()
@@ -50,11 +50,11 @@ class TestRealStrictTrend5mAssets(unittest.TestCase):
         self.assertEqual(labels['schema_version'],
                          'chan-real-strict-trend-v1')
         self.assertEqual({case['window_key'] for case in labels['cases']},
-                         {'Y1'})
+                         {'D1', 'X1'})
         for case in labels['cases']:
             packet = ROOT / 'validation' / case['source']['packet']
             self.assertEqual(case['source']['sha256'], tool.digest(packet))
-            self.assertEqual(case['granularity'], '5m')
+            self.assertEqual(case['granularity'], '60m')
             data = json.loads(packet.read_text())
             self.assertEqual(data['rows'], case['raw_rows'])
             self.assertEqual(
@@ -80,16 +80,16 @@ class TestRealStrictTrend5mAssets(unittest.TestCase):
             self.assertEqual(output.read_bytes(), FIXTURE.read_bytes())
 
     def test_reject_corrupt_completed_role_and_ledger_tables(self):
-        """Y1完成正例角色算术、冻结互斥、证明段与台账被篡改时直接拒绝。"""
+        """D1完成正例角色算术、冻结互斥、证明段与台账被篡改时直接拒绝。"""
         tool = compiler()
-        case = [c for c in manual_cases() if c['window_key'] == 'Y1'][0]
+        case = [c for c in manual_cases() if c['window_key'] == 'D1'][0]
         path, data = packet_of(case)
         changes = [
             ('expected_bis',
-             lambda c: c['expected_bis'][0].__setitem__(3, 9703)),
-            ('zn_step', lambda c: c['roles']['B']['zn'].__setitem__(1, 9)),
-            ('zd', lambda c: c['roles']['B'].__setitem__('zd', 9340)),
-            ('dd', lambda c: c['roles']['B'].__setitem__('dd', 9109)),
+             lambda c: c['expected_bis'][0].__setitem__(3, 1208)),
+            ('zn_step', lambda c: c['roles']['B']['zn'].__setitem__(1, 7)),
+            ('zd', lambda c: c['roles']['B'].__setitem__('zd', 1140)),
+            ('dd', lambda c: c['roles']['B'].__setitem__('dd', 1089)),
             ('B_closed_by',
              lambda c: c['roles']['B'].__setitem__('closed_by', 10)),
             ('B_frozen_removed',
@@ -104,7 +104,7 @@ class TestRealStrictTrend5mAssets(unittest.TestCase):
              lambda c: c['roles']['c'].__setitem__('outcome', 'fail')),
             ('proof_removed', lambda c: c['roles'].pop('proof')),
             ('proof_unit', lambda c: c['roles']['proof'].__setitem__('unit', 11)),
-            ('gap', lambda c: c['roles'].__setitem__('gap_ticks', 160)),
+            ('gap', lambda c: c['roles'].__setitem__('gap_ticks', 28)),
             ('ledger', lambda c: c['ledger'][0].__setitem__(1, 3)),
             ('status_ongoing',
              lambda c: c['trend'].__setitem__('status', 'ongoing')),
@@ -120,22 +120,22 @@ class TestRealStrictTrend5mAssets(unittest.TestCase):
                     tool.compile_case(broken, data, path)
 
     def test_reject_corrupt_xd_event_and_audit_tables(self):
-        """Y1的XD组成、确认理由与粒度被篡改时直接拒绝。"""
+        """X1的XD组成、确认理由与粒度被篡改时直接拒绝。"""
         tool = compiler()
-        case = [c for c in manual_cases() if c['window_key'] == 'Y1'][0]
+        case = [c for c in manual_cases() if c['window_key'] == 'X1'][0]
         path, data = packet_of(case)
         changes = [
+            ('expected_bis',
+             lambda c: c['expected_bis'][0].__setitem__(3, 1682)),
             ('xd_too_short',
-             lambda c: c['xd_events'][0].__setitem__(1, 6)),
+             lambda c: c['xd_events'][0].__setitem__(1, 4)),
             ('xd_mode', lambda c: c['xd_events'][0].__setitem__(2, 3)),
             ('xd_mode_bool',
              lambda c: c['xd_events'][0].__setitem__(2, True)),
             ('xd_proof_oob',
-             lambda c: c['xd_events'][-1].__setitem__(3, 300)),
+             lambda c: c['xd_events'][-1].__setitem__(3, 112)),
             ('xd_non_contiguous',
-             lambda c: c['xd_events'][1].__setitem__(0, 2)),
-            ('xd_first_three_gap',
-             lambda c: c['xd_events'][0].__setitem__(0, 0)),
+             lambda c: c['xd_events'][1].__setitem__(0, 7)),
             ('audit_short', lambda c: c['xd_audit'].pop()),
             ('audit_kind', lambda c: c['xd_audit'][0].__setitem__(
                 'confirm_kind', 'second_fx')),

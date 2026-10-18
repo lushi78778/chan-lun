@@ -8,14 +8,14 @@
 - 正式计划为本仓库
   [`docs/缠论理论逐一实现计划.md`](docs/缠论理论逐一实现计划.md),
   **§6 是唯一实现进度表**。
-- `../../.deveco/plans/1791553935604-mighty-otter.md` 为维护者外层
-  工作区的正式计划入口, 不随本仓库分发; 初始设计可从 Git 历史查阅,
-  约束、版本纪律和进度以正式计划为准。
+- 本仓库的协作规则见 [AGENTS.md](AGENTS.md)。维护者外层工作区的
+  计划链接仅供导航，独立开发与验收不依赖外层目录。
 - 理论真源材料（108 课 PDF 与逐课文本等版权材料）保存在维护者私有
   工作区, 不随本仓库分发; 没有原文就不能完成理论核验。README 只描述
   使用方式, 本文件只描述开发流程, 均不另维护理论实现进度。
 - 验收收据与只读验证工具已在本仓库 `validation/` 与 `tools/` 维护,
-  收据链说明见 [validation/README.md](validation/README.md)。
+  收据链说明见 [validation/README.md](validation/README.md)；`validation/`
+  是仓库开发资产，不进入 wheel/sdist。
 
 ## 分层与抽象边界
 
@@ -46,28 +46,33 @@
 
 1.0 前允许重构新版本, 但需说明公开行为变化并保留旧版本。工程维护
 与概念实现分开登记; 不为整理测试或抽取内部函数抢占下一个概念版号。
+1.0 及之后遵循 API.md 的冻结契约，公开行为修正仍需版本登记与行为差异证据。
 
 ## 验证入口
 
-包仓库根运行(可用已准备的 Python 环境):
+在本仓库根准备环境并运行：
+
+```bash
+python -m pip install -e .
+python tools/check_core.py
+python tools/check_core.py --pattern test_contracts.py
+python tools/check_core.py --scope validation  # 仓库级资产验收
+python tools/check_core.py --scope all
+```
+
+`check_core.py` 自动定位本仓库，只发现本仓库 `tests/test_*.py`，检查
+源码与元数据版本一致，并将同一源码路径传给子进程。资产测试在
+`validation/tests/` 单独维护，包测试不加载它们。可从任意 cwd
+以绝对路径启动; 空测试集明确失败。标准入口仍可使用：
 
 ```bash
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-完整 Chan checkout 根运行:
-
-```bash
-.venv/bin/python tools/check_project.py --scope core
-.venv/bin/python tools/check_project.py
-```
-
-统一入口显式将同一源码路径传给子进程；完整项目开发依赖安装使用
-`python -m pip install -r requirements-dev.txt`（Python 3.10+）。
-项目 `tests/test_core.py` 自动扫描本仓库 `tests/test_*.py`, 包测试只维护
-一份。新增文件/测试类自动进入项目全量测试, 无需手写 shim。只跑核心库
-项目入口可用 `--pattern test_core.py`; 定向跑某个模块可直接在包内
-discover 指定文件名。
+CI 集中构建一次候选 wheel/sdist，冻结提交、版本和摘要清单；现代与
+Python 3.6 从解包 sdist 执行包测试，资产验收另行执行。两个发布渠道只
+消费已验收的同一批产物，上传前再次校验标签、元数据与摘要。外层研究项目独立维护集成测试与固定依赖; 联调外层属于单独验收，
+不由本仓库加载，也不以外层测试替代本仓库测试。
 
 `tests/test_contracts.py` 自动检查版本双处一致、顶层导出与 Python 3.6
 语法, 随同一套测试进入现有 CI。语法通过不证明旧解释器及旧依赖可运行;
@@ -76,8 +81,8 @@ Python 与 wheel 运行时的最低 Python 是两项不同的环境要求。
 
 ## 仓库交付
 
-包提交与发版在本目录内完成。完整项目需要交付时, 再在外层提交计划、
-测试桥接与 `src/chan` 子模块引用; 子模块指针只引用已存在的包提交。
+包提交与发版在本目录内完成。外层研究项目需要升级依赖时, 独立验证
+集成行为后提交其依赖配置与 `src/chan` 子模块引用; 子模块指针只引用已存在的包提交。
 外层提交前确认相应包提交可从远端获得, 不把未提交的包改动当作指针交付。
 历史脚本、原始报告、课文与冻结研究产物保留。
 

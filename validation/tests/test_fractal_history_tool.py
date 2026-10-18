@@ -6,7 +6,7 @@ import unittest
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 spec = importlib.util.spec_from_file_location(
     '_fractal_history_tool', os.path.join(ROOT, 'tools', 'verify_fractal_history.py'))
 tool = importlib.util.module_from_spec(spec)

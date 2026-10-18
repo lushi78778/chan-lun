@@ -10,7 +10,7 @@ import sys
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'tools/gen_real_strict_trend.py'
 MANUAL = ROOT / 'validation/chan-real-strict-trend-manual-0.9.3.json'
 FIXTURE = ROOT / 'tests/fixtures/real_strict_trend_completed.json'

@@ -10,7 +10,7 @@ import sys
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'tools/gen_real_third_point.py'
 MANUAL = ROOT / 'validation/chan-real-third-point-manual-0.9.5.json'
 FIXTURE = ROOT / 'tests/fixtures/real_third_point.json'

@@ -26,7 +26,7 @@ keywords = [
     "technical-analysis", "quant", "stock", "kline", "trading",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Science/Research",
     # License classifier 已被 PEP 639 的 license = "MIT" 表达式取代

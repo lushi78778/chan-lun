@@ -1,4 +1,3 @@
-# chan-lun: 测试(push/PR)+ 打 tag 自动构建、发布 GitHub Release、发布 PyPI
 name: test-and-release
 
 on:
@@ -7,13 +6,42 @@ on:
     tags: ["v*"]
   pull_request:
 
+permissions:
+  contents: read
+
+env:
+  RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+  SOURCE_COMMIT: ${{ github.sha }}
+
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - uses: astral-sh/setup-uv@v5
+      - name: Check tag and source version before building
+        run: python tools/release_artifacts.py check-source --tag "$RELEASE_TAG"
+      - name: Build candidate once
+        run: uv build
+      - name: Seal candidate metadata and digests
+        run: python tools/release_artifacts.py seal --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/release-manifest.json
+
   test:
+    needs: build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # 现代运行时3.10/3.13构建验收; 3.6旧依赖另用legacy容器执行。
         python-version: ["3.10", "3.13"]
     steps:
       - uses: actions/checkout@v4
@@ -21,90 +49,118 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@v5
-      - name: Install package + deps
-        run: uv pip install --system .
-      - name: Run tests
-        run: python -m unittest discover -s tests -p 'test_*.py' -v
-      - name: Build and verify installed wheel
-        run: |
-          uv build --wheel
-          uv pip install --system --force-reinstall --no-deps dist/*.whl
-          python -I tools/verify_installed.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
-          name: wheel-${{ matrix.python-version }}
-          path: dist/*.whl
+          name: release-candidate
+          path: dist
+      - name: Verify candidate before installation
+        run: python tools/release_artifacts.py verify --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
+      - name: Install sealed wheel
+        run: uv pip install --system dist/*.whl
+      - name: Verify installed wheel in isolation
+        run: python -I tools/verify_installed.py
+      - name: Run self-contained package tests from sdist
+        run: |
+          mkdir -p "$RUNNER_TEMP/chan-sdist"
+          tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/chan-sdist"
+          cd "$RUNNER_TEMP/chan-sdist"/chan_lun_core-*
+          python tools/check_core.py -v
+
+  validation:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-candidate
+          path: dist
+      - name: Verify and install candidate for repository asset checks
+        run: |
+          python tools/release_artifacts.py verify --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
+          uv pip install --system dist/*.whl
+      - name: Run independent repository asset validation
+        run: python tools/check_core.py --scope validation -v
 
   legacy:
-    needs: test
+    needs: build
     runs-on: ubuntu-latest
     container: python:3.6.15-buster
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: wheel-3.10
+          name: release-candidate
           path: dist
-      - name: Install old runtime dependencies and built wheel
+      - name: Verify candidate and install old runtime dependencies
         run: |
+          python tools/release_artifacts.py verify --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
           python -m pip install 'pip==21.3.1'
           python -m pip install 'numpy==1.14.6' 'pandas==0.23.4' 'python-dateutil==2.8.2' 'six==1.16.0' 'pytz==2025.2'
           python -m pip install --no-deps dist/*.whl
-      - name: Verify source tests and installed wheel on Python 3.6
+      - name: Verify installed wheel and sdist package tests on Python 3.6
         run: |
-          python -m unittest discover -s tests -p 'test_*.py' -v
           python -I tools/verify_installed.py
+          mkdir -p /tmp/chan-sdist
+          tar -xzf dist/*.tar.gz -C /tmp/chan-sdist
+          cd /tmp/chan-sdist/chan_lun_core-*
+          python tools/check_core.py -v
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [test, legacy]
+    needs: [test, validation, legacy]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - name: Build sdist + wheel
-        run: uv build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-candidate
+          path: dist
+      - name: Verify the tested candidate before GitHub publication
+        run: python tools/release_artifacts.py verify --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
       - name: Prepare release notes body
-        # 按 tag 提供发布说明正文(如 .github/release-notes/v1.0.0.md);
-        # 无对应文件时给默认占位, body 空正文 + generate_release_notes
-        # 仍会生成自动注记。
         run: |
-          NOTES=".github/release-notes/${{ github.ref_name }}.md"
-          if [ -f "$NOTES" ]; then cp "$NOTES" release_body.md; else printf '发布说明见仓库 CHANGELOG.md。\n' > release_body.md; fi
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+          python -c 'import os,pathlib; p=pathlib.Path(".github/release-notes")/(os.environ["RELEASE_TAG"]+".md"); pathlib.Path("release_body.md").write_text(p.read_text() if p.exists() else "发布说明见仓库 CHANGELOG.md。\n")'
+      - uses: softprops/action-gh-release@v2
         with:
           body_path: release_body.md
-          # 只传构建产物(避免把 uv 生成的 dist/.gitignore 当资产上传)
           files: |
             dist/*.whl
             dist/*.tar.gz
+            dist/release-manifest.json
           generate_release_notes: true
 
   publish-pypi:
-    # 打 v* tag 且测试通过后, 发布到 PyPI(https://pypi.org/project/chan-lun-core/)
-    # 发行名 chan-lun-core: `chan-lun` 被 PyPI 拒(与现有 chanlun 过于相似)。
-    # 前置配置(用户侧一次性):
-    #   1. PyPI 注册账号(需开启 2FA)并创建 API token:
-    #      首次上传建议"整个账号"作用域 token(chan-lun 项目不存在时,
-    #      项目级 token 无法创建; 账号级 token 首次上传会自动建项目);
-    #      项目已存在后建议改用只限 chan-lun 的项目级 token。
-    #   2. GitHub 仓库 Settings -> Secrets and variables -> Actions ->
-    #      Repository secrets -> 新增名为 PYPI_API_TOKEN 的机密。
-    # 注: 也可改用 Trusted Publishing(OIDC, 无需 token), 在 PyPI
-    #     发布设置里登记本仓库/workflow 即可; 此流程按 API token 方式实现。
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [test, legacy]
+    needs: [test, validation, legacy]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - name: Build sdist + wheel
-        run: uv build
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: actions/setup-python@v5
         with:
-          # 默认 username 即 __token__, 直接给 API token
+          python-version: "3.10"
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-candidate
+          path: candidate
+      - name: Verify and stage only the tested Python distributions
+        run: |
+          python tools/release_artifacts.py verify --dist candidate --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
+          mkdir dist
+          cp candidate/*.whl candidate/*.tar.gz dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
           password: ${{ secrets.PYPI_API_TOKEN }}

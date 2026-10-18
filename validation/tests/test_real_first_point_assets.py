@@ -10,7 +10,7 @@ import sys
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'tools/gen_real_first_point.py'
 MANUAL = ROOT / 'validation/chan-real-first-point-manual-0.9.9.json'
 FIXTURE = ROOT / 'tests/fixtures/real_first_point.json'

@@ -1,0 +1,77 @@
+{
+  "schema": "chan-core-governance-remediation-v1",
+  "verified_at": "2026-10-18T11:24:38+08:00",
+  "core_baseline": "82392432593bdc3b61d3649b9498ce8bb513ca40",
+  "package_version": "1.0.0",
+  "validation_policy": "repository asset only; excluded from wheel and sdist; validation/tests runs explicitly",
+  "findings": {
+    "G01": "implemented; self-contained sdist tests and separate asset suite pass",
+    "G02": "implemented; tag/source/artifact version mismatches rejected",
+    "G03": "implemented; build once, sealed manifest passed through CI and publication jobs",
+    "G04": "implemented; API 1.x rules and current documentation aligned",
+    "G05": "implemented; current 30 rows with unchanged 23/7 states; original register archived",
+    "G06": "delivery verified by final Git commit, its Actions run, and outer local gitlink; no new package release"
+  },
+  "local_checks": {
+    "sdist_package": {
+      "tests": 813,
+      "seconds": 64.752,
+      "status": "passed",
+      "log_sha256": "ebacc81dccd335b53cbfd483911f2d78d4a8d89b128f39a9cbaa794306672e64"
+    },
+    "repository_validation": {
+      "tests": 47,
+      "seconds": 560.697,
+      "status": "passed",
+      "log_sha256": "bfa72ee35197e3df192f95c085f5edbfa93fd918767593eb48b8a0f0dbd0329d"
+    },
+    "outer_integration": {
+      "tests": 412,
+      "seconds": 120.774,
+      "status": "passed",
+      "log_sha256": "6526b7ef9b8e9e37ba4cdb3fae89183d56d9933c873c68d9819b6965b4975a4d"
+    },
+    "python36_new_governance_regressions": {
+      "tests": 8,
+      "status": "passed",
+      "scope": "release guard and independent entry; full old-environment result belongs to remote CI"
+    },
+    "wrong_tag_actual_command": "rejected",
+    "candidate_wheel_isolated_import": "passed",
+    "workflow_yaml": "parsed; only one uv build invocation; both publication jobs depend on test/validation/legacy",
+    "new_core_grammar": "Python 3.6 passed"
+  },
+  "candidate_manifest": {
+    "schema": "chan-release-artifacts-v1",
+    "name": "chan-lun-core",
+    "version": "1.0.0",
+    "commit": "local-remediation",
+    "tag": null,
+    "files": [
+      {
+        "name": "chan_lun_core-1.0.0-py3-none-any.whl",
+        "sha256": "fb094f141d305e0abfd8a676c3c082bc90420db79f42017b174e7c7a020a5f26",
+        "bytes": 203214
+      },
+      {
+        "name": "chan_lun_core-1.0.0.tar.gz",
+        "sha256": "f32689ff35269b34edd4c49f56c9b2b7f1535a4887708e1ac5e89ee2ae12008a",
+        "bytes": 1339820
+      }
+    ]
+  },
+  "preservation": {
+    "existing_evidence_paths_checked": 141,
+    "changed_existing_paths": [
+      "validation/README.md"
+    ],
+    "reason": "README index documents the new validation boundary; raw evidence and algorithm fixtures unchanged",
+    "algorithm_source_diff": ""
+  },
+  "delivery_policy": {
+    "push_core": true,
+    "outer_commit_local_only": true,
+    "publish_new_version": false,
+    "remote_ci_status": "inspect Actions run for final governance commit; this receipt records local checks only"
+  }
+}

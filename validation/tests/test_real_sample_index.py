@@ -6,7 +6,7 @@ import unittest
 
 import pandas as pd
 
-_PATH = Path(__file__).resolve().parents[1]/'tools/index_core_samples.py'
+_PATH = Path(__file__).resolve().parents[2]/'tools/index_core_samples.py'
 _SPEC = importlib.util.spec_from_file_location('real_sample_index',str(_PATH))
 _TOOL = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_TOOL)

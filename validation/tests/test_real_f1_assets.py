@@ -9,7 +9,7 @@ import sys
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / 'tests/fixtures/real_f1_originals.json'
 MANUAL = ROOT / 'validation/chan-real-f1-manual-0.9.0.json'
 

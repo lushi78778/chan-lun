@@ -10,7 +10,7 @@ import sys
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'tools/gen_real_second_point.py'
 MANUAL = ROOT / 'validation/chan-real-second-point-manual-0.9.10.json'
 FIXTURE = ROOT / 'tests/fixtures/real_second_point.json'

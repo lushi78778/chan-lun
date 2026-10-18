@@ -1,0 +1,69 @@
+core tests; source: /private/tmp/chan-core-governance-eval-42bkhs2c/unpacked/chan_lun_core-1.0.0/src/chan/__init__.py (1.0.0)
+EEE
+======================================================================
+ERROR: test_frozen_sources_and_independent_rebuild (test_real_second_point_assets.TestRealSecondPointAssets.test_frozen_sources_and_independent_rebuild)
+原始包与人工表保真；重复编译逐字节一致且不能覆盖证据。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/chan-core-governance-eval-42bkhs2c/unpacked/chan_lun_core-1.0.0/tests/test_real_second_point_assets.py", line 46, in test_frozen_sources_and_independent_rebuild
+    manual = json.loads(MANUAL.read_text())
+                        ~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py", line 546, in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_abc.py", line 632, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py", line 537, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/chan-core-governance-eval-42bkhs2c/unpacked/chan_lun_core-1.0.0/validation/chan-real-second-point-manual-0.9.10.json'
+
+======================================================================
+ERROR: test_reject_corrupt_b1_strict_trend_and_second_point_tables (test_real_second_point_assets.TestRealSecondPointAssets.test_reject_corrupt_b1_strict_trend_and_second_point_tables)
+B1严格趋势角色、台账、一类与二类裁定表被篡改时直接拒绝。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/chan-core-governance-eval-42bkhs2c/unpacked/chan_lun_core-1.0.0/tests/test_real_second_point_assets.py", line 92, in test_reject_corrupt_b1_strict_trend_and_second_point_tables
+    case = [c for c in manual_cases() if c['window_key'] == 'B1'][0]
+                       ~~~~~~~~~~~~^^
+  File "/private/tmp/chan-core-governance-eval-42bkhs2c/unpacked/chan_lun_core-1.0.0/tests/test_real_second_point_assets.py", line 33, in manual_cases
+    return json.loads(MANUAL.read_text())['cases']
+                      ~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py", line 546, in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_abc.py", line 632, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py", line 537, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/chan-core-governance-eval-42bkhs2c/unpacked/chan_lun_core-1.0.0/validation/chan-real-second-point-manual-0.9.10.json'
+
+======================================================================
+ERROR: test_reject_corrupt_frozen_window_second_point_tables (test_real_second_point_assets.TestRealSecondPointAssets.test_reject_corrupt_frozen_window_second_point_tables)
+C1/D1/X1/Y1/Z1二类裁定表被篡改时直接拒绝。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/chan-core-governance-eval-42bkhs2c/unpacked/chan_lun_core-1.0.0/tests/test_real_second_point_assets.py", line 187, in test_reject_corrupt_frozen_window_second_point_tables
+    for case in manual_cases():
+                ~~~~~~~~~~~~^^
+  File "/private/tmp/chan-core-governance-eval-42bkhs2c/unpacked/chan_lun_core-1.0.0/tests/test_real_second_point_assets.py", line 33, in manual_cases
+    return json.loads(MANUAL.read_text())['cases']
+                      ~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py", line 546, in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_abc.py", line 632, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py", line 537, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/chan-core-governance-eval-42bkhs2c/unpacked/chan_lun_core-1.0.0/validation/chan-real-second-point-manual-0.9.10.json'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.017s
+
+FAILED (errors=3)

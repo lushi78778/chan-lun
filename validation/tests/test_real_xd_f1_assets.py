@@ -9,7 +9,7 @@ import sys
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'tools/gen_real_xd_f1.py'
 MANUAL = ROOT / 'validation/chan-real-xd-f1-manual-0.9.1.json'
 FIXTURE = ROOT / 'tests/fixtures/real_xd_f1.json'

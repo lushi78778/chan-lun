@@ -1,5 +1,11 @@
 # 核心库验收记录
 
+本目录为核心库仓库级证据，不属于 wheel/sdist。资产测试在 `tests/`，
+完整 Git checkout 中运行 `python tools/check_core.py --scope validation`；
+包测试在仓库根 `tests/`，默认 `python tools/check_core.py` 可在 sdist 中执行。
+两层合跑使用 `--scope all`。原始输入与历史收据不覆盖，新的验收另存新文件。
+
+
 ## 正式1.0.0门槛终审裁定（2026-10-17）
 
 按 §11.11 六门槛逐项核对已登记证据：第 1—5 条裁定通过（第 3/4 条

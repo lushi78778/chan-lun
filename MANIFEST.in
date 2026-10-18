@@ -3,5 +3,14 @@ include API.md
 include MIGRATION.md
 include CHANGELOG.md
 include CONTRIBUTING.md
-recursive-include tools *.py
+include AGENTS.md
+recursive-include docs *.md
+include tools/README.md
+include tools/check_core.py
+include tools/diagnose_chan.py
+include tools/verify_installed.py
+include tools/release_artifacts.py
+include tools/benchmark.py
 recursive-include tests/fixtures *.json
+prune validation
+global-exclude __pycache__ *.py[cod]

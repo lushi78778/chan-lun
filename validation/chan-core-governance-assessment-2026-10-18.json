@@ -1,0 +1,87 @@
+{
+  "schema": "chan-core-governance-assessment-v1",
+  "assessed_at": "2026-10-18T10:16:11+08:00",
+  "scope": "current uncommitted worktree and existing repository delivery baseline; assessment only",
+  "baseline_core_commit": "82392432593bdc3b61d3649b9498ce8bb513ca40",
+  "prior_full_test_evidence": {
+    "receipt": {
+      "workspace": "maintainer outer research workspace",
+      "path": "doc/项目治理与分离验收-2026-10-18.json"
+    },
+    "status": "853 passed in prior turn; not rerun in this assessment",
+    "prior_log_sha256_matches": true,
+    "current_python_files_compared": 141,
+    "python_file_mismatches": 0
+  },
+  "source_distribution_reproduction": {
+    "artifact_kind": "locally built candidate from current worktree; not PyPI release",
+    "build_command": "uv build --offline --cache-dir <prepared-cache> --python <prepared-python> --sdist --out-dir <new-output> <independent-copy>",
+    "uv_version": "uv 0.12.3 (Homebrew 2026-08-07 aarch64-apple-darwin)",
+    "python_version": "3.14.7",
+    "archive_sha256": "ae7e3bffeec8a80da5293052410a3434c827e5248b64a81af54e7b65e646d81f",
+    "member_count": 180,
+    "required_path_presence": {
+      "AGENTS.md": false,
+      "docs/": false,
+      "validation/": false,
+      "tools/check_core.py": true,
+      "tools/README.md": false,
+      "tests/test_real_second_point_assets.py": true,
+      "tests/fixtures/real_second_point.json": true
+    },
+    "test_command": "python tools/check_core.py --pattern test_real_second_point_assets.py",
+    "exit_code": 1,
+    "tests": 3,
+    "errors": 3,
+    "cause": "FileNotFoundError: validation/chan-real-second-point-manual-0.9.10.json absent",
+    "log": "chan-core-governance-sdist-repro-2026-10-18.txt",
+    "log_sha256": "cc0302c57e213256986be54415805524f783f0ee197d67e2bd3196f60f61ee21"
+  },
+  "findings": [
+    {
+      "id": "G01",
+      "priority": "P1",
+      "title": "源码包遗漏迁入验收资产，解包验收失败",
+      "evidence": "MANIFEST.in:1-7; tests/test_real_second_point_assets.py:15; local sdist reproduction"
+    },
+    {
+      "id": "G02",
+      "priority": "P1",
+      "title": "发布未校验标签与包版本一致",
+      "evidence": ".github/workflows/test-and-release.yml:7,58-68,98-105; tests/test_contracts.py:26-32"
+    },
+    {
+      "id": "G03",
+      "priority": "P2",
+      "title": "测试、Release、PyPI各自构建，已测产物未直接传递至发布",
+      "evidence": ".github/workflows/test-and-release.yml:28-36,64-68,102-105"
+    },
+    {
+      "id": "G04",
+      "priority": "P2",
+      "title": "1.0稳定性治理仍引用0.13候选版契约",
+      "evidence": "API.md:1-16; AGENTS.md:26-27; pyproject.toml:13,29"
+    },
+    {
+      "id": "G05",
+      "priority": "P2",
+      "title": "进度行混合历史缺口和后续完成记录，当前剩余能力边界难以直接读取",
+      "evidence": "docs/缠论理论逐一实现计划.md:175,181"
+    },
+    {
+      "id": "G06",
+      "priority": "P2",
+      "title": "新治理入口尚未交付为可检出的仓库版本",
+      "evidence": "AGENTS.md, tools/check_core.py, tests/test_check_core.py currently untracked; HEAD=origin/main=8239243"
+    }
+  ],
+  "assessment_limitations": [
+    "No algorithm or theoretical revalidation",
+    "No fresh full-suite rerun; prior evidence content-matched",
+    "No new remote CI run or GitHub branch protection inspection",
+    "No claim that published 1.0.0 archive exhibits the migrated-test failure"
+  ],
+  "code_changed": false,
+  "committed": false,
+  "pushed": false
+}

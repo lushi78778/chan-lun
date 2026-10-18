@@ -10,7 +10,7 @@ import sys
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'tools/gen_real_causal_formation.py'
 MANUAL = ROOT / 'validation/chan-real-causal-formation-manual-0.9.11.json'
 FIXTURE = ROOT / 'tests/fixtures/real_causal_formation.json'
