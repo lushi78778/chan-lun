@@ -1,8 +1,8 @@
-# 从 0.7.x / 0.8.x 迁移到1.x（0.13.x）
+# 从 0.7.x / 0.8.x 迁移到 1.x
 
 适用：冻结研究脚本或聚宽 Notebook 仍钉在 0.7.x/0.8.x，需要评估升级
-到 0.13.x 的调用方。版本事实唯一登记在 [CHANGELOG.md](CHANGELOG.md)；
-本文件按影响面组织升级要点。
+到 1.x 的调用方。1.0.0 沿用 0.13.x 冻结契约，版本事实唯一登记在
+[CHANGELOG.md](CHANGELOG.md)；本文件按影响面组织升级要点。
 
 ## 升级原则
 
@@ -19,7 +19,7 @@
 
 | 影响面 | 版本 | 变化与确认方式 |
 |---|---|---|
-| 线段识别 | 0.6.1/0.7.0/0.7.5/0.7.7/0.7.8/0.7.9 | 多次线段修正改变线段划分与完成时间；线段级中枢/背驰随之变化。最后一次线段行为变化在 0.7.9，0.7.10 起至 0.13.x 线段口径一致 |
+| 线段识别 | 0.6.1/0.7.0/0.7.5/0.7.7/0.7.8/0.7.9 | 多次线段修正改变线段划分与完成时间；线段级中枢/背驰随之变化。最后一次线段行为变化在 0.7.9，0.7.10 起至 1.0.0 线段口径一致 |
 | 实际可用时间 | 0.7.0 起 | `analyze_available` 等门控入口要求 bar 带 `closed_dt`/`available_dt` 元数据；不带门控的入口不受影响 |
 | `find_ma_points` | 0.12.1 | 第一类候选（post_kiss_divergence）前置吻由"湿吻"放开为"飞/唇/湿吻"：旧候选全部保留，新增前置吻候选；收据见 CHANGELOG 0.12.1 |
 | `classify_bc_turn` | 0.12.2 | 转折判据修正——课29"是否重新回抽最后一个中枢里"以回抽端点进入 [ZD,ZG] 为界（触及边界即算）：反弹高点落在 [ZD,ZG)/回落低点落在 (ZD,ZG] 由 `expansion` 改判 `turn`（`candidates` 随之非空）；收据 `validation/turn-0122-behavior-diff-*.json` |
@@ -29,7 +29,7 @@
 0.9.x—0.11.x 的真实标注与因果接口、0.13.2 的 API.md 契约均为新增，
 不改变既有输入的输出（各版 CHANGELOG 未标"行为变化"）。
 
-## 指纹示例（可运行，0.7.0+ 与 0.13.x 通用）
+## 指纹示例（可运行，0.7.0+ 与 1.0.0 通用）
 
 在**旧版本环境**与**新版本环境**各运行一次，对比输出摘要；换上
 你自己的行情 `df` 即为真实迁移核对：
@@ -39,6 +39,7 @@
 import hashlib
 import json
 import math
+import os
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -60,7 +61,8 @@ print("version:", chan.__version__)
 print("sha256:", hashlib.sha256(snapshot.encode("utf-8")).hexdigest())
 print("bis:", len(result.bis), "xds:", len(result.xds),
       "bi_zss:", len(result.bi_zss))
-with open("fingerprint-{}.json".format(chan.__version__), "w") as f:
+output = os.path.abspath("fingerprint-{}.json".format(chan.__version__))
+with open(output, "w") as f:
     f.write(snapshot)
 ```
 
@@ -80,10 +82,9 @@ with open("fingerprint-{}.json".format(chan.__version__), "w") as f:
 ## 冻结脚本与旧版本获取
 
 - Release/PyPI 已核验、可用版本号直接钉住的版本：0.5.0、0.6.0、
-  0.7.0—0.7.5、0.8.0、0.9.0、0.9.1、0.10.0（各版 CHANGELOG
+  0.7.0—0.7.5、0.8.0、0.9.0、0.9.1、0.10.0、1.0.0（各版 CHANGELOG
   "发布状态"为准）。
 - 其余版本（0.7.6—0.7.10、0.9.2—0.9.11、0.10.1—0.10.6、
-  0.11.x、0.12.x、0.13.x）仅本地提交或本地 tag/推送，无独立
-  Release/PyPI 产物；冻结脚本应钉住已核验发布版本，或随外层
-  工作区交付源码。
+  0.11.x、0.12.x、0.13.x、0.14.0）没有独立 Release/PyPI 产物，变更已随
+  1.0.0 交付。冻结脚本应钉住已核验发布版本，或随外层工作区交付源码。
 - 已提交的历史文件可从 Git 查回；升级不删除旧产物。

@@ -1,28 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-chan.cross30 —— 30 分钟跨级别确认(区间套基础)
+chan.cross30 —— 日线事件与 30 分钟行情的两级辅助条件核对。
 
-理论依据: doc/缠论知识库/04-背驰与区间套.md
+参考导航（维护者私有工作区）: doc/缠论知识库/04-背驰与区间套.md。
+理论最终依据为 108 课原文；课 108/99 的导航关联和原文覆盖状态见实现计划。
+本模块沿用既有工程规则，不将固定日线/30m 周期等同于理论相邻级别，
+不由两级结果推断收益或可靠度。
 
-区间套思想(课 108/99): 大级别信号出现后, 到次级别里找背驰确认,
-两级别同时成立才叫"共振", 可靠度远高于单级别信号。
+输入: 调用方截断至观察时刻的 30m 行情，以及同标的、同复权基准的
+日线事件、中枢边界或一类点价格。跨周期对齐、可用时间由调用方保证。
+输出: 带 status、note 与力度/位置明细的 dict；空输入返回 no_data。
+confirmed/weak 仅表示本模块条件满足，不等同于严格理论背驰或交易确认。
 
-  日线第三类买点 = 向上离开日线中枢 [ZD, ZG] 后, 回抽笔不破 ZG。
-  区间套确认: 回抽笔的内部(30 分钟级别)应呈现一段下跌走势,
-  且该下跌末端出现**底背驰**(最后一段下跌 MACD 面积比前一段小、
-  却创新低); 同时 30 分钟低点不破日线 ZG(允许轻微刺破)。
-  -> 满足 = "跨级别共振"(强确认); 不满足 = 日线信号未获次级别背书。
-
-  日线第三类卖点镜像: 反弹笔内部 30 分钟出现**顶背驰**,
-  且 30 分钟高点不升破日线 ZD。
-
-实现: 30m bars -> 笔 -> 连续同向 run(段), 比较最后一段下跌(上涨)
-与前一对照段的力度(DIF 摆动 = 段首末 DIF 差; MACD 柱面积作参考),
-叠加日线中枢位置过滤。
-
-力度度量为什幺用 DIF 摆动: 柱面积受前段动量惯性污染(强涨后的
-反弹段里 DIF 仍为负, 面积会被抵消), DIF 在段内的变化量只反映
-本段自身的推动力, 对 EMA 滞后更稳健。
+实现: 30m 行情识别笔，将连续同向笔合为 run，比较末段与前段的 DIF
+摆动并要求端点创新极值；MACD 柱面积只作参考。三类点再核对中枢位置，
+二类点采用分型和一类点价格规则，具体差异与参数见各函数 docstring。
+weak_tol、stale_days、对照段幅度等为工程阈值，不冒充原文量化要求。
 
 兼容: Python 3.6。依赖 chan.bi / chan.zs / chan.bc。
 """
@@ -80,7 +73,7 @@ def find_run_exhaustion(bis30: List[Any], bars30: List[Dict[str, Any]],
             None = 不设门槛(兼容旧行为)。
 
     返回 dict:
-        status: 'ok'(背驰成立) / 'no_exhaustion'(无背驰) /
+        status: 'ok'(工程衰竭条件满足) / 'no_exhaustion'(无背驰) /
                 'stale'(run 终点过旧, 未跟上信号日) / 'none'(无该方向段)
         run_end_dt / run_start_dt: 最后一段 run 的起止时间
         swing_last / swing_prev / swing_ratio: 末段与前段 DIF 摆动及比值
@@ -218,7 +211,7 @@ def confirm_buy3_30m(bars30: List[Dict[str, Any]], zd: float, zg: float,
         bars30: 30m bars(升序, 拉到信号日为止)
         zd/zg: 日线中枢下/上沿(与 30m 同一前复权基准)
         signal_dt: 日线三买信号日(str 或 date)
-        zg_tol: 保留参数(历史兼容, 当前判定不使用); "强确认"口径固定为
+        zg_tol: 保留参数(历史兼容, 当前判定不使用); confirmed 条件固定为
             30m 低点不破 ZG(low30 >= zg), 不设贴近容忍。
         weak_tol: 允许 30m 低点跌破 ZG 的比例(zg*(1-weak_tol) 以内算弱确认)
         stale_days: 30m 回抽段终点允许早于信号日的自然日数
@@ -226,8 +219,8 @@ def confirm_buy3_30m(bars30: List[Dict[str, Any]], zd: float, zg: float,
             默认 None = 不设门槛)
 
     返回 dict:
-        status: confirmed(强共振) / weak(弱确认) / no_exhaustion(无背驰) /
-                broke(30m 跌破 ZG, 三买存疑) / stale / no_data
+        status: confirmed(辅助条件满足) / weak(容差条件满足) / no_exhaustion(无背驰) /
+                broke(30m 跌破 ZG, 三买存疑) / stale / none / no_data
         + find_run_exhaustion 的明细字段 + low30 / dist_zg
     """
     out = {"status": "no_data", "note": "", "low30": None, "dist_zg": None}
@@ -286,11 +279,11 @@ def confirm_sell3_30m(bars30: List[Dict[str, Any]], zd: float, zg: float,
     反弹笔内部 30m 出现顶背驰, 且 30m 高点不升破 ZD(允许轻微刺破)。
 
     参数: 同 confirm_buy3_30m 镜像; zd_tol 为保留参数(历史兼容,
-    当前判定不使用), "强确认"口径固定为 30m 高点不升破 ZD。
+    当前判定不使用), confirmed 条件固定为 30m 高点不升破 ZD。
 
     返回 dict:
-        status: confirmed(强共振) / weak / no_exhaustion /
-                broke(30m 升破 ZD, 三卖存疑) / stale / no_data
+        status: confirmed(辅助条件满足) / weak / no_exhaustion /
+                broke(30m 升破 ZD, 三卖存疑) / stale / none / no_data
         + 明细字段 + high30 / dist_zd
     """
     out = {"status": "no_data", "note": "", "high30": None, "dist_zd": None}

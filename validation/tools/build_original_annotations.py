@@ -16,8 +16,7 @@ import shutil
 import subprocess
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[1]
-PDF_DEFAULT = ROOT / 'doc/缠中说禅教你炒股票108课.1完美配图版.pdf'
+ROOT = Path(__file__).resolve().parents[2]
 FIX = ROOT / 'tests/fixtures'
 
 
@@ -62,7 +61,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version',required=True,help='收据及文件名的概念版本')
     parser.add_argument('--review',type=Path,help='该版本的图面登记JSON')
-    parser.add_argument('--pdf',type=Path,default=PDF_DEFAULT,help='108课PDF路径, 版权材料不随本仓库分发, 由维护者本地提供')
+    parser.add_argument('--pdf',type=Path,required=True,help='108课PDF路径, 版权材料不随本仓库分发, 由维护者本地提供')
     parser.add_argument('--output',type=Path)
     args = parser.parse_args()
     pdf = args.pdf.resolve()

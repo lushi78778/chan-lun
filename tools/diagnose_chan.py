@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """检查当前解释器实际导入的 chan，不注入源码、不安装或改写模块。
 
-python tools/diagnose_chan.py [--expect 0.4.0] [--json]
+python tools/diagnose_chan.py [--expect 1.0.0] [--json]
 可将本文件复制到聚宽运行；Python 3.6 用 pkg_resources 查询发行元数据。
 """
 

@@ -1,8 +1,5 @@
-# chan-lun-core 发布配置(仓库根 = src/chan, 标准 src-layout, 见 PyPA 官方教程)
-# 发行名 chan-lun-core(import 名仍是 chan): PyPI 拒绝 `chan-lun`(与现有
-# `chanlun` 过于相似); chan-lun-core 已按 PyPI ultranormalize 规则
-# (去 ._- / l,i->1 / o->0)逐变体验证无冲突。
-# 注意: version 与 src/chan/__init__.py 的 __version__ 需保持一致。
+# chan-lun-core 发行配置；仓库采用 src 布局，Python 导入名为 chan。
+# version 与 src/chan/__init__.py 的 __version__ 保持一致。
 [build-system]
 # >=77 支持 PEP 639 的 license = "MIT" 字符串形式(生成 License-Expression)
 requires = ["setuptools>=77"]
@@ -11,15 +8,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chan-lun-core"
 version = "1.0.0"
-description = "缠论(缠中说禅理论)量化核心库: 分型/笔/线段/中枢/背驰/买卖点 + 30 分钟跨级别共振确认, 纯 Python 实现, 仅依赖 numpy/pandas"
+description = "缠论结构识别与理论辅助计算库。输入单标的、单周期的行情或结构序列，输出分型、笔、线段、中枢、背驰、买卖点，以及多级分解和辅助状态。算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。"
 readme = "README.md"
 requires-python = ">=3.6"
 # PEP 639: SPDX 表达式, pip show 显示为 "License: MIT"(不再内联全文)
 license = "MIT"
 # PEP 639: 显式随发行包保留许可证文件。
 license-files = ["LICENSE"]
-# 作者身份为发布时静态写入的稳定字符串(GitHub 改名不会同步);
-# 不公开邮箱(隐私优先)
+# 发行作者信息；不包含私人邮箱。
 authors = [{name = "lushi78778"}]
 keywords = [
     "chan", "chanlun", "缠论", "缠中说禅",
@@ -45,7 +41,7 @@ classifiers = [
 ]
 dependencies = [
     # 与聚宽研究环境(3.6.7 / numpy 1.14.6 / pandas 0.23.4)对齐的下限;
-    # 新版 numpy/pandas 同样兼容。
+    # 现代环境另行验收，不改变旧运行时依赖下限。
     "numpy>=1.14",
     "pandas>=0.23",
 ]
@@ -53,9 +49,14 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/lushi78778/chan-lun"
 Repository = "https://github.com/lushi78778/chan-lun"
+Documentation = "https://github.com/lushi78778/chan-lun#readme"
+Changelog = "https://github.com/lushi78778/chan-lun/blob/main/CHANGELOG.md"
+Issues = "https://github.com/lushi78778/chan-lun/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["chan", "chan.*"]
+namespaces = false

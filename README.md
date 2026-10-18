@@ -5,15 +5,16 @@
 算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。
 
 - 发行名：`chan-lun-core`；Python 导入名：`chan`。
-- 当前源码版本：`0.10.0`（已发布到 PyPI；正式
-  1.0.0 目标尚未全部验收）。安装环境的实际版本以 `chan.__version__` 为准。
+- 当前源码版本：`1.0.0`。该版本已发布到 GitHub Release 与 PyPI；
+  后续工程维护单独登记，不重发既有版本。安装环境以 `chan.__version__` 为准。
 - 版本更迭的完整记录见 [CHANGELOG.md](CHANGELOG.md)（每版定位、主要
   变化、行为变化与发布状态）。
 - 仓库：[lushi78778/chan-lun](https://github.com/lushi78778/chan-lun)。
 - 许可证：[MIT](LICENSE)。
 
 本库负责结构与指标计算。行情下载、交易日历、复权、跨周期取数、组合管理、
-调度和下单由调用方负责。批量入口每次重新计算所提供的完整前缀。
+调度和下单由调用方负责。跨级别与跨成员接口由调用方分别提供已对齐的
+输入，不按分钟周期自动推断理论级别。批量入口每次重算所提供的完整前缀。
 
 ## 阅读路线
 
@@ -21,11 +22,12 @@
 |---|---|
 | 投资者/使用者：第一次用这个库 | [第一部分 §1—§3](#第一部分投资者视角)：能做什么、安装、快速开始 |
 | 投资者/使用者：读懂结果、避免未来函数 | [§4—§7](#4-读懂计算结果)：结果字段、时间语义、买卖点边界、使用守则 |
-| 投资者/使用者：评估这个库能不能用 | [§8 可用范围与正式1.0.0门槛](#8-可用范围与正式1000门槛)、[免责声明](#免责声明) |
+| 投资者/使用者：评估这个库能不能用 | [§8 可用范围与证据边界](#8-10-的可用范围与证据边界)、[免责声明](#免责声明) |
 | 开发者：接入行情、调用全部 API | [第二部分](#第二部分开发者视角)：输入契约、模块与公开入口 |
 | 开发者：参与开发、测试、发版 | [§10 从源码开发](#10-从源码开发)、[§17 测试与开发](#17-测试与开发)、[CONTRIBUTING.md](CONTRIBUTING.md) |
 | 查调用细节、键集、原因码、身份契约 | [API.md](API.md)、[§19 证据、身份与常见错误](#19-证据身份与常见错误) |
 | 从 0.7.x/0.8.x 升级到1.x | [MIGRATION.md](MIGRATION.md)、[§18 版本与发布](#18-版本与发布) |
+| 维护仓库、查目录与工具职责 | [文档与目录索引](docs/README.md)、[工程工具](tools/README.md)、[资产工具](validation/tools/README.md) |
 | 查某个版本改了什么 | [CHANGELOG.md](CHANGELOG.md) |
 
 ---
@@ -71,7 +73,7 @@
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==0.10.0'
+python -m pip install 'chan-lun-core==1.0.0'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 
@@ -85,16 +87,16 @@ python -c "import chan; print(chan.__version__); print(chan.__file__)"
 
 ```python
 import sys
-!{sys.executable} -m pip install --user chan-lun-core==0.10.0 --no-cache-dir
+!{sys.executable} -m pip install --user chan-lun-core==1.0.0 --no-cache-dir
 ```
 
-如果当前镜像尚未提供 `0.10.0`，可继续使用已经安装并可导入的版本。
+如果当前镜像尚未提供 `1.0.0`，可继续使用已经安装并可导入的版本。
 镜像同步时间不由本库控制；版本不可获取时不要把安装失败当成算法错误。
 如能访问 GitHub Release，也可安装指定 wheel：
 
 ```python
 import sys
-!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v0.10.0/chan_lun_core-0.10.0-py3-none-any.whl
+!{sys.executable} -m pip install --user https://github.com/lushi78778/chan-lun/releases/download/v1.0.0/chan_lun_core-1.0.0-py3-none-any.whl
 ```
 
 离线时，先下载该 wheel 并上传到 Notebook 能读取的目录，再用当前解释器
@@ -118,9 +120,9 @@ print("has find_bis:", hasattr(chan, "find_bis"))
 MACD 防狼从 `0.4.4` 起可用，底/顶构造从 `0.4.5` 起可用，板块强弱从
 `0.5.0` 起可用，观察时点接口从 `0.5.1` 起可用，二类点条件接口从
 `0.5.2` 起可用，实际可用时间门控从 `0.7.0` 起可用，自动一类候选与
-点位链从 `0.7.4` 起可用。`0.9.1` 与 `0.10.0` 已发布到 PyPI；
+点位链从 `0.7.4` 起可用。`0.9.1`、`0.10.0` 与 `1.0.0` 已发布到 PyPI；
 `0.9.2`—`0.9.11` 为本地概念 tag，未单独发布，随 `0.10.0` 统一交付。
-本文示例按当前源码版本 `0.10.0` 编写，并随契约测试自动执行。
+本文示例按当前源码版本 `1.0.0` 编写，并随契约测试自动执行。
 冻结研究脚本的原有版本要求另行保留。
 
 ### `chan.__version__` 不存在时
@@ -159,7 +161,7 @@ except pkg_resources.DistributionNotFound:
 ```
 
 元数据说明发行包已安装，不单独证明 `import chan` 加载了它。
-完整 Chan 工作区提供 `tools/diagnose_chan.py`，可同时核对运行时路径、
+本仓库提供 `tools/diagnose_chan.py`，可同时核对运行时路径、
 版本、安装元数据和关键公开入口。
 
 ## 3. 快速开始
@@ -362,7 +364,7 @@ for stop in range(1, len(bars) + 1):
 
 ```bash
 # 在独立 chan-lun 仓库根运行，使用现代开发解释器
-python -m pip install -e .
+python -m pip install -r requirements-dev.txt  # Python 3.10+ 开发环境
 python tools/check_core.py
 python tools/check_core.py --scope validation  # 完整 Git checkout 的资产验收
 ```
@@ -1189,8 +1191,8 @@ F1 的两条最低操作构造规则：
 - **F1-xd**：从上述固定笔重新计算线段，仅使用 `complete=True` 的 XD，
   再做同级切分；活动 XD、仅有分型确认但后继笔尚未固定的证明均等待。
 
-这些标注不证明严格自动一类、因果继承或正式 1.0 验收已完成；不直接
-充当已完成走势类型；`same_level_decompose` 的 `kind/complete` 字段
+这些标注仅证明各自窗口和冻结口径，不单独证明严格自动一类、因果继承
+或整体验收；也不直接充当已完成走势类型；`same_level_decompose` 的 `kind/complete` 字段
 口径见[§15.6](#156-同级分解级别递归与状态)。详细裁定算术、窗口台账
 与测试清单一律登记在本仓库正式计划 §9 的对应版本锚点。
 
@@ -1201,7 +1203,7 @@ F1 的两条最低操作构造规则：
 在独立包仓库根运行：
 
 ```bash
-python -m pip install -e .
+python -m pip install -r requirements-dev.txt  # Python 3.10+ 开发环境
 python tools/check_core.py  # 自包含包测试，sdist 可运行
 python tools/check_core.py --scope validation  # 仓库资产验收，不随发行包
 # 定向检查公开契约和 README 示例
@@ -1225,7 +1227,7 @@ python -m unittest discover -s tests -p 'test_contracts.py'
 ```bash
 python -m pip install build
 python -m build
-python -m pip install --force-reinstall --no-deps dist/chan_lun_core-0.10.0-py3-none-any.whl
+python -m pip install --force-reinstall --no-deps dist/chan_lun_core-1.0.0-py3-none-any.whl
 python -I tools/verify_installed.py
 ```
 
@@ -1244,24 +1246,23 @@ pandas 容器运行检查；容器通过不代替聚宽实际取数。tag 发布
 聚宽已确认 `0.4.0` 可安装并导入，但这不代替全部新增算法在该环境的实跑。
 新的辅助结果不会自动接入冻结研究脚本或改变策略参数。
 
-真实行情验证使用 ETF 历史数据集 `v2026-07-31-r2` 的十只代表 ETF
-（26,727 根日线与 240,559 根 30m）；核验读取文件 SHA-256，按观察日
-锚定复权。真实数据检验的是计算及时间契约；该样本未观察到一类候选
-用于底/顶构造、仅有一个可接线的普通二买条件样本，弱二类点与因果
-中枢的全部真实分支尚未验证。它不证明理论自动识别完备、交易收益、
-旧依赖或聚宽可运行。数据源未提供历史发布版本，无法据此证明历史
-因子未被供应方事后修订。详细报告在本仓库 `validation/`。
+真实行情验收使用 ETF 历史数据集 `v2026-07-31-r2`，核对 manifest 与
+所读文件 SHA-256，按观察时点锚定复权。独立标注窗口、工具回放和后续
+R7 整体验收各有明确范围，见 [仓库证据索引](validation/README.md)；
+早期全模块冒烟未出现某类点位，不等于后续独立窗口仍缺该分支。
+当前随版缺口见 §8。数据源没有历史发布版本，不能由快照证明历史因子
+从未事后修订；本地验收也不能替代聚宽实际取数与策略有效性验证。
 
 开发分层、原文核验、概念版本和交付流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-完整 Chan 工作区的理论进度唯一维护在 `docs/缠论理论逐一实现计划.md` §6；
+理论进度唯一维护在本仓库 [实现计划](docs/缠论理论逐一实现计划.md) §6；
 本 README 维护用法，版本历史维护在 [CHANGELOG.md](CHANGELOG.md)，
 不另设理论完成状态表。
 
 ## 18. 版本与发布
 
 - 版本号在 `pyproject.toml` 与 `src/chan/__init__.py` 双处一致，由
-  `test_contracts.py` 检查；1.0 前允许行为重构，公开行为变化须在
-  [CHANGELOG.md](CHANGELOG.md) 标注"行为变化"并保留旧版本。
+  `test_contracts.py` 检查；1.x 按 [API.md](API.md#1x-版本规则) 区分主、次、
+  修订版本。公开行为变化须在 [CHANGELOG.md](CHANGELOG.md) 登记并保留差异证据。
 - 阶段 tag 始终指向该版已验收的源码提交；本地 tag、远端推送、CI、
   Release/PyPI 分别核验，不把本地完成写成已发布。
 - 升级注意：线段相关修正在 0.6.1/0.7.0/0.7.5/0.7.7/0.7.8/0.7.9 多次
@@ -1315,7 +1316,7 @@ pandas 容器运行检查；容器通过不代替聚宽实际取数。tag 发布
 | `可见行情须为连续前缀, 不允许跳过迟到历史行` | 迟到历史可能重算 EMA；必须声明新输入版本，不能跳过缺口后继续 |
 | `json.dumps` 失败（日期/对象不可序列化） | 用各对象的 `to_dict()`（时间字段已统一 `str()` 化）而不是序列化对象本身 |
 | `import chan` 后无 `__version__` | 导入了同名目录或遮蔽模块；按[§2](#2-安装与环境检查)排查 |
-| 升级后结果与旧版不一致 | 1.0 前允许行为修正（CHANGELOG 标注"行为变化"并附收据）；升级前保存旧结果并逐前缀比较（§5、§18） |
+| 升级后结果与旧版不一致 | 按 1.x 兼容规则登记行为修正（CHANGELOG 标注差异并附收据）；升级前保存旧结果并逐前缀比较（§5、§18） |
 
 ## 免责声明
 

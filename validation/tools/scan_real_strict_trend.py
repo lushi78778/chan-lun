@@ -42,7 +42,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CORE_SRC = ROOT / 'src'
 
 CODES = ['510300.SH', '510500.SH', '512880.SH', '512480.SH', '159915.SZ',

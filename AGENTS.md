@@ -1,14 +1,16 @@
 # chan-lun-core 协作规范
 
 本文件适用于独立核心库仓库，不依赖维护者外层项目的目录或测试入口。
-开发与验收流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+开发与验收流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，目录与文档职责见
+[docs/README.md](docs/README.md)。
 
 ## 真源与范围
 
 - `src/chan/` 为算法唯一真源，`tests/` 为包测试唯一真源。
 - [理论实现计划](docs/缠论理论逐一实现计划.md) §6 为唯一实现进度表;
   其他文档只链接，不另维护状态。`validation/` 是仓库级资产，排除 wheel/sdist。
-  `tests/` 维护自包含包测试，`validation/tests/` 维护资产验收，工具在 `tools/`。
+  `tests/` 维护自包含包测试，`validation/tests/` 维护资产验收；资产工具在
+  `validation/tools/`，工程入口在 `tools/`。
 - 理论最终依据为《缠中说禅教你炒股票 108 课》原文。PDF、逐课文本、
   导航知识库和笔记是维护者私有工作区材料，不随本仓库分发。
   文本存疑时复核 PDF 原页; 缺原文不能登记理论核验完成。
@@ -33,7 +35,7 @@
 ## 独立验收与交付
 
 ```bash
-python -m pip install -e .
+python -m pip install -r requirements-dev.txt  # Python 3.10+ 开发环境
 python tools/check_core.py
 python tools/check_core.py --pattern test_模块.py
 python tools/check_core.py --scope validation

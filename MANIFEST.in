@@ -4,6 +4,8 @@ include MIGRATION.md
 include CHANGELOG.md
 include CONTRIBUTING.md
 include AGENTS.md
+include requirements-dev.txt
+include tests/README.md
 recursive-include docs *.md
 include tools/README.md
 include tools/check_core.py

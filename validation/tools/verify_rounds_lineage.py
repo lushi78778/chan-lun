@@ -201,7 +201,7 @@ def main():
     minute1=load_frames(root,'1m',CODES,files)
     report=dict(version=chan.__version__,dataset=str(root),manifest_sha256=digest(root/'manifest.json'),
                 files=files,scope=__doc__,assets=[],errors=[],
-                source_sha256={p.name:digest(p) for p in sorted((Path(__file__).resolve().parents[1]/'src/chan').glob('*.py'))})
+                source_sha256={p.name:digest(p) for p in sorted((Path(__file__).resolve().parents[2]/'src/chan').glob('*.py'))})
     for code in CODES:
         try:
             item=dict(code=code,day=check(daily[code],'1d'),

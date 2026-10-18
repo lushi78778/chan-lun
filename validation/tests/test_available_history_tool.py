@@ -7,7 +7,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 
 ROOT=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-spec=importlib.util.spec_from_file_location('_available_history_tool',os.path.join(ROOT,'tools','verify_core_available.py'))
+spec=importlib.util.spec_from_file_location('_available_history_tool',os.path.join(ROOT,'validation','tools','verify_core_available.py'))
 tool=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(tool)
 

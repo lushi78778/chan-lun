@@ -8,7 +8,7 @@
 候选口径（课24 行31-33 面积判据）：
 - 前提=完成严格趋势（0.9.3 冻结口径）：A 闭合 + b 离开 + gap>0 +
   B 在首个离开核心的中间反向单元处冻结（课29 行20-26）+ c 离开 +
-  proof=c+1 自外侧回核心；与 tools/gen_real_strict_trend.py 的
+  proof=c+1 自外侧回核心；与 validation/tools/gen_real_strict_trend.py 的
   validate_zhongshu/validate_roles 逐条对齐；
 - 背驰=0 < area_c < area_b：b=A.zn[-1]+1、c=B.zn[-1]+1 同方向柱
   正幅值和，区间(start,end]；MACD(12,26,9) 固定 EMA 自窗口首行
@@ -37,7 +37,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CORE_SRC = ROOT / 'src'
 
 CODES = ['510300.SH', '510500.SH', '512880.SH', '512480.SH', '159915.SZ',

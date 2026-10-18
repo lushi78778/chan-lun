@@ -1,0 +1,120 @@
+{
+  "schema": "chan-core-structure-standardization-v1",
+  "checked_at": "2026-10-18T12:09:20.962960+08:00",
+  "baseline_commit": "2d757d1e0f6b5d5c4a43ffa78c9256b9c1b259d9",
+  "version": "1.0.0",
+  "publication": "engineering maintenance; no new tag or package release",
+  "description": "缠论结构识别与理论辅助计算库；单标的、单周期输入；多级和跨成员接口显式对齐",
+  "changes": [
+    "project description, README, API, architecture and module terminology aligned",
+    "current installation examples and migration guidance aligned to 1.0.0",
+    "23 repository asset tools moved from tools to validation/tools; five engineering scripts remain",
+    "independent requirements-dev.txt and optional validation/requirements.txt",
+    "explicit chan package discovery; validation excluded from wheel and sdist",
+    "current 1.x release discipline and repository/document ownership clarified",
+    "original page atlas now requires explicit --pdf; historical receipts remain unchanged"
+  ],
+  "checks": {
+    "package_source": {
+      "tests": 813,
+      "seconds": 65.266,
+      "result": "pass",
+      "log_sha256": "66aac7a81c226ee72b7b43ef48f95b08f7eac812df80ce38ebead50bd276e20e"
+    },
+    "sdist_initial": {
+      "tests": 813,
+      "seconds": 67.123,
+      "result": "pass",
+      "log_sha256": "f87ea19a10080ac3a093a3db7b8c4d715e958c8cd4733994cd570e60ee87371c"
+    },
+    "sdist_clean_development_environment": {
+      "tests": 813,
+      "seconds": 64.938,
+      "result": "pass",
+      "log_sha256": "453bb01b34552c0e666ee00897a7431886a41b38ce8ba6184f0649eb55afb192"
+    },
+    "repository_assets": {
+      "tests": 47,
+      "seconds": 568.559,
+      "result": "pass",
+      "log_sha256": "30b489d8e97c2b1c23cad245b82a4a258d319ab31a1660a83ab9b1c18064085f"
+    },
+    "documentation_contracts_final": {
+      "tests": 7,
+      "seconds": 0.324,
+      "result": "pass",
+      "log_sha256": "858a0e82735c32a47f8e82c9885de90bcea1321fa3c7bd849985cd8e896af7b4"
+    },
+    "cross30_documentation": {
+      "tests": 23,
+      "seconds": 0.006,
+      "result": "pass",
+      "log_sha256": "75e58d0a51903c626bde823634064d17f3c593f056d17cc6b77fda5ab61c9316"
+    }
+  },
+  "development_environment": {
+    "chan-lun-core": "1.0.0",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "build": "1.6.1"
+  },
+  "structural_audit": {
+    "frozen_assets_unchanged": 130,
+    "package_execution_unchanged": true,
+    "tool_cli_smoke": [
+      "build_original_annotations.py",
+      "build_real_annotations.py",
+      "build_real_f1_annotations.py",
+      "build_real_xd_annotations.py",
+      "build_real_xd_f1_annotations.py",
+      "gen_real_causal_formation.py",
+      "gen_real_f1_originals.py",
+      "gen_real_first_point.py",
+      "gen_real_second_point.py",
+      "gen_real_strict_trend.py",
+      "gen_real_third_point.py",
+      "gen_real_xd_f1.py",
+      "index_core_samples.py",
+      "scan_real_first_point.py",
+      "scan_real_rounds.py",
+      "scan_real_strict_trend.py",
+      "verify_completion_history.py",
+      "verify_core_available.py",
+      "verify_core_history.py",
+      "verify_fractal_history.py",
+      "verify_ma_history.py",
+      "verify_points_history.py",
+      "verify_rounds_lineage.py"
+    ],
+    "active_local_links": "pass",
+    "package_modules_execution_unchanged": 41,
+    "progress_section6_unchanged": true,
+    "local_links": "all active docs pass"
+  },
+  "artifacts": {
+    "artifacts": [
+      {
+        "file": "chan_lun_core-1.0.0-py3-none-any.whl",
+        "bytes": 204128,
+        "sha256": "91eeabb1fd52b1eb71c9fc61e0060f6f5b7e9e91682cd8e9d288143649d4ccba",
+        "summary": "缠论结构识别与理论辅助计算库。输入单标的、单周期的行情或结构序列，输出分型、笔、线段、中枢、背驰、买卖点，以及多级分解和辅助状态。算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。"
+      },
+      {
+        "file": "chan_lun_core-1.0.0.tar.gz",
+        "bytes": 1343716,
+        "sha256": "4835501a65cbf61a236b83f31e87232bc72bd54295d0cb9e79bc465ceff803c6",
+        "summary": "缠论结构识别与理论辅助计算库。输入单标的、单周期的行情或结构序列，输出分型、笔、线段、中枢、背驰、买卖点，以及多级分解和辅助状态。算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。"
+      }
+    ],
+    "wheel_modules": 41,
+    "sdist_fixtures": 16,
+    "validation_excluded": true,
+    "summary_matches_project": true
+  },
+  "wheel_isolated_import": "pass in existing and clean development environments",
+  "limitations": [
+    "local tests do not establish platform or strategy acceptance",
+    "old runtime and final remote CI are recorded separately for the eventual commit"
+  ],
+  "git_delivery": "push core only; outer pointer and governance documentation remain local"
+}

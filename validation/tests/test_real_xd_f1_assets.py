@@ -10,14 +10,14 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-TOOL = ROOT / 'tools/gen_real_xd_f1.py'
+TOOL = ROOT / 'validation/tools/gen_real_xd_f1.py'
 MANUAL = ROOT / 'validation/chan-real-xd-f1-manual-0.9.1.json'
 FIXTURE = ROOT / 'tests/fixtures/real_xd_f1.json'
 
 
 def compiler():
     """只加载独立开发工具，不把包算法引入真值编译。"""
-    sys.path.insert(0, str(ROOT / 'tools'))
+    sys.path.insert(0, str(ROOT / 'validation/tools'))
     try:
         spec = importlib.util.spec_from_file_location('real_xd_f1_compiler', TOOL)
         module = importlib.util.module_from_spec(spec)
@@ -39,7 +39,7 @@ class TestRealXdF1Assets(unittest.TestCase):
             data = json.loads(packet.read_text())
             self.assertEqual(data['rows'], case['raw_rows'])
             self.assertEqual(data['manifest_sha256'], case['source']['dataset_manifest_sha256'])
-        for path in (TOOL, ROOT / 'tools/gen_real_f1_originals.py'):
+        for path in (TOOL, ROOT / 'validation/tools/gen_real_f1_originals.py'):
             for node in ast.walk(ast.parse(path.read_text())):
                 names = ([a.name for a in node.names] if isinstance(node, ast.Import)
                          else [node.module or ''] if isinstance(node, ast.ImportFrom) else [])

@@ -1,8 +1,9 @@
 # 公开 API 与行为契约
 
 适用版本：1.x（契约建立于 0.13.x 的 R6 冻结阶段，1.0.0 沿用）。本文件是**契约参考**：回答
-"能调用什么、返回什么、什么算稳定"。用法教程见 `README.md`，架构
-决策见 `ARCHITECTURE.md`，理论进度不在本文件维护。
+"能调用什么、返回什么、什么算稳定"。用法教程见 [README.md](README.md)，分层与输入契约见
+[ARCHITECTURE.md](ARCHITECTURE.md)，仓库职责见 [目录索引](docs/README.md)。
+理论进度唯一维护在实现计划 §6。
 
 ## 1. 冻结范围与变更规则
 
@@ -34,11 +35,15 @@
 
 ## 2. 公开入口分层
 
+单个行情或结构序列对应单标的、单周期；多级和跨成员接口接收调用方
+显式对齐的多组序列。输出按模块区分结构识别、辅助候选与条件判定。
+
 | 层 | 模块 | 代表入口 | 输入 | 性质 |
 |---|---|---|---|---|
 | 行情与基础结构 | `bars` `fx` `bi` `xd` `zs` `bc` | `normalize_bars` `find_fxs` `find_bis` `find_xds` `find_zs` | 原始 bar 序列 | 结构识别 |
 | 批量组合与回放 | `analysis` `replay` `availability` | `analyze_bars` `analyze_at` `replay_bars` `analyze_available` | bar 序列(+观察时点) | 接线组合 |
-| 三类买卖点候选 | `bs` `cross30` | `find_buy_points` `find_sell_points` `confirm_buy3_30m` | 笔级结构 | 笔级简化候选 |
+| 三类买卖点候选 | `bs` | `find_buy_points` `find_sell_points` | 笔级结构 | 笔级简化候选 |
+| 两级辅助核对 | `cross30` | `confirm_buy3_30m` `confirm_sell3_30m` | 日线事件/边界与截断的 30m 行情 | 工程条件满足，不自动认定严格理论确认 |
 | 严格条件接口 | `first` `second` `third` `strict` `point_chain` `completion` `bottom` `fractal_range` | `scan_first_points` `find_second_points` `find_third_points` `scan_strict_divergence` `analyze_point_chain` | 调用方已确认的次级走势 | 条件判定，不自动升级 |
 | 因果谱系与诊断 | `lineage` `rounds` `causal_graph` | `track_center_lineage` `track_rounds` `causal_graph_dot` | 走势/单元序列 | 事件谱系 |
 | 理论辅助模块 | `gap` `kiss` `strength` `turn` `minor_turn` `zhongyin` `osc` `biaoli` `levels` `sector` `fxpower` `macd_guard` `ma_points` `nest` `decompose` `recurse` | `classify_gap` `find_kisses` `classify_bc_turn` `track_zhongyin` `oscillation_monitor` `decompose_levels` … | 各模块声明的最小输入 | 课理论工程化，阈值已声明 |

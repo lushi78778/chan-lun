@@ -1,0 +1,4 @@
+# 可选仓库资产工具环境：从核心库仓库根安装本文件。
+# 包测试不需要 pyarrow；原页图册另外需要系统命令 pdftoppm。
+-r ../requirements-dev.txt
+pyarrow>=12

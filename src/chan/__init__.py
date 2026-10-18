@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""chan 缠论量化核心包(纯 Python 3.6 兼容)
+"""chan-lun-core：缠论结构识别与理论辅助计算库。
+
+输入单标的、单周期的行情或结构序列，输出结构、点位、多级分解与辅助状态。
+算法用 Python 实现，第三方运行依赖为 numpy 与 pandas；MACD 内置计算。
+跨周期/跨成员接口由调用方分别提供已对齐的输入，级别不由分钟周期自动推断。
+运行时兼容目标为 Python 3.6，开发与构建环境另行准备。
 
 模块:
     bars    - 行情数据归一化
@@ -12,8 +17,8 @@
     recurse - 级别递归 f2: 三个连续次级别走势类型重叠 = 高一级别中枢,
               逐级上推(课 35/63/84/102)
     bc      - 背驰识别(MACD 辅助: 趋势背驰/盘整背驰)
-    bs      - 三类买卖点信号
-    cross30 - 日线买卖点 -> 30 分钟跨级别共振确认(区间套)
+    bs      - 笔级简化三类买卖点候选
+    cross30 - 调用方提供日线事件与 30m 行情的两级条件确认
     gap     - 缺口识别与力度三分类(课 77)
     fxpower - 分型力度与破均线辅助(课79/82)
     macd_guard - MACD双线负区防狼判据(课103)
@@ -28,9 +33,9 @@
     from chan.cross30 import confirm_buy3_30m
 完整导出清单见 __all__; 私有函数(下划线开头)与内部实现不在此列。
 
-发布: 发行名 chan-lun-core(import 名 chan), 仓库根 = src/chan(标准
-      src-layout, 本包位于仓库根的 src/chan/ 子目录, 见仓库根 pyproject.toml)。
-     注意: __version__ 与 pyproject.toml 的 [project] version 需保持一致。
+发行名 chan-lun-core，导入名 chan。独立仓库采用 src 布局，本模块位于
+仓库根的 src/chan/__init__.py；__version__ 与 pyproject.toml 版本保持一致。
+完整分层与职责见 ARCHITECTURE.md，输入输出契约见 API.md。
 """
 
 from chan.bars import BAR_KEYS, bars_to_df, normalize_bars, validate_bars
@@ -136,9 +141,9 @@ __all__ = [
     "build_expanded_zs", "classify_trend",
     # chan.bc 背驰(MACD 辅助)
     "ema", "macd_series", "segment_area", "find_trend_bc", "find_pan_bc",
-    # chan.bs 三类买卖点
+    # chan.bs 笔级简化三类买卖点候选
     "find_buy_points", "find_sell_points",
-    # chan.cross30 30m 跨级别共振确认
+    # chan.cross30 30m 两级条件确认
     "find_run_exhaustion", "confirm_buy3_30m", "confirm_sell3_30m",
     "confirm_buy2_30m", "confirm_buy3_event_30m",
     "confirm_sell3_event_30m",

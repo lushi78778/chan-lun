@@ -1,10 +1,29 @@
 # 核心库验收记录
 
-本目录为核心库仓库级证据，不属于 wheel/sdist。资产测试在 `tests/`，
+本目录为核心库仓库级证据，不属于 wheel/sdist。资产测试在
+`validation/tests/`，工具在 `validation/tools/`。
 完整 Git checkout 中运行 `python tools/check_core.py --scope validation`；
 包测试在仓库根 `tests/`，默认 `python tools/check_core.py` 可在 sdist 中执行。
 两层合跑使用 `--scope all`。原始输入与历史收据不覆盖，新的验收另存新文件。
 
+
+目录规范和当前工具命令见 [工具索引](tools/README.md)。下列记录按当时版本
+保留，历史行情验收、标注、扫描、图册与样本工具现位于 `validation/tools/`；
+`tools/verify_installed.py` 仍属工程层。冻结收据内的旧路径和摘要不回写。
+
+## 目录与表述规范化（2026-10-18）
+
+库定位统一为结构识别与理论辅助计算，安装示例对齐1.0.0，现行规则按1.x
+兼容契约执行。23个资产工具迁到 `validation/tools/`，五个工程入口保留在
+`tools/`；目录职责见 [文档索引](../docs/README.md)。新增独立开发依赖，
+原图图册的PDF由 `--pdf` 显式提供。
+
+源码与源码包各813项包测试通过，47项资产验收通过；全新开发环境的最终
+源码包813项及wheel隔离导入通过。41个模块的可执行AST、§6进度表及130份
+冻结资产保持一致。构建元数据采用新描述，wheel/sdist不含validation。
+以上为本地结果，远端CI与旧环境结果按实际提交另行核验，不重发1.0.0。
+
+- [本轮机器可读验证收据](chan-core-structure-standardization-2026-10-18.json)
 
 ## 正式1.0.0门槛终审裁定（2026-10-17）
 

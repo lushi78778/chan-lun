@@ -42,7 +42,7 @@ class TestRealF1Assets(unittest.TestCase):
 
     def test_generator_has_no_library_dependency_and_rebuilds_frozen_bytes(self):
         """独立编译只复算人工表, 每次输出摘要一致且拒绝覆盖既有证据。"""
-        tool = ROOT / 'tools/gen_real_f1_originals.py'
+        tool = ROOT / 'validation/tools/gen_real_f1_originals.py'
         for node in ast.walk(ast.parse(tool.read_text())):
             names = ([a.name for a in node.names] if isinstance(node, ast.Import)
                      else [node.module or ''] if isinstance(node, ast.ImportFrom) else [])

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from build_real_f1_annotations import chart, digest, table
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def main():
