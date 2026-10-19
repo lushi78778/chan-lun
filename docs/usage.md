@@ -470,11 +470,14 @@ BOLL 阈值和震荡估计都是辅助口径，BOLL 提示不等同于 `bs` 的�
 `strength` 的短长均线等长，`sma_series` 暖机段为 None；输入价格需完整。
 `find_ma_bc` 比较已闭合的同向均线面积，`use_avg=True` 使用平均力度。
 `avg_strength_state` 可描述形成中的面积，不应作为已完成背驰替代品。
+从 1.0.2 起，暖机后的缺值使尾段保持未封闭，即时状态返回 None；
+不跨缺口拼接面积与均线距离，缺口前实际确认的历史候选仍保留。
 
 `find_kisses(short, long, volumes=None, proximity=0.5, min_depth=0.2,
 flip_confirm=0.5)` 返回吻事件。`alignment_series` 的 `up/down` 分别表示
 短线在长线上方/下方；触零也算湿吻。三个默认比例是对定性描述的量化，
-吻本身不自动生成买卖点，需要配合价格结构和背驰。
+吻本身不自动生成买卖点。均线第一类候选另需价格趋势与力度证据，
+第二类采用体位转化后的首次中继条件，不额外要求另一轮背驰。
 
 `classify_bc_turn` 接收原中枢、后续回拉、原趋势方向；`classify_minor_turn`
 还可接收次级中枢和三类点信息。分类保留必要条件与充分证据的区别。

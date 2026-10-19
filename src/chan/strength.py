@@ -116,7 +116,9 @@ def ma_areas(short: Any, long: Any) -> List[MaArea]:
     返回:
         List[MaArea], 按时间序; 段边界 = 差值穿越零轴或触零(吻 =
             均线相交, 单点触零亦为相交)。末段若因序列耗尽而未再
-            相交, closed=False。差值恒为零或数据不足时返回 []。
+            相交, closed=False。暖机后的首次缺值同样只中断观测，尾段仍未
+            封闭，且不接续缺口后的序列；不能用缺值确认背驰。
+            差值恒为零或数据不足时返回 []。
     """
     diffs = _diff_series(short, long)
     # 首个有效位
@@ -136,10 +138,10 @@ def ma_areas(short: Any, long: Any) -> List[MaArea]:
     for i in range(first, len(diffs)):
         d = diffs[i]
         if d is None:
-            # 无效位: 视为数据耗尽, 封闭当前段
+            # 观测中断不等于两均线再次相交；保留未封闭尾段。
             if cur_sign != 0:
                 areas.append(MaArea(cur_sign, cur_start, i - 1,
-                                    cur_area, cur_bars, True))
+                                    cur_area, cur_bars, False))
                 cur_sign = 0
             break
         if d == 0.0:
@@ -180,6 +182,10 @@ def find_ma_bc(short: Any, long: Any,
         - use_avg=True 时改用平均力度(avg_area, 面积/时间)比较;
         - direction: 'up' = 上涨段力度转弱(顶背驰候选) /
             'down' = 下跌段力度转弱(底背驰候选)。
+
+    两条均线的同号面积本身不证明价格高低点符合趋势定义；本函数
+    仅返回均线力度弱化候选，价格趋势、级别及精确点位须另行验证。
+    缺值不提供相交证据，未封闭尾段不产生稳妥候选。
 
     返回:
         list of dict: direction / idx(后段末索引) / area_prev /
@@ -280,13 +286,19 @@ def avg_strength_state(short: Any, long: Any) -> Optional[MaStrengthState]:
     预警, find_ma_bc 承担接吻后的确认)。
 
     返回:
-        MaStrengthState; 无有效数据(均线未定义/差值恒零)时 None。
+        MaStrengthState; 无有效数据(均线未定义/差值恒零)，或前导
+        暖机之后存在缺值时返回 None。缺口前的历史封闭段仍可由
+        ma_areas/find_ma_bc 读取，但不据此返回当前力度状态。
     """
     areas = ma_areas(short, long)
     if not areas:
         return None
     diffs = _diff_series(short, long)
-    valid = [d for d in diffs if d is not None]
+    first = next(i for i, value in enumerate(diffs) if value is not None)
+    valid = diffs[first:]
+    if any(value is None for value in valid):
+        # 没有连续的当下观测，不能拿缺口前面积配缺口后距离。
+        return None
 
     open_seg = areas[-1]
     direction = "up" if open_seg.sign > 0 else "down"

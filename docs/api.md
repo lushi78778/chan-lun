@@ -178,6 +178,9 @@ docstring 与模块测试。
   "无数据"区分，`completed_types` 计数独立保留。
 - 开放尾部（`open_tail=True`、`STRICT_CANDIDATE`）随前缀演进，
   可被后续数据否决，不是确认。
+- 均线力度（1.0.2 修正）：前导暖机之后的缺值不是相交证据，
+  `ma_areas` 保留未封闭尾段，`avg_strength_state` 返回 `None`。
+  缺口前实际相交确认的历史候选保留；与 1.0.1 的差异见 CHANGELOG。
 
 ## 10. 稳定性声明
 

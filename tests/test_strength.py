@@ -14,6 +14,8 @@
   数据返回 None;
 - 集成: 合成"强-弱"两段上涨(短均线围成面积递减)触发顶背驰,
   下跌镜像触发底背驰。
+- 缺值: 暖机后 None/NaN 不封闭尾段、不确认稳妥候选、不拼接即时状态；
+  保留缺口前实际相交的历史事件，前导暖机继续支持。
 """
 
 import os
@@ -115,9 +117,42 @@ class TestMaAreas(unittest.TestCase):
         self.assertEqual(len(areas), 1)
         self.assertTrue(areas[0].closed)
 
+    def test_missing_value_does_not_close_open_area(self):
+        # 课15须由再次相交封闭；缺值只使观测中断，不是相交证据。
+        for missing in (None, float('nan')):
+            for sign in (1, -1):
+                with self.subTest(missing=missing, sign=sign):
+                    short = [10 + sign, 10 + sign, 10 - sign,
+                             10 - sign, 10 + sign * .5, 10 + sign * .5,
+                             missing, 50.0]
+                    areas = ma_areas(short, [10.0] * len(short))
+                    self.assertEqual(len(areas), 3)
+                    self.assertTrue(all(a.closed for a in areas[:-1]))
+                    self.assertFalse(areas[-1].closed)
+                    self.assertEqual(areas[-1].end_idx, 5)
+                    self.assertAlmostEqual(areas[-1].area, sign * 1.0)
+
 
 class TestFindMaBc(unittest.TestCase):
     """find_ma_bc 均线趋势背驰(稳妥口径)"""
+
+    def test_missing_value_is_not_confirming_kiss(self):
+        # 强、反向、弱三段后缺值，不得把弱段假封闭成顶/底背驰。
+        # 实际触零已确认的历史事件，则不因其后的缺值被删除。
+        for sign in (1, -1):
+            prefix = [10 + sign, 10 + sign, 10 - sign,
+                      10 - sign, 10 + sign * .5, 10 + sign * .5]
+            for missing in (None, float('nan')):
+                for use_avg in (False, True):
+                    with self.subTest(sign=sign, missing=missing, use_avg=use_avg):
+                        short = prefix + [missing, 50.0]
+                        self.assertEqual(find_ma_bc(short, [10.] * len(short), use_avg), [])
+                        complete = prefix + [10.0]
+                        expected = find_ma_bc(complete, [10.] * len(complete), use_avg)
+                        self.assertEqual(len(expected), 1)
+                        later_gap = complete + [missing, 50.0]
+                        self.assertEqual(find_ma_bc(later_gap, [10.] * len(later_gap), use_avg),
+                                         expected)
 
     def test_top_divergence(self):
         # 同向段后弱(中间异向段跳过): 上涨段面积 5.0 -> 3.0 -> 顶背驰
@@ -245,6 +280,17 @@ class TestAvgStrengthState(unittest.TestCase):
         self.assertIsNone(avg_strength_state([], []))
         self.assertIsNone(avg_strength_state([10.0] * 6, [10.0] * 6))
         self.assertIsNone(avg_strength_state([None, None], [None, None]))
+
+    def test_gap_after_warmup_has_no_current_strength(self):
+        # 不拼接缺口前面积和缺口后距离；前导暖机 None 仍可跳过。
+        prefix = [11., 11., 9., 9., 10.5, 10.5]
+        warmup = [None, None] + prefix
+        self.assertIsNotNone(avg_strength_state(warmup, [10.] * len(warmup)))
+        for missing in (None, float('nan')):
+            for suffix in ([], [50.], [9., 10.1]):
+                with self.subTest(missing=missing, suffix=suffix):
+                    short = warmup + [missing] + suffix
+                    self.assertIsNone(avg_strength_state(short, [10.] * len(short)))
 
 
 class TestIntegration(unittest.TestCase):
