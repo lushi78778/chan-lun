@@ -17,11 +17,13 @@ ticks。first_raw_count按逐原始bar前缀首次可见冻结; 日线15:05到�
 仅测试约定。构造允许constructing结局（引发中枢未形成或三类尝试
 全部fail）, 与0.9.11只冻结已裁定底顶的编译口径互补。
 标准同时用于全窗分笔和每个原始前缀, 不能只换最终笔链而沿用106确认。
+仅接受完整且为正的恒定因子; 当行/末因子为1, 原价和原因子均保留。
 """
 import argparse
 from datetime import datetime, timedelta, timezone
 import json
 import math
+from numbers import Real
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -122,12 +124,28 @@ def formation_fields(units, proof_unit, up, unit_seen, rows, granularity):
                 attempts=attempts, resolution=resolution, outcome=outcome)
 
 
+def constant_factor(rows):
+    """仅接受正的恒定数值因子; 保留原值, 不把因子改成1。
+
+    任一观察前缀的当行因子/末因子均精确等于1, 故原始价格坐标不变。
+    因子缺失、非有限或变化均拒绝; 本检查不证明供应版本或原价真伪。
+    """
+    if not rows:
+        raise ValueError('原始包为空')
+    factors = [row.get('adj_factor') for row in rows]
+    if any(isinstance(value, bool) or not isinstance(value, Real) or
+           not math.isfinite(value) or value <= 0 for value in factors):
+        raise ValueError('发现扫描要求完整、有限且为正的数值因子')
+    if any(value != factors[0] for value in factors):
+        raise ValueError('发现扫描仅接受恒因子窗口;变化因子须先独立冻结复权坐标')
+    return factors[0]
+
+
 def scan(packet, granularity='day', standard='106'):
     if standard not in ('81', '106'):
         raise ValueError('不支持的笔标准: ' + str(standard))
     rows = packet['rows']
-    if any(row['adj_factor'] != 1 for row in rows):
-        raise ValueError('本轮发现扫描仅接受因子恒为1')
+    constant_factor(rows)
     groups, fxs, bis = foundation(rows, standard)
     fixed = components(rows, bis[:-1], 10 if granularity == 'day' else None)
     pseudo = dict(expected_bis=records(bis), standard=standard)
@@ -208,6 +226,8 @@ def main():
     report = dict(schema_version='chan-real-rounds-scan-v1',
                   annotation='rounds_discovery_scan_not_labels',
                   standard=args.standard,
+                  factor_coordinate=dict(source_factor=constant_factor(packet['rows']),
+                      rule='constant positive factor;factor/final_factor=1;raw prices unchanged'),
                   generated_at=datetime.now(
                       timezone(timedelta(hours=8))).isoformat(),
                   packet=args.packet.name, packet_sha256=digest(args.packet),

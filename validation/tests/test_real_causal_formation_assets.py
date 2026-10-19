@@ -432,15 +432,57 @@ class TestRealRoundsDiscovery(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, '笔标准'):
             tool.scan(packet, standard='unknown')
 
+    def test_positive_constant_factor_is_identity_without_mutating_source(self):
+        """当行/观察末因子恒相等, 任意正恒因子不改变原价或冻结结构。"""
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        _, original = packet_of(manual_cases()[0])
+        for standard in ('81', '106'):
+            expected = tool.scan(original, standard=standard)
+            for factor in (1.455, 6.66401, 0.25):
+                with self.subTest(standard=standard, factor=factor):
+                    packet = copy.deepcopy(original)
+                    for row in packet['rows']:
+                        row['adj_factor'] = factor
+                    untouched = copy.deepcopy(packet)
+                    self.assertEqual(tool.constant_factor(packet['rows']), factor)
+                    self.assertEqual(tool.scan(packet, standard=standard), expected)
+                    self.assertEqual(packet, untouched)
+                    self.assertEqual(packet['rows'][-1]['adj_factor'], factor)
+
+    def test_factor_changes_and_invalid_factors_are_not_normalized_or_filled(self):
+        """只放行恒因子恒等坐标, 不放行跳变、微小差值或缺因子。"""
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        _, original = packet_of(manual_cases()[0])
+        for value in (None, 0, -1, float('nan'), float('inf'), True, '1',
+                      1 + 1e-12):
+            with self.subTest(value=value):
+                packet = copy.deepcopy(original)
+                packet['rows'][len(packet['rows']) // 2]['adj_factor'] = value
+                with self.assertRaises(ValueError):
+                    tool.scan(packet)
+        packet = copy.deepcopy(original)
+        del packet['rows'][0]['adj_factor']
+        with self.assertRaises(ValueError):
+            tool.scan(packet)
+        with self.assertRaises(ValueError):
+            tool.scan({'rows': []})
+
     def test_cli_records_selected_standard_and_preserves_existing_output(self):
         labels = json.loads(
             (ROOT / 'tests/fixtures/real_f1_originals.json').read_text())
         case = labels['cases'][0]
         tool = ROOT / 'validation/tools/scan_real_rounds.py'
         with tempfile.TemporaryDirectory() as temp:
+            packet = json.loads(
+                (ROOT / 'validation' / case['source']['packet']).read_text())
+            for row in packet['rows']:
+                row['adj_factor'] = 1.455
+            source = Path(temp) / 'packet.json'
+            source.write_text(json.dumps(packet))
+            original = source.read_bytes()
             output = Path(temp) / 'scan.json'
             command = [sys.executable, str(tool), '--packet',
-                       str(ROOT / 'validation' / case['source']['packet']),
+                       str(source),
                        '--output', str(output), '--standard', '81']
             run = subprocess.run(command, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE, universal_newlines=True)
@@ -448,6 +490,8 @@ class TestRealRoundsDiscovery(unittest.TestCase):
             frozen = output.read_bytes()
             report = json.loads(frozen.decode('utf-8'))
             self.assertEqual(report['standard'], '81')
+            self.assertEqual(report['factor_coordinate']['source_factor'], 1.455)
+            self.assertEqual(source.read_bytes(), original)
             self.assertEqual(report['bis'], case['foundation_81']['bis'])
             self.assertEqual(report['annotation'],
                              'rounds_discovery_scan_not_labels')
