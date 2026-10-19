@@ -20,8 +20,10 @@
 
 import os
 import math
+import json
 import sys
 import unittest
+from decimal import Decimal, localcontext
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "src"))
@@ -64,8 +66,8 @@ class TestSmaSeries(unittest.TestCase):
         # 旧Python逐项sum的长均线多1 ULP, 把相交行误计入下跌面积。
         values = [1.016, 1.016, 1.031, 1.030, 1.033,
                   1.024, 1.024, 1.031, 1.028, 1.019]
-        self.assertEqual(sum(round(x*1000) for x in values[-5:])*2,
-                         sum(round(x*1000) for x in values))
+        ticks = [int(Decimal(str(x))*1000) for x in values]
+        self.assertEqual(sum(ticks[-5:])*2, sum(ticks))
         short, long = sma_series(values, 5), sma_series(values, 10)
         self.assertEqual(short[-1], 1.0252)
         self.assertEqual(short[-1], long[-1])
@@ -73,6 +75,66 @@ class TestSmaSeries(unittest.TestCase):
         self.assertEqual(len(areas), 1)
         self.assertTrue(areas[0].closed)
         self.assertEqual(areas[0].bars, 1)
+
+    def test_frozen_raw_quote_means_agree_with_integer_tick_signs(self):
+        # 既有原始ETF报价均在0.001格点上。先用整数交叉相乘求符号,
+        # 不把均线取至报价档位, 不沿用原笔/XD标签作为均线真值。
+        root = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures')
+        seen, equal_count, unequal_count = set(), 0, 0
+        for name in sorted(os.listdir(root)):
+            if not name.endswith('.json'):
+                continue
+            with open(os.path.join(root, name), encoding='utf-8') as f:
+                data = json.load(f)
+            if not isinstance(data, dict):
+                continue
+            for case in data.get('cases', []):
+                if not case.get('raw_rows') or case['id'] in seen:
+                    continue
+                seen.add(case['id'])
+                values = [r['close'] for r in case['raw_rows']]
+                decimal_ticks = [Decimal(str(v))*1000 for v in values]
+                self.assertTrue(all(v == int(v) for v in decimal_ticks), case['id'])
+                ticks = [int(v) for v in decimal_ticks]
+                short, long = sma_series(values, 5), sma_series(values, 10)
+                for i in range(9, len(values)):
+                    diff = 2*sum(ticks[i-4:i+1]) - sum(ticks[i-9:i+1])
+                    actual = short[i] - long[i]
+                    self.assertEqual((actual > 0) - (actual < 0),
+                                     (diff > 0) - (diff < 0), (case['id'], i))
+                    equal_count += diff == 0
+                    unequal_count += diff != 0
+        self.assertTrue(seen)
+        self.assertGreater(equal_count, 0)
+        self.assertGreater(unequal_count, 0)
+
+    def test_quote_tick_does_not_quantize_indicator_values(self):
+        # A股0.01/基金0.001为申报档位; 合法报价的均线仍有更细的有效差值。
+        for base, tick in ((10., .01), (1., .001)):
+            values = [base]*9 + [base + tick]
+            short, long = sma_series(values, 5)[-1], sma_series(values, 10)[-1]
+            self.assertGreater(short, long)
+            self.assertLess(short-long, tick)
+            self.assertAlmostEqual(short-long, tick/10)
+            self.assertEqual(round(short/tick), round(long/tick))
+
+    def test_decimal_context_does_not_change_quote_mean(self):
+        values = [1.696, 1.676, 1.681, 1.704, 1.690,
+                  1.681, 1.689, 1.697, 1.687, 1.693]
+        # 两组五根整数和均8447, 精确均值1.6894; fsum仍会差一个ULP。
+        with localcontext() as context:
+            context.prec = 2
+            self.assertEqual(sma_series(values, 5)[-1], 1.6894)
+            self.assertEqual(sma_series(values, 10)[-1], 1.6894)
+
+    def test_invalid_window_recovers_without_accepting_numeric_strings(self):
+        values = [1.001, float('nan'), 1.002, 1.003, 1.004]
+        out = sma_series(values, 2)
+        self.assertTrue(math.isnan(out[1]))
+        self.assertTrue(math.isnan(out[2]))
+        self.assertEqual(out[3:], [1.0025, 1.0035])
+        with self.assertRaises(TypeError):
+            sma_series(['1.001', '1.002'], 2)
 
     def test_cancellation_mean_preserves_the_small_term(self):
         # 精确总和为1, 不能因大数抵消把均值变0。

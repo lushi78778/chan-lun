@@ -29,6 +29,8 @@
 """
 
 import math
+from fractions import Fraction
+from numbers import Number
 from typing import Any, Dict, List, Optional
 
 from chan._series import _diff_series
@@ -46,9 +48,10 @@ __all__ = [
 def sma_series(values: Any, n: int) -> List[Optional[float]]:
     """简单移动平均(SMA), 暖机期置 None
 
-    有限实数采用math.fsum稳定求和, 避免内置sum在不同Python版本
-    的舍入残差改变相交/面积根数。不添加零点容差或四舍五入报价。
-    fsum不能处理的数值沿用原sum路径, 保持缺值/非有限值的既有语义。
+    有限数值按str(value)的十进制表示精确累加、除以周期, 最后转float。
+    不按交易报价单位取整, 不添加零点容差; 复权价格及有效微小差值保留。
+    输入已经丢失的十进制精度无法恢复。非有限/异常数值沿用既有求和
+    路径, 不承诺任意对象都能作为报价解析。
 
     参数:
         values: 收盘价序列(list / tuple / ndarray, 数值元素)。
@@ -62,6 +65,16 @@ def sma_series(values: Any, n: int) -> List[Optional[float]]:
         raise ValueError("n must be >= 1")
     out: List[Optional[float]] = []
     vals = list(values)
+    # 前缀只累计可解析的数值; 缺口计数保证其离开窗口后可恢复。
+    # Fraction不受调用方Decimal上下文精度影响, 不推断标的或固定报价档位。
+    totals, invalid = [Fraction(0)], [0]
+    for value in vals:
+        try:
+            exact = Fraction(str(value)) if isinstance(value, Number) else None
+        except (TypeError, ValueError, OverflowError, ZeroDivisionError):
+            exact = None
+        totals.append(totals[-1] + (exact if exact is not None else 0))
+        invalid.append(invalid[-1] + (exact is None))
     for i in range(len(vals)):
         if i < n - 1:
             out.append(None)
@@ -71,6 +84,14 @@ def sma_series(values: Any, n: int) -> List[Optional[float]]:
                 total = math.fsum(window)
             except (TypeError, ValueError, OverflowError):
                 total = sum(window)
+            else:
+                start = i - n + 1
+                if math.isfinite(total) and invalid[i + 1] == invalid[start]:
+                    try:
+                        out.append(float((totals[i + 1] - totals[start]) / int(n)))
+                        continue
+                    except OverflowError:
+                        pass
             out.append(total / float(n))
     return out
 
