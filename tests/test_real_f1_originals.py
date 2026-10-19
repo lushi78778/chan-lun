@@ -4,6 +4,9 @@
 预期来自人工三段交集/切点/后继证明表, 编译器不导入chan。六窗口
 共928原始日, 双标准和双路径分别回放。分型极值日和证据笔端点日
 均不代替确认日。15:00闭合/15:05到达仅工程约定, 非供应时效实测。
+
+另复用81因果条件两窗, 明示同一最低F1-bi规则后的真实完整类型及
+F2未完成边界；独立区间表先于库比较声明, 不覆盖原条件fixture。
 """
 import json
 import os
@@ -269,6 +272,157 @@ class TestRealF1Originals(unittest.TestCase):
                     now = rows[-1]['available_dt']
                     self.assertEqual(chan.confirm_level_up(units, now, 'F2'),
                                      chan.confirm_level_up(units + [future], now, 'F2'))
+
+
+# 课35/38/84；复用0.9.0的F1-bi合同：固定笔无延伸同级切分。
+# (起笔, 末笔, kind, 进入方向, 三段起点, 交集ticks, 证明笔, 首确认原始行)
+# 交集/切点/证明来自独立区间表；不从库输出搜索或回填预期。
+M3_F1_AUDIT = {
+    'M3T81': {
+        'completed': (
+            (0, 2, 'consolidation', None, (0,), ((1495, 1524),), 3, 41),
+            (3, 8, 'up', 'up', (3, 6), ((1495, 1582), (1685, 1728)), 9, 133),
+            (9, 11, 'consolidation', None, (9,), ((1663, 1763),), 12, 165),
+        ),
+        'tail': (12, 14, 'consolidation', None, (12,), ((1784, 1849),), None, None),
+        'f2_kind': 'incomplete', 'f2_centers': (),
+    },
+    'M3B81': {
+        'completed': (
+            (0, 2, 'consolidation', None, (0,), ((1767, 1808),), 3, 48),
+            (3, 5, 'consolidation', None, (3,), ((1631, 1688),), 6, 68),
+            (6, 8, 'consolidation', None, (6,), ((1626, 1702),), 9, 87),
+            (9, 11, 'consolidation', None, (9,), ((1595, 1751),), 12, 126),
+            (12, 14, 'consolidation', None, (12,), ((1631, 1765),), 15, 177),
+        ),
+        'tail': (15, 16, 'incomplete', None, (), (), None, None),
+        'f2_kind': 'consolidation', 'f2_centers': ((1719, 1751),),
+    },
+}
+
+
+def m3_cases():
+    path = os.path.join(os.path.dirname(__file__), 'fixtures',
+                        'real_causal_formation_81.json')
+    with open(path, encoding='utf-8') as stream:
+        return json.load(stream)['cases']
+
+
+def m3_expected(case, spec):
+    """装配已声明区间, 只读取冻结源坐标, 不调用识别器或寻找切点。"""
+    a, z, kind, direction, triples, centers, proof, count = spec
+    parts = case['units']
+    return dict(kind=kind, complete=proof is not None, direction=direction,
+                seg_start=a, seg_end=z, start_dt=parts[a]['start_dt'],
+                end_dt=parts[z]['end_dt'], start_ticks=parts[a]['start_ticks'],
+                end_ticks=parts[z]['end_ticks'],
+                low_ticks=min(p['low_ticks'] for p in parts[a:z + 1]),
+                high_ticks=max(p['high_ticks'] for p in parts[a:z + 1]),
+                centers_ticks=[list(c) for c in centers], proof_unit=proof,
+                confirmed_raw_count=count,
+                confirmed_dt=(case['raw_rows'][count - 1]['dt'][:10]
+                              + ' 15:05:00') if count is not None else None)
+
+
+class TestRealM3MinimumTypes(unittest.TestCase):
+    def test_declared_f1_tables_and_every_raw_prefix_confirmation(self):
+        """两窗8个完整F1及未完成尾部, 全部原始前缀独立核对。"""
+        for case in m3_cases():
+            audit = M3_F1_AUDIT[case['window_key']]
+            specs = audit['completed'] + (audit['tail'],)
+            target = [m3_expected(case, spec) for spec in specs]
+            for spec, record in zip(specs, target):
+                triples, centers, proof, count = spec[4:]
+                parts = case['units']
+                actual = [(max(p['low_ticks'] for p in parts[j:j + 3]),
+                           min(p['high_ticks'] for p in parts[j:j + 3]))
+                          for j in triples]
+                self.assertEqual(tuple(actual), centers, case['window_key'])
+                if proof is not None:
+                    self.assertEqual(case['foundation']['bis_confirmed_raw_count'][proof], count)
+                    self.assertGreater(count,
+                                       parts[record['seg_end']]['confirmed_raw_count'])
+            bars = raw_bars(case)
+            seen = {}
+            for count in range(1, len(bars) + 1):
+                _, _, bis = chan.chan_fx_bi(bars[:count], standard='81')
+                moves = chan.same_level_decompose(bis[:-1])
+                completed = [m for m in moves if m.complete]
+                expected = [m for m in target if m['complete']
+                            and m['confirmed_raw_count'] <= count]
+                self.assertEqual([move_record(m) for m in completed],
+                                 [expected_shape(m) for m in expected],
+                                 (case['window_key'], count))
+                for move in completed:
+                    seen.setdefault(move.seg_start, count)
+            self.assertEqual(seen, {m['seg_start']: m['confirmed_raw_count']
+                                    for m in target if m['complete']})
+            self.assertEqual([move_record(m) for m in moves],
+                             [expected_shape(m) for m in target])
+
+    def test_complete_f1_prefixes_cannot_manufacture_a_strict_f2_trend(self):
+        """F1已确认才能递归；F2不完整时注入力度也不能生成严格结果。"""
+        for case in m3_cases():
+            audit = M3_F1_AUDIT[case['window_key']]
+            completed = [m3_expected(case, s) for s in audit['completed']]
+            units = confirmed_inputs(dict(completed=completed))
+            calls = []
+
+            def force(reference, leave):
+                calls.append((reference, leave))
+                return 10.0, 1.0
+
+            for count, row in enumerate(case['raw_rows'], 1):
+                now = date(row['dt'][:10]) + timedelta(hours=15, minutes=5)
+                visible = [u for u in units if u.confirmed_dt <= now]
+                self.assertEqual(chan.confirm_level_up(units, now, 'F2'), [])
+                scan = chan.scan_strict_divergence(
+                    units, now, 'F2', force_fn=force, force_method='boundary_test')
+                self.assertEqual(scan.results, (), (case['window_key'], count))
+                self.assertEqual(scan.completed_types, 0)
+                self.assertEqual(scan.open_tail, bool(visible))
+                self.assertEqual([reason for _, reason in scan.skipped],
+                                 ['not_two_separated_centers'] if visible else [])
+                poisoned = [u if u.confirmed_dt <= now else u._replace(
+                    move_id=None, level=None, low=float('nan'), centers=None)
+                            for u in units]
+                self.assertEqual(chan.scan_strict_divergence(
+                    poisoned, now, 'F2').to_dict(),
+                    chan.scan_strict_divergence(units, now, 'F2').to_dict())
+            self.assertEqual(calls, [])
+            final = chan.level_up(units)
+            self.assertEqual(len(final), 1)
+            self.assertFalse(final[0].complete)
+            self.assertEqual(final[0].kind, audit['f2_kind'])
+            self.assertEqual(tuple((round(a * 1000), round(b * 1000))
+                                   for a, b in final[0].centers),
+                             audit['f2_centers'])
+            _, _, bis = chan.chan_fx_bi(raw_bars(case), standard='81')
+            with self.assertRaises(ValueError):
+                chan.confirm_level_up(bis[:-1], now, 'F2')
+
+    def test_r2_c_is_internal_and_core_shift_is_not_wave_separation(self):
+        """辅助c笔在未完成F1内部；工程up的核心移位不证明严格波动分离。"""
+        for case in m3_cases():
+            c = case['first_point']['c_unit']
+            target = [m3_expected(case, spec)
+                      for spec in M3_F1_AUDIT[case['window_key']]['completed']]
+            containing = [m for m in target if m['seg_start'] <= c <= m['seg_end']]
+            self.assertEqual(len(containing), 1)
+            move = containing[0]
+            self.assertGreater(move['confirmed_raw_count'],
+                               case['first_point']['first_raw_count'])
+            self.assertNotEqual(move['end_dt'], case['units'][c]['end_dt'])
+            self.assertEqual(sum(m['confirmed_raw_count'] <=
+                                 case['first_point']['first_raw_count'] for m in target), 2)
+            if case['window_key'] == 'M3T81':
+                up = target[1]
+                self.assertEqual(up['kind'], 'up')
+                self.assertGreater(up['centers_ticks'][1][0], up['centers_ticks'][0][1])
+                parts = case['units']
+                first_gg = max(p['high_ticks'] for p in parts[3:6])
+                second_dd = min(p['low_ticks'] for p in parts[6:9])
+                self.assertEqual(second_dd - first_gg, -79)
 
 
 if __name__ == '__main__':

@@ -444,10 +444,20 @@ reading = level_reading(levels, at_dt=bars[-1]["dt"]) if bars else []
 表示尾部尚未完成，`kind='incomplete'` 表示没有形成完整走势类别，
 两种标记不能混为一谈。
 
-**类型口径**：`same_level_decompose` 的 `kind='up'/'down'` 表示明示
-同级切分规则中的中枢核心 ZD/ZG 同向移位；`complete=True` 表示当前
-输入的后继结束证据已具备。这两个字段不独立证明课 20 严格趋势或
-背驰。`zs_relation` 另比较完整波动 DD/GG，两种口径不可混用。
+**类型口径**：`same_level_decompose` 和 `level_up` 的 `kind='up'/'down'`
+表示各自切分规则中的中枢核心 ZD/ZG 同向移位；`complete=True` 表示
+当前输入的后继结束结构已具备。这两个字段不独立证明课 20 严格趋势
+或背驰。`zs_relation` 另比较完整波动 DD/GG，两种口径不可混用。
+上例是区间结构计算；严格链还须声明最低完整 F1 规则，逐原始前缀取得
+后继证明的实际确认，再构造 `ConfirmedMoveType` 供相邻 F2 递归。
+裸笔/线段或未完成 `MoveType` 不能仅改名后充当这一输入。
+
+现有 81 两窗在固定笔无延伸 F1 规则下，各形成 3 / 5 个完成类型；
+原 R2 的 c 笔均在当时未完成的 F1 内。该窗口的 F2 仍未完成，严格
+接口只登记 `skipped/not_two_separated_centers`，不能由辅助点名反推
+严格一类点。独立切点和确认表见
+[仓库验收索引](https://github.com/lushi78778/chan-lun/blob/main/validation/README.md)，
+逐前缀检查复用 `tests/test_real_f1_originals.py`，只覆盖该声明规则。
 
 `decompose_levels` 第 1 级保留输入单元，以后逐级上推；序号不自动对应
 1 分钟/5 分钟/日线等时间周期。`level_reading` 按起止端点的闭区间读数，
