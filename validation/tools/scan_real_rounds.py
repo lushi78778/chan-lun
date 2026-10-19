@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""0.11.7 多轮真实窗口发现扫描（课24/101/108, 笔级）。
+"""多轮真实窗口发现扫描（课24/81/101/106/108, 笔级）。
 
 发现工具, 不导入chan, 不产出独立真值。固定笔链与逐前缀确认复用
-R2冻结算术（gen_real_f1_originals.foundation, 106标准）; 完成严格
+R2冻结算术（gen_real_f1_originals.foundation, 默认106、显式可选81）; 完成严格
 趋势检测沿用0.9.9冻结口径（scan_real_first_point.scan_strict_v3,
 属性包装适配字典单元）; 一类候选面积/新极值/零轴口径同0.9.9; 引发
 中枢与三类尝试沿用0.9.11冻结算术（gen_real_causal_formation.
@@ -16,6 +16,7 @@ run_causal_zn, gen_real_third_point.enumerate_attempts）。本工具
 ticks。first_raw_count按逐原始bar前缀首次可见冻结; 日线15:05到达
 仅测试约定。构造允许constructing结局（引发中枢未形成或三类尝试
 全部fail）, 与0.9.11只冻结已裁定底顶的编译口径互补。
+标准同时用于全窗分笔和每个原始前缀, 不能只换最终笔链而沿用106确认。
 """
 import argparse
 from datetime import datetime, timedelta, timezone
@@ -121,13 +122,15 @@ def formation_fields(units, proof_unit, up, unit_seen, rows, granularity):
                 attempts=attempts, resolution=resolution, outcome=outcome)
 
 
-def scan(packet, granularity='day'):
+def scan(packet, granularity='day', standard='106'):
+    if standard not in ('81', '106'):
+        raise ValueError('不支持的笔标准: ' + str(standard))
     rows = packet['rows']
     if any(row['adj_factor'] != 1 for row in rows):
         raise ValueError('本轮发现扫描仅接受因子恒为1')
-    groups, fxs, bis = foundation(rows, '106')
+    groups, fxs, bis = foundation(rows, standard)
     fixed = components(rows, bis[:-1], 10 if granularity == 'day' else None)
-    pseudo = dict(expected_bis=records(bis), standard='106')
+    pseudo = dict(expected_bis=records(bis), standard=standard)
     bi_seen, _ = replay_confirmations(rows, pseudo, [])
     units = []
     for unit, count in zip(fixed, bi_seen):
@@ -191,6 +194,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--packet', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--standard', choices=('81', '106'), default='106',
+                        help='全窗及逐前缀使用同一笔标准; 默认保持106')
     args = parser.parse_args()
     if args.output.exists():
         parser.error('拒绝覆盖已有扫描报告, 使用新输出路径')
@@ -199,9 +204,10 @@ def main():
     granularity = 'day' if period == '1d' else period
     if granularity not in ('day', '60m', '30m', '5m'):
         parser.error('不支持的原始包粒度: ' + str(period))
-    result = scan(packet, granularity)
+    result = scan(packet, granularity, args.standard)
     report = dict(schema_version='chan-real-rounds-scan-v1',
                   annotation='rounds_discovery_scan_not_labels',
+                  standard=args.standard,
                   generated_at=datetime.now(
                       timezone(timedelta(hours=8))).isoformat(),
                   packet=args.packet.name, packet_sha256=digest(args.packet),

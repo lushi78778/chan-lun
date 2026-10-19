@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""0.9.11 因果底顶标注的来源、独立编译与人工表防错契约。"""
+"""因果底顶冻结标注与轮次发现工具的独立算术、确认和来源契约。"""
 import ast
 import copy
 import importlib.util
@@ -16,12 +16,12 @@ MANUAL = ROOT / 'validation/chan-real-causal-formation-manual-0.9.11.json'
 FIXTURE = ROOT / 'tests/fixtures/real_causal_formation.json'
 
 
-def compiler():
+def compiler(tool=TOOL):
     """只加载独立开发工具，不把包算法引入真值编译。"""
     sys.path.insert(0, str(ROOT / 'validation/tools'))
     try:
         spec = importlib.util.spec_from_file_location(
-            'real_causal_formation_compiler', TOOL)
+            tool.stem + '_assets', tool)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
@@ -311,6 +311,80 @@ class TestRealCausalFormationAssets(unittest.TestCase):
                     mutate(broken)
                     with self.assertRaises(ValueError):
                         tool.compile_case(broken, data, path)
+
+
+class TestRealRoundsDiscovery(unittest.TestCase):
+    """发现工具复用冻结结构；改变笔标准须同时改变实际前缀确认。"""
+
+    def test_both_standards_match_frozen_structure_and_confirmation(self):
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        labels = json.loads(
+            (ROOT / 'tests/fixtures/real_f1_originals.json').read_text())
+        different = False
+        for case in labels['cases']:
+            different = different or (case['foundation_81']['bis'] !=
+                                      case['foundation_106']['bis'])
+            for standard in ('81', '106'):
+                with self.subTest(window=case['window_key'], standard=standard):
+                    result = tool.scan({'rows': case['raw_rows']},
+                                       standard=standard)
+                    self.assertEqual(result['bis'],
+                                     case['foundation_' + standard]['bis'])
+                    observations = sorted(
+                        (int(count), observation[standard]['fixed_bis'])
+                        for count, observation in case['observations'].items())
+                    for i, unit in enumerate(result['units']):
+                        count, fixed = next((count, fixed)
+                                            for count, fixed in observations
+                                            if len(fixed) > i)
+                        self.assertEqual(unit['confirmed_raw_count'], count)
+                        self.assertEqual(unit['confirmed_dt'],
+                                         case['raw_rows'][count - 1]['dt'][:10]
+                                         + ' 15:05:00')
+                        self.assertEqual(
+                            {k: v for k, v in unit.items()
+                             if not k.startswith('confirmed_')}, fixed[i])
+        self.assertTrue(different, '样本须实际覆盖81/106不同笔链')
+
+    def test_default_standard_preserves_frozen_106_round(self):
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        case = manual_cases()[0]
+        _, packet = packet_of(case)
+        result = tool.scan(packet)
+        self.assertEqual(result, tool.scan(packet, standard='106'))
+        self.assertEqual(len(result['rounds']), 1)
+        item = result['rounds'][0]
+        self.assertEqual(item['side'], 'buy1')
+        self.assertEqual(item['first_dt'], '2018-01-02 15:05:00')
+        self.assertEqual(item['formation']['outcome'], 'failed')
+        self.assertIsNone(item['handover'])
+        with self.assertRaisesRegex(ValueError, '笔标准'):
+            tool.scan(packet, standard='unknown')
+
+    def test_cli_records_selected_standard_and_preserves_existing_output(self):
+        labels = json.loads(
+            (ROOT / 'tests/fixtures/real_f1_originals.json').read_text())
+        case = labels['cases'][0]
+        tool = ROOT / 'validation/tools/scan_real_rounds.py'
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / 'scan.json'
+            command = [sys.executable, str(tool), '--packet',
+                       str(ROOT / 'validation' / case['source']['packet']),
+                       '--output', str(output), '--standard', '81']
+            run = subprocess.run(command, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            frozen = output.read_bytes()
+            report = json.loads(frozen.decode('utf-8'))
+            self.assertEqual(report['standard'], '81')
+            self.assertEqual(report['bis'], case['foundation_81']['bis'])
+            self.assertEqual(report['annotation'],
+                             'rounds_discovery_scan_not_labels')
+            run = subprocess.run(command, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertNotEqual(run.returncode, 0)
+            self.assertIn('拒绝覆盖', run.stderr)
+            self.assertEqual(output.read_bytes(), frozen)
 
 
 if __name__ == '__main__':
