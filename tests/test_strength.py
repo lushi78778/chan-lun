@@ -19,6 +19,7 @@
 """
 
 import os
+import math
 import sys
 import unittest
 
@@ -57,6 +58,42 @@ class TestSmaSeries(unittest.TestCase):
     def test_invalid_period(self):
         with self.assertRaises(ValueError):
             sma_series([1.0], 0)
+
+    def test_real_equal_means_do_not_create_a_spurious_area_bar(self):
+        # 2017-04-14真实收盘, 两窗口均值均为整数ticks的1.0252。
+        # 旧Python逐项sum的长均线多1 ULP, 把相交行误计入下跌面积。
+        values = [1.016, 1.016, 1.031, 1.030, 1.033,
+                  1.024, 1.024, 1.031, 1.028, 1.019]
+        self.assertEqual(sum(round(x*1000) for x in values[-5:])*2,
+                         sum(round(x*1000) for x in values))
+        short, long = sma_series(values, 5), sma_series(values, 10)
+        self.assertEqual(short[-1], 1.0252)
+        self.assertEqual(short[-1], long[-1])
+        areas = ma_areas([1.02, short[-1]], [1.03, long[-1]])
+        self.assertEqual(len(areas), 1)
+        self.assertTrue(areas[0].closed)
+        self.assertEqual(areas[0].bars, 1)
+
+    def test_cancellation_mean_preserves_the_small_term(self):
+        # 精确总和为1, 不能因大数抵消把均值变0。
+        self.assertEqual(sma_series([1e16, 1., -1e16], 3)[-1], 1./3)
+
+    def test_tiny_valid_difference_is_not_clamped_to_zero(self):
+        # 只修求和精度, 不对调用方提供的有效微小差值做近零屏蔽。
+        short = sma_series([1.0000000000000002]*2, 1)
+        long = sma_series([1.]*2, 1)
+        area = ma_areas(short, long)[0]
+        self.assertGreater(area.area, 0)
+        self.assertFalse(area.closed)
+
+    def test_missing_nonfinite_and_overflow_keep_the_original_contract(self):
+        self.assertTrue(math.isnan(sma_series([float('nan'), 1.], 2)[-1]))
+        self.assertTrue(math.isnan(sma_series([float('inf'), -float('inf')], 2)[-1]))
+        self.assertEqual(sma_series([float('inf'), 1.], 2)[-1], float('inf'))
+        self.assertEqual(sma_series([1e308, 1e308], 2)[-1], float('inf'))
+        with self.assertRaises(TypeError):
+            sma_series([None, 1.], 2)
+        self.assertEqual(sma_series([1+2j, 3+4j], 2)[-1], 2+3j)
 
 
 class TestMaAreas(unittest.TestCase):

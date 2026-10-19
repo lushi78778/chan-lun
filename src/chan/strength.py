@@ -28,6 +28,7 @@
     均线与走势, 与任何技术指标无关。
 """
 
+import math
 from typing import Any, Dict, List, Optional
 
 from chan._series import _diff_series
@@ -44,6 +45,10 @@ __all__ = [
 
 def sma_series(values: Any, n: int) -> List[Optional[float]]:
     """简单移动平均(SMA), 暖机期置 None
+
+    有限实数采用math.fsum稳定求和, 避免内置sum在不同Python版本
+    的舍入残差改变相交/面积根数。不添加零点容差或四舍五入报价。
+    fsum不能处理的数值沿用原sum路径, 保持缺值/非有限值的既有语义。
 
     参数:
         values: 收盘价序列(list / tuple / ndarray, 数值元素)。
@@ -62,7 +67,11 @@ def sma_series(values: Any, n: int) -> List[Optional[float]]:
             out.append(None)
         else:
             window = vals[i - n + 1:i + 1]
-            out.append(sum(window) / float(n))
+            try:
+                total = math.fsum(window)
+            except (TypeError, ValueError, OverflowError):
+                total = sum(window)
+            out.append(total / float(n))
     return out
 
 
