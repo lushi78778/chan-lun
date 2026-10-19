@@ -71,6 +71,8 @@ assert len(list(chan.replay_available([bar])))==1
 assert chan.find_third_points([],[],"2026-01-01")==[]
 assert chan.fractal_range_state(None, [], datetime(2026,7,31)).phase=="waiting"
 assert chan.find_ma_points([], datetime(2026,7,31))==[]
+assert chan.ma_point_state([], datetime(2026,7,31)).status=="insufficient_evidence"
+assert chan.ma_point_state([], datetime(2026,7,31)).kind is None
 assert chan.confirm_level_up([], datetime(2026,7,31), 'higher')==[]
 assert chan.find_first_points([], [], datetime(2026,7,31), 'higher')==[]
 assert chan.first_point_contexts([], [], datetime(2026,7,31), 'higher')==[]

@@ -96,7 +96,7 @@ from chan.fxpower import (BREAK_EFFECTIVE, BREAK_NONE, BREAK_TESTING,
                           classify_fx_power, ma_break_state)
 from chan.macd_guard import macd_below_zero, macd_guard_series
 from chan.bottom import FormationEvent, FormationState, formation_state
-from chan.ma_points import MaPoint, find_ma_points
+from chan.ma_points import MaPoint, MaPointState, find_ma_points, ma_point_state
 from chan.fractal_range import (ConfirmedFractalRange, FractalRangeState,
                                 fractal_range_state)
 from chan.sector import (MA_PERIODS, MaClassResult, SectorStrength,
@@ -112,13 +112,13 @@ from chan.lineage import (CenterEvent, CenterLineage, CenterVersion,
 from chan.causal_graph import causal_graph_dot
 from chan.rounds import Round, RoundChain, track_rounds
 
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",
     "first_point_contexts", "analyze_point_chain",
     "ConfirmedMoveType", "confirm_level_up",
-    "MaPoint", "find_ma_points",
+    "MaPoint", "MaPointState", "find_ma_points", "ma_point_state",
     "ConfirmedFractalRange", "FractalRangeState", "fractal_range_state",
     "ThirdPoint", "ThirdPointContext", "find_third_points",
     "AvailableSnapshot", "StructureObservation", "analyze_available", "replay_available",

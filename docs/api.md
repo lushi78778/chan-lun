@@ -35,7 +35,7 @@
 - 输入被修订、参数改变、未完成尾部按新证据演进，按既有输入版本和时间
   契约解释；它们与同一输入的实现回归分别记录。
 
-公开 = 出现在 `chan.__all__`（0.13.1 起 185 项）。模块 `__all__`
+公开 = 出现在 `chan.__all__`（1.1.0 起 187 项，原 185 项保留）。模块 `__all__`
 与包级保持同步，由契约测试检查。
 
 ## 2. 公开入口分层
@@ -66,6 +66,7 @@
 | `ended_dt` | 中阴/上下文实际结束确认时刻；未知为 `None` | `str()` 或 `None` |
 | `as_of` | 输入截止观察时刻；空输入为 `None` | `str()` 或 `None` |
 | `evidence_dt` | XD 最后一笔证据的端点；不等于实际行情确认时间 | `str()` 或 `None` |
+| `MaPointState.observed_dt` | 即时组合所用最后行情的实际到达；不是精确点确认 | `str()` 或 `None` |
 
 **结构时间 ≠ 确认时间 ≠ 可用时间**。按端点时间过滤全样本结果不能
 还原历史可见状态；回放必须逐前缀重算或读当时快照，见
@@ -115,6 +116,14 @@ JSON 可写快照。底层 `NewBar.to_dict()` 则保留原始 `dt` 类型，只�
 | `StrictScan.to_dict()` | completed_types, open_tail, results, skipped |
 | `PointChain.to_dict()` | contexts, first_points, formations, second_points, third_points, unresolved_move_ids |
 | `PointContext`（嵌套） | causal_center, first_point, previous_center, second_context |
+| `MaPointState`（1.1.0 新增） | status, direction, observed_dt, reference_start_dt, reference_end_dt, evidence_start_dt, evidence_end_dt, kiss_start_dt, kiss_end_dt, kiss_index, kiss_kind, reference_strength, current_strength, stretch, stretch_shortening, reasons, kind, last_kiss_proven |
+
+`ma_point_state` 的快照只描述当前可见输入，不累计历史预警。`status` 为
+`insufficient_evidence / no_warning / warning`；仅 warning 时 kind 为
+`ma_buy1_warning / ma_sell1_warning`，其余为 None。direction 是当前均线面积
+方向，down 对应买侧预警。两个 strength 是绝对平均力度，stretch 带符号；
+last_kiss_proven 始终 False。对象不含 dt、price 或 confirmed_dt；不会扩写
+既有 MaPoint 的键集，也不能按永久已确认候选的方式使用。
 
 其余带 `to_dict()` 的类（osc/zhongyin/kiss/strength/sector/fxpower/
 lineage/rounds/nest/levels/ma_points/fractal_range/completion/
@@ -157,6 +166,7 @@ docstring 与模块测试。
 | `scan_strict_divergence` | `skipped` 每项 `(move_id, 原因码)`；`results[].reason` | skipped：`not_trend` / `no_matching_decomposition` / 完成项评估原因；result reason：`force_missing` / `force_unavailable`（证据不足）/ `force_not_declining`（否决）/ `force_decline`（成立）/ `trend_open`（开放尾部）等 |
 | `strict_nested_chain` | `levels[].status` | `bc` / `no_new_extreme` / `force_not_declining` / `force_missing` / `force_unavailable` / `no_sub_center` / `no_compare_legs` / `not_covered` |
 | `nested_bc` | `levels[].reason` | `REASON_*` 六常量 |
+| `ma_point_state`（1.1.0） | `reasons` 有序元组，序列化为列表 | `no_visible_bars` / `ma_unavailable` / `reference_missing` / `kiss_missing` 为缺证据；`kiss_not_continuation` / `kiss_count_below_two` / `area_closed` / `price_not_trending` / `average_not_weaker` / `stretch_not_shortening` 表示本组合相应条件不满足，不判精确理论点位不存在 |
 
 原因码字符串值属于冻结契约；新增码须排版本登记。
 

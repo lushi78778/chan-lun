@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""候选版公开 API 契约快照(0.13.2, R6 §11.9 第 1—3 条)。
+"""公开 API 契约快照(1.1.0, 沿用 R6 §11.9 第 1—3 条)。
 
 docs/api.md 是人读契约, 本文件是机器可查快照: 导出清单、常量值域与
 核心链 to_dict 键集。任一快照变化必须另排版本并在 CHANGELOG
@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
 import pandas as pd  # noqa: E402
 import chan  # noqa: E402
 
-#: 包级 __all__ 冻结快照(0.13.1: 185 项)。
+#: 包级 __all__ 冻结快照(1.1.0: 187 项; 原185项保留)。
 FROZEN_EXPORTS = [
     "ALIGN_DOWN", "ALIGN_UP", "AnalysisResult", "AvailableSnapshot",
     "BAR_KEYS", "BI", "BI_STANDARD_106", "BI_STANDARD_81",
@@ -32,7 +32,7 @@ FROZEN_EXPORTS = [
     "KISS_FLY", "KISS_LIP", "KISS_WET", "KissEvent",
     "LevelDecomposition", "MAX_LEVELS_DEFAULT", "MA_PERIODS",
     "MIN_K_GAP", "MIN_UNITS_FOR_NEXT", "MaArea", "MaBreakState",
-    "MaClassResult", "MaPoint", "MaStrengthState", "MoveType",
+    "MaClassResult", "MaPoint", "MaPointState", "MaStrengthState", "MoveType",
     "NestBcState", "NewBar", "OSC_UPGRADE_N", "ObservationChange",
     "OscReport", "POWER_NEUTRAL", "POWER_SEVERE", "POWER_STRONG",
     "POWER_WEAK", "PointChain", "PointContext", "REASON_BC",
@@ -65,7 +65,7 @@ FROZEN_EXPORTS = [
     "find_third_points", "find_trend_bc", "find_xds", "find_zs",
     "first_point_contexts", "followup_quality", "formation_state",
     "fractal_range_state", "guaranteed_rebound_gap", "level_reading",
-    "level_up", "ma_areas", "ma_break_state", "ma_strength_class",
+    "level_up", "ma_areas", "ma_break_state", "ma_point_state", "ma_strength_class",
     "macd_below_zero", "macd_guard_series", "macd_series", "nested_bc",
     "normalize_bars", "osc_strength", "oscillation_monitor",
     "remove_includes", "replay_available", "replay_bars",
@@ -185,6 +185,15 @@ class TestCoreChainKeySets(unittest.TestCase):
     def test_analysis_result_key_set(self):
         self.assertEqual(sorted(self.result.to_dict()),
                          FROZEN_KEY_SETS["AnalysisResult"])
+
+    def test_ma_point_state_keys_added_in_110(self):
+        """1.1.0新增独立快照, 既有MaPoint字段和语义不扩写。"""
+        state = chan.ma_point_state([], datetime(2026, 1, 1))
+        self.assertEqual(sorted(state.to_dict()), sorted([
+            'status', 'direction', 'observed_dt', 'reference_start_dt', 'reference_end_dt',
+            'evidence_start_dt', 'evidence_end_dt', 'kiss_start_dt', 'kiss_end_dt',
+            'kiss_index', 'kiss_kind', 'reference_strength', 'current_strength',
+            'stretch', 'stretch_shortening', 'reasons', 'kind', 'last_kiss_proven']))
 
     def test_structure_key_sets(self):
         """NewBar/FX/BI/XD/ZS 键集逐对象冻结; 空结构跳过。"""

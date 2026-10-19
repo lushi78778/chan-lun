@@ -15,8 +15,9 @@
 衰减, 并且该面积内价格高点和低点均顺趋势移动(课15趋势定义的
 区间近似), 没有价格新极值不产生候选。第二类前腿强度默认>=2%,
 前腿均量不超过此前long_period根均量的2倍, 均为工程参数。
-面积法不能覆盖所有飞/唇吻后的背驰, 即时平均力度预警仍由
-strength独立提供。这些是可复现的保守辅助条件, 不证明最终趋势
+面积法不能覆盖所有飞/唇吻后的背驰。ma_point_state 将 strength
+的即时平均力度与前置吻、价格趋势组合, 返回可撤销的当下预警。
+这些是可复现的保守辅助条件, 不证明最终趋势
 反转或理论精确点位。
 """
 from collections import namedtuple
@@ -25,8 +26,10 @@ from numbers import Integral
 from chan.availability import _available_bars
 from chan.bars import _bar_time, validate_bars
 from chan.kiss import find_kisses
-from chan.strength import find_ma_bc, ma_areas, sma_series
+from chan.strength import avg_strength_state, find_ma_bc, ma_areas, sma_series
 from chan._series import _finite_number
+
+__all__ = ['MaPoint', 'MaPointState', 'find_ma_points', 'ma_point_state']
 
 
 class MaPoint(namedtuple('MaPointBase',
@@ -52,6 +55,43 @@ class MaPoint(namedtuple('MaPointBase',
         for key in ('dt', 'confirmed_dt', 'kiss_start_dt', 'kiss_end_dt',
                     'reference_start_dt', 'reference_end_dt', 'evidence_start_dt', 'evidence_end_dt'):
             result[key] = None if result[key] is None else str(result[key])
+        result['last_kiss_proven'] = self.last_kiss_proven
+        return result
+
+
+class MaPointState(namedtuple('MaPointStateBase',
+                             'status direction observed_dt reference_start_dt reference_end_dt '
+                             'evidence_start_dt evidence_end_dt kiss_start_dt kiss_end_dt '
+                             'kiss_index kiss_kind reference_strength current_strength '
+                             'stretch stretch_shortening reasons')):
+    """课11/12/15的不可变当下快照, 不累积成历史已确认候选。
+
+    status: insufficient_evidence(缺可比输入)、no_warning(本组合不满足)、
+    warning(当下组合满足)。direction 为均线面积方向, down 对应买侧预警。
+    observed_dt 为最近已用行情的实际到达, 不是点位确认时间。
+    两个 strength 均为绝对平均力度; stretch 带短线-长线符号。
+    reasons 是有序原因码元组; 没有 dt/price/confirmed_dt, 不声明精确端点。
+    快照可随观察推进撤销; last_kiss_proven 始终为 False。
+    """
+    __slots__ = ()
+
+    @property
+    def kind(self):
+        if self.status != 'warning':
+            return None
+        return 'ma_buy1_warning' if self.direction == 'down' else 'ma_sell1_warning'
+
+    @property
+    def last_kiss_proven(self):
+        return False
+
+    def to_dict(self):
+        result = dict(self._asdict())
+        for key in ('observed_dt', 'reference_start_dt', 'reference_end_dt',
+                    'evidence_start_dt', 'evidence_end_dt', 'kiss_start_dt', 'kiss_end_dt'):
+            result[key] = None if result[key] is None else str(result[key])
+        result['reasons'] = list(self.reasons)
+        result['kind'] = self.kind
         result['last_kiss_proven'] = self.last_kiss_proven
         return result
 
@@ -94,6 +134,87 @@ def _point(rows, kiss, start, end, confirmation, kind, pattern,
                    rows[start]['dt'], rows[end]['dt'])
 
 
+def _ma_rows(bars, as_of):
+    rows = _available_bars(bars, as_of)
+    validate_bars(rows)
+    times = [_bar_time(row['available_dt'])[0] for row in rows]
+    if any(right < left for left, right in zip(times, times[1:])):
+        raise ValueError('状态行情available_dt须非降序')
+    return rows
+
+
+def ma_point_state(bars, as_of, short_period=5, long_period=10, proximity=0.5,
+                   min_depth=0.2, flip_confirm=0.5):
+    """实际可用行情->可撤销的均线一类预警快照(课11/12/15)。
+
+    最小输入及吻参数同 find_ma_points; 先按 closed/available 截断,
+    不读取未来OHLC。只比较当下未封闭面积与前同向封闭面积的平均力度。
+    沿用保守前置: 最近已了结同向中继吻须为第二次及以后, 两段价格
+    高低点均顺趋势移动, 平均力度严格减弱且均线距离正在缩短才 warning。
+    不跳过最近吻, 不选择未来的最后一吻。触零后面积已封闭不发即时预警。
+
+    reasons 顺序: ma_unavailable; 或 reference_missing、kiss_missing /
+    kiss_not_continuation / kiss_count_below_two、area_closed、
+    price_not_trending、average_not_weaker、stretch_not_shortening。
+    缺前同向面积或前置吻为 insufficient_evidence; 其余已知条件不满足为
+    no_warning。空可见输入为 insufficient_evidence/no_visible_bars。
+    预警不是 find_ma_points 的稳妥候选, 不保证精确转折或最终反转。
+    """
+    # 本入口不使用第二类的前腿/量比筛选; 共用周期与吻参数校验。
+    _parameters(short_period, long_period, proximity, min_depth, flip_confirm, 0, None)
+    rows = _ma_rows(bars, as_of)
+    empty = MaPointState('insufficient_evidence', None,
+                         rows[-1]['available_dt'] if rows else None,
+                         None, None, None, None, None, None, None, None,
+                         None, None, None, None, ())
+    if not rows:
+        return empty._replace(reasons=('no_visible_bars',))
+    short = sma_series([r['close'] for r in rows], short_period)
+    long = sma_series([r['close'] for r in rows], long_period)
+    strength = avg_strength_state(short, long)
+    if strength is None:
+        return empty._replace(reasons=('ma_unavailable',))
+    current, previous = strength.open_area, strength.prev_area
+    preceding = [k for k in find_kisses(short, long, None, proximity, min_depth, flip_confirm)
+                 if not k.open and k.end_idx <= current.start_idx]
+    kiss = preceding[-1] if preceding else None
+    reasons = []
+    if previous is None:
+        reasons.append('reference_missing')
+    if kiss is None:
+        reasons.append('kiss_missing')
+    elif not kiss.resumed or kiss.direction != strength.direction:
+        reasons.append('kiss_not_continuation')
+    elif kiss.kiss_index < 2:
+        reasons.append('kiss_count_below_two')
+    if current.closed:
+        reasons.append('area_closed')
+    if previous is not None:
+        prior = rows[previous.start_idx:previous.end_idx+1]
+        active = rows[current.start_idx:current.end_idx+1]
+        sign = 1 if strength.direction == 'up' else -1
+        trending = sign * (max(r['high'] for r in active)-max(r['high'] for r in prior)) > 0 and \
+            sign * (min(r['low'] for r in active)-min(r['low'] for r in prior)) > 0
+        if not trending:
+            reasons.append('price_not_trending')
+        if not strength.forming_weak:
+            reasons.append('average_not_weaker')
+    if not strength.stretch_shortening:
+        reasons.append('stretch_not_shortening')
+    missing = previous is None or kiss is None
+    status = 'insufficient_evidence' if missing else ('no_warning' if reasons else 'warning')
+    return MaPointState(
+        status, strength.direction, rows[-1]['available_dt'],
+        rows[previous.start_idx]['dt'] if previous is not None else None,
+        rows[previous.end_idx]['dt'] if previous is not None else None,
+        rows[current.start_idx]['dt'], rows[current.end_idx]['dt'],
+        rows[kiss.start_idx]['dt'] if kiss is not None else None,
+        rows[kiss.end_idx]['dt'] if kiss is not None else None,
+        kiss.kiss_index if kiss is not None else None, kiss.kind if kiss is not None else None,
+        abs(strength.avg_prev) if strength.avg_prev is not None else None,
+        abs(strength.avg_cur), strength.stretch, strength.stretch_shortening, tuple(reasons))
+
+
 def find_ma_points(bars, as_of, short_period=5, long_period=10, proximity=0.5,
                    min_depth=0.2, flip_confirm=0.5, min_pre_gain=0.02,
                    max_volume_ratio=2.0, use_avg=False):
@@ -113,11 +234,7 @@ def find_ma_points(bars, as_of, short_period=5, long_period=10, proximity=0.5,
                 min_pre_gain, max_volume_ratio)
     if not isinstance(use_avg, bool):
         raise ValueError('use_avg须为bool')
-    rows = _available_bars(bars, as_of)
-    validate_bars(rows)
-    times = [_bar_time(row['available_dt'])[0] for row in rows]
-    if any(right < left for left, right in zip(times, times[1:])):
-        raise ValueError('状态行情available_dt须非降序')
+    rows = _ma_rows(bars, as_of)
     short = sma_series([row['close'] for row in rows], short_period)
     long = sma_series([row['close'] for row in rows], long_period)
     kisses = [kiss for kiss in find_kisses(short, long, [row['volume'] for row in rows],

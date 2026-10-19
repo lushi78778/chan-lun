@@ -7,7 +7,7 @@ import unittest
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
-from chan import avg_strength_state, find_kisses, find_ma_points, sma_series
+from chan import avg_strength_state, find_kisses, find_ma_points, ma_point_state, sma_series
 
 
 FIRST = [-10, -8, 1, -11, -10, 1, -12, -1, 0]
@@ -73,14 +73,28 @@ REAL_SECOND = (
         (126, 130, 887, 'up', 'wet'),)),
 )
 
+# 月初起点固定网格的不同买侧锚点, 不将同锚点的多个起点计为独立样本。
+# 仍读取既有原始行; :: 后是显式观察起点, 不自动带窗口前暖机。
+REAL_BUY_FIRST = (
+    ('real_f1_originals.json', '512880-day-2016-11-09-2017-08-30::2017-01-01',
+     (72, 81, 3, 'lip'), (67, 87, 92, 95, 1764, 140, True, True)),
+    ('real_causal_formation.json', '588000-30m-20220801-20230501::2022-11-01',
+     (302, 312, 2, 'lip'), (298, 335, 339, 352, 1257, 519, True, False)),
+    ('real_strict_trend_5m.json', '518880-5m-20260501-20260724::2026-06-01',
+     (249, 347, 2, 'wet'), (334, 368, 388, 412, 8924, 7685, True, False)),
+)
+
 
 def real_bars(filename, key):
     """复用包内原始行; 日线15:05/分钟结束+1分仅为到达测试约定。"""
     path = os.path.join(os.path.dirname(__file__), 'fixtures', filename)
+    parent, separator, start = key.partition('::')
     with open(path, encoding='utf-8') as stream:
-        case = next(c for c in json.load(stream)['cases'] if c['id'] == key)
+        case = next(c for c in json.load(stream)['cases'] if c['id'] == parent)
     rows = []
     for raw in case['raw_rows']:
+        if separator and raw['dt'][:10] < start:
+            continue
         if raw['adj_factor'] != 1:
             raise ValueError('本表只审计恒1因子, 不自动重算报价')
         dt = datetime.strptime(raw['dt'], '%Y-%m-%d %H:%M:%S')
@@ -146,6 +160,118 @@ class TestRealMaPoints(unittest.TestCase):
                     self.assertEqual((event.dt, event.price), (extreme['dt'], extreme['high']))
                     self.assertEqual(event.confirmed_dt, rows[d+1]['available_dt'])
                     self.assertFalse(event.last_kiss_proven)
+
+    def test_real_buy_first_conditions_and_origin_are_explicit(self):
+        """三个实际买侧锚点; 月初重新暖机, 不套用原窗口的吻状态。"""
+        for filename, key, kiss, table in REAL_BUY_FIRST:
+            rows = real_bars(filename, key)
+            a, b, c, d, prior, current, weak, avg_weak = table
+            diffs = integer_diffs(rows)
+            self.assertEqual(-sum(diffs[a:b+1]), prior)
+            self.assertEqual(-sum(diffs[c:d+1]), current)
+            self.assertTrue(all(x < 0 for x in diffs[a:b+1] + diffs[c:d+1]))
+            self.assertGreaterEqual(diffs[b+1], 0)
+            self.assertGreaterEqual(diffs[d+1], 0)
+            self.assertTrue(all(x >= 0 for x in diffs[b+1:c]))
+            self.assertEqual(current < prior, weak)
+            self.assertEqual(current * (b-a+1) < prior * (d-c+1), avg_weak)
+            for field, pick in (('low', min), ('high', max)):
+                self.assertLess(pick(r[field] for r in rows[c:d+1]),
+                                pick(r[field] for r in rows[a:b+1]))
+            for average, expected in ((False, weak), (True, avg_weak)):
+                events = [e for e in self.first_points(rows, average)
+                          if e.kind == 'ma_buy1_candidate']
+                self.assertEqual(len(events), int(expected))
+                if not events:
+                    continue
+                event = events[0]
+                self.assertEqual((event.reference_start_dt, event.reference_end_dt,
+                                  event.evidence_start_dt, event.evidence_end_dt),
+                                 tuple(rows[i]['dt'] for i in (a, b, c, d)))
+                self.assertEqual((event.kiss_start_dt, event.kiss_end_dt, event.kiss_index,
+                                  event.kiss_kind), (rows[kiss[0]]['dt'], rows[kiss[1]]['dt'],
+                                                     kiss[2], kiss[3]))
+                self.assertAlmostEqual(event.reference_strength, prior / 10000. / (b-a+1 if average else 1))
+                self.assertAlmostEqual(event.current_strength, current / 10000. / (d-c+1 if average else 1))
+                extreme = min(rows[c:d+1], key=lambda r: r['low'])
+                self.assertEqual((event.dt, event.price), (extreme['dt'], extreme['low']))
+                self.assertEqual(event.confirmed_dt, rows[d+1]['available_dt'])
+            # 原始父窗口没有该买侧条件。起点改变属于输入合同变化, 不是修复算法。
+            parent = real_bars(filename, key.partition('::')[0])
+            self.assertFalse(any(e.kind == 'ma_buy1_candidate' and e.evidence_start_dt == rows[c]['dt']
+                                 for e in self.first_points(parent)))
+
+    def test_real_buy_kiss_witnesses(self):
+        """第三次唇吻和第二次唇/湿吻, 同体位峰/恢复及半峰转化门槛。"""
+        witnesses = (((38, 53, 81), (53, 70, 91), (72, 81, 108)),
+                     ((275, 302, 55), (302, 312, 59)),
+                     ((102, 247, 585), (249, 347, 1233)))
+        for (filename, key, kiss, _), sequence in zip(REAL_BUY_FIRST, witnesses):
+            rows = real_bars(filename, key)
+            diffs = integer_diffs(rows)
+            for number, (peak, end, value) in enumerate(sequence, 1):
+                self.assertEqual(diffs[peak], -value)
+                self.assertTrue(all(-value < -2*x <= 2*value for x in diffs[peak+1:end]))
+                self.assertLess(diffs[end], -value)
+                self.assertGreaterEqual(5 * (value+max(diffs[peak+1:end+1])), value)
+                closes = [r['close'] for r in rows[:end+1]]
+                event = [e for e in find_kisses(sma_series(closes, 5), sma_series(closes, 10))
+                         if not e.open][-1]
+                self.assertEqual((event.start_idx, event.end_idx, event.direction, event.resumed,
+                                  event.kiss_index), (peak, end, 'down', True, number))
+            self.assertEqual((event.kiss_index, event.kind), (kiss[2], kiss[3]))
+
+    def test_real_buy_confirmation_prefixes_and_future_poison(self):
+        """买侧同样不能在封闭行实际到达前使用; 相邻前缀及未来坏字段隔离。"""
+        for filename, key, _, table in REAL_BUY_FIRST:
+            rows = real_bars(filename, key)
+            start, end = table[2:4]
+            for average, expected in ((False, table[6]), (True, table[7])):
+                for stop in range(end-1, end+3):
+                    now = rows[stop]['available_dt']
+                    visible = rows[:stop+1]
+                    future = [{k: r[k] for k in ('dt', 'closed_dt', 'available_dt')}
+                              for r in rows[stop+1:]]
+                    actual = self.first_points(visible, average)
+                    self.assertEqual(actual, self.first_points(rows, average, now))
+                    self.assertEqual(actual, self.first_points(visible+future, average, now))
+                    self.assertEqual(any(e.kind == 'ma_buy1_candidate' and
+                                         e.evidence_start_dt == rows[start]['dt'] for e in actual),
+                                     expected and stop > end)
+                before = rows[end+1]['available_dt']-timedelta(microseconds=1)
+                self.assertFalse(any(e.kind == 'ma_buy1_candidate' and e.evidence_start_dt == rows[start]['dt']
+                                     for e in self.first_points(rows, average, before)))
+
+    def test_real_combined_warning_has_both_sides_and_can_disappear(self):
+        """独立价格/吻证据与即时平均力度组合; 快照不成为永久已确认点。"""
+        buy_file, buy_key, _, _ = REAL_BUY_FIRST[0]
+        sell_file, sell_key, _, _ = REAL_FIRST[0]
+        cases = ((buy_file, buy_key, 94, 'ma_buy1_warning', 1764/21/10000., 128/3/10000.),
+                 (buy_file, buy_key, 95, 'ma_buy1_warning', 1764/21/10000., 140/4/10000.),
+                 (sell_file, sell_key, 1025, 'ma_sell1_warning', 3788/12/10000., 1729/6/10000.))
+        for filename, key, end, kind, reference, current in cases:
+            rows = real_bars(filename, key)
+            now = rows[end]['available_dt']
+            actual = ma_point_state(rows, now)
+            self.assertEqual((actual.status, actual.kind, actual.reasons), ('warning', kind, ()))
+            self.assertAlmostEqual(actual.reference_strength, reference)
+            self.assertAlmostEqual(actual.current_strength, current)
+            self.assertEqual(actual.observed_dt, now)
+            self.assertEqual(actual.evidence_end_dt, rows[end]['dt'])
+            self.assertEqual(actual, ma_point_state(rows[:end+1], now))
+            future = [{k: r[k] for k in ('dt', 'closed_dt', 'available_dt')} for r in rows[end+1:]]
+            self.assertEqual(actual, ma_point_state(rows[:end+1]+future, now))
+            before = now-timedelta(microseconds=1)
+            self.assertEqual(ma_point_state(rows, before), ma_point_state(rows[:end], before))
+            self.assertFalse(any(e.evidence_start_dt == actual.evidence_start_dt
+                                 for e in self.first_points(rows[:end+1])))
+        # 已有独立表中1135距离缩短但平均力度增强; 组合不能只读距离产生预警。
+        rows = real_bars(sell_file, sell_key)
+        state = ma_point_state(rows, rows[1135]['available_dt'])
+        self.assertEqual(state.status, 'no_warning')
+        self.assertIn('average_not_weaker', state.reasons)
+        self.assertTrue(state.stretch_shortening)
+
 
     def test_real_kiss_witnesses_precede_the_area(self):
         """冻结两次同体位中继的峰/了结; 第二次不由未来吻回填。"""
@@ -269,6 +395,119 @@ class TestRealMaPoints(unittest.TestCase):
             avg_events = self.first_points(rows[:end+1], True)
             self.assertEqual(any(e.evidence_start_dt == rows[1130]['dt'] for e in area_events), end >= 1136)
             self.assertFalse(any(e.evidence_start_dt == rows[1130]['dt'] for e in avg_events))
+
+
+class TestMaPointState(unittest.TestCase):
+    def state(self, rows, **kwargs):
+        return ma_point_state(rows, rows[-1]['available_dt'] if rows else BASE,
+                              short_period=1, long_period=2, **kwargs)
+
+    def test_open_weak_and_shortening_has_warning_on_both_sides(self):
+        """第二次吻后开放面积12+1, 均值6.5<10.5且距离缩短, 非封闭候选。"""
+        for mirror, direction, kind in ((False, 'down', 'ma_buy1_warning'),
+                                         (True, 'up', 'ma_sell1_warning')):
+            rows = bars(FIRST[:-1], mirror=mirror)
+            state = self.state(rows)
+            self.assertEqual((state.status, state.direction, state.kind, state.reasons),
+                             ('warning', direction, kind, ()))
+            self.assertEqual((state.reference_strength, state.current_strength), (10.5, 6.5))
+            self.assertEqual((state.kiss_index, state.kiss_kind), (2, 'wet'))
+            self.assertEqual(state.observed_dt, rows[-1]['available_dt'])
+            self.assertEqual(points(rows), [])
+            self.assertFalse(state.last_kiss_proven)
+            for name in ('dt', 'price', 'confirmed_dt'):
+                self.assertFalse(hasattr(state, name))
+
+    def test_warning_revokes_and_immutable_snapshot_is_preserved(self):
+        """未封闭末段继续扩展可转强, 已取快照保持, 不虚构已确认记录。"""
+        rows = bars(FIRST[:-1])
+        old = self.state(rows)
+        later = self.state(bars(FIRST[:-1]+[-2, -50]))
+        self.assertEqual((old.status, old.current_strength), ('warning', 6.5))
+        self.assertEqual(later.status, 'no_warning')
+        self.assertEqual(later.kind, None)
+        self.assertIn('average_not_weaker', later.reasons)
+        self.assertIn('stretch_not_shortening', later.reasons)
+        with self.assertRaises(AttributeError):
+            old.status = 'no_warning'
+
+    def test_closed_touch_and_equal_average_do_not_warn(self):
+        """触零已封闭与平均力度相等均不满足即时严格减弱条件。"""
+        closed = self.state(bars(FIRST))
+        self.assertEqual(closed.status, 'no_warning')
+        self.assertIn('area_closed', closed.reasons)
+        equal = self.state(bars(FIRST[:6]+[-12, -9]))
+        self.assertEqual(equal.status, 'no_warning')
+        self.assertIn('average_not_weaker', equal.reasons)
+        self.assertEqual(equal.reference_strength, equal.current_strength)
+
+    def test_price_and_latest_kiss_conditions_remain_required(self):
+        """价格两极值、第二次中继及体位都需满足, 不挑更早有利吻。"""
+        rows = bars(FIRST[:-1]); rows[7]['high'] = 500.
+        self.assertIn('price_not_trending', self.state(rows).reasons)
+        first = self.state(bars([-10, -8, 1, -11, -1]))
+        self.assertIn('kiss_count_below_two', first.reasons)
+        wrong = self.state(bars(FIRST[:-1]+[2, 1]))
+        self.assertIn('kiss_not_continuation', wrong.reasons)
+        self.assertNotEqual(wrong.status, 'warning')
+
+    def test_missing_visible_history_and_sma_are_insufficient(self):
+        """空、未来、暖机、恒零、缺前同向面积/前置吻均明确缺证据。"""
+        self.assertEqual(self.state([]).reasons, ('no_visible_bars',))
+        future = [{'dt': BASE, 'closed_dt': BASE+timedelta(days=1),
+                   'available_dt': BASE+timedelta(days=2)}]
+        self.assertEqual(ma_point_state(future, BASE).reasons, ('no_visible_bars',))
+        self.assertEqual(ma_point_state(bars([1]), BASE+timedelta(days=3)).reasons,
+                         ('ma_unavailable',))
+        self.assertEqual(self.state(bars([0, 0, 0])).reasons, ('ma_unavailable',))
+        state = self.state(bars([-3, -2, -1]))
+        self.assertEqual(state.status, 'insufficient_evidence')
+        self.assertIn('reference_missing', state.reasons)
+        self.assertIn('kiss_missing', state.reasons)
+
+    def test_late_arrival_and_future_prices_are_not_read(self):
+        """新观测先截断, 同一已见前缀状态与未来缺字段/迟到无关。"""
+        rows = bars(FIRST[:-1])
+        expected = self.state(rows)
+        poison = [dict(dt=BASE+timedelta(days=30), closed_dt=BASE+timedelta(days=31),
+                       available_dt=BASE+timedelta(days=32))]
+        self.assertEqual(expected, ma_point_state(rows+poison, rows[-1]['available_dt'], 1, 2))
+        delayed = [dict(r) for r in rows]
+        delayed[-1]['available_dt'] += timedelta(days=2)
+        self.assertEqual(ma_point_state(delayed, rows[-1]['available_dt'], 1, 2), self.state(rows[:-1]))
+        late = self.state(delayed)
+        self.assertEqual(late.status, 'warning')
+        self.assertEqual(late.observed_dt, delayed[-1]['available_dt'])
+        self.assertEqual(late.evidence_end_dt, expected.evidence_end_dt)
+
+    def test_parameters_invalid_bars_and_delivery_order_are_rejected(self):
+        """新入口沿用周期/吻阈值、原始OHLC与实际到达非降序合同。"""
+        rows = bars(FIRST[:-1])
+        for kwargs in ({'short_period':True}, {'short_period':2, 'long_period':2},
+                       {'proximity':float('nan')}, {'min_depth':2}, {'flip_confirm':0}):
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                ma_point_state(rows, rows[-1]['available_dt'], **kwargs)
+        invalid = [dict(r) for r in rows]; invalid[0]['high'] = 1
+        with self.assertRaises(ValueError): self.state(invalid)
+        invalid = [dict(r) for r in rows]; invalid[0]['available_dt'] = rows[-1]['available_dt']
+        with self.assertRaises(ValueError): self.state(invalid)
+        invalid = [dict(r) for r in rows]; del invalid[0]['closed_dt']
+        with self.assertRaises(ValueError): self.state(invalid)
+
+    def test_serialization_input_and_volume_boundary(self):
+        """快照序列化独立, 不回写输入; 一类预警无二类量比过滤。"""
+        rows = bars(FIRST[:-1]); original = [dict(r) for r in rows]
+        expected = self.state(rows)
+        payload = expected.to_dict()
+        self.assertEqual(payload['observed_dt'], str(expected.observed_dt))
+        self.assertEqual(payload['reasons'], [])
+        self.assertEqual(payload['kind'], 'ma_buy1_warning')
+        payload['reasons'].append('changed')
+        self.assertEqual(expected.reasons, ())
+        json.dumps(payload)
+        self.assertEqual(rows, original)
+        for row in rows: row['volume'] = 0
+        self.assertEqual(self.state(rows), expected)
 
 
 class TestMaPoints(unittest.TestCase):

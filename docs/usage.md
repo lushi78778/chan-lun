@@ -635,7 +635,8 @@ K 线的 `dt` 不是确认时间。确认时间由当时观察或存档提供；
 
 原文未规定吻的数值边界、前腿强度和放量阈值；本接口沿用 `find_kisses`
 的量化参数并保留调整入口。第一类为保守封闭面积法，不覆盖飞吻／唇吻后的
-全部背驰或尚未结束的即时预警，后者见 `avg_strength_state`。价格趋势采用
+全部背驰或尚未结束的即时预警；底层力度见 `avg_strength_state`，组合见下文。
+价格趋势采用
 同向面积腿的高低区间近似，不宣称已经完成精确走势类型划分。
 
 `use_avg=False` 比较完整面积，`True` 比较面积除以根数，选项显式区分量纲。
@@ -676,6 +677,28 @@ assert ma_candidates[0].to_dict()["last_kiss_proven"] is False
 `dt / price` 是证据区间内最早的最低／最高点，`confirmed_dt` 是所需证据的
 实际到达时刻，两者不同。只截断当时已关闭并已到达的行情，再计算均线；
 调用方负责同标的、同周期、同价格基准及供应历史版本，到达时间非降序。
+
+1.1.0 新增 `ma_point_state`，把即时平均力度与前置吻及价格趋势组合。
+它使用同样的可见行情和吻参数，只取当前未封闭面积：最近已了结同向
+中继吻为第二次及以后、两段价格高低点顺趋势移动、平均力度严格减弱、
+距离缩短，全部满足才 warning；缺前同向面积或吻为 insufficient_evidence，
+已知条件不满足为 no_warning。触零已封闭后不再发该段即时预警。
+
+```python
+from chan import ma_point_state
+# 复用上例，最后的相交行尚未到达；当前快照可预警，但无已确认点。
+ma_warning = ma_point_state(ma_point_bars, datetime(2026, 1, 9, 15, 5),
+                            short_period=1, long_period=2)
+assert ma_warning.status == 'warning'
+assert ma_warning.kind == 'ma_buy1_warning'
+assert ma_warning.observed_dt == datetime(2026, 1, 9, 15, 5)
+assert ma_warning.last_kiss_proven is False
+```
+
+快照包含吻、两个证据区间、绝对平均力度、带符号距离和 reasons，没有精确
+价格或 confirmed_dt。observed_dt 是所用最后行情实际到达时刻；相同已见
+前缀的状态保持一致，后续观测可撤销预警。不要将各时刻的 warning 永久
+累计进已确认候选列表；原 `find_ma_points` 的返回结构和封闭规则不变。
 当时已产生的候选是历史判定事实，后续行情不会把它改为"最终反转成功"。
 
 ### 6.13 MACD 辅助一类候选与因果点位链

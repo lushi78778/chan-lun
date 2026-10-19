@@ -25,6 +25,8 @@
 | `classify_bc_turn` | 0.12.2 | 转折判据修正——课29"是否重新回抽最后一个中枢里"以回抽端点进入 [ZD,ZG] 为界（触及边界即算）：反弹高点落在 [ZD,ZG)/回落低点落在 (ZD,ZG] 由 `expansion` 改判 `turn`（`candidates` 随之非空）；收据 `validation/turn-0122-behavior-diff-*.json` |
 | `Gap.to_dict()` | 0.13.1 | `dt_a`/`dt_b` 由原类型透传改为统一 `str()`（`None` 保持）；直接消费该 dict 的下游注意类型变化；`Gap` 补 `__slots__` 禁止动态属性 |
 | `StrictDivergence` | 0.10.2 | namedtuple 新增 `force_method`/`force` 字段；按位置解包的代码需要改按字段名访问 |
+| 均线即时组合 | 1.1.0 | 兼容新增 `ma_point_state` 与独立 `MaPointState`；现有 `find_ma_points` 返回结构不变。新预警可撤销，使用 observed_dt，不充当 confirmed_dt 或已确认候选 |
+| 缺值后的均线力度 | 1.1.0（原 1.0.2 开发修正） | 暖机后的缺值不再封闭面积，且不拼接缺口后的数值；即时力度返回 None。1.0.2 未单独发布，连续完整输入及缺口前实际确认事件保留 |
 
 0.9.x—0.11.x 的真实标注与因果接口、0.13.2 的 API.md 契约均为新增，
 不改变既有输入的输出（各版 CHANGELOG 未标"行为变化"）。

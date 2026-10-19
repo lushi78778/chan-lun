@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chan-lun-core"
-version = "1.0.2"
+version = "1.1.0"
 description = "缠论结构识别与理论辅助计算库。输入单标的、单周期的行情或结构序列，输出分型、笔、线段、中枢、背驰、买卖点，以及多级分解和辅助状态。算法用 Python 实现，第三方依赖只有 numpy 与 pandas；MACD 内置计算。"
 readme = "README.md"
 requires-python = ">=3.6"

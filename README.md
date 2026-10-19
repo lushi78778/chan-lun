@@ -7,7 +7,7 @@
 | 项目 | 约定 |
 |---|---|
 | 发行名 / 导入名 | `chan-lun-core` / `chan` |
-| 当前源码版本 | `1.0.2`（待发布）；安装环境以 `chan.__version__` 和实际导入路径为准 |
+| 当前源码版本 | `1.1.0`（待发布）；安装环境以 `chan.__version__` 和实际导入路径为准 |
 | 运行兼容目标 | Python 3.6、numpy 1.14、pandas 0.23 及以上；验证范围见下文 |
 | 开发与构建 | Python 3.10+，使用本仓库 `requirements-dev.txt` |
 | 仓库 / 许可证 | [lushi78778/chan-lun](https://github.com/lushi78778/chan-lun) / [MIT](https://github.com/lushi78778/chan-lun/blob/main/LICENSE) |
@@ -168,7 +168,7 @@ assert empty.buy_points == []
 | 已确认次级走势与对应行情 | `find_first_points`、`scan_first_points`、`analyze_point_chain` | MACD 辅助一类候选及组合链；候选性质沿链保留 |
 | 已确认走势、相邻级别与力度方法 | `scan_strict_divergence`、`strict_nested_chain`、`strict_completion_cascade` | 严格结构与显式证据判定；力度方法和级别声明仍是输入前提 |
 | 已确认类型的递归完成、中枢演化与轮次 | `confirm_level_up`、`track_center_lineage`、`track_rounds` | 完成证据、稳定身份、版本链和轮次移交 |
-| 均线、分型区间或成员状态等专项输入 | 各辅助模块 | 返回定义内的状态或候选；阈值性质见模块说明 |
+| 均线、分型区间或成员状态等专项输入 | 各辅助模块；均线组合用 `find_ma_points` / `ma_point_state` | 封闭候选与可撤销即时预警分别返回；阈值性质见模块说明 |
 
 公开入口经 `import chan` 或 `from chan import ...` 使用；完整导出以
 `chan.__all__` 为准，字段与稳定性以 [API](https://github.com/lushi78778/chan-lun/blob/main/docs/api.md) 为准。

@@ -104,7 +104,11 @@ class TestPackageContracts(unittest.TestCase):
         for marker in ["first = FormationEvent", "report = sector_strength",
                        "context = SecondPointContext", "available_bars =", "third_moves =", "fractal_box =", "ma_point_bars =", "completion_prices ="]:
             code = next(code for code in examples if marker in code)
-            exec(code, {})
+            namespace = {}
+            exec(code, namespace)
+            if marker == "ma_point_bars =":
+                warning = next(code for code in examples if "ma_warning = ma_point_state" in code)
+                exec(warning, namespace)
 
     def test_readme_links_work_outside_repository(self):
         """README 同时进入 PyPI 长描述，链接不能依赖仓库目录作为基址。"""
