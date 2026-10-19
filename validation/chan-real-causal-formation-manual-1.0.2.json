@@ -1,0 +1,608 @@
+{
+  "schema_version": "chan-real-causal-formation-manual-v1",
+  "version": "1.0.2",
+  "annotation": "manual_causal_formation_81_conditional_auxiliary_math",
+  "availability": "日线收盘后观察，15:05到达仅测试约定，不证明供应历史发布或复权当时未修订。",
+  "minimum_rule": "条件标签：沿用R2冻结81笔、双中枢结构、MACD面积/新极值与三类尝试几何；在该辅助前提下，顶×buy3及底×sell3均映射failed（课108）。不是完整F1、严格一类点或精确理论底顶的充分证明。",
+  "limits": [
+    "只覆盖81笔级条件顶部失败与条件底部失败两窗；不扩大到完成正例、xd级或同侧多轮。",
+    "first_point.verdict=established仅表示0.9.9冻结辅助算术成立；完整F1与严格方法证明仍缺，不能等同当前自动一类接口已确认。",
+    "两窗zero_axis均>0.005；旧冻结口径仅登记，未调整当前接口默认值，未将阈值放宽为通过。",
+    "输入、手工结构/角色/尝试/确认表及原文审计先冻结，后与chan比较；未从库输出生成预期。",
+    "观察日按候选终态首次可见截止，起点和EMA种子不改；原5年发现窗保留原结论，不把截短前缀称为另一独立发现。",
+    "原始数据manifest与文件可核；供应历史版本和实际到达未核验，包含组端点标签不等于极值发生时间。"
+  ],
+  "source_review": {
+    "lessons": [
+      20,
+      24,
+      29,
+      65,
+      81,
+      108
+    ],
+    "private_pdf_pages": [
+      888
+    ],
+    "scope": "复核原文精确底顶的前提与失败映射；81沿用已有R2工程合同，不新改原笔定义。"
+  },
+  "cases": [
+    {
+      "id": "513100-day-20160415-20170113",
+      "window_key": "M3T81",
+      "standard": "81",
+      "level": "bi",
+      "packet": "chan-real-513100-day-20160415-20170113-input.json",
+      "packet_sha256": "f307e246e073236fad0317d16f350b345067bea8677fa1934aab9433f3d13022",
+      "sampling_rule": "保持发现起点2016-04-15；截至条件构造终态首次可见日2017-01-13，无窗口前暖机，不改价或补因子。",
+      "expected_bis": [
+        [
+          "down",
+          3,
+          9,
+          1563,
+          1486
+        ],
+        [
+          "up",
+          9,
+          13,
+          1486,
+          1524
+        ],
+        [
+          "down",
+          13,
+          18,
+          1524,
+          1495
+        ],
+        [
+          "up",
+          18,
+          27,
+          1495,
+          1582
+        ],
+        [
+          "down",
+          27,
+          37,
+          1582,
+          1492
+        ],
+        [
+          "up",
+          37,
+          58,
+          1492,
+          1742
+        ],
+        [
+          "down",
+          58,
+          67,
+          1742,
+          1685
+        ],
+        [
+          "up",
+          67,
+          78,
+          1685,
+          1728
+        ],
+        [
+          "down",
+          78,
+          82,
+          1728,
+          1663
+        ],
+        [
+          "up",
+          82,
+          98,
+          1663,
+          1763
+        ],
+        [
+          "down",
+          98,
+          109,
+          1763,
+          1630
+        ],
+        [
+          "up",
+          109,
+          117,
+          1630,
+          1849
+        ],
+        [
+          "down",
+          117,
+          122,
+          1849,
+          1759
+        ],
+        [
+          "up",
+          122,
+          133,
+          1759,
+          1887
+        ],
+        [
+          "down",
+          133,
+          137,
+          1887,
+          1784
+        ],
+        [
+          "up",
+          137,
+          144,
+          1784,
+          1850
+        ]
+      ],
+      "trend": {
+        "direction": "up",
+        "status": "completed"
+      },
+      "roles": {
+        "a": null,
+        "A": {
+          "zn": [
+            0,
+            2,
+            4
+          ],
+          "zd": 1495,
+          "zg": 1524,
+          "dd": 1486,
+          "gg": 1582,
+          "closed_by": 6
+        },
+        "b": {
+          "unit": 5
+        },
+        "B": {
+          "zn": [
+            6,
+            8
+          ],
+          "zd": 1685,
+          "zg": 1728,
+          "dd": 1663,
+          "gg": 1742,
+          "closed_by": null,
+          "frozen_by_departure": true
+        },
+        "c": {
+          "unit": 9,
+          "outcome": "departed"
+        },
+        "proof": {
+          "unit": 10
+        },
+        "C": null,
+        "gap_ticks": 81,
+        "merge": null
+      },
+      "ledger": [
+        [
+          "A_open",
+          2
+        ],
+        [
+          "A_zn_extend",
+          4
+        ],
+        [
+          "b_fixed",
+          5
+        ],
+        [
+          "A_closed",
+          6
+        ],
+        [
+          "B_open",
+          8
+        ],
+        [
+          "c_fixed",
+          9
+        ],
+        [
+          "c_departed",
+          9
+        ],
+        [
+          "proof_fixed",
+          10
+        ]
+      ],
+      "first_point": {
+        "side": "sell1",
+        "verdict": "established",
+        "reason": null,
+        "area_b": 0.2012747727618046,
+        "area_c": 0.029499363294713254,
+        "prior_extreme_ticks": 1742,
+        "c_extreme_ticks": 1763,
+        "new_extreme": true,
+        "zero_axis": 0.006688442709401374
+      },
+      "formation": {
+        "kind": "top",
+        "center": {
+          "zn": [
+            10,
+            12
+          ],
+          "zd": 1759,
+          "zg": 1763,
+          "dd": 1630,
+          "gg": 1849,
+          "closed_by": 14
+        },
+        "attempts": [
+          {
+            "side": "buy3",
+            "leave": 13,
+            "pull": 14,
+            "outcome": "established",
+            "point_ticks": 1784,
+            "margin_ticks": 21
+          }
+        ],
+        "resolution": {
+          "side": "buy3",
+          "unit": 14,
+          "leave": 13,
+          "point_ticks": 1784,
+          "margin_ticks": 21
+        },
+        "outcome": "failed"
+      },
+      "audit": {
+        "independent_of_chan": true,
+        "minimum_input": "R2固定81笔为几何单元；没有完整F1或严格背驰方法证明；只冻结辅助前提下的条件算术。",
+        "expected_confirmed_raw_counts": [
+          19,
+          24,
+          34,
+          41,
+          56,
+          83,
+          96,
+          107,
+          116,
+          133,
+          153,
+          160,
+          165,
+          178,
+          185
+        ],
+        "first_raw_count": 153,
+        "center_open_raw_count": 165,
+        "resolution_raw_count": 185,
+        "current_default_zero_axis_limit": 0.005,
+        "current_default_zero_axis_pass": false,
+        "endpoint_group_rule": "合并分型时间映射组内最后原始行，是旧R2坐标约定；不将其当极值发生时刻或实际确认时刻。",
+        "reasons": [
+          "A=[1495,1524]，Zn0/2/4，完整包络[1486,1582]，u6不触沿封闭；u5向上离开。",
+          "B=[1685,1728]，Zn6/8，包络[1663,1742]；gap=1663-1582=81。u9向上离开，u10反向从外侧回核心，B采用既有离开冻结。",
+          "b/c同向柱面积0.2012747727618046>0.029499363294713254>0，1763>1742；零轴比值仅记录，未通过当前默认0.005。",
+          "因果中枢从u10起，u10/u12交集[1759,1763]，u11覆盖；u14.low=1784>1763不触沿封口。",
+          "首个几何尝试u13离开/u14回试，1784-1763=21，buy3成立；条件顶部失败，终态185行首次可见。"
+        ]
+      }
+    },
+    {
+      "id": "159915-day-20171015-20180712",
+      "window_key": "M3B81",
+      "standard": "81",
+      "level": "bi",
+      "packet": "chan-real-159915-day-20171015-20180712-input.json",
+      "packet_sha256": "478ea24152494a8ac6596ec9141951be267c1082a3a69c76911a30e54788cbb3",
+      "sampling_rule": "保持发现起点2017-10-15；截至条件构造终态首次可见日2018-07-12，无窗口前暖机，不改价或补因子。",
+      "expected_bis": [
+        [
+          "up",
+          2,
+          6,
+          1767,
+          1826
+        ],
+        [
+          "down",
+          6,
+          12,
+          1826,
+          1719
+        ],
+        [
+          "up",
+          12,
+          16,
+          1719,
+          1808
+        ],
+        [
+          "down",
+          16,
+          26,
+          1808,
+          1631
+        ],
+        [
+          "up",
+          26,
+          32,
+          1631,
+          1688
+        ],
+        [
+          "down",
+          32,
+          36,
+          1688,
+          1626
+        ],
+        [
+          "up",
+          36,
+          41,
+          1626,
+          1702
+        ],
+        [
+          "down",
+          41,
+          45,
+          1702,
+          1601
+        ],
+        [
+          "up",
+          45,
+          49,
+          1601,
+          1751
+        ],
+        [
+          "down",
+          49,
+          56,
+          1751,
+          1480
+        ],
+        [
+          "up",
+          56,
+          72,
+          1480,
+          1795
+        ],
+        [
+          "down",
+          72,
+          80,
+          1795,
+          1595
+        ],
+        [
+          "up",
+          80,
+          85,
+          1595,
+          1810
+        ],
+        [
+          "down",
+          85,
+          94,
+          1810,
+          1631
+        ],
+        [
+          "up",
+          94,
+          103,
+          1631,
+          1765
+        ],
+        [
+          "down",
+          103,
+          128,
+          1765,
+          1427
+        ],
+        [
+          "up",
+          128,
+          132,
+          1427,
+          1531
+        ],
+        [
+          "down",
+          132,
+          138,
+          1531,
+          1468
+        ]
+      ],
+      "trend": {
+        "direction": "down",
+        "status": "completed"
+      },
+      "roles": {
+        "a": null,
+        "A": {
+          "zn": [
+            0,
+            2
+          ],
+          "zd": 1767,
+          "zg": 1808,
+          "dd": 1719,
+          "gg": 1826,
+          "closed_by": 4
+        },
+        "b": {
+          "unit": 3
+        },
+        "B": {
+          "zn": [
+            4,
+            6
+          ],
+          "zd": 1631,
+          "zg": 1688,
+          "dd": 1626,
+          "gg": 1702,
+          "closed_by": null,
+          "frozen_by_departure": true
+        },
+        "c": {
+          "unit": 7,
+          "outcome": "departed"
+        },
+        "proof": {
+          "unit": 8
+        },
+        "C": null,
+        "gap_ticks": 17,
+        "merge": null
+      },
+      "ledger": [
+        [
+          "A_open",
+          2
+        ],
+        [
+          "b_fixed",
+          3
+        ],
+        [
+          "A_closed",
+          4
+        ],
+        [
+          "B_open",
+          6
+        ],
+        [
+          "c_fixed",
+          7
+        ],
+        [
+          "c_departed",
+          7
+        ],
+        [
+          "proof_fixed",
+          8
+        ]
+      ],
+      "first_point": {
+        "side": "buy1",
+        "verdict": "established",
+        "reason": null,
+        "area_b": 0.16795467990046364,
+        "area_c": 0.00831244957969692,
+        "prior_extreme_ticks": 1626,
+        "c_extreme_ticks": 1601,
+        "new_extreme": true,
+        "zero_axis": 0.006071348654543968
+      },
+      "formation": {
+        "kind": "bottom",
+        "center": {
+          "zn": [
+            8,
+            10,
+            12,
+            14
+          ],
+          "zd": 1601,
+          "zg": 1751,
+          "dd": 1480,
+          "gg": 1810,
+          "closed_by": 16
+        },
+        "attempts": [
+          {
+            "side": "sell3",
+            "leave": 11,
+            "pull": 12,
+            "outcome": "fail",
+            "point_ticks": 1810,
+            "margin_ticks": -209
+          },
+          {
+            "side": "sell3",
+            "leave": 15,
+            "pull": 16,
+            "outcome": "established",
+            "point_ticks": 1531,
+            "margin_ticks": 70
+          }
+        ],
+        "resolution": {
+          "side": "sell3",
+          "unit": 16,
+          "leave": 15,
+          "point_ticks": 1531,
+          "margin_ticks": 70
+        },
+        "outcome": "failed"
+      },
+      "audit": {
+        "independent_of_chan": true,
+        "minimum_input": "R2固定81笔为几何单元；没有完整F1或严格背驰方法证明；只冻结辅助前提下的条件算术。",
+        "expected_confirmed_raw_counts": [
+          17,
+          23,
+          35,
+          48,
+          54,
+          62,
+          68,
+          75,
+          83,
+          87,
+          111,
+          116,
+          126,
+          134,
+          146,
+          177,
+          183
+        ],
+        "first_raw_count": 83,
+        "center_open_raw_count": 111,
+        "resolution_raw_count": 183,
+        "current_default_zero_axis_limit": 0.005,
+        "current_default_zero_axis_pass": false,
+        "endpoint_group_rule": "合并分型时间映射组内最后原始行，是旧R2坐标约定；不将其当极值发生时刻或实际确认时刻。",
+        "reasons": [
+          "A=[1767,1808]，Zn0/2，完整包络[1719,1826]；u4不触沿封闭，u3向下离开。",
+          "B=[1631,1688]，Zn4/6，包络[1626,1702]；gap=1719-1702=17。u7向下离开，u8反向自外侧回核心，B采用既有离开冻结。",
+          "b/c同向柱面积0.16795467990046364>0.00831244957969692>0，1601<1626；零轴比值仅记录，未通过当前默认0.005。",
+          "因果中枢从u8起，[1601,1751]；u10/12/14均触沿延伸，包络[1480,1810]；u16.high=1531<1601封口。",
+          "首尝试u11/u12：1810>1601，margin=-209，回中枢失败，不能跳过。后续u15/u16：1531<=1601，margin=70，sell3成立，条件底部失败；183行首确认。"
+        ]
+      }
+    }
+  ]
+}

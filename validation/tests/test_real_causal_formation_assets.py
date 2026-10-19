@@ -313,6 +313,77 @@ class TestRealCausalFormationAssets(unittest.TestCase):
                         tool.compile_case(broken, data, path)
 
 
+class TestRealCausalFormation81Assets(unittest.TestCase):
+    """两份新前缀与独立审计表保真；旧四窗和编译器输出不回写。"""
+
+    def test_sources_confirmation_audit_and_frozen_rebuild(self):
+        tool = compiler()
+        manual_path = ROOT / 'validation/chan-real-causal-formation-manual-1.0.2.json'
+        fixture = ROOT / 'tests/fixtures/real_causal_formation_81.json'
+        manual = json.loads(manual_path.read_text())
+        labels = json.loads(fixture.read_text())
+        self.assertEqual(labels['manual_sha256'], tool.digest(manual_path))
+        self.assertEqual(labels['annotation'],
+                         'manual_causal_formation_81_conditional_auxiliary_math')
+        self.assertEqual(labels['minimum_rule'], manual['minimum_rule'])
+        self.assertEqual(labels['limits'], manual['limits'])
+        self.assertEqual(len(labels['cases']), 2)
+        for case, frozen in zip(manual['cases'], labels['cases']):
+            path, packet = packet_of(case)
+            self.assertEqual(tool.digest(path), case['packet_sha256'])
+            self.assertEqual(frozen['source']['sha256'], case['packet_sha256'])
+            self.assertEqual(packet['rows'], frozen['raw_rows'])
+            self.assertEqual(packet['manifest_sha256'],
+                             frozen['source']['dataset_manifest_sha256'])
+            audit = case['audit']
+            self.assertEqual(frozen['foundation']['bis_confirmed_raw_count'],
+                             audit['expected_confirmed_raw_counts'])
+            self.assertEqual(frozen['first_point']['first_raw_count'],
+                             audit['first_raw_count'])
+            self.assertEqual(frozen['formation']['center_open_first_raw_count'],
+                             audit['center_open_raw_count'])
+            self.assertEqual(frozen['formation']['resolution']['first_raw_count'],
+                             audit['resolution_raw_count'])
+            self.assertEqual(len(packet['rows']), audit['resolution_raw_count'])
+            self.assertFalse(audit['current_default_zero_axis_pass'])
+            self.assertGreater(frozen['first_point']['zero_axis'],
+                               audit['current_default_zero_axis_limit'])
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / 'labels.json'
+            command = [sys.executable, str(TOOL), '--manual', str(manual_path),
+                       '--packets', str(ROOT / 'validation'), '--output', str(output)]
+            run = subprocess.run(command, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertEqual(output.read_bytes(), fixture.read_bytes())
+            run = subprocess.run(command, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertNotEqual(run.returncode, 0)
+            self.assertIn('拒绝覆盖', run.stderr)
+            self.assertEqual(output.read_bytes(), fixture.read_bytes())
+
+    def test_reject_wrong_standard_early_proof_and_mislabelled_first_attempt(self):
+        tool = compiler()
+        manual = json.loads((ROOT / 'validation/chan-real-causal-formation-manual-1.0.2.json').read_text())
+        for case in manual['cases']:
+            path, packet = packet_of(case)
+            changes = [
+                ('standard', lambda c: c.__setitem__('standard', '106')),
+                ('early_proof', lambda c: c['roles']['proof'].__setitem__(
+                    'unit', c['roles']['c']['unit'])),
+                ('point', lambda c: c['formation']['attempts'][-1].__setitem__(
+                    'point_ticks', c['formation']['attempts'][-1]['point_ticks'] + 1)),
+                ('outcome', lambda c: c['formation'].__setitem__('outcome', 'completed')),
+                ('missing_first_attempt', lambda c: c['formation']['attempts'].pop(0)),
+            ]
+            for name, mutate in changes:
+                with self.subTest(window=case['window_key'], change=name):
+                    broken = copy.deepcopy(case)
+                    mutate(broken)
+                    with self.assertRaises(ValueError):
+                        tool.compile_case(broken, packet, path)
+
+
 class TestRealRoundsDiscovery(unittest.TestCase):
     """发现工具复用冻结结构；改变笔标准须同时改变实际前缀确认。"""
 

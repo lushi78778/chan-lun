@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""课108: R2 0.9.11 因果底顶真实正反例标注。
+"""课108: R2 因果底顶及81笔级条件算术的独立真实标注。
 
 预期由原始行情、独立整数人工表经独立编译器冻结, 测试只读取标签,
-不重新生成预期; 输入不继承窗口以前的结构。四案例因子恒为1, 价格
+不重新生成预期; 输入不继承窗口以前的结构。案例因子恒为1, 价格
 单位0.001。因果底顶裁定(课108:2-6): 底部=第一类买点出现后至该买
 点所引发的中枢第一次走出第三类买卖点前的构造过程, 顶部反过来
 定义; 引发中枢=证明段起贪心运行的首个有效Zn(定理一全延伸, 一类
@@ -16,6 +16,9 @@ buy3先出现=完成、顶×sell3先出现=完成、顶×buy3先出现=失败; �
 日线到达15:05(测试约定)。覆盖: 底部失败F1(512880日线)、顶部完成
 G1(588000 30m)、顶部失败H1(518880日线)、底部完成E1(159915 60m),
 底/顶×完成/失败四格闭合。
+
+新增81两窗只验证R2辅助前提下的结构、确认和失败映射；其MACD零轴比值
+均>0.005，不等同当前自动接口通过，也不提供完整F1或严格一类点证明。
 """
 from datetime import datetime, timedelta
 import json
@@ -27,10 +30,12 @@ import chan
 
 def load_labels():
     """加载独立冻结标签; 不调用识别器、编译器或补齐预期字段。"""
-    path = os.path.join(os.path.dirname(__file__), 'fixtures',
-                        'real_causal_formation.json')
-    with open(path, encoding='utf-8') as stream:
-        return json.load(stream)
+    cases = []
+    for name in ('real_causal_formation.json', 'real_causal_formation_81.json'):
+        path = os.path.join(os.path.dirname(__file__), 'fixtures', name)
+        with open(path, encoding='utf-8') as stream:
+            cases.extend(json.load(stream)['cases'])
+    return dict(cases=cases)
 
 
 def raw_bars(case):
@@ -433,7 +438,7 @@ class TestRealCausalFormation(unittest.TestCase):
                 (case['id'], '台账事件序列'))
 
     def test_first_point_arithmetic_rederived_from_raw_rows(self):
-        """课24/27/29: 原始行重推MACD面积/新极值/零轴; 四窗一类均成立。"""
+        """课24/27/29: 重推冻结辅助算术，不等同严格一类点证明。"""
         coverage = dict(buy1_established=0, sell1_established=0)
         for case in load_labels()['cases']:
             rows = case['raw_rows']
@@ -495,8 +500,8 @@ class TestRealCausalFormation(unittest.TestCase):
                              (case['id'], '零轴回拉'))
             coverage['sell1_established' if up
                      else 'buy1_established'] += 1
-        self.assertEqual(coverage, dict(buy1_established=2,
-                                        sell1_established=2))
+        self.assertEqual(coverage, dict(buy1_established=3,
+                                        sell1_established=3))
 
     def test_causal_formation_rederived_from_library_units(self):
         """课108: 库单元重推引发中枢贪心运行、三类尝试枚举与四结局
@@ -577,9 +582,26 @@ class TestRealCausalFormation(unittest.TestCase):
             self.assertEqual(formation['outcome'], outcome,
                              (case['id'], '结局映射（课108行4-6）'))
             coverage[kind + '_' + outcome] += 1
-        self.assertEqual(coverage, dict(bottom_completed=1, bottom_failed=1,
-                                        top_completed=1, top_failed=1,
-                                        attempts_fail=10))
+        self.assertEqual(coverage, dict(bottom_completed=1, bottom_failed=2,
+                                        top_completed=1, top_failed=2,
+                                        attempts_fail=11))
+
+    def test_81_auxiliary_labels_preserve_their_evidence_boundary(self):
+        """81条件标签不能冒充默认零轴筛选通过或严格理论底顶证明。"""
+        path = os.path.join(os.path.dirname(__file__), 'fixtures',
+                            'real_causal_formation_81.json')
+        with open(path, encoding='utf-8') as stream:
+            labels = json.load(stream)
+        self.assertEqual(labels['annotation'],
+                         'manual_causal_formation_81_conditional_auxiliary_math')
+        self.assertEqual({case['window_key'] for case in labels['cases']},
+                         {'M3T81', 'M3B81'})
+        for case in labels['cases']:
+            self.assertEqual(case['standard'], '81')
+            self.assertGreater(case['first_point']['zero_axis'], 0.005)
+            self.assertEqual(case['formation']['outcome'], 'failed')
+            endpoint = case['units'][case['first_point']['c_unit']]['end_dt']
+            self.assertGreater(case['first_point']['first_dt'][:10], endpoint)
 
     def test_future_raw_poison_is_filtered_before_price_validation(self):
         """课65: 原始行情先截观察时刻; NaN、缺价格字段及未来结构均
