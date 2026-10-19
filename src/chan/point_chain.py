@@ -29,7 +29,10 @@ class PointChain(namedtuple('PointChainBase', 'first_points contexts second_poin
     """组合结果; unresolved_move_ids为不可表达方向的平端点类型。
 
     平端点前的已确认点保留, 本轮其后的有向条件等待, 不跳段拼接。
-    自动一类点继续保留MACD辅助候选性质。
+    自动一类点继续保留MACD辅助候选性质。二/三类点以context_id
+    回溯first_points的point_id/method; formations与contexts同序
+    对应, 经该上下文的一类候选核对来源。不能只凭kind或phase
+    把整链改称严格理论证明。
     """
     __slots__ = ()
 
@@ -174,6 +177,9 @@ def analyze_point_chain(units, bars, as_of, level, zero_axis_ratio=0.005):
     新一类开启新轮次; 同侧后继一类点确认后旧轮中阴被新锚点接管
     (移交), 其二类点停发, 已确认点位不回写; 三类点与构造判定独立
     继续(课101中阴结束后只剩三类点)。
+    输出的buy2/sell2、三类点及completed/failed是给定辅助锚点下的
+    条件与构造状态, 不升级上游一类候选的证据性质; 力度来源保留
+    在对应context.first_point.method, 不新增严格证明。
     """
     points = find_first_points(units, bars, as_of, level, zero_axis_ratio)
     contexts = first_point_contexts(units, points, as_of, level)

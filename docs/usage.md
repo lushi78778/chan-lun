@@ -671,6 +671,10 @@ assert ma_candidates[0].to_dict()["last_kiss_proven"] is False
 `zero_axis_ratio` 调整，原文没有该数值。单中枢盘整背驰、未完成走势、
 内部极值发生时间未知、零宽中枢等不输出。基础类型真实性、供应版本和
 复权价格坐标仍由输入负责；EMA 暖机从所给历史第一根开始。
+本辅助入口的新极值相对末中枢波动比较，并要求极值位于离开段端点；
+严格入口另检查全趋势的先验极值，不能互相替代。
+入参 `zero_axis_ratio` 是筛选阈值；`FirstPoint.zero_axis_ratio` 则记录
+B 窗口实测的 `min(max(abs(DIF), abs(DEA)) / close)`，两者不可混为同一个值。
 
 ```python
 import chan
@@ -695,12 +699,25 @@ print(chain.formations)
 现有三类接口表达，不跳过去改选后面的中枢。`analyze_point_chain` 是薄组合
 入口，用引发中枢的首次三类点驱动第 108 课底/顶构造，用原趋势中枢判
 二三合一；一类候选性质继续沿整个链传递。
+下游点位通过 `context_id` 对应一类候选的 `point_id`，从该候选的
+`method` 追溯力度来源；构造结果与 `contexts` 同序对应，经该上下文的
+`first_point.method` 核对来源。`kind='buy2'`、构造 `phase='completed'` 等结果
+只说明给定锚点下的条件与构造状态，不把锚点升级为严格背驰证明。
 
 `scan_first_points` 返回 `FirstPointScan(points, exclusions, completed_types)`，
-在没有候选时可查看完成类型的首个否决条件。它区分盘整、比较段不足、
-中枢波动区间重叠、未创新极值、内部极值时间未知、价格证据待到达、
-面积没有减弱、未回零轴和零宽中枢。尚未完成的类型不在否决列表中。
-这使"没有候选"可以复核，而不把它解释成全部理论分支验证通过。
+`exclusions` 记录完成类型未输出候选的首个原因，不能一概称为理论否决：
+
+| 原因示例 | 阅读口径 |
+|---|---|
+| `not_trend` | 已完成类型不是趋势，不属于该入口的趋势一类候选问题 |
+| `waiting_price_evidence` | 所需末端行情尚未到达，等待价格证据 |
+| `internal_extreme_time_unknown`、`zero_width_center` | 现有输入不能定位或表达，保留证据缺口 |
+| `no_zero_axis_pull`、`area_not_positive_and_weaker` | 当前参数下 MACD 辅助条件未通过，不等于严格背驰已被否定 |
+
+比较段不足、中枢波动重叠或未创新极值也会记录相应首个原因；这些原因
+不自动转换为严格接口的四态状态。尚未完成类型不进入 `exclusions`，空列表
+也不能证明全部理论分支已被判定。需要四态诊断时使用 §6.15 的严格接口，
+并保留其显式力度方法及证据前提。
 
 中枢演化谱系、重组与轮次移交见 §6.17，严格结构、区间套及次级完成级联
 见 §6.15—§6.16。这些接口保留显式级别、完成证据和力度方法前提，不能把

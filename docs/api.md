@@ -174,8 +174,9 @@ docstring 与模块测试。
 - `None`：字段语义上的"未知/未形成/不适用"，非缺失错误（如
   `causal_center=None` 表示尚未形成因果中枢）。
 - 空列表/空元组：计算完成且无结果（如无买卖点）。
-- 排除清单（`exclusions`/`skipped`）：计算完成但被条件否决，与
-  "无数据"区分，`completed_types` 计数独立保留。
+- 排除清单（`exclusions`/`skipped`）：未输出该类候选/结果的首个原因，
+  可含问题不适用、构造不足、证据未到达或当前筛选未通过，不能统一解读
+  为严格接口的 `rejected`。`completed_types` 仅计已完成类型，独立保留。
 - 开放尾部（`open_tail=True`、`STRICT_CANDIDATE`）随前缀演进，
   可被后续数据否决，不是确认。
 - 均线力度（1.0.2 修正）：前导暖机之后的缺值不是相交证据，
@@ -186,6 +187,11 @@ docstring 与模块测试。
 
 - 严格接口输出是**条件判定**，不是交易指令；辅助候选（MACD 一类）
   不冒充严格理论结论。
+- `FirstPointScan.exclusions` 是未输出辅助候选的首个原因，包含不适用、
+  待补证与当前筛选未通过，不等于严格接口的 `rejected`。点位链的二/三类
+  和构造终态继续依赖其一类锚点；点位由 `context_id` 关联 `point_id`，
+  `formations` 与 `contexts` 同序对应，经上下文的 `first_point.method`
+  核对来源，不能只凭 `kind` 或 `phase` 将辅助链解释为严格证明。
 - 工程阈值（`WEDGE_MIN_RUN`、boll 参数、`fxpower` 档位等）已逐项
   声明理论/工程性质（见各模块 docstring 与《辅助模块能力与证据
   矩阵》）。

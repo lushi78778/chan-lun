@@ -41,7 +41,12 @@ class FirstPoint(namedtuple('FirstPointBase',
 
 
 class FirstPointScan(namedtuple('FirstPointScanBase', 'points exclusions completed_types')):
-    """辅助扫描结果; exclusions保存完成走势身份和未通过的首个条件。"""
+    """辅助扫描结果; exclusions保存完成走势身份和未输出候选的首个原因。
+
+    原因可表示非趋势、不足以判定或当前辅助筛选未通过, 不是严格
+    接口的rejected状态。未完成类型不进exclusions; 空列表不证明
+    全部理论分支均已判定。points中的method保留辅助方法来源。
+    """
     __slots__ = ()
 
     def to_dict(self):
@@ -91,6 +96,10 @@ def scan_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
     无完成趋势、严格分离中枢、同向比较段、新极值、零轴回拉或正
     面积减弱则不输出。端点不在行情显式报错。走势极值不要求等于
     对应行情close; 同标的/复权坐标由调用方保证。
+
+    zero_axis_ratio入参为筛选阈值; FirstPoint同名字段记录B区间
+    实测的最小双线幅值/收盘价, 不是把阈值原样回传。exclusions
+    包含待补证原因, 不可统一解释为严格背驰被否决。
     """
     ratio = _finite_number(zero_axis_ratio)
     if ratio is None or ratio < 0:
