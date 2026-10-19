@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
-"""R2真实ETF样本准备: 文件完整性、指定十标的原始数据概况与快照提取。
+"""真实样本准备: Parquet数据集审计/提取, 或显式声明来源的单标的CSV接收。
 
 本工具不导入chan, 不运行识别器, 不生成理论真值。profile核对全部频率
 文件摘要, 仅对显式频率和标的读取原始字段; extract固定观察日并保留
 原始OHLC/复权因子, 不填空、不修价、不选择暖机或自动认定分钟到达时刻。
-本地Python3.10+及pyarrow环境使用, 不加入核心包依赖。
+CSV接收不推断复权、周期或历史到达, 不把来源声明视为平台验证。
+本地Python3.10+及pandas环境使用, 仅Parquet模式需要pyarrow, 不加入核心包依赖。
 """
 import argparse
+import csv
 from datetime import datetime, timedelta, timezone
 import hashlib
+import io
 import json
 import math
 from pathlib import Path
@@ -177,23 +180,133 @@ def packet_records(frame, period, start, observation):
                 record['high'] < max(record['open'], record['close']) or
                 record['low'] > record['high']):
             raise ValueError('观察前缀OHLC包络无效;不自动修正价格')
+        if 'paused' in visible.columns:
+            paused = float(row['paused'])
+            if paused not in (0.0, 1.0):
+                raise ValueError('观察前缀paused须为0或1;不以0量推定停牌')
+            record['paused'] = int(paused)
         rows.append(record)
     return rows
 
 
+def csv_packet(path, code, period, start, observation, source, source_version,
+               timezone_name, adjustment, time_label, layout='joinquant',
+               expected_sha256=None, volume_unit='unknown'):
+    """接收单标的未复权CSV并冻结观察日前缀; 不调用识别器或生成理论标签。
+
+    joinquant布局使用date/volume/factor, canonical布局使用
+    ts_code/dt/vol/adj_factor; OHLC同名。单文件原始字节摘要在解析前固定,
+    只有提供expected_sha256时才证明与该外部摘要一致。时间均为显式声明的
+    北京时间无偏移格式; 不推导closed_dt/available_dt, 不转换价格/成交量,
+    不补因子、不删停牌、不自动排序坏输入。未来数值先截后验, 原始字节保留。
+    """
+    import pandas as pd
+    if not code or code.strip() != code or not source.strip() or not source_version.strip():
+        raise ValueError('需单一代码、来源和来源版本/导出批次声明')
+    if timezone_name != 'Asia/Shanghai' or adjustment != 'none':
+        raise ValueError('CSV接收仅支持显式北京时间、未复权原始行情')
+    if period not in ('1d', '1m', '5m', '15m', '30m', '60m'):
+        raise ValueError('不支持的CSV频率')
+    if time_label not in (('date',) if period == '1d' else ('start', 'end', 'unknown')):
+        raise ValueError('日线须声明date, 分钟须声明start/end/unknown')
+    if volume_unit not in ('shares', 'lots', 'units', 'unknown'):
+        raise ValueError('未支持的成交量单位;不得自动换算')
+    if layout not in ('joinquant', 'canonical'):
+        raise ValueError('需显式选择CSV列布局')
+    path = Path(path).resolve()
+    data = path.read_bytes()
+    actual = hashlib.sha256(data).hexdigest()
+    if expected_sha256 is not None and expected_sha256.lower() != actual:
+        raise ValueError('CSV源文件摘要不一致')
+    reader = csv.reader(io.StringIO(data.decode('utf-8-sig')), strict=True)
+    header = next(reader, [])
+    if not header or len(set(header)) != len(header):
+        raise ValueError('CSV表头为空或重复')
+    values = list(reader)
+    if not values or any(len(row) != len(header) for row in values):
+        raise ValueError('CSV为空或数据列数与表头不一致')
+    frame = pd.DataFrame(values, columns=header)
+    names = ({'date': 'dt', 'volume': 'vol', 'factor': 'adj_factor'}
+             if layout == 'joinquant' else {})
+    # 显式布局不容许同义列同时出现, 防止重命名后读到不同坐标。
+    if any(old in header and new in header for old, new in names.items()):
+        raise ValueError('CSV包含冲突的同义列')
+    required = ({'date', 'open', 'high', 'low', 'close', 'volume', 'factor'}
+                if layout == 'joinquant' else
+                {'ts_code', 'dt', 'open', 'high', 'low', 'close', 'vol', 'adj_factor'})
+    if not required <= set(header):
+        raise ValueError('CSV缺少布局要求的行情/因子字段')
+    frame = frame.rename(columns=names)
+    if 'ts_code' in frame.columns:
+        if set(frame['ts_code']) != {code}:
+            raise ValueError('CSV代码与声明不一致或含多个标的;不静默筛选')
+    else:
+        frame['ts_code'] = code
+    time_format = '%Y-%m-%d' if period == '1d' else '%Y-%m-%d %H:%M:%S'
+    # 只接受一种明确时间格式, 不靠pandas猜测月日顺序、时区或bar标签。
+    for value in frame['dt']:
+        if datetime.strptime(value, time_format).strftime(time_format) != value:
+            raise ValueError('CSV时间格式与频率不一致')
+    first_day = datetime.strptime(start, '%Y-%m-%d')
+    last_day = datetime.strptime(observation, '%Y-%m-%d')
+    dates = pd.to_datetime(frame['dt'])
+    visible = frame.loc[(dates >= first_day) & (dates < last_day + timedelta(days=1))]
+    if not visible['dt'].is_monotonic_increasing:
+        raise ValueError('观察前缀时间乱序;不自动排序或删除')
+    key = 'trade_date' if period == '1d' else 'trade_time'
+    rows = packet_records(frame.rename(columns={'dt': key}), period, start, observation)
+    return {
+        'schema_version': 'chan-real-sample-v1', 'dataset': str(path),
+        'dataset_version': source_version, 'source': source,
+        'source_sha256': actual,
+        'source_digest_check': 'matched_expected' if expected_sha256 is not None else 'calculated_only',
+        'source_rows': len(frame), 'source_layout': layout,
+        'generated_at': datetime.now(timezone(timedelta(hours=8))).isoformat(),
+        'sampling_rule': {'periods': [period], 'codes': [code], 'window': [start, observation]},
+        'timezone': timezone_name, 'adjustment': adjustment,
+        'time_label': time_label, 'volume_unit': volume_unit, 'rows': rows,
+        'algorithm_labels_generated': False, 'theoretical_acceptance': False,
+        'factor_recipe': '保留原始价格及当行因子;每次观察截断后再独立选择复权锚',
+        'availability_scope': '仅已收盘观察日研究输入;不生成closed_dt/available_dt',
+        'limits': ['来源/版本/时间标签为输入声明,不是平台或历史供应时效验证',
+                   '不证明历史数据未修订;不推断停牌、交易日完整性或真实走势级别']}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('mode',choices=['profile','extract'])
+    parser.add_argument('mode',choices=['profile','extract','import-csv'])
     parser.add_argument('dataset',type=Path)
     parser.add_argument('--periods',nargs='+',default=['1d','30m'])
     parser.add_argument('--codes',nargs='+',default=CODES)
     parser.add_argument('--start')
     parser.add_argument('--observation')
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--csv-layout', choices=['joinquant', 'canonical'])
+    parser.add_argument('--source')
+    parser.add_argument('--source-version')
+    parser.add_argument('--timezone')
+    parser.add_argument('--adjustment', choices=['none'])
+    parser.add_argument('--time-label', choices=['date', 'start', 'end', 'unknown'])
+    parser.add_argument('--volume-unit', choices=['shares', 'lots', 'units', 'unknown'], default='unknown')
+    parser.add_argument('--sha256', help='可选外部源文件摘要;未提供时只计算摘要')
     args = parser.parse_args()
     if args.output.exists():
         parser.error('拒绝覆盖已归档样本/收据;请使用新文件名')
     dataset = args.dataset.resolve()
+    if args.mode == 'import-csv':
+        if (len(args.periods) != 1 or len(args.codes) != 1 or not args.start or
+                not args.observation or not all([args.csv_layout, args.source,
+                    args.source_version, args.timezone, args.adjustment, args.time_label])):
+            parser.error('import-csv需一个period/code、start/observation、布局、来源/版本、时区、复权及时间标签声明')
+        report = csv_packet(dataset, args.codes[0], args.periods[0], args.start,
+                            args.observation, args.source, args.source_version,
+                            args.timezone, args.adjustment, args.time_label,
+                            args.csv_layout, args.sha256, args.volume_unit)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        with args.output.open('x', encoding='utf-8') as stream:
+            stream.write(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + '\n')
+        print(args.output.resolve())
+        return 0
     manifest = load_manifest(dataset)
     if not set(args.periods)<=set(manifest['datasets']):
         parser.error('不支持的行情频率')

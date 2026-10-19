@@ -90,4 +90,46 @@ python validation/tools/scan_real_rounds.py --packet /样本绝对路径.json --
 
 | 工具 | 用途 | 示例 |
 |---|---|---|
-| `index_core_samples.py` | R2真实ETF样本准备：文件完整性、指定十标的原始数据概况与快照提取；本地Python3.10+及pyarrow环境使用 | `python validation/tools/index_core_samples.py profile /数据集绝对路径 --periods 1d 30m --output /结果绝对路径.json` |
+| `index_core_samples.py` | Parquet数据集审计/提取、单标的CSV接收；CSV仅需pandas，Parquet另需pyarrow | `python validation/tools/index_core_samples.py profile /数据集绝对路径 --periods 1d 30m --output /结果绝对路径.json` |
+
+
+`import-csv` 复用同一入口，接收个股或 ETF 的单标的原始行情，不取行情、
+不调用 chan、不生成理论标签。现有 profile/extract 默认十 ETF 和 Parquet
+合同保持。CSV 不需要为适配工具建立 Parquet 数据集：
+
+```bash
+python validation/tools/index_core_samples.py import-csv /原始行情绝对路径.csv \
+  --csv-layout joinquant --codes 600721.XSHG --periods 1d \
+  --start 2024-01-01 --observation 2024-12-31 \
+  --source joinquant_get_price --source-version 导出批次或供应版本 \
+  --timezone Asia/Shanghai --adjustment none --time-label date \
+  --volume-unit shares --output /新样本绝对路径.json
+```
+
+- `joinquant` 列为 `date,open,high,low,close,volume,factor`；可选 `paused`。
+  `canonical` 列为 `ts_code,dt,open,high,low,close,vol,adj_factor`；可选
+  `paused`。不猜列名或把多标的静默筛成一只；代码须与显式声明逐字一致。
+- 日线时间格式 `YYYY-MM-DD`，分钟 `YYYY-MM-DD HH:MM:SS`，均须显式声明
+  `Asia/Shanghai`。支持 `1d/1m/5m/15m/30m/60m`，不重采样或验证周期
+  标签真伪；日线标签用 `date`，分钟用 `start/end/unknown`。未知时保留
+  `unknown`，不推导收盘和实际到达时间。observation 仍是已收盘信号日，
+  不接受盘中截止，也不证明历史供应版本当时可见。
+- 输入价格必须为未复权报价；因子必填且为正，不能用 1 补空。先截观察日，
+  再校验可见价格/成交量/因子和 OHLC 包络。保留跨分红因子、零成交量及
+  已给出的停牌标记，不提前复权、按报价档位取整或删行；可见重复/乱序、
+  缺值或非法字段明确拒绝。缺失 paused 不生成默认值，零量不推定停牌。
+- 原始字节 SHA-256 写入样本；可加 `--sha256` 与外部摘要核对，不提供时
+  明确为 `calculated_only`。来源/版本和时间标签只是输入声明，行校验不证明
+  供应来源、交易日齐全、平台时效或理论形态。原始 CSV、来源收据和历史
+  调整记录继续保留，输出拒绝覆盖。
+- 接收成功不等于适用于每个历史扫描器。`scan_real_rounds.py` 仍仅接受因子
+  恒 1，不能把个股因子改成 1 绕过；跨分红发现/标注须先独立冻结当次观察
+  的复权坐标及算术。数据接收、候选发现和独立标签分别验收。
+
+个股补证优先复用已有输入。扩展批次可先取 10—20 只不同走势的股票，日线
+覆盖 5—10 年，30m/5m 覆盖尽可能长的同期 1—3 年；这是首批工程抽样建议，
+不构成分支必然出现或统计代表性的保证。至少包含上述原始字段、代码/交易所、
+周期、成交量单位、来源/导出时间/版本、复权因子定义及时间标签说明。已有
+停复牌/除权除息/交易日记录一并保留；若缺少，应明确未知而非推定正常。
+课 12 茅台原图另需覆盖 2006 年 8—9 月及足够前序行情，可优先提供
+2005-01-01 至 2006-12-01 的原始日线与调整记录。近期茅台行情不能替代该例。
