@@ -494,6 +494,25 @@ class TestMaPointState(unittest.TestCase):
         invalid = [dict(r) for r in rows]; del invalid[0]['closed_dt']
         with self.assertRaises(ValueError): self.state(invalid)
 
+    def test_nonprefix_arrival_does_not_rebase_warning_history(self):
+        """课11/12/15工程时间: 首行或内部迟到不能跳行重算吻和平均力度。"""
+        for mirror in (False, True):
+            rows = bars(FIRST[:-1], mirror)
+            now = rows[-1]['available_dt']
+            self.assertEqual(self.state(rows).status, 'warning')
+            for gap in (0, 3, 6):
+                for metadata_only in (False, True):
+                    with self.subTest(mirror=mirror, gap=gap, metadata_only=metadata_only):
+                        broken = [dict(r) for r in rows]
+                        broken[gap]['available_dt'] = now + timedelta(days=1)
+                        if metadata_only:
+                            broken[gap] = {k: broken[gap][k] for k in
+                                           ('dt', 'closed_dt', 'available_dt')}
+                        untouched = [dict(r) for r in broken]
+                        with self.assertRaises(ValueError):
+                            ma_point_state(broken, now, 1, 2)
+                        self.assertEqual(broken, untouched)
+
     def test_serialization_input_and_volume_boundary(self):
         """快照序列化独立, 不回写输入; 一类预警无二类量比过滤。"""
         rows = bars(FIRST[:-1]); original = [dict(r) for r in rows]
@@ -511,6 +530,47 @@ class TestMaPointState(unittest.TestCase):
 
 
 class TestMaPoints(unittest.TestCase):
+    def test_nonprefix_arrival_cannot_remove_closed_candidate(self):
+        """已了结候选的历史坐标不能因中间行情未到而被静默压缩。"""
+        for mirror in (False, True):
+            rows = bars(FIRST, mirror)
+            now = rows[-1]['available_dt']
+            for use_avg in (False, True):
+                self.assertEqual(len(points(rows, use_avg=use_avg)), 1)
+                for gap in (0, 3, 6):
+                    with self.subTest(mirror=mirror, use_avg=use_avg, gap=gap):
+                        broken = [dict(r) for r in rows]
+                        broken[gap] = {k: broken[gap][k] for k in
+                                       ('dt', 'closed_dt', 'available_dt')}
+                        broken[gap]['available_dt'] = now + timedelta(days=1)
+                        untouched = [dict(r) for r in broken]
+                        with self.assertRaises(ValueError):
+                            find_ma_points(broken, now, 1, 2, use_avg=use_avg)
+                        self.assertEqual(broken, untouched)
+
+    def test_explicit_batch_snapshot_and_unavailable_suffix_remain_valid(self):
+        """连续尾部延迟仍按原前缀计算; 显式同批可用快照保留价格与了结时刻。"""
+        for mirror in (False, True):
+            for diffs, state_mode in ((FIRST, False), (FIRST[:-1], True)):
+                rows = bars(diffs, mirror)
+                now = rows[-1]['available_dt']
+                batch = now + timedelta(days=2)
+                delayed = [dict(r) for r in rows]
+                for row in delayed[3:]:
+                    row['available_dt'] = batch
+                fn = ma_point_state if state_mode else find_ma_points
+                self.assertEqual(fn(delayed, now, 1, 2), fn(rows[:3], now, 1, 2))
+                original = fn(rows, now, 1, 2)
+                rebuilt = fn(delayed, batch, 1, 2)
+                if state_mode:
+                    self.assertEqual(rebuilt._replace(observed_dt=now), original)
+                    self.assertEqual(rebuilt.observed_dt, batch)
+                else:
+                    self.assertEqual(len(rebuilt), 1)
+                    self.assertEqual(rebuilt[0]._replace(confirmed_dt=now), original[0])
+                    self.assertEqual(rebuilt[0].confirmed_dt, batch)
+                self.assertEqual(delayed[0], rows[0])
+
     def test_closed_area_buy1_after_second_wet_kiss(self):
         """第二湿吻后下降腿21->13, 两个价格极值均下移。"""
         rows = bars(FIRST)

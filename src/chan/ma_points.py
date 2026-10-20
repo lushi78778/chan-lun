@@ -136,6 +136,9 @@ def _point(rows, kiss, start, end, confirmation, kind, pattern,
 
 def _ma_rows(bars, as_of):
     rows = _available_bars(bars, as_of)
+    # 缺失的历史行不能被过滤后压缩均线/吻坐标; 尾部尚未到达仍允许。
+    if any(a is not b for a, b in zip(rows, bars[:len(rows)])):
+        raise ValueError('可见行情须为连续前缀, 迟到历史须重建输入版本')
     validate_bars(rows)
     times = [_bar_time(row['available_dt'])[0] for row in rows]
     if any(right < left for left, right in zip(times, times[1:])):
@@ -148,7 +151,8 @@ def ma_point_state(bars, as_of, short_period=5, long_period=10, proximity=0.5,
     """实际可用行情->可撤销的均线一类预警快照(课11/12/15)。
 
     最小输入及吻参数同 find_ma_points; 先按 closed/available 截断,
-    不读取未来OHLC。只比较当下未封闭面积与前同向封闭面积的平均力度。
+    可见行情须是连续前缀, 不跳过迟到历史行, 不读取未来OHLC。
+    只比较当下未封闭面积与前同向封闭面积的平均力度。
     沿用保守前置: 最近已了结同向中继吻须为第二次及以后, 两段价格
     高低点均顺趋势移动, 平均力度严格减弱且均线距离正在缩短才 warning。
     不跳过最近吻, 不选择未来的最后一吻。触零后面积已封闭不发即时预警。
@@ -221,8 +225,9 @@ def find_ma_points(bars, as_of, short_period=5, long_period=10, proximity=0.5,
     """实际可用原始行情->均线版辅助候选列表(课11/12/15)。
 
     bars须同标的同周期同价格基准, 附closed_dt/available_dt; 先截断
-    实际到达再计算SMA/吻/面积。未来OHLC不读取, 空前缀返回[]。
-    到达非降序, 乱序交付/历史修订由输入方先建立版本快照。
+    实际到达的连续前缀再计算SMA/吻/面积。未来OHLC不读取, 空前缀返回[]。
+    到达非降序, 首行/内部迟到不能被过滤后拼接; 乱序交付/历史修订
+    由输入方先建立版本快照, 本接口不自动重建或回填历史。
     short_period/long_period是SMA周期; 吻参数与find_kisses同口径。
     min_pre_gain、max_volume_ratio只约束second类; None量比开关
     明确表示不筛量, 不把未知量当正常量。use_avg须bool, 选择面积
