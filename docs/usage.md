@@ -384,8 +384,10 @@ assert third_points[0].confirmed_dt == "2026-01-07"
 
 ```python
 from datetime import datetime, timedelta
-from chan import ConfirmedMove, confirm_level_up
-completion_prices = [10, 14, 11, 15, 13, 18, 16, 20, 14]
+from chan import (ConfirmedCenter, ConfirmedMove, SecondPointContext,
+                  ThirdPointContext, confirm_level_up, find_second_points,
+                  find_third_points)
+completion_prices = [10, 14, 11, 15, 13, 18, 16, 20, 14, 18, 12, 11, 13, 19]
 t0 = datetime(2026, 1, 1)
 completion_units = [
     ConfirmedMove("u%d" % i, "base", "up" if b > a else "down",
@@ -403,6 +405,21 @@ next_result = confirm_level_up(completion_result, t0 + timedelta(days=9), "L2")
 assert next_result == []  # 单个已完成类型不足以形成上一级中枢。
 point_move = completion_result[0].to_confirmed_move()
 assert point_move.direction == "up"
+
+# 原一类锚点与原中枢由调用方显式声明，转换本身不生成这些证明。
+point_types = confirm_level_up(completion_units, t0 + timedelta(days=14), "L1")
+point_moves = [item.to_confirmed_move() for item in point_types]
+original_center = ConfirmedCenter("original", "main", 10, 11, t0 - timedelta(days=1))
+second_context = SecondPointContext("cycle", "buy", "main", "L1", t0, 10, t0)
+third_context = ThirdPointContext("cycle", "main", "L1", original_center)
+assert find_second_points(point_moves, [second_context], t0 + timedelta(days=13)) == []
+assert find_third_points(point_moves, [third_context], t0 + timedelta(days=13)) == []
+second_points = find_second_points(point_moves, [second_context], t0 + timedelta(days=14),
+                                   centers={"cycle": original_center})
+third_points = find_third_points(point_moves, [third_context], t0 + timedelta(days=14))
+assert second_points[0].also_third and third_points[0].kind == "buy3"
+assert second_points[0].dt == third_points[0].dt == t0 + timedelta(days=12)
+assert second_points[0].confirmed_dt == third_points[0].confirmed_dt == t0 + timedelta(days=14)
 ```
 
 `unit_ids` 是组成单元，`evidence_ids` 是首次完成时的全部可见次级前缀，
@@ -417,6 +434,14 @@ assert point_move.direction == "up"
 转换不生成一类点、背驰、反转上下文或因果中枢。级别名由递归相邻关系
 声明；继续递归时保留完整 `ConfirmedMoveType`，不要转换后丢失类型及
 进入方向。级别不对应固定分钟时长。
+
+上述回试类型端点为 13、全程低点为 11，原中枢 ZG=11，属于给定上下文下
+触沿的二三合一。若只将原中枢 ZG 改为 12，端点仍守沿，但全程低点破沿，
+二类条件保留而不再合一，三类不成立；不能在转换时用端点价格代替全程极值。
+回试类型需要组成之外的 u12 完成证明，故端点为 t0+12 天、确认为 t0+14 天；
+证明迟到时二/三类均继续等待，同批证明整批进入。二类的 ended_dt 也与
+实际确认时间比较，同刻允许，三类判定独立。示例及镜像只验证工程接线，
+不构成独立真实标签或上游一类点证明。
 
 ### 6.6 同级分解、级别递归与状态
 

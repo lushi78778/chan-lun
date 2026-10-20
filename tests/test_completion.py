@@ -8,7 +8,9 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
-from chan import ConfirmedMove, SecondPointContext, find_second_points, level_up
+from chan import (ConfirmedCenter, ConfirmedMove, SecondPointContext,
+                  ThirdPointContext, find_second_points, find_third_points,
+                  level_up)
 from chan.completion import ConfirmedMoveType, confirm_level_up
 
 T = datetime(2026, 1, 1)
@@ -185,6 +187,142 @@ class TestCompletion(unittest.TestCase):
         """空和不足三单元没有完成输出, 不静默消费一次性流对象。"""
         for data in [[],units()[:2]]:self.assertEqual(confirm_level_up(data,T+timedelta(days=30),'L1'),[])
         with self.assertRaises(TypeError):confirm_level_up(iter([]),T,'L1')
+
+
+class TestCompletedTypePointIntegration(unittest.TestCase):
+    """课20/35/101工程接线: 完成类型须由递归产生, 不手填complete。
+
+    确定性合成基础路径及显式一类/原中枢上下文只检查条件和时间合同,
+    不证明上游一类点、最低类型真实性或独立真实分支。
+    """
+    prices = (10, 14, 11, 15, 13, 18, 16, 20, 14, 18, 12, 11, 13, 19)
+
+    def point_results(self, data, now, mirror=False, edge=11, ended=None):
+        types = confirm_level_up(data, now, 'L1')
+        moves = [item.to_confirmed_move() for item in types]
+        side, anchor = ('sell', 30) if mirror else ('buy', 10)
+        zd, zg = (40 - edge, 30) if mirror else (10, edge)
+        center = ConfirmedCenter('original', 'main', zd, zg,
+                                 T - timedelta(days=1))
+        second_context = SecondPointContext('cycle', side, 'main', 'L1',
+                                            T, anchor, T, ended_dt=ended)
+        third_context = ThirdPointContext('cycle', 'main', 'L1', center)
+        second = find_second_points(moves, [second_context], now,
+                                    centers={'cycle': center})
+        third = find_third_points(moves, [third_context], now)
+        return types, second, third
+
+    def test_recursive_types_feed_both_sides_and_second_third_merge(self):
+        """两盘整的组成/外部完成证据分开, 回试触沿使二三类同点成立。"""
+        for mirror in (False, True):
+            with self.subTest(mirror=mirror):
+                path = [40 - p for p in self.prices] if mirror else self.prices
+                completed, second, third = self.point_results(
+                    units(path), T + timedelta(days=30), mirror)
+                self.assertEqual(len(completed), 2)
+                # 第一盘整由u0..6组成,u7证明;第二由u7..11组成,u12证明。
+                for item, body, proof, center, end, known in (
+                        (completed[0], range(7), range(8), (11, 14), 7, 9),
+                        (completed[1], range(7, 12), range(13), (14, 18), 12, 14)):
+                    expected = ((40 - center[1], 40 - center[0])
+                                if mirror else center)
+                    self.assertIsInstance(item, ConfirmedMoveType)
+                    self.assertEqual((item.kind, item.direction),
+                                     ('consolidation', None))
+                    self.assertEqual(item.centers, (expected,))
+                    self.assertEqual(item.unit_ids, tuple('u%d' % i for i in body))
+                    self.assertEqual(item.evidence_ids, tuple('u%d' % i for i in proof))
+                    self.assertEqual(item.end_dt, T + timedelta(days=end))
+                    self.assertEqual(item.confirmed_dt, T + timedelta(days=known))
+                self.assertEqual((completed[1].low, completed[1].high),
+                                 (20, 29) if mirror else (11, 20))
+                self.assertEqual(len(second), 1)
+                self.assertEqual(len(third), 1)
+                for point, number in ((second[0], '2'), (third[0], '3')):
+                    self.assertEqual(point.kind, ('sell' if mirror else 'buy') + number)
+                    self.assertEqual((point.dt, point.price, point.confirmed_dt),
+                                     (T + timedelta(days=12), 27 if mirror else 13,
+                                      T + timedelta(days=14)))
+                    self.assertEqual((point.context_id, point.center_id),
+                                     ('cycle', 'original'))
+                self.assertEqual((second[0].strength, second[0].also_third),
+                                 ('strong', True))
+                self.assertEqual((third[0].leave_move_id, third[0].pull_move_id),
+                                 tuple(item.move_id for item in completed))
+
+    def test_internal_extreme_vetoes_third_without_deleting_second(self):
+        """回试端点守沿而完整区间破沿, 二类保留但不合一也不输出三类。"""
+        for mirror in (False, True):
+            path = [40 - p for p in self.prices] if mirror else self.prices
+            for edge in (12, 13):
+                with self.subTest(mirror=mirror, edge=edge):
+                    _, second, third = self.point_results(
+                        units(path), T + timedelta(days=30), mirror, edge)
+                    self.assertEqual(len(second), 1)
+                    self.assertEqual((second[0].strength, second[0].also_third,
+                                      second[0].center_id), ('normal', False, None))
+                    self.assertEqual(third, [])
+
+    def test_every_arrival_prefix_and_delayed_external_proof(self):
+        """逐前缀不提前到端点;外部完成证明迟到时两类点都等待且隔离毒值。"""
+        for mirror in (False, True):
+            path = [40 - p for p in self.prices] if mirror else self.prices
+            data = units(path)
+            for stop, unit in enumerate(data, 1):
+                self.assertEqual(self.point_results(data, unit.confirmed_dt, mirror),
+                                 self.point_results(data[:stop], unit.confirmed_dt, mirror))
+                if stop < len(data):
+                    self.assertEqual(self.point_results(data, unit.confirmed_dt, mirror)[1:],
+                                     ([], []))
+            late = T + timedelta(days=20)
+            data[-1] = data[-1]._replace(confirmed_dt=late)
+            poison = data[-1]._replace(move_id=None, level=None, start_price=None,
+                                       end_price=float('nan'), low=None, high=None)
+            for now in (T + timedelta(days=12), T + timedelta(days=13),
+                        late - timedelta(microseconds=1)):
+                self.assertEqual(self.point_results(data, now, mirror)[1:], ([], []))
+                self.assertEqual(self.point_results(data[:-1] + [poison], now, mirror),
+                                 self.point_results(data[:-1], now, mirror))
+            completed, second, third = self.point_results(data, late, mirror)
+            self.assertEqual(completed[-1].confirmed_dt, late)
+            for point in second + third:
+                self.assertEqual(point.confirmed_dt, late)
+                self.assertEqual(point.dt, T + timedelta(days=12))
+            self.assertEqual((len(second), len(third)), (1, 1))
+
+    def test_same_batch_and_formation_end_use_confirmation_time(self):
+        """同批完整进入, 中阴终止按证明到达比较;同刻合一允许且三类独立。"""
+        known = T + timedelta(days=30)
+        for mirror in (False, True):
+            path = [40 - p for p in self.prices] if mirror else self.prices
+            data = [u._replace(confirmed_dt=known) for u in units(path)]
+            self.assertEqual(self.point_results(
+                data, known - timedelta(microseconds=1), mirror), ([], [], []))
+            completed, second, third = self.point_results(data, known, mirror, ended=known)
+            self.assertEqual(len(completed), 2)
+            for item in completed:
+                self.assertEqual(item.evidence_ids, tuple(u.move_id for u in data))
+                self.assertEqual(item.confirmed_dt, known)
+            self.assertEqual((len(second), len(third)), (1, 1))
+            self.assertEqual(second[0].confirmed_dt, known)
+            self.assertEqual(third[0].confirmed_dt, known)
+            _, stopped, independent = self.point_results(
+                data, known, mirror, ended=known - timedelta(microseconds=1))
+            self.assertEqual(stopped, [])
+            self.assertEqual(independent, third)
+
+    def test_later_completed_types_preserve_point_records_and_inputs(self):
+        """后续完整输入不改已确认点位、身份或完成证据, 原始类型不被修改。"""
+        for mirror in (False, True):
+            path = self.prices + (16, 21, 17, 22, 19, 25)
+            path = [40 - p for p in path] if mirror else path
+            data = units(path)
+            untouched = list(data)
+            initial = self.point_results(data, T + timedelta(days=14), mirror)
+            later = self.point_results(data, T + timedelta(days=40), mirror)
+            self.assertEqual(later[0][:2], initial[0])
+            self.assertEqual(later[1:], initial[1:])
+            self.assertEqual(data, untouched)
 
 
 if __name__=='__main__':unittest.main()
