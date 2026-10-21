@@ -875,7 +875,11 @@ force_method=None)` 判定结构条件，力度方法显式注入。
 c 极值超越全趋势先验极值且恰在 c 端点（课37/61）、c 内含末中枢
 次级别三类点（课37）。每项结果保留趋势/中枢/比较段单元身份、力度
 方法身份与力度值、最晚确认时刻。`force_fn(reference, leave)` 返回
-`(reference_force, leave_force)` 数值对，返回 None 表示不可用；
+`(reference_force, leave_force)` 两项有序有限实数，返回 None 表示不可用；
+数值须在 float 可表示范围，合法值仍按原类型和符号比较，不自动取绝对值。
+NaN/inf、布尔/字符、映射/集合或错误项数抛 `ValueError`，不转成成立、
+否决或缺证据；方法不可用应显式返回 None，方法执行异常原样传播。
+该校验由扫描和区间套链共用，只在结构条件通过且实际评估力度时执行。
 注入时必须以 `force_method` 声明非空方法身份。`travel_force` 为
 内置示例力度（单元行程和），是工程示例度量，不称走势真实力度。
 与 MACD 辅助候选（`find_first_points`）分别：辅助候选不

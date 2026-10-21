@@ -59,7 +59,9 @@ first.py只比末中枢波动); 不设比较段方向排除, c末单元为回抽
                         力度不减)。
 
 力度注入契约: force_fn(reference_units, leave_units)返回
-(reference_force, leave_force)数值对; 返回None表示该方法在
+(reference_force, leave_force)有序有限实数对; 数值域沿用有限实数适配,
+保留合法值原类型和符号。NaN/inf、布尔、字符、映射/集合或非两项返回
+均报错, 不作为成立/否决证据; 方法执行异常原样传播。返回None表示该方法在
 该输入上不可用(数据缺失等), 登记证据不足不否决。注入时必须
 以force_method声明方法身份字符串, 保留方法身份与局限。
 travel_force为内置示例方法(单元行程和), 是工程示例度量,
@@ -93,9 +95,11 @@ travel_force为内置示例方法(单元行程和), 是工程示例度量,
 """
 
 from collections import namedtuple
+from collections.abc import Mapping, Set
 import json
 
 from chan._intervals import _range3
+from chan._series import _finite_number
 from chan.completion import _visible_units, confirm_level_up
 from chan.first import _net, _tail
 from chan.recurse import _level_up_traced
@@ -161,6 +165,26 @@ class StrictScan(namedtuple('StrictScanBase',
 
 def _identity(parts):
     return json.dumps(list(parts), ensure_ascii=False, separators=(',', ':'))
+
+
+def _force_pair(force_fn, reference, leave):
+    """验证有序两项力度, 保留合法值原类型/符号; None仍表示方法不可用。
+
+    数值域沿用有限实数适配, 非有限/布尔/非数值/超出float范围均拒绝。
+    方法执行异常原样传播, 不吞成缺证据; 本检查不证明力度方法的理论真实性。
+    """
+    forces = force_fn(reference, leave)
+    if forces is None:
+        return None
+    try:
+        if isinstance(forces, (str, bytes, bytearray, Mapping, Set)):
+            raise ValueError('力度须为有序数值对')
+        ref_force, leave_force = forces
+        if any(_finite_number(value) is None for value in (ref_force, leave_force)):
+            raise ValueError('力度须为有限实数')
+    except (TypeError, ValueError) as error:
+        raise ValueError('force_fn须返回两项可表示的有限实数或None') from error
+    return ref_force, leave_force
 
 
 def travel_force(units):
@@ -269,7 +293,7 @@ def _evaluate_completed(trend, move, prefix, spans, force_fn):
         # 证明, 必要证据缺失登记证据不足)。
         return (STRICT_INSUFFICIENT, 'force_missing', conditions,
                 reference, leave, (zd, zg), None, None, None)
-    forces = force_fn(reference, leave)
+    forces = _force_pair(force_fn, reference, leave)
     if forces is None:
         # 方法对该输入不可用(数据缺失等), 登记证据不足不否决。
         return (STRICT_INSUFFICIENT, 'force_unavailable',
@@ -333,7 +357,7 @@ def scan_strict_divergence(units, as_of, level, force_fn=None,
     及端点价格连续的ConfirmedMove/ConfirmedMoveType, 只消费
     as_of前已确认连续前缀。level为趋势级别名(不同于输入级别,
     不猜K线周期)。force_fn为可选力度方法: 接收(reference_units,
-    leave_units)返回(reference_force, leave_force)数值对, 返回
+    leave_units)返回(reference_force, leave_force)有序有限实数对, 返回
     None表示该方法对该输入不可用; 注入时必须以force_method声明
     非空方法身份字符串, 保留方法身份与局限(课24口径)。返回
     StrictScan: 每个完成上涨/下跌趋势一个冻结结果(结构闭合+
@@ -521,7 +545,7 @@ def _evaluate_chain_level(units, direction, force_fn):
     if force_fn is None:
         return 'force_missing', STRICT_INSUFFICIENT, reference, leave, \
             center_range, None, None
-    forces = force_fn(reference, leave)
+    forces = _force_pair(force_fn, reference, leave)
     if forces is None:
         return 'force_unavailable', STRICT_INSUFFICIENT, reference, leave, \
             center_range, None, None

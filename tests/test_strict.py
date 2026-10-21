@@ -3,6 +3,9 @@
 import json
 import unittest
 from datetime import datetime, timedelta
+from fractions import Fraction
+
+import numpy as np
 
 from chan import (ConfirmedMove, STRICT_CANDIDATE, STRICT_CONFIRMED,
                    STRICT_INSUFFICIENT, STRICT_REJECTED, StrictScan,
@@ -14,6 +17,16 @@ T = datetime(2025, 1, 1)
 # 完成下跌趋势: A=(88,94)系与B=(70,72)系波动分离, b=u8, c=u12-u14,
 # c含回抽u13(三类点)且端点65为新低。
 PRICES = [120, 110, 115, 108, 114, 90, 95, 88, 94, 70, 74, 68, 72, 67, 69, 65, 76, 70, 78, 75, 82, 76, 86]
+
+
+def invalid_force_values():
+    """方法不可用须返回None; 非法数值/容器不能产生四态裁定。"""
+    return [(float('inf'), 5), (10, float('inf')), (float('-inf'), 5),
+            (10, float('-inf')), (float('nan'), 5), (10, float('nan')),
+            (True, 0), (1, False), ('9', '1'), (None, 1), (1, None),
+            (1j, 0), (10 ** 1000, 1), (), (1,), (1, 2, 3), 1, True,
+            '91', b'91', bytearray(b'91'), {9: 0, 1: 0}, {9, 1},
+            np.array([[10.], [5.]])]
 
 
 def sample(prices=PRICES, n=20):
@@ -271,6 +284,30 @@ class TestStrictForceInjection(unittest.TestCase):
         self.assertEqual(r.force_method, 'macd_area')
         self.assertIsNone(r.force_reference)
 
+    def test_invalid_force_return_is_not_a_structural_verdict(self):
+        """NaN不能被否决,inf/布尔/字符不能被确认为力度证据;非法方法输出报错。"""
+        units, now = sample()
+        for value in invalid_force_values():
+            with self.subTest(value=repr(value)), self.assertRaises(ValueError):
+                scan_strict_divergence(units, now, 'main',
+                                      force_fn=self._fn(value), force_method='invalid_probe')
+
+    def test_finite_force_pairs_keep_values_order_and_signed_semantics(self):
+        """合法有序数值不转绝对值/取整;方法符号与量纲仍由提供方负责。"""
+        units, now = sample()
+        for value in [(10, 5), [10., 5.], iter([10, 5]), np.array([10., 5.]),
+                      (Fraction(2, 3), Fraction(1, 3)), (0, -1), (-1, -2), (0, 0)]:
+            expected = tuple(value)
+            # 迭代器只消费一次, 向方法提供新的一份有序结果。
+            supplied = iter(expected) if hasattr(value, '__next__') else value
+            r = scan_strict_divergence(units, now, 'main', force_fn=self._fn(supplied),
+                                       force_method='numeric_probe').results[0]
+            self.assertEqual((r.force_reference, r.force_leave), expected)
+            self.assertIs(type(r.force_reference), type(expected[0]))
+            self.assertIs(type(r.force_leave), type(expected[1]))
+            self.assertEqual(r.status, STRICT_CONFIRMED if expected[1] < expected[0]
+                             else STRICT_REJECTED)
+
     def test_injection_requires_method_identity(self):
         """注入force_fn必须声明方法身份, 保留方法身份与局限。"""
         units, now = sample()
@@ -375,6 +412,45 @@ class TestStrictNestedChain(unittest.TestCase):
                          (sub[5].end_dt, 65.0))
         self.assertGreaterEqual(chain.confirmed_dt, sub[5].confirmed_dt)
         self.assertGreaterEqual(chain.confirmed_dt, r.confirmed_dt)
+
+    def test_invalid_force_return_cannot_complete_or_reject_chain(self):
+        """逐重下探采用相同力度校验, 非法值不转换成bc或否决分支。"""
+        units, now = sample()
+        parent = scan_strict_divergence(units, now, 'main').results[0]
+        for value in invalid_force_values():
+            with self.subTest(value=repr(value)), self.assertRaises(ValueError):
+                strict_nested_chain(parent, units, [('sub', self.sub_units())], now,
+                                    force_fn=lambda reference, leave: value,
+                                    force_method='invalid_probe')
+
+    def test_valid_numeric_pairs_and_callback_errors_remain_distinct(self):
+        """合法有序值保持;返回None仍缺证据,方法自身异常不被吞成缺证据。"""
+        units, now = sample()
+        parent = scan_strict_divergence(units, now, 'main').results[0]
+        for value in [(10, 5), [10., 5.], np.array([10., 5.]),
+                      (Fraction(2, 3), Fraction(1, 3)), (0, -1), (-1, -2), (0, 0), None]:
+            chain = strict_nested_chain(parent, units, [('sub', self.sub_units())], now,
+                                        force_fn=lambda reference, leave: value,
+                                        force_method='numeric_probe')
+            if value is None:
+                self.assertEqual(chain.levels[0].status, 'force_unavailable')
+                self.assertFalse(chain.complete)
+            else:
+                expected = tuple(value)
+                self.assertEqual((chain.levels[0].force_reference,
+                                  chain.levels[0].force_leave), expected)
+                self.assertEqual(chain.complete, expected[1] < expected[0])
+        failure = RuntimeError('方法内部错误')
+        def broken(reference, leave):
+            raise failure
+        for run in [lambda: scan_strict_divergence(units, now, 'main', force_fn=broken,
+                                                   force_method='broken_probe'),
+                    lambda: strict_nested_chain(parent, units, [('sub', self.sub_units())],
+                                                 now, force_fn=broken,
+                                                 force_method='broken_probe')]:
+            with self.assertRaises(RuntimeError) as caught:
+                run()
+            self.assertIs(caught.exception, failure)
 
     def test_travel_force_not_declining_breaks(self):
         """内置行程力度不减即反例, 该重否决(课61力度大于前者)。"""
