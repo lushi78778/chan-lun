@@ -236,7 +236,7 @@ def find_kisses(short: Any, long: Any, volumes: Any = None,
         min_depth: 吻的最小回撤深度比例(相对峰值差值, 默认 0.2),
             更浅的微扰不构成吻;
         flip_confirm: 体位转化确认比例(反向行程达峰值差值的该
-            比例即确认转化, 默认 0.5)。
+            比例即在该根确认转化, 包括首根回撤, 默认 0.5)。
 
     返回:
         List[KissEvent], 按时间序。吻 = 差值自峰值回撤至同体位新
@@ -306,15 +306,16 @@ def find_kisses(short: Any, long: Any, volumes: Any = None,
             k_min_gap = abs(float(d))
             k_cross = 1 if td <= 0 else 0
             prev_td = td
-            continue
-        # 吻进行中: 累计回撤形态
-        if (prev_td > 0 and td <= 0) or (prev_td <= 0 and td > 0):
-            k_cross += 1
-        if td < k_min_td:
-            k_min_td = td
-        if abs(float(d)) < k_min_gap:
-            k_min_gap = abs(float(d))
-        prev_td = td
+        else:
+            # 已开始的回撤才累计穿越; 首根已单独登记, 不重复计数。
+            if (prev_td > 0 and td <= 0) or (prev_td <= 0 and td > 0):
+                k_cross += 1
+            if td < k_min_td:
+                k_min_td = td
+            if abs(float(d)) < k_min_gap:
+                k_min_gap = abs(float(d))
+            prev_td = td
+        # 首根回撤也须判定转化门槛, 不能等未来一根决定已具备的证据。
         if td > t_peak:
             # 同体位新极值: 吻以中继了结(课 11 "按原来趋势继续")
             depth = t_peak - k_min_td

@@ -145,6 +145,56 @@ class TestFindKisses(unittest.TestCase):
         self.assertEqual(e.crossings, 1)
         self.assertAlmostEqual(e.depth, 1.5)
 
+    def test_first_retracement_can_confirm_flip_on_the_same_bar(self):
+        """首根回撤已达到既定反向门槛, 当根闭合, 不依赖第三根报价。"""
+        for sign in (1, -1):
+            for reverse, threshold in ((0.5, 0.5), (0.75, 0.5), (0.25, 0.25)):
+                with self.subTest(sign=sign, reverse=reverse, threshold=threshold):
+                    short, long = _series([sign, -sign * reverse])
+                    event, = find_kisses(short, long, [10., 20.], flip_confirm=threshold)
+                    self.assertEqual((event.start_idx, event.end_idx), (0, 1))
+                    self.assertEqual(event.direction, ALIGN_UP if sign > 0 else ALIGN_DOWN)
+                    self.assertEqual((event.kind, event.resumed, event.open),
+                                     (KISS_WET, False, False))
+                    self.assertEqual((event.kiss_index, event.crossings), (1, 1))
+                    self.assertEqual((event.vol_leg, event.vol_kiss), (10., 20.))
+
+    def test_confirmed_first_bar_flip_cannot_become_a_future_continuation(self):
+        """门槛已满足的闭合事件在未来反弹、延伸或缺值后保持原证据。"""
+        for sign in (1, -1):
+            short, long = _series([sign, -sign * 0.5])
+            expected, = find_kisses(short, long, [10., 20.])
+            self.assertFalse(expected.open)
+            for tail in (0.25, 1.5, -2., None):
+                suffix = None if tail is None else sign * tail
+                short, long = _series([sign, -sign * 0.5, suffix])
+                actual = find_kisses(short, long, [10., 20., 30.])
+                self.assertEqual(actual[0].to_dict(), expected.to_dict())
+
+    def test_same_bar_flip_is_the_origin_of_the_next_leg(self):
+        """新体位腿从实际转化当根起算, 峰值及腿均量不能晚一根重启。"""
+        for sign in (1, -1):
+            short, long = _series([sign * x for x in (1., -0.5, -0.75, -0.25, -1.)])
+            first, second = find_kisses(short, long, [10., 20., 30., 40., 50.])
+            self.assertEqual((first.end_idx, second.leg_start_idx), (1, 1))
+            self.assertEqual((second.start_idx, second.end_idx, second.kiss_index), (2, 4, 1))
+            self.assertEqual(second.direction, ALIGN_DOWN if sign > 0 else ALIGN_UP)
+            self.assertEqual((second.kind, second.resumed, second.open), (KISS_LIP, True, False))
+            self.assertAlmostEqual(second.pre_gain, 0.025)
+            self.assertEqual((second.vol_leg, second.vol_kiss), (25., 45.))
+
+    def test_first_retracement_below_flip_threshold_stays_open(self):
+        """触零和反向不足仍等待; 首根回撤即时检查不能提前确认。"""
+        for sign in (1, -1):
+            for reverse in (0., 0.25):
+                short, long = _series([sign, -sign * reverse])
+                event, = find_kisses(short, long)
+                self.assertEqual((event.kind, event.resumed, event.open), (KISS_WET, False, True))
+                short, long = _series([sign, -sign * reverse, -sign * 0.5])
+                event, = find_kisses(short, long)
+                self.assertFalse(event.open)
+                self.assertEqual(event.end_idx, 2)
+
     def test_down_mirror_closed(self):
         # down 镜像: 闭合唇吻 + pre_gain 下跌方向同样为正(趋势符号口径)
         short, long = _series([-1.0, -1.5, -0.5, -2.0])
