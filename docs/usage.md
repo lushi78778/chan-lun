@@ -386,6 +386,14 @@ assert third_points[0].confirmed_dt == "2026-01-07"
 上游严格一类或二三合一证明；范围和独立算术见
 [仓库验收索引](https://github.com/lushi78778/chan-lun/blob/main/validation/README.md)。
 
+完成 XD 路径另复用五个原窗，按 `track_center_lineage` 的 formed 事件取
+形成快照，转换为 `ConfirmedCenter` 后接三类上下文。完整类型及进入方向
+保留给谱系；三类输入通过 `to_confirmed_move` 使用净端点方向、全程范围
+和实际确认时刻。后续 extended 版本沿用中枢身份和核心，接线仍使用形成
+时刻。真实回归保留七个中枢，含两处三买、一处首次回试破沿后重新离开
+再成立，以及仍缺首回试的情况。中枢形成及三类条件可早于 F2 类型完成；
+上述条件没有增加上游一类或底顶完成证明。
+
 ### 6.5 完成走势类型的递归确认
 
 `confirm_level_up` 只接受已确认的 `ConfirmedMove` 或完整的

@@ -28,6 +28,77 @@ def compiler():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def test_xd_f1_lineage_third_table_uses_first_known_core_and_whole_return(self):
+        """七个核心全部保留; 首回试破沿与重新离开分开, 不靠库输出反推预期。"""
+        tree = ast.parse((ROOT / 'tests/test_real_xd_f1.py').read_text())
+
+        def embedded(name):
+            return next(ast.literal_eval(n.value) for n in tree.body
+                        if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and
+                            t.id==name for t in n.targets))
+
+        types,table = embedded('M3_XD_RECURSION_AUDIT'),embedded('M3_XD_THIRD_AUDIT')
+        spec = importlib.util.spec_from_file_location('independent_xd_third',
+                    ROOT / 'validation/tools/gen_real_f1_originals.py')
+        tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tool)
+        self.assertEqual(set(table),set(types))
+        totals = [0,0,0,0,0]
+        for key,audit in sorted(types.items()):
+            path = ROOT / 'tests/fixtures' / audit['fixture']
+            self.assertEqual(tool.digest(path),audit['source_sha256'])
+            case = next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['parent_id'])
+            f1 = []
+            for row in audit['f1']:
+                record = tool.move_record(case['units'],row)
+                proof = case['units'][row[-1]]
+                record.update(confirmed_raw_count=proof['confirmed_raw_count'],confirmed_dt=proof['confirmed_dt'])
+                f1.append(record)
+            self.assertEqual([(r[0],r[1],r[2]) for r in table[key]],
+                             [(a,b,core) for move,spans in zip(audit['f2'],audit['f2_spans'])
+                              for (a,b,_),core in zip(spans,move[5])])
+            for start,formed,core,known,extended,expected,pending,failed in table[key]:
+                zd,zg = core
+                self.assertEqual(formed,start+2)
+                self.assertEqual((max(r['low_ticks'] for r in f1[start:formed+1]),
+                                  min(r['high_ticks'] for r in f1[start:formed+1])),core)
+                self.assertEqual(max(r['confirmed_raw_count'] for r in f1[start:formed+1]),known)
+                known_dt = max(r['confirmed_dt'] for r in f1[start:formed+1])
+                self.assertEqual([i for i,_ in extended],list(range(formed+1,formed+1+len(extended))))
+                for i,count in extended:
+                    self.assertEqual(f1[i]['confirmed_raw_count'],count)
+                    self.assertTrue(f1[i]['low_ticks']<=zg and f1[i]['high_ticks']>=zd)
+                matches,breaches = [],[]
+                for i in range(formed+1,len(f1)-1):
+                    leave,pull = f1[i:i+2]
+                    self.assertEqual((leave['end_dt'],leave['end_ticks']),
+                                     (pull['start_dt'],pull['start_ticks']))
+                    up = leave['end_ticks']>leave['start_ticks']
+                    reverse_up = pull['end_ticks']>pull['start_ticks']
+                    if leave['start_dt']<known_dt or leave['low_ticks']>zg or leave['high_ticks']<zd:
+                        continue
+                    if up==reverse_up or not (leave['end_ticks']>zg if up else leave['end_ticks']<zd):
+                        continue
+                    margin = pull['low_ticks']-zg if up else zd-pull['high_ticks']
+                    count = max(known,leave['confirmed_raw_count'],pull['confirmed_raw_count'])
+                    if margin<0:
+                        breaches.append((i,i+1,count,margin))
+                    else:
+                        matches.append(('buy3' if up else 'sell3',i,i+1,pull['end_dt'],pull['end_ticks'],count,margin))
+                self.assertEqual(matches[0] if matches else None,expected)
+                self.assertEqual(tuple(breaches),failed)
+                last = f1[-1]
+                outside = last['end_ticks']>zg if last['end_ticks']>last['start_ticks'] else last['end_ticks']<zd
+                waiting = (len(f1)-1 if not matches and last['start_dt']>=known_dt and
+                           last['low_ticks']<=zg and last['high_ticks']>=zd and outside else None)
+                self.assertEqual(waiting,pending)
+                totals[0] += 1
+                totals[1] += len(extended)
+                totals[2] += expected is not None
+                totals[3] += len(failed)
+                totals[4] += pending is not None
+        self.assertEqual(totals,[7,9,2,1,1])
+
     def test_complete_xd_f1_f2_table_has_independent_intersections_and_proofs(self):
         """AST读取同一冻结表; 独立核返回/反向中枢证明、F2延伸及开放尾部。"""
         source = ROOT / 'tests/test_real_xd_f1.py'

@@ -670,5 +670,191 @@ class TestRealM3XdRecursion(unittest.TestCase):
                         self.assertEqual(round(f2[0].high*1000),1113)
 
 
+# 同一五条XD→F1链的全部七个递归核心, 不筛选有点位的中枢。
+# (首/第三F1,核心ticks,可知原始行,延伸(末F1,行),点或None,待回试F1或None,失败对)。
+# 点=(kind,离开/回试F1,端点日期,ticks,确认原始行,全段守沿余量ticks)。
+M3_XD_THIRD_AUDIT = {'M1': ((1,
+         3,
+         (906, 956),
+         2360,
+         (),
+         ('buy3', 6, 7, '2024-11-25 14:30:00', 991, 3572, 29),
+         None,
+         ()),
+        (6, 8, (991, 1117), 3822, ((9, 3913),), None, None, ())),
+ 'M2': ((1,
+         3,
+         (1029, 1056),
+         2365,
+         ((4, 2759), (5, 2994), (6, 3480), (7, 4016), (8, 4727)),
+         ('buy3', 8, 9, '2026-06-30 11:00:00', 1113, 4774, 44),
+         None,
+         ((5, 6, 3480, -17),)),),
+ 'S3': ((0, 2, (3550, 3745), 491, ((3, 776),), None, None, ()),),
+ 'X1': ((0, 2, (1584, 1860), 1138, (), None, None, ()),),
+ 'Y1': ((1, 3, (9266, 9311), 1456, (), None, None, ()),
+        (4, 6, (8418, 8479), 2113, ((7, 2279), (8, 2580)), None, 8, ()))}
+
+
+def m3_xd_type_batches(key,case,extra_counts=()):
+    """冻结XD到达批→实际完整F1首见快照; 原始基础链由既有证明前后测试核对。"""
+    counts = {u['confirmed_raw_count'] for u in case['units']}
+    counts.update(extra_counts)
+    counts.add(len(case['raw_rows']))
+    rows,seen = m3_xd_rows(case),{}
+    for count in sorted(counts):
+        parts = m3_xd_parts(case,count)
+        for move in chan.same_level_decompose(parts):
+            if move.complete and move.seg_start not in seen:
+                seen[move.seg_start] = m3_xd_type(key,move,case['units'][:len(parts)],rows[count-1]['available_dt'])
+        yield count,tuple(seen[a] for a in sorted(seen))
+
+
+def m3_xd_lineage_third(types,now):
+    """形成事件的v0快照接三类上下文; 延伸快照不重置形成时刻。"""
+    lineage = chan.track_center_lineage(types,now,'F2')
+    contexts = []
+    for event in lineage.events:
+        if event.kind!='formed':
+            continue
+        snapshot = lineage.snapshot(event.center_id,event.version)
+        center = chan.ConfirmedCenter(snapshot.center_id,'F2',snapshot.zd,snapshot.zg,snapshot.confirmed_dt)
+        contexts.append(chan.ThirdPointContext('xd-third:'+snapshot.center_id,'F2','F1',center))
+    moves = [t.to_confirmed_move() for t in types if t.confirmed_dt<=now]
+    return lineage,contexts,chan.find_third_points(moves,contexts,now)
+
+
+class TestRealM3XdLineageThird(unittest.TestCase):
+    """真实XD→完整F1→形成/延伸谱系→三类条件, 不授予上游一类或底顶证明。"""
+
+    def test_all_formed_versions_and_third_points_at_visible_xd_batches(self):
+        """七个形成/九个延伸及全部空/待回试结果保留; 历史快照和点位不回写。"""
+        totals = [0,0,0]
+        for key,audit in sorted(M3_XD_RECURSION_AUDIT.items()):
+            case,records = m3_xd_case(audit),M3_XD_THIRD_AUDIT[key]
+            rows = m3_xd_rows(case)
+            extra = [r[3]-1 for r in records]
+            extra += [r[5][5]-1 for r in records if r[5] is not None]
+            extra += [f[2]-1 for r in records for f in r[7]]
+            history,versions,points_seen = (),{},{}
+            for count,types in m3_xd_type_batches(key,case,extra):
+                now = rows[count-1]['available_dt']
+                lineage,contexts,points = m3_xd_lineage_third(types,now)
+                self.assertEqual(lineage.events[:len(history)],history)
+                for identity,snapshot in versions.items():
+                    self.assertEqual(lineage.snapshot(*identity),snapshot)
+                history = lineage.events
+                versions = {(c.center_id,c.version):c for c in lineage.centers}
+                expected = [r for r in records if r[3]<=count]
+                self.assertEqual(len(contexts),len(expected),(key,count))
+                expected_versions = 0
+                expected_points = []
+                for context,record in zip(contexts,expected):
+                    a,formed,core,known,extended,point,_,_ = record
+                    self.assertEqual((round(context.center.zd*1000),round(context.center.zg*1000)),core)
+                    self.assertEqual(context.center.confirmed_dt,rows[known-1]['available_dt'])
+                    snapshots = [(0,formed,known)]+[(i,z,n) for i,(z,n) in enumerate(extended,1) if n<=count]
+                    for version,z,first in snapshots:
+                        snap = lineage.snapshot(context.center.center_id,version)
+                        self.assertEqual(snap.unit_ids,tuple(t.move_id for t in types[a:z+1]))
+                        self.assertEqual(snap.confirmed_dt,rows[first-1]['available_dt'])
+                        self.assertEqual((round(snap.zd*1000),round(snap.zg*1000)),core)
+                    expected_versions += len(snapshots)
+                    if point is not None and point[5]<=count:
+                        kind,leave,pull,dt,price,confirmed,_ = point
+                        expected_points.append((kind,context.context_id,context.center.center_id,
+                            types[leave].move_id,types[pull].move_id,dt,price,rows[confirmed-1]['available_dt']))
+                self.assertEqual(len(lineage.centers),expected_versions)
+                self.assertEqual([(p.kind,p.context_id,p.center_id,p.leave_move_id,p.pull_move_id,
+                                   str(p.dt),round(p.price*1000),p.confirmed_dt) for p in points],expected_points)
+                current = {(p.center_id,p.leave_move_id,p.pull_move_id):p for p in points}
+                for identity,point in points_seen.items():
+                    self.assertEqual(current[identity],point)
+                points_seen = current
+            totals[0] += len(contexts)
+            totals[1] += len(lineage.events)-len(contexts)
+            totals[2] += len(points)
+        self.assertEqual(totals,[7,9,2])
+
+    def _raw_types(self,key,case,full_types,rows,now,late_start=None,late=None):
+        """在专项原始前缀重算F1; 只沿用此前实际首见的身份与证据。"""
+        result = chan.analyze_available(rows,now,bi_standard='106')
+        _,xds = completed_units(result.bis)
+        by_id = {t.move_id:t for t in full_types}
+        types = []
+        for move in chan.same_level_decompose(xds):
+            if not move.complete:
+                continue
+            prior = by_id[key+':f1:'+str(move.seg_start)]
+            self.assertEqual((move.kind,move.direction,move.start_dt,move.end_dt,move.low,move.high,tuple(move.centers)),
+                             (prior.kind,prior.direction,prior.start_dt,prior.end_dt,prior.low,prior.high,prior.centers))
+            types.append(prior._replace(confirmed_dt=late) if move.seg_start==late_start else prior)
+        return types
+
+    def test_failed_first_return_requires_a_new_departure_from_the_same_center(self):
+        """M2[5,6]破沿后保留失败; 回到中枢的新离开[8,9]才可成立, 形成身份不变。"""
+        key = 'M2'
+        audit = M3_XD_RECURSION_AUDIT[key]
+        case = m3_xd_case(audit)
+        rows = m3_xd_rows(case)
+        full_types = list(m3_xd_type_batches(key,case))[-1][1]
+        ids = []
+        for count,ready in ((3480,False),(4773,False),(4774,True)):
+            types = self._raw_types(key,case,full_types,rows,rows[count-1]['available_dt'])
+            lineage,contexts,points = m3_xd_lineage_third(types,rows[count-1]['available_dt'])
+            context, = contexts
+            ids.append(context.center.center_id)
+            self.assertEqual(context.center.confirmed_dt,rows[2364]['available_dt'])
+            self.assertEqual(len(points),int(ready))
+            if ready:
+                point, = points
+                self.assertEqual((point.leave_move_id,point.pull_move_id),
+                                 (types[8].move_id,types[9].move_id))
+                self.assertNotEqual(point.leave_move_id,types[5].move_id)
+                self.assertEqual(round(types[6].low*1000)-1056,-17)
+                self.assertTrue(1029<=round(types[6].end_price*1000)<=1056)
+                self.assertTrue(1029<=round(types[8].start_price*1000)<=1056)
+                self.assertEqual(round(types[9].low*1000)-1056,44)
+                self.assertEqual(max(c.version for c in lineage.centers),5)
+        self.assertEqual(len(set(ids)),1)
+
+    def test_real_return_completion_proof_waits_for_arrival_and_delay(self):
+        """两处三买原始证明行情的到达/晚到与未来隔离; 不把回试端点当确认。"""
+        for key in ('M1','M2'):
+            audit = M3_XD_RECURSION_AUDIT[key]
+            case = m3_xd_case(audit)
+            rows = m3_xd_rows(case)
+            full_types = list(m3_xd_type_batches(key,case))[-1][1]
+            point = M3_XD_THIRD_AUDIT[key][0][5]
+            _,_,pull,endpoint,_,count,_ = point
+            last = rows[count-1]
+            now,late = last['available_dt'],last['available_dt']+timedelta(days=1)
+            poisoned = [dict(r) for r in rows]
+            for r in poisoned[count-1:]:
+                r.pop('open')
+                r.update(high=float('nan'),low=-999,close=99999)
+            for before in (last['closed_dt']-timedelta(microseconds=1),last['closed_dt'],
+                           now-timedelta(microseconds=1)):
+                self.assertEqual(chan.analyze_available(poisoned,before,bi_standard='106').to_dict(),
+                                 chan.analyze_available(rows[:count-1],before,bi_standard='106').to_dict())
+                types = self._raw_types(key,case,full_types,rows,before)
+                self.assertEqual(m3_xd_lineage_third(types,before)[2],[])
+            delayed = [dict(r) for r in rows[:count]]
+            delayed[-1]['available_dt'] = late
+            for observed,ready in ((now,False),(late-timedelta(microseconds=1),False),(late,True)):
+                types = self._raw_types(key,case,full_types,delayed,observed,
+                                       audit['f1'][pull][0],late)
+                lineage,contexts,points = m3_xd_lineage_third(types,observed)
+                self.assertEqual(len(points),int(ready))
+                future = full_types[-1]._replace(move_id='future',start_price=float('nan'),
+                                                confirmed_dt=late+timedelta(days=2))
+                poisoned_result = m3_xd_lineage_third(types+[future],observed)
+                self.assertEqual(poisoned_result,(lineage,contexts,points))
+                if ready:
+                    self.assertEqual(points[0].confirmed_dt,late)
+                    self.assertEqual(str(points[0].dt),endpoint)
+                    self.assertLess(points[0].dt,points[0].confirmed_dt)
+
+
 if __name__ == '__main__':
     unittest.main()
