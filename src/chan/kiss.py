@@ -89,7 +89,8 @@ class KissEvent(object):
 
     属性:
         kind: KISS_FLY / KISS_LIP / KISS_WET;
-        direction: 宿主体位——ALIGN_UP(女上位)/ALIGN_DOWN(男上位);
+        direction: 宿主体位——ALIGN_UP(女上位)/ALIGN_DOWN(男上位),
+            按 flip_confirm 转化门槛保持, 不等于每根差值的瞬时符号;
         start_idx: 吻前峰值差值所在序号(回撤起点);
         end_idx: 吻了结序号(同体位新极值 / 体位转化确认 / 数据耗尽);
         leg_start_idx: 吻前一段(腿)的起点序号(pre_gain/量的区间);

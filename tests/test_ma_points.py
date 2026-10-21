@@ -7,7 +7,8 @@ import unittest
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
-from chan import avg_strength_state, find_kisses, find_ma_points, ma_point_state, sma_series
+from chan import (alignment_series, avg_strength_state, find_kisses,
+                  find_ma_points, ma_point_state, sma_series)
 
 
 FIRST = [-10, -8, 1, -11, -10, 1, -12, -1, 0]
@@ -112,6 +113,80 @@ def integer_diffs(rows):
     return [None if i < 9 else
             2 * sum(closes[i-4:i+1]) - sum(closes[i-9:i+1])
             for i in range(len(rows))]
+
+
+class TestMaEvidenceBoundaries(unittest.TestCase):
+    """课12局部差异的工程证据, 不将派生差值当作完整原图点位标签。"""
+
+    # 600519, 固定2006-05-25..11-30窗的第28..84行(07-04..09-20)。
+    # 原CSV SHA256: 513aa257b143ce397a7fc39733c394b02640b94b4a2ddebee5ff3a1d7f64ba7e
+    # 在调用库前直接以收盘分价冻结: 2*sum(last5)-sum(last10), 单位0.001元。
+    # 这里只保留派生差值; 不复制原OHLC/量, 不继承窗前吻计数或确认日。
+    DIFFS = (-27, -209, -484, -705, -790, -819, -945, -1004,
+             -1001, -841, -659, -455, -292, -164, -12, 281, 636,
+             863, 984, 628, 170, -375, -884, -1272, -1215, -1160,
+             -941, -518, -98, 211, 455, 592, 513, 379, 270, 286,
+             115, 77, 63, -5, -65, 48, 174, 286, 446, 327, 285,
+             149, -15, -243, -285, -423, -288, -89, 181, 556, 991)
+
+    def test_sign_crossing_does_not_confirm_the_host_regime_flip(self):
+        """瞬时上穿不重置吻计数; 592<1272/2, 后到991才跨默认门槛。"""
+        # 共用整数平移使差值精确, 仅验证吻几何, 不用于pre_gain或价格趋势。
+        short = [10000 + d for d in self.DIFFS]
+        long = [10000] * len(short)
+        alignment = alignment_series(short, long)
+        self.assertTrue(all(a == 'up' for a in alignment[29:39]))  # 08-14..25
+        self.assertEqual(max(self.DIFFS[24:56]), 592)
+        self.assertLess(2 * 592, 1272)
+        self.assertLess(2 * self.DIFFS[55], 1272)  # 09-19: 556
+        self.assertGreaterEqual(2 * self.DIFFS[56], 1272)  # 09-20: 991
+        expected = [(7, 16, 'down'), (18, 22, 'up'), (23, 56, 'down')]
+        previous = []
+        for count in range(1, len(short)+1):
+            with self.subTest(count=count):
+                events = find_kisses(short[:count], long[:count])
+                closed = [e for e in events if not e.open]
+                self.assertEqual([(e.start_idx, e.end_idx, e.direction) for e in closed],
+                                 [w for w in expected if w[1] < count])
+                self.assertTrue(all(e.kiss_index == 1 and e.kind == 'wet' and
+                                    not e.resumed for e in closed))
+                payload = [e.to_dict() for e in closed]
+                self.assertEqual(payload[:len(previous)], previous)
+                previous = payload
+                if count == 25:  # 08-07回撤太浅, 不返回开放吻, 也不转化。
+                    self.assertLess(5 * (1272-1215), 1272)
+                    self.assertEqual(len(events), 2)
+                    self.assertTrue(all(not e.open for e in events))
+                if count == 53:  # 09-14已有足够深的回撤, 吻仍未转化。
+                    current = events[-1]
+                    self.assertEqual((current.start_idx, current.end_idx), (23, count-1))
+                    self.assertEqual((current.direction, current.kiss_index,
+                                      current.open, current.resumed), ('down', 1, True, False))
+
+    def test_nearest_same_sign_area_and_shortening_are_separate_conditions(self):
+        """距离缩短不能补回平均力度; 不能跳过最近同向段挑有利参照。"""
+        # (观察行, 前段起止, 当前段起止, 两段绝对面积); 均为本表局部序号。
+        table = ((24, 0, 14, 21, 24, 8407, 3746),
+                 (52, 39, 40, 48, 52, 70, 1254))
+        for stop, a, b, c, d, before, current in table:
+            with self.subTest(stop=stop):
+                self.assertEqual(-sum(self.DIFFS[a:b+1]), before)
+                self.assertEqual(-sum(self.DIFFS[c:d+1]), current)
+                self.assertTrue(all(x < 0 for x in self.DIFFS[a:b+1]+self.DIFFS[c:d+1]))
+                self.assertTrue(all(x > 0 for x in self.DIFFS[b+1:c]))
+                self.assertGreater(current*(b-a+1), before*(d-c+1))
+                self.assertLess(abs(self.DIFFS[stop]), abs(self.DIFFS[stop-1]))
+                state = avg_strength_state([10000+x for x in self.DIFFS[:stop+1]],
+                                           [10000]*(stop+1))
+                self.assertEqual(state.direction, 'down')
+                self.assertEqual((state.prev_area.start_idx, state.prev_area.end_idx), (a, b))
+                self.assertEqual((state.open_area.start_idx, state.open_area.end_idx), (c, d))
+                self.assertTrue(state.prev_area.closed)
+                self.assertFalse(state.open_area.closed)
+                self.assertAlmostEqual(state.avg_prev, -before / float(b-a+1))
+                self.assertAlmostEqual(state.avg_cur, -current / float(d-c+1))
+                self.assertFalse(state.forming_weak)
+                self.assertTrue(state.stretch_shortening)
 
 
 class TestRealMaPoints(unittest.TestCase):
