@@ -11,9 +11,14 @@
 15:00收盘/15:05到达是工程测试约定, 不是供应时效实测。
 中枢核心移动与本工程三单元组的全包络关系分别记录; 这些工程
 分组不是原文Z_n的另行角色分解, 不提供严格理论趋势正例证明。
+
+另复用五条既有独立完成XD链, 核38个完整F1、一个完成盘整F2及开放
+尾部。F2允许延伸; 后继F1的确认只作完成证据, 不并入原F2的区间。
+反向中枢证明的三条XD按实际到达整批处理, 不制造批内确认时刻。
 """
 from bisect import bisect_right
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 import json
 import os
 import unittest
@@ -403,6 +408,266 @@ class TestRealXdF1(unittest.TestCase):
                                      (case['id'], identity))
                     seen[identity] = structure.first_seen
             self.assertEqual(seen, expected_first, case['id'])
+
+
+# 五条既有独立完成XD链的原起点/末端, 106标准, 不按结果裁剪。
+# spec=(起/末部件,kind,进入方向,首三段起点,核心ticks,后继证明部件)。
+# 包含原先已核的前缀, 不将38个F1全部计作新增独立行情。
+M3_XD_RECURSION_AUDIT = {'X1': {'fixture': 'real_second_point.json',
+        'f1': ((0, 2, 'consolidation', None, (0,), ((1687, 1744),), 3),
+               (3, 5, 'consolidation', None, (3,), ((1687, 1702),), 6),
+               (6, 9, 'consolidation', 'down', (7,), ((2080, 2256),), 10),
+               (10, 12, 'consolidation', None, (10,), ((2079, 2320),), 13)),
+        'tail': (13, 13, 'incomplete', None, (), (), None),
+        'f2': ((0, 3, 'consolidation', None, (0,), ((1584, 1860),), None),),
+        'source_sha256': '745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6',
+        'parent_id': '159915-60m-20240101-20250331',
+        'f2_spans': (((0, 2, 2),),)},
+ 'Y1': {'fixture': 'real_second_point.json',
+        'f1': ((0, 2, 'consolidation', None, (0,), ((9780, 9834),), 3),
+               (3, 8, 'down', 'down', (3, 6), ((9761, 9797), (9332, 9414)), 9),
+               (9, 11, 'consolidation', None, (9,), ((9268, 9414),), 12),
+               (12, 15, 'consolidation', 'up', (13,), ((8937, 9046),), 16),
+               (16, 18, 'consolidation', None, (16,), ((8910, 8986),), 19),
+               (19, 24, 'down', 'down', (19, 22), ((8655, 8731), (8282, 8329)), 25),
+               (25, 27, 'consolidation', None, (25,), ((8253, 8389),), 28),
+               (28, 30, 'consolidation', None, (28,), ((8551, 8605),), 31),
+               (31, 36, 'down', 'down', (31, 34), ((8446, 8587), (8347, 8395)), 37)),
+        'tail': (37, 38, 'incomplete', None, (), (), None),
+        'f2': ((0, 8, 'down', 'down', (1, 4), ((9266, 9311), (8418, 8479)), None),),
+        'source_sha256': '745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6',
+        'parent_id': '518880-5m-20260501-20260724',
+        'f2_spans': (((1, 3, 3), (4, 6, 8)),)},
+ 'S3': {'fixture': 'real_strict_trend.json',
+        'f1': ((0, 2, 'consolidation', None, (0,), ((3579, 3865),), 3),
+               (3, 5, 'consolidation', None, (3,), ((3579, 3730),), 6),
+               (6, 9, 'consolidation', 'down', (7,), ((3834, 3942),), 10),
+               (10, 13, 'consolidation', 'down', (11,), ((4488, 4642),), 14)),
+        'tail': (14, 17, 'consolidation', 'down', (15,), ((5231, 5586),), None),
+        'f2': ((0, 3, 'consolidation', None, (0,), ((3550, 3745),), None),),
+        'source_sha256': 'ac9101f3cb99de1a9e8612a6366aa87be4e4627664ccf1b4884ffe60fc39ffde',
+        'parent_id': '518880-day-20210101-20260731',
+        'f2_spans': (((0, 2, 3),),)},
+ 'M1': {'fixture': 'real_third_point_xd_margin0.json',
+        'f1': ((0, 2, 'consolidation', None, (0,), ((1048, 1107),), 3),
+               (3, 6, 'consolidation', 'up', (4,), ((991, 1022),), 7),
+               (7, 9, 'consolidation', None, (7,), ((906, 944),), 10),
+               (10, 15, 'down', 'down', (10, 13), ((879, 944), (753, 821)), 16),
+               (16, 18, 'consolidation', None, (16,), ((753, 804),), 19),
+               (19, 21, 'consolidation', None, (19,), ((733, 784),), 22),
+               (22, 25, 'consolidation', 'down', (23,), ((915, 1118),), 26),
+               (26, 28, 'consolidation', None, (26,), ((991, 1118),), 29),
+               (29, 31, 'consolidation', None, (29,), ((1016, 1099),), 32),
+               (32, 34, 'consolidation', None, (32,), ((1001, 1048),), 35)),
+        'tail': (35, 36, 'incomplete', None, (), (), None),
+        'f2': ((0, 5, 'consolidation', None, (1,), ((906, 956),), 6),
+               (6, 9, 'consolidation', None, (6,), ((991, 1117),), None)),
+        'source_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+        'parent_id': '588000-30m-20230501-20250228',
+        'f2_spans': (((1, 3, 3),), ((6, 8, 9),))},
+ 'M2': {'fixture': 'real_third_point_xd_margin0.json',
+        'f1': ((0, 5, 'down', 'down', (0, 3), ((1183, 1200), (1113, 1135)), 6),
+               (6, 8, 'consolidation', None, (6,), ((1031, 1060),), 9),
+               (9, 11, 'consolidation', None, (9,), ((1025, 1049),), 12),
+               (12, 15, 'consolidation', 'down', (13,), ((1067, 1084),), 16),
+               (16, 18, 'consolidation', None, (16,), ((1070, 1079),), 19),
+               (19, 21, 'consolidation', None, (19,), ((1065, 1082),), 22),
+               (22, 24, 'consolidation', None, (22,), ((1073, 1100),), 25),
+               (25, 27, 'consolidation', None, (25,), ((1039, 1048),), 28),
+               (28, 31, 'consolidation', 'down', (29,), ((1045, 1085),), 34),
+               (32, 34, 'consolidation', None, (32,), ((1111, 1137),), 35),
+               (35, 37, 'consolidation', None, (35,), ((1139, 1177),), 38)),
+        'tail': (38, 40, 'consolidation', None, (38,), ((1094, 1139),), None),
+        'f2': ((0, 10, 'consolidation', 'down', (1,), ((1029, 1056),), None),),
+        'source_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+        'parent_id': '512880-5m-20260201-20260724',
+        'f2_spans': (((1, 3, 8),),)}}
+
+
+def date(value):
+    return datetime.strptime(value, '%Y-%m-%d' if len(value)==10 else '%Y-%m-%d %H:%M:%S')
+
+
+def m3_xd_case(audit):
+    path = os.path.join(os.path.dirname(__file__), 'fixtures', audit['fixture'])
+    with open(path, encoding='utf-8') as stream:
+        return next(c for c in json.load(stream)['cases'] if c['id'] == audit['parent_id'])
+
+
+def m3_xd_shape(move):
+    return (move.seg_start, move.seg_end, move.kind, move.direction, move.complete,
+            date(str(move.start_dt)), date(str(move.end_dt)), round(move.low*1000),
+            round(move.high*1000), tuple((round(a*1000), round(b*1000)) for a, b in move.centers))
+
+
+def m3_xd_expected(parts, spec):
+    a, z, kind, entry, _, cores, proof = spec
+    return (a, z, kind, entry, proof is not None, date(parts[a]['start_dt']),
+            date(parts[z]['end_dt']), min(u['low_ticks'] for u in parts[a:z+1]),
+            max(u['high_ticks'] for u in parts[a:z+1]), tuple(cores))
+
+
+def m3_xd_parts(case, count):
+    return [SimpleNamespace(direction=u['direction'], start_dt=date(u['start_dt']),
+            end_dt=date(u['end_dt']), low=u['low_ticks']/1000., high=u['high_ticks']/1000.)
+            for u in case['units'] if u['confirmed_raw_count'] <= count]
+
+
+def m3_xd_type(key, move, parts, now):
+    """仅将实际已完成F1快照转换, 证据身份保留实际到达整批。"""
+    a, z = move.seg_start, move.seg_end
+    return chan.ConfirmedMoveType(
+        key+':f1:'+str(a), 'F1', move.kind, move.direction, move.start_dt, move.end_dt,
+        parts[a]['start_ticks']/1000., parts[z]['end_ticks']/1000., move.low, move.high,
+        now, tuple(key+':xd:'+str(i) for i in range(a,z+1)),
+        tuple(key+':xd:'+str(i) for i in range(len(parts))), tuple(move.centers))
+
+
+def m3_xd_rows(case):
+    rows = []
+    for r in case['raw_rows']:
+        dt = date(r['dt'])
+        close = dt+timedelta(hours=15) if len(r['dt'])==10 else dt
+        rows.append(dict(dt=dt, open=r['open'], high=r['high'], low=r['low'],
+                         close=r['close'], volume=r['vol'], closed_dt=close,
+                         available_dt=close+timedelta(minutes=5 if len(r['dt'])==10 else 1)))
+    return rows
+
+
+class TestRealM3XdRecursion(unittest.TestCase):
+    """独立完成XD→最低完整F1→允许延伸的F2; 级别及供应时效为声明输入。"""
+
+    def test_raw_confirmation_boundaries_match_all_complete_f1_and_tails(self):
+        """每个F1首证明的前/当根重算原始基础链; 不用最终端点过滤。"""
+        for key, audit in sorted(M3_XD_RECURSION_AUDIT.items()):
+            case = m3_xd_case(audit)
+            self.assertTrue(all(r['adj_factor']==1 for r in case['raw_rows']))
+            rows = m3_xd_rows(case)
+            counts = {len(rows)}
+            for spec in audit['f1']:
+                count = case['units'][spec[-1]]['confirmed_raw_count']
+                counts.update((count-1,count))
+            for count in sorted(counts):
+                _, _, bis = chan.chan_fx_bi(rows[:count], standard='106')
+                _, xds = completed_units(bis)
+                expected_xds = [u for u in case['units'] if u['confirmed_raw_count']<=count]
+                self.assertEqual(
+                    [(x.direction, x.start_dt, x.end_dt, round(x.start_value*1000),
+                      round(x.end_value*1000), round(x.low*1000), round(x.high*1000), x.mode)
+                     for x in xds],
+                    [(u['direction'],date(u['start_dt']),date(u['end_dt']),u['start_ticks'],
+                      u['end_ticks'],u['low_ticks'],u['high_ticks'],u['mode']) for u in expected_xds],
+                    (key,count))
+                actual = chan.same_level_decompose(xds)
+                specs = [s for s in audit['f1'] if case['units'][s[-1]]['confirmed_raw_count']<=count]
+                self.assertEqual([m3_xd_shape(m) for m in actual if m.complete],
+                                 [m3_xd_expected(case['units'],s) for s in specs], (key,count))
+                if count==len(rows):
+                    self.assertEqual([m3_xd_shape(m) for m in actual],
+                                     [m3_xd_expected(case['units'],s) for s in audit['f1']+(audit['tail'],)])
+
+    def test_recursive_confirmation_uses_visible_xd_batches_and_external_proof(self):
+        """15202个冻结XD观察格, 实际分解并冻结首见F1后才递归; 非逐原始全链重算。"""
+        totals, finished = [], []
+        for key, audit in sorted(M3_XD_RECURSION_AUDIT.items()):
+            case = m3_xd_case(audit)
+            types, first_seen, last_size = [], {}, -1
+            rows = m3_xd_rows(case)
+            for count, row in enumerate(rows,1):
+                parts = m3_xd_parts(case,count)
+                if len(parts)!=last_size:
+                    current = [m for m in chan.same_level_decompose(parts) if m.complete]
+                    self.assertEqual([m3_xd_shape(m) for m in current],
+                                     [m3_xd_expected(case['units'],s) for s in audit['f1']
+                                      if case['units'][s[-1]]['confirmed_raw_count']<=count])
+                    for move in current:
+                        if move.seg_start not in first_seen:
+                            first_seen[move.seg_start] = count
+                            types.append(m3_xd_type(key,move,case['units'][:len(parts)],row['available_dt']))
+                    self.assertEqual(len(current),len(types))
+                    last_size = len(parts)
+                f2 = chan.confirm_level_up(types,row['available_dt'],'F2')
+                expected = [s for s in audit['f2'] if s[-1] is not None and
+                            case['units'][audit['f1'][s[-1]][-1]]['confirmed_raw_count']<=count]
+                records = [dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),
+                                low_ticks=round(t.low*1000),high_ticks=round(t.high*1000)) for t in types]
+                for actual, spec in zip(f2,expected):
+                    self.assertEqual((actual.start_dt,actual.end_dt,actual.kind,actual.direction,
+                                      round(actual.low*1000),round(actual.high*1000),
+                                      tuple((round(a*1000),round(b*1000)) for a,b in actual.centers)),
+                                     m3_xd_expected(records,spec)[5:7]+(spec[2],spec[3])+
+                                     m3_xd_expected(records,spec)[7:])
+                self.assertEqual(len(f2),len(expected),(key,count))
+            self.assertEqual(first_seen,{s[0]:case['units'][s[-1]]['confirmed_raw_count'] for s in audit['f1']})
+            records = [dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),
+                            high_ticks=round(t.high*1000)) for t in types]
+            self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],
+                             [m3_xd_expected(records,s) for s in audit['f2']])
+            totals.append(len(types))
+            if f2:
+                actual, = f2
+                finished.append(key)
+                self.assertEqual(str(actual.confirmed_dt),'2024-11-11 10:01:00')
+                self.assertEqual(str(actual.end_dt),'2024-08-09 10:00:00')
+                self.assertEqual((round(actual.start_price*1000),round(actual.end_price*1000)),(1107,754))
+                self.assertEqual((round(actual.low*1000),round(actual.high*1000)),(666,1113))
+                self.assertEqual((len(actual.unit_ids),len(actual.evidence_ids)),(6,7))
+                self.assertNotIn(types[6].move_id,actual.unit_ids)
+                self.assertIn(types[6].move_id,actual.evidence_ids)
+                self.assertEqual(round(types[6].high*1000),1202)
+        self.assertEqual(totals,[10,11,4,4,9])
+        self.assertEqual(finished,['M1'])
+
+    def test_return_and_opposite_center_proof_wait_for_arrival_and_delay(self):
+        """M1后继F1回入才完成F2; M2反向中枢三条XD整批可见才完成F1。"""
+        for key,index in (('M1',6),('M2',8)):
+            audit = M3_XD_RECURSION_AUDIT[key]
+            case = m3_xd_case(audit)
+            spec = audit['f1'][index]
+            count = case['units'][spec[-1]]['confirmed_raw_count']
+            rows = m3_xd_rows(case)
+            last = rows[count-1]
+            now, late = last['available_dt'], last['available_dt']+timedelta(days=1)
+            target = m3_xd_expected(case['units'],spec)
+            if key=='M2':
+                self.assertEqual(spec[-1],spec[1]+3)
+                self.assertEqual([u['confirmed_raw_count'] for u in case['units'][32:35]],[4727]*3)
+                self.assertEqual((max(u['low_ticks'] for u in case['units'][32:35]),
+                                  min(u['high_ticks'] for u in case['units'][32:35])),(1111,1137))
+            poisoned = [dict(r) for r in rows]
+            for r in poisoned[count-1:]:
+                r.pop('open')
+                r.update(high=float('nan'),low=-999,close=99999)
+            for before in (last['closed_dt']-timedelta(microseconds=1),last['closed_dt'],
+                           now-timedelta(microseconds=1)):
+                baseline = chan.analyze_available(rows[:count-1],before,bi_standard='106')
+                self.assertEqual(chan.analyze_available(poisoned,before,bi_standard='106').to_dict(),
+                                 baseline.to_dict())
+                _, xds = completed_units(baseline.bis)
+                self.assertNotIn(target,[m3_xd_shape(m) for m in chan.same_level_decompose(xds) if m.complete])
+            delayed = [dict(r) for r in rows[:count]]
+            delayed[-1]['available_dt'] = late
+            for observed,ready in ((now,False),(late-timedelta(microseconds=1),False),(late,True)):
+                result = chan.analyze_available(delayed,observed,bi_standard='106')
+                _, xds = completed_units(result.bis)
+                moves = [m for m in chan.same_level_decompose(xds) if m.complete]
+                self.assertEqual(target in [m3_xd_shape(m) for m in moves],ready)
+                if key=='M1':
+                    types = []
+                    for i,move in enumerate(moves):
+                        proof = case['units'][audit['f1'][i][-1]]
+                        proof_batch = [u for u in case['units']
+                                       if u['confirmed_raw_count']<=proof['confirmed_raw_count']]
+                        types.append(m3_xd_type(key,move,proof_batch,
+                                     late if i==index else date(proof['confirmed_dt'])))
+                    f2 = chan.confirm_level_up(types,observed,'F2')
+                    self.assertEqual(len(f2),int(ready))
+                    future = types[-1]._replace(move_id='future',start_price=float('nan'),
+                                               confirmed_dt=late+timedelta(days=2))
+                    self.assertEqual(chan.confirm_level_up(types+[future],observed,'F2'),f2)
+                    if ready:
+                        self.assertEqual(f2[0].confirmed_dt,late)
+                        self.assertEqual(round(f2[0].high*1000),1113)
 
 
 if __name__ == '__main__':

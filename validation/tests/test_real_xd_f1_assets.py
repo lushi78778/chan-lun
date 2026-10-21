@@ -28,6 +28,96 @@ def compiler():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def test_complete_xd_f1_f2_table_has_independent_intersections_and_proofs(self):
+        """AST读取同一冻结表; 独立核返回/反向中枢证明、F2延伸及开放尾部。"""
+        source = ROOT / 'tests/test_real_xd_f1.py'
+        table = next(ast.literal_eval(n.value) for n in ast.parse(source.read_text()).body
+                     if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and
+                         t.id=='M3_XD_RECURSION_AUDIT' for t in n.targets))
+        tool = compiler()
+        spec = importlib.util.spec_from_file_location('independent_xd_recursion',
+                    ROOT / 'validation/tools/gen_real_f1_originals.py')
+        arithmetic = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(arithmetic)
+
+        def touches(unit,core):
+            return unit['low_ticks']<=core[1] and unit['high_ticks']>=core[0]
+
+        def core_at(units,start):
+            return (max(u['low_ticks'] for u in units[start:start+3]),
+                    min(u['high_ticks'] for u in units[start:start+3]))
+
+        total, opposite, completed = 0, [], []
+        self.assertEqual(set(table),{'X1','Y1','S3','M1','M2'})
+        for key,audit in sorted(table.items()):
+            fixture = ROOT / 'tests/fixtures' / audit['fixture']
+            self.assertEqual(tool.digest(fixture),audit['source_sha256'])
+            case = next(c for c in json.loads(fixture.read_text())['cases'] if c['id']==audit['parent_id'])
+            self.assertEqual((case['standard'],case['level']),('106','xd'))
+            self.assertTrue(all(r['adj_factor']==1 for r in case['raw_rows']))
+            units, records = case['units'], []
+            rows = audit['f1']+(audit['tail'],)
+            self.assertEqual(rows[0][0],0)
+            self.assertEqual(rows[-1][1],len(units)-1)
+            for left,right in zip(rows,rows[1:]):
+                self.assertEqual(left[1]+1,right[0])
+            for row in rows:
+                a,z,kind,entry,triples,cores,proof = row
+                record = arithmetic.move_record(units,row)
+                if not triples:
+                    self.assertEqual((kind,proof),('incomplete',None))
+                    self.assertLess(z-a,2)
+                    continue
+                for j in range(a,triples[0]):
+                    lo,hi = core_at(units,j)
+                    self.assertGreater(lo,hi)
+                for n,(j,core) in enumerate(zip(triples,cores)):
+                    stop = triples[n+1]+3 if n+1<len(triples) else z+1
+                    self.assertTrue(all(not touches(u,core) for u in units[j+3:stop]))
+                if proof is None:
+                    continue
+                if proof==z+1:
+                    self.assertTrue(touches(units[proof],cores[-1]))
+                else:
+                    self.assertEqual(proof,z+3)
+                    new = core_at(units,z+1)
+                    self.assertLessEqual(*new)
+                    self.assertTrue(new[0]>cores[-1][1] or new[1]<cores[-1][0])
+                    direction = 'up' if new[0]>cores[-1][1] else 'down'
+                    self.assertNotEqual(direction,entry)
+                    self.assertTrue(all(not touches(u,cores[-1]) for u in units[z+1:proof+1]))
+                    self.assertEqual({u['confirmed_raw_count'] for u in units[z+1:proof+1]},{4727})
+                    opposite.append(key)
+                record.update(confirmed_raw_count=units[proof]['confirmed_raw_count'])
+                records.append(record)
+            total += len(records)
+            self.assertEqual(len(audit['f2']),len(audit['f2_spans']))
+            for row,spans in zip(audit['f2'],audit['f2_spans']):
+                record = arithmetic.move_record(records,row)
+                a,z,_,_,_,cores,proof = row
+                for j in range(a,spans[0][0]):
+                    lo,hi = core_at(records,j)
+                    self.assertGreater(lo,hi)
+                for i,((start,formed,extended),core) in enumerate(zip(spans,cores)):
+                    self.assertEqual(formed,start+2)
+                    self.assertTrue(all(touches(u,core) for u in records[formed+1:extended+1]))
+                    if i+1<len(spans):
+                        new_start,new_formed,_ = spans[i+1]
+                        self.assertEqual(new_start,extended+1)
+                        self.assertTrue(all(not touches(u,core) for u in records[new_start:new_formed+1]))
+                leave = spans[-1][2]+1
+                self.assertTrue(all(not touches(u,cores[-1]) for u in records[leave:z+1]))
+                if proof is None:
+                    self.assertLess(z-leave+1,3)
+                else:
+                    self.assertEqual(proof,z+1)
+                    self.assertTrue(touches(records[proof],cores[-1]))
+                    self.assertEqual(records[proof]['confirmed_raw_count'],3323)
+                    self.assertEqual((record['low_ticks'],record['high_ticks']),(666,1113))
+                    self.assertEqual(records[proof]['high_ticks'],1202)
+                    completed.append(key)
+        self.assertEqual((total,opposite,completed),(38,['M2'],['M1']))
+
     def test_frozen_sources_and_independent_rebuild(self):
         """原始包与人工表保真；重复编译逐字节一致且不能覆盖证据。"""
         tool = compiler()
