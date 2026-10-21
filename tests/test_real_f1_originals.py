@@ -10,6 +10,7 @@ F2未完成边界；独立区间表先于库比较声明, 不覆盖原条件fixt
 另复用既有5m/30m/日线报价，静态表核验34个完整F1到三个完成F2。
 严格接口的波动重叠、未创新低与内部极值待判分别保留；输入为明示
 最低F1-bi合同，不提升为精确理论一类点、严格成立或真实周期级别证明。
+同一完整F1表另接三类条件；三组窗口六个中枢全部保留，不择样本或改切点。
 """
 import json
 import hashlib
@@ -668,6 +669,151 @@ class TestRealM3StrictF2Boundaries(unittest.TestCase):
             self.assertEqual(chan.scan_strict_divergence(
                 units+[future], now, 'F2', force_fn=force, force_method='unused_boundary_probe'), scan)
             self.assertEqual(calls, [], key)
+
+
+# 既有三个完整F1窗口的两个F2核心, 独立整数表在调用三类接口前冻结。
+# 每行: (中枢首确认原始行数, 三类条件或None, 仍待首回试的离开F1下标或None)。
+# 点行: (kind, leave/pull的F1下标, 回试端点原始行下标, 端点ticks,
+#        实际确认原始行数, 全区间守沿余量ticks)。均为本窗口坐标。
+M3_F1_THIRD_AUDIT = {
+    'M3I106': ((181, ('sell3', 5, 6, 269, 1122, 300, 17), None),
+               (415, None, 11)),
+    'M3N81': ((261, None, None),
+              (467, ('buy3', 8, 9, 571, 829, 595, 33), None)),
+    'M3W106': ((84, None, None), (157, None, 9)),
+}
+
+
+def m3_third_contexts(key, audit, types):
+    """只在三个完整F1均可见后冻结核心; 不用未来F2完成时刻回填。"""
+    out = []
+    for number, (start, formed, _) in enumerate(audit['spans']):
+        if len(types) <= formed:
+            continue
+        parts = types[start:formed+1]
+        center = chan.ConfirmedCenter(
+            key+':center:'+str(number), 'F2', max(t.low for t in parts),
+            min(t.high for t in parts), max(t.confirmed_dt for t in parts))
+        out.append(chan.ThirdPointContext(key+':context:'+str(number), 'F2', 'F1', center))
+    return out
+
+
+class TestRealM3CompleteF1ThirdPoints(unittest.TestCase):
+    """真实完整F1→三类条件; 最低规则/邻接明示, 不证明严格背驰或理论周期。"""
+
+    def test_actual_complete_f1_pipeline_at_every_raw_prefix(self):
+        """1588个原始前缀从行情产生完整F1, 再冻结因果中枢及首离开/首回试。"""
+        for key, audit in sorted(M3_STRICT_F2_AUDIT.items()):
+            case = m3_strict_source(audit)
+            rows = raw_bars(case, timed=True)
+            frozen, history = {}, {}
+            for count, row in enumerate(rows, 1):
+                fixed = chan.chan_fx_bi(rows[:count], standard=audit['standard'])[2][:-1]
+                completed = [m for m in chan.same_level_decompose(fixed) if m.complete]
+                for m in completed:
+                    old = frozen.get(m.seg_start)
+                    item = chan.ConfirmedMoveType(
+                        'f1:'+str(m.seg_start), 'F1', m.kind, m.direction, m.start_dt, m.end_dt,
+                        fixed[m.seg_start].start_value, fixed[m.seg_end].end_value, m.low, m.high,
+                        row['available_dt'] if old is None else old.confirmed_dt,
+                        tuple('component:'+str(i) for i in range(m.seg_start, m.seg_end+1)),
+                        tuple('component:'+str(i) for i in range(len(fixed)))
+                        if old is None else old.evidence_ids, tuple(m.centers))
+                    if old is not None:
+                        self.assertEqual(item, old, (key, count, '完成F1回写'))
+                    frozen[m.seg_start] = item
+                self.assertEqual([m.seg_start for m in completed], sorted(frozen))
+                types = [frozen[i] for i in sorted(frozen)]
+                moves = [t.to_confirmed_move() for t in types]
+                for item, move in zip(types, moves):
+                    self.assertEqual((move.low, move.high, move.confirmed_dt),
+                                     (item.low, item.high, item.confirmed_dt))
+                contexts = m3_third_contexts(key, audit, types)
+                actual = chan.find_third_points(moves, contexts, row['available_dt'])
+                expected = []
+                for number, (_, point, _) in enumerate(M3_F1_THIRD_AUDIT[key]):
+                    if point is None or count < point[5]:
+                        continue
+                    kind, leave, pull, end, price, known, margin = point
+                    expected.append((kind, key+':context:'+str(number), key+':center:'+str(number),
+                                     rows[end]['dt'], price/1000., rows[known-1]['available_dt'],
+                                     'f1:'+str(audit['f1'][leave][0]),
+                                     'f1:'+str(audit['f1'][pull][0])))
+                self.assertEqual([(p.kind, p.context_id, p.center_id, p.dt, p.price,
+                                   p.confirmed_dt, p.leave_move_id, p.pull_move_id) for p in actual],
+                                 expected, (key, count))
+                for p in actual:
+                    if p.context_id in history:
+                        self.assertEqual(p, history[p.context_id])
+                    history[p.context_id] = p
+            declared = confirmed_inputs(dict(completed=m3_strict_records(audit, case)))
+            self.assertEqual(types, declared, key)
+            for number, context in enumerate(contexts):
+                known, _, pending = M3_F1_THIRD_AUDIT[key][number]
+                self.assertEqual(context.center.confirmed_dt, rows[known-1]['available_dt'])
+                core = audit['f2'][5][number]
+                self.assertEqual((context.center.zd, context.center.zg), tuple(v/1000. for v in core))
+                # 首个紧接的F1开始早于中枢可知, 不能倒填为因果离开。
+                formed = audit['spans'][number][1]
+                self.assertLess(types[formed+1].start_dt, context.center.confirmed_dt)
+                if pending is not None:
+                    last = moves[pending]
+                    self.assertEqual(pending, len(moves)-1)
+                    self.assertGreaterEqual(last.start_dt, context.center.confirmed_dt)
+                    self.assertLessEqual(last.low, context.center.zg)
+                    self.assertGreaterEqual(last.high, context.center.zd)
+                    self.assertTrue(last.end_price > context.center.zg if last.direction == 'up'
+                                    else last.end_price < context.center.zd)
+
+    def test_full_future_types_and_centers_do_not_enter_earlier_snapshots(self):
+        """完整输入按观察截止与真实可见前缀同值; 未来身份/极值/中枢毒值不读取。"""
+        for key, audit in sorted(M3_STRICT_F2_AUDIT.items()):
+            case = m3_strict_source(audit)
+            rows = raw_bars(case, timed=True)
+            types = confirmed_inputs(dict(completed=m3_strict_records(audit, case)))
+            moves = [t.to_confirmed_move() for t in types]
+            contexts = m3_third_contexts(key, audit, types)
+            for row in rows:
+                now = row['available_dt']
+                visible = [m for m in moves if m.confirmed_dt <= now]
+                known = [c for c in contexts if c.center.confirmed_dt <= now]
+                expected = chan.find_third_points(visible, known, now)
+                self.assertEqual(chan.find_third_points(moves, contexts, now), expected)
+                poison = [m if m.confirmed_dt <= now else m._replace(
+                    move_id=None, level=None, low=float('nan'), high=float('inf')) for m in moves]
+                future = [c if c.center.confirmed_dt <= now else c._replace(
+                    level=None, sub_level=None, center=c.center._replace(
+                        center_id=None, zd=float('nan'), zg=float('inf'))) for c in contexts]
+                self.assertEqual(chan.find_third_points(poison, future, now), expected)
+
+    def test_external_proof_delay_and_center_causality_on_both_real_sides(self):
+        """回试端点不能代替外部证明; 人工延迟是工程变体, 不另计真实反例。"""
+        for key, audit in sorted(M3_STRICT_F2_AUDIT.items()):
+            case = m3_strict_source(audit)
+            types = confirmed_inputs(dict(completed=m3_strict_records(audit, case)))
+            moves = [t.to_confirmed_move() for t in types]
+            contexts = m3_third_contexts(key, audit, types)
+            for number, (_, point, _) in enumerate(M3_F1_THIRD_AUDIT[key]):
+                if point is None:
+                    continue
+                _, leave, pull, _, _, _, margin = point
+                context = contexts[number]
+                target = moves[pull]
+                endpoint = chan.find_third_points(moves, [context], target.end_dt)
+                self.assertEqual(endpoint, [])
+                actual, = chan.find_third_points(moves, [context], target.confirmed_dt)
+                self.assertGreater(actual.confirmed_dt, actual.dt)
+                self.assertEqual(round((context.center.zd-target.high if actual.kind == 'sell3'
+                                        else target.low-context.center.zg)*1000), margin)
+                delay = target.confirmed_dt+timedelta(minutes=1)
+                late = [m._replace(confirmed_dt=delay) if i == pull else m for i, m in enumerate(moves)]
+                self.assertEqual(chan.find_third_points(late, [context], target.confirmed_dt), [])
+                delayed, = chan.find_third_points(late, [context], delay)
+                self.assertEqual(delayed, actual._replace(confirmed_dt=delay))
+                late_center = context._replace(center=context.center._replace(
+                    confirmed_dt=moves[leave].start_dt+timedelta(microseconds=1)))
+                self.assertFalse(any(p.leave_move_id == moves[leave].move_id for p in
+                                     chan.find_third_points(moves, [late_center], moves[-1].confirmed_dt)))
 
 
 if __name__ == '__main__':

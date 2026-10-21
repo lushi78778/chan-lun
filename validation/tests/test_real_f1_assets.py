@@ -19,14 +19,18 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def embedded_table(name):
+    """读取同一静态表, 不导入包测试或执行识别器。"""
+    source = ROOT / 'tests/test_real_f1_originals.py'
+    return next(ast.literal_eval(node.value) for node in ast.parse(source.read_text()).body
+                if isinstance(node, ast.Assign) and any(
+                    isinstance(target, ast.Name) and target.id == name for target in node.targets))
+
+
 class TestRealF1Assets(unittest.TestCase):
     def test_embedded_m3_f1_tables_recompute_without_importing_package_tests(self):
         """复用整数编译器核验34个F1/三个F2表；AST读取避免执行包测试或调用chan。"""
-        source = ROOT / 'tests/test_real_f1_originals.py'
-        table = next(ast.literal_eval(node.value) for node in ast.parse(source.read_text()).body
-                     if isinstance(node, ast.Assign) and any(
-                         isinstance(target, ast.Name) and target.id == 'M3_STRICT_F2_AUDIT'
-                         for target in node.targets))
+        table = embedded_table('M3_STRICT_F2_AUDIT')
         tool = ROOT / 'validation/tools/gen_real_f1_originals.py'
         spec = importlib.util.spec_from_file_location('independent_f1_audit', str(tool))
         compiler = importlib.util.module_from_spec(spec)
@@ -75,6 +79,50 @@ class TestRealF1Assets(unittest.TestCase):
                    if f2['kind'] == 'up' else
                    min(u['low_ticks'] for u in previous)-max(u['high_ticks'] for u in last))
             self.assertEqual(gap, audit['wave_gap'], key)
+
+    def test_complete_f1_third_point_table_uses_causal_centers_and_whole_returns(self):
+        """六个真实F1上下文全保留; 两侧条件与待回试分别用独立整数算术核对。"""
+        types = embedded_table('M3_STRICT_F2_AUDIT')
+        table = embedded_table('M3_F1_THIRD_AUDIT')
+        self.assertEqual(set(types), set(table))
+        positive, pending = [], []
+        for key, audit in sorted(types.items()):
+            f1 = audit['f1']
+            self.assertEqual(len(table[key]), len(audit['spans']))
+            for number, ((start, formed, _), core, record) in enumerate(zip(
+                    audit['spans'], audit['f2'][5], table[key])):
+                known, expected, waiting = record
+                zd, zg = core
+                self.assertEqual((max(f[12] for f in f1[start:formed+1]),
+                                  min(f[13] for f in f1[start:formed+1])), core)
+                self.assertEqual(max(f[7] for f in f1[start:formed+1]), known)
+                self.assertLess(f1[formed+1][8], known)
+                matches = []
+                for i in range(formed+1, len(f1)-1):
+                    leave, pull = f1[i:i+2]
+                    self.assertEqual((leave[9], leave[11]), (pull[8], pull[10]))
+                    up, reverse_up = leave[11] > leave[10], pull[11] > pull[10]
+                    if leave[8] < known or leave[12] > zg or leave[13] < zd:
+                        continue
+                    outside = leave[11] > zg if up else leave[11] < zd
+                    if not outside or up == reverse_up:
+                        continue
+                    margin = pull[12]-zg if up else zd-pull[13]
+                    if margin >= 0:
+                        matches.append(('buy3' if up else 'sell3', i, i+1, pull[9], pull[11],
+                                        max(known, leave[7], pull[7]), margin))
+                self.assertEqual(matches[0] if matches else None, expected, (key, number))
+                if expected is not None:
+                    positive.append(expected[0])
+                last = f1[-1]
+                outside = last[11] > zg if last[11] > last[10] else last[11] < zd
+                actual_wait = len(f1)-1 if (not matches and last[8] >= known and
+                              last[12] <= zg and last[13] >= zd and outside) else None
+                self.assertEqual(actual_wait, waiting, (key, number))
+                if waiting is not None:
+                    pending.append((key, number))
+        self.assertEqual(sorted(positive), ['buy3', 'sell3'])
+        self.assertEqual(pending, [('M3I106', 1), ('M3W106', 1)])
 
     def test_frozen_source_packets_and_manual_receipt(self):
         """源包摘要/行/时间/价格/因子须保真, 不允许静默修价或补因子。"""
