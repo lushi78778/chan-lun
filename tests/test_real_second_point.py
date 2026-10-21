@@ -25,6 +25,7 @@ from datetime import datetime, timedelta
 import json
 import os
 import unittest
+from types import SimpleNamespace
 
 import chan
 
@@ -714,6 +715,129 @@ class TestRealSecondPoint(unittest.TestCase):
                                  len(case['raw_rows']), case['id'])
             self.assertLessEqual(second['leg2_confirmed_raw_count'],
                                  len(case['raw_rows']), case['id'])
+
+
+# 原R2六窗/原106部件上的最低F1合同, 不按旧二类腿移动切点。
+# spec=(起/末部件,kind,进入方向,首三段起点,核心ticks,后继证明部件)。
+# 独立整数表只扩展输入边界证据, 不把旧二类标签改名为完整F1二类正例。
+M3_SECOND_F1_AUDIT = {
+    'B1': {'completed': (
+        (0, 2, 'consolidation', None, (0,), ((1102, 1138),), 3),
+        (3, 5, 'consolidation', None, (3,), ((1059, 1087),), 6),
+        (6, 8, 'consolidation', None, (6,), ((1021, 1059),), 9)),
+        'tail': (9, 11, 'consolidation', None, (9,), ((967, 1017),), None)},
+    'C1': {'completed': (
+        (0, 2, 'consolidation', None, (0,), ((4003, 4023),), 3),
+        (3, 5, 'consolidation', None, (3,), ((4221, 4335),), 6),
+        (6, 8, 'consolidation', None, (6,), ((4320, 4383),), 9)),
+        'tail': (9, 9, 'incomplete', None, (), (), None)},
+    'D1': {'completed': (
+        (0, 2, 'consolidation', None, (0,), ((1207, 1250),), 3),
+        (3, 8, 'down', 'down', (3, 6), ((1211, 1254), (1139, 1159)), 9),
+        (9, 15, 'down', 'down', (9, 13), ((1131, 1159), (1038, 1068)), 16)),
+        'tail': None},
+    'X1': {'completed': (
+        (0, 2, 'consolidation', None, (0,), ((1687, 1744),), 3),
+        (3, 5, 'consolidation', None, (3,), ((1687, 1702),), 6),
+        (6, 9, 'consolidation', 'down', (7,), ((2080, 2256),), 10)),
+        'tail': None},
+    'Y1': {'completed': (
+        (0, 2, 'consolidation', None, (0,), ((9780, 9834),), 3),
+        (3, 8, 'down', 'down', (3, 6), ((9761, 9797), (9332, 9414)), 9),
+        (9, 11, 'consolidation', None, (9,), ((9268, 9414),), 12)),
+        'tail': None},
+    'Z1': {'completed': (
+        (0, 2, 'consolidation', None, (0,), ((1150, 1159),), 3),
+        (3, 5, 'consolidation', None, (3,), ((1193, 1217),), 6)),
+        'tail': (6, 13, 'down', 'down', (6, 10), ((1203, 1224), (1149, 1169)), None)},
+}
+
+
+def m3_stamp(value):
+    return datetime.strptime(value, '%Y-%m-%d' if len(value) == 10 else '%Y-%m-%d %H:%M:%S')
+
+
+def m3_parts(case, count):
+    """已独立冻结的固定笔/完成XD前缀; 不将这些部件包装为ConfirmedMove。"""
+    return [SimpleNamespace(direction=u['direction'], start_dt=m3_stamp(u['start_dt']),
+                            end_dt=m3_stamp(u['end_dt']), low=u['low_ticks']/1000.,
+                            high=u['high_ticks']/1000.) for u in case['units']
+            if u['confirmed_raw_count'] <= count]
+
+
+def m3_types(case, specs):
+    """按静态完整F1规格装配条件探针输入, 未完成尾部绝不转换。"""
+    units = case['units']
+    result = []
+    for a, z, kind, direction, _, centers, proof in specs:
+        result.append(chan.ConfirmedMoveType(
+            'f1:'+str(a), 'F1', kind, direction,
+            m3_stamp(units[a]['start_dt']), m3_stamp(units[z]['end_dt']),
+            units[a]['start_ticks']/1000., units[z]['end_ticks']/1000.,
+            min(u['low_ticks'] for u in units[a:z+1])/1000.,
+            max(u['high_ticks'] for u in units[a:z+1])/1000.,
+            m3_stamp(units[proof]['confirmed_dt']), tuple('part:'+str(i) for i in range(a, z+1)),
+            tuple('part:'+str(i) for i in range(proof+1)), tuple((lo/1000., hi/1000.) for lo, hi in centers)))
+    return result
+
+
+class TestR2SecondMinimumF1Boundary(unittest.TestCase):
+    """原R2腿与所选最低F1合同的真实差异; 不是新的二类成立或否决标签。"""
+
+    def test_frozen_f1_prefixes_and_actual_successor_confirmation(self):
+        """5006个观察格读取冻结可见部件; 原始包含/笔/XD另由既有逐原始回放核对。"""
+        for case in load_labels()['cases']:
+            audit = M3_SECOND_F1_AUDIT[case['window_key']]
+            first_seen = {}
+            for count in range(1, len(case['raw_rows'])+1):
+                actual = [m for m in chan.same_level_decompose(m3_parts(case, count)) if m.complete]
+                expected = [s for s in audit['completed']
+                            if case['units'][s[-1]]['confirmed_raw_count'] <= count]
+                prefix = [m for m in actual if m.seg_start <= audit['completed'][-1][0]]
+                self.assertEqual([(m.seg_start, m.seg_end, m.kind, m.direction,
+                                   tuple((round(a*1000), round(b*1000)) for a, b in m.centers))
+                                  for m in prefix],
+                                 [(s[0], s[1], s[2], s[3], s[5]) for s in expected])
+                for move in prefix:
+                    first_seen.setdefault(move.seg_start, count)
+            self.assertEqual(first_seen, {s[0]: case['units'][s[-1]]['confirmed_raw_count']
+                                          for s in audit['completed']})
+            for typ, spec in zip(m3_types(case, audit['completed']), audit['completed']):
+                self.assertEqual(typ.confirmed_dt, m3_stamp(case['units'][spec[-1]]['confirmed_dt']))
+                self.assertGreater(typ.confirmed_dt, typ.end_dt)
+            if audit['tail'] is not None:
+                tail = chan.same_level_decompose(m3_parts(case, len(case['raw_rows'])))[-1]
+                spec = audit['tail']
+                self.assertEqual((tail.seg_start, tail.seg_end, tail.kind, tail.complete),
+                                 (spec[0], spec[1], spec[2], False))
+
+    def test_old_anchor_legs_cannot_be_relabelled_as_complete_f1(self):
+        """五个边界锚即使反事实授予first前提也无匹配F1; X1内部锚不造时间。"""
+        for case in load_labels()['cases']:
+            key = case['window_key']
+            audit = M3_SECOND_F1_AUDIT[key]
+            old = case['second_point']
+            types = m3_types(case, audit['completed'])
+            all_specs = audit['completed']+((audit['tail'],) if audit['tail'] is not None else ())
+            holder, = [s for s in all_specs if s[0] <= old['anchor_unit'] <= s[1]]
+            start = m3_stamp(case['units'][old['leg1']]['start_dt'])
+            self.assertLess(m3_stamp(case['units'][holder[0]]['start_dt']), start)
+            self.assertLess(start, m3_stamp(case['units'][holder[1]]['end_dt']))
+            self.assertFalse(any(t.start_dt == start for t in types))
+            if old['anchor_kind'] == 'interior':
+                self.assertEqual(key, 'X1')
+                self.assertEqual(old['anchor_ticks']-case['units'][old['leg1']]['start_ticks'], 422)
+                self.assertEqual(old['interior_gap_ticks'], 422)
+                continue  # 不把腿1起点/价格重命名为内部极值的精确时间/锚价。
+            # 此上下文只用于隔离“缺锚点起始F1”这一输入条件; 不证明上游一类。
+            context = chan.SecondPointContext(key+':probe', old['side'][:-1], 'F2', 'F1',
+                start, old['anchor_ticks']/1000., m3_stamp(case['first_point']['first_dt']))
+            moves = [t.to_confirmed_move() for t in types]
+            now = m3_stamp(arrival(len(case['raw_rows']), case['raw_rows'], case.get('granularity', 'day')))
+            self.assertEqual(chan.find_second_points(moves, [context], now), [])
+            if key == 'Z1':
+                self.assertEqual(old['tier'], 'strongest')
+                self.assertIsNone(holder[-1])  # 旧最强档不证明本F1已完成。
 
 
 if __name__ == '__main__':

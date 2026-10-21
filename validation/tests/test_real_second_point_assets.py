@@ -39,6 +39,60 @@ def packet_of(case):
 
 
 class TestRealSecondPointAssets(unittest.TestCase):
+    def test_minimum_f1_boundary_table_is_independent_of_old_second_labels(self):
+        """静态F1表核首三段/无提前回入/后继证明; 不改原R2腿或源数据。"""
+        source = ROOT / 'tests/test_real_second_point.py'
+        table = next(ast.literal_eval(n.value) for n in ast.parse(source.read_text()).body
+                     if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and
+                         t.id == 'M3_SECOND_F1_AUDIT' for t in n.targets))
+        spec = importlib.util.spec_from_file_location('minimum_f1_boundary_compiler',
+                    str(ROOT / 'validation/tools/gen_real_f1_originals.py'))
+        tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tool)
+        labels = json.loads(FIXTURE.read_text())
+        self.assertEqual(set(table), {c['window_key'] for c in labels['cases']})
+        total, open_containers = 0, []
+        for case in labels['cases']:
+            audit = table[case['window_key']]
+            units = case['units']
+            rows = audit['completed']+((audit['tail'],) if audit['tail'] is not None else ())
+            self.assertEqual(rows[0][0], 0)
+            for left, right in zip(rows, rows[1:]):
+                self.assertEqual(left[1]+1, right[0])
+            for row in rows:
+                a, z, kind, direction, triples, cores, proof = row
+                record = tool.move_record(units, row)
+                self.assertEqual(record['complete'], proof is not None)
+                for i in range(a, triples[0] if triples else z-1):
+                    self.assertGreater(max(u['low_ticks'] for u in units[i:i+3]),
+                                       min(u['high_ticks'] for u in units[i:i+3]))
+                for n, (start, core) in enumerate(zip(triples, cores)):
+                    stop = triples[n+1]+3 if n+1<len(triples) else z+1
+                    for u in units[start+3:stop]:
+                        self.assertTrue(u['low_ticks']>core[1] or u['high_ticks']<core[0])
+                if proof is not None:
+                    self.assertEqual(proof, z+1)
+                    lo, hi = cores[-1]
+                    self.assertLessEqual(units[proof]['low_ticks'], hi)
+                    self.assertGreaterEqual(units[proof]['high_ticks'], lo)
+                    total += 1
+                elif not triples:
+                    self.assertEqual(kind, 'incomplete')
+            old = case['second_point']
+            holder, = [r for r in rows if r[0] <= old['anchor_unit'] <= r[1]]
+            start = units[old['leg1']]['start_dt']
+            self.assertLess(units[holder[0]]['start_dt'], start)
+            self.assertLess(start, units[holder[1]]['end_dt'])
+            self.assertFalse(any(units[r[0]]['start_dt'] == start for r in rows))
+            if holder[-1] is None:
+                open_containers.append(case['window_key'])
+            if case['window_key'] == 'X1':
+                self.assertEqual(old['anchor_ticks']-units[old['leg1']]['start_ticks'], 422)
+                self.assertGreater(units[holder[-1]]['confirmed_raw_count'],
+                                   old['leg2_confirmed_raw_count'])
+        self.assertEqual(total, 17)
+        self.assertEqual(open_containers, ['Z1'])
+
     def test_frozen_sources_and_independent_rebuild(self):
         """原始包与人工表保真；重复编译逐字节一致且不能覆盖证据。"""
         tool = compiler()
