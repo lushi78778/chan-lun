@@ -2,6 +2,7 @@
 """因果底顶冻结标注与轮次发现工具的独立算术、确认和来源契约。"""
 import ast
 import copy
+from fractions import Fraction
 import importlib.util
 import json
 from pathlib import Path
@@ -386,6 +387,113 @@ class TestRealCausalFormation81Assets(unittest.TestCase):
 
 class TestRealRoundsDiscovery(unittest.TestCase):
     """发现工具复用冻结结构；改变笔标准须同时改变实际前缀确认。"""
+
+    @staticmethod
+    def factor_packet():
+        return dict(adjustment='none', timezone='Asia/Shanghai',
+                    sampling_rule={'periods': ['1d'], 'window': ['2022-09-26', '2022-09-28']},
+                    rows=[dict(dt=dt, open=10.25, high=11.1, low=9.3, close=10.75,
+                               vol=volume, adj_factor=factor)
+                          for dt, volume, factor in [('2022-09-26', 0, 1.003886),
+                              ('2022-09-27', 200, 1.003886), ('2022-09-28', 300, 1.005408)]])
+
+    def test_factor_product_is_exact_at_every_observation_not_quote_rounded(self):
+        """逐观察价用Fraction直接复算; 数量和因子不改, 不把坐标当实际报价。"""
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        packet = self.factor_packet()
+        original = copy.deepcopy(packet)
+        view, metadata = tool.price_coordinate(packet, 'factor-product')
+        self.assertEqual(metadata['price_multiplier'], 1000000)
+        self.assertEqual(metadata['source_factor_values'], ['1.003886', '1.005408'])
+        for count in range(1, 4):
+            prefix, _ = tool.price_coordinate(dict(packet, rows=packet['rows'][:count]),
+                                              'factor-product')
+            self.assertEqual(prefix, view[:count])
+            anchor = Fraction(str(packet['rows'][count-1]['adj_factor']))
+            for raw, adjusted in zip(packet['rows'][:count], prefix):
+                self.assertEqual(adjusted['vol'], raw['vol'])
+                self.assertEqual(adjusted['adj_factor'], raw['adj_factor'])
+                for key in ('open', 'high', 'low', 'close'):
+                    expected = Fraction(str(raw[key])) * Fraction(str(raw['adj_factor'])) / anchor
+                    self.assertEqual(Fraction(str(adjusted[key])) / 1000000 / anchor, expected)
+        self.assertEqual(packet, original)
+        with self.assertRaises(ValueError):
+            tool.scan(packet)  # 默认仍拒绝变因子, 不隐式开启新视图。
+
+    def test_factor_product_has_no_future_precision_or_factor_dependency(self):
+        """已截前缀不读未来因子, 倍率不靠未来行精度决定。"""
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        packet = self.factor_packet()
+        expected, _ = tool.price_coordinate(dict(packet, rows=packet['rows'][:2]),
+                                           'factor-product')
+        for value in (float('nan'), 1.000000000001):
+            packet['rows'][2]['adj_factor'] = value
+            self.assertEqual(tool.price_coordinate(dict(packet, rows=packet['rows'][:2]),
+                'factor-product')[0], expected)
+            with self.assertRaises(ValueError):
+                tool.price_coordinate(packet, 'factor-product')
+
+    def test_factor_product_rejects_unknown_contract_bad_values_and_time(self):
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        for field, value in [('adj_factor', None), ('adj_factor', True),
+                ('adj_factor', -1), ('adj_factor', float('inf')), ('open', '10'),
+                ('close', float('nan')), ('vol', -1), ('low', 12),
+                ('dt', '2022-09-26'), ('dt', '2022-09-27 12:00:00')]:
+            with self.subTest(field=field, value=value):
+                packet = self.factor_packet()
+                packet['rows'][1][field] = value
+                with self.assertRaises(ValueError):
+                    tool.price_coordinate(packet, 'factor-product')
+        for field, value in [('adjustment', 'pre'), ('timezone', 'UTC'),
+                              ('sampling_rule', {'periods': ['30m']})]:
+            packet = self.factor_packet(); packet[field] = value
+            with self.assertRaises(ValueError):
+                tool.price_coordinate(packet, 'factor-product')
+        with self.assertRaises(ValueError):
+            tool.scan(self.factor_packet(), granularity='30m', coordinate='factor-product')
+        with self.assertRaises(ValueError):
+            tool.price_coordinate(self.factor_packet(), 'unknown')
+
+    def test_factor_product_precision_bounds_reject_instead_of_rounding(self):
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        for price in (1e8, 1e-10):
+            packet = self.factor_packet()
+            for row in packet['rows']:
+                row.update(open=price, high=price, low=price, close=price, adj_factor=1)
+            with self.assertRaises(ValueError):
+                tool.price_coordinate(packet, 'factor-product')
+        packet = self.factor_packet()
+        for row in packet['rows']:
+            row.update(open=9000001, high=9000001, low=9000001, close=9000001,
+                       adj_factor=1.000000001)
+        with self.assertRaisesRegex(ValueError, '保真'):
+            tool.price_coordinate(packet, 'factor-product')
+        packet = self.factor_packet()
+        for row in packet['rows']:
+            row.update(open=2e-8, high=3e-8, low=1e-8, close=2e-8, adj_factor=0.1)
+        view, _ = tool.price_coordinate(packet, 'factor-product')
+        self.assertEqual([view[0]['low'], view[0]['high']], [0.001, 0.003])
+
+    def test_factor_product_cli_requires_opt_in_and_records_inverse_coordinate(self):
+        tool = ROOT / 'validation/tools/scan_real_rounds.py'
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / 'packet.json'
+            source.write_text(json.dumps(self.factor_packet()))
+            untouched = source.read_bytes(); output = Path(temp) / 'scan.json'
+            command = [sys.executable, str(tool), '--packet', str(source), '--output', str(output)]
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output.exists())
+            result = subprocess.run(command + ['--coordinate', 'factor-product'],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(output.read_text())
+            self.assertEqual(report['factor_coordinate']['kind'], 'factor-product')
+            self.assertEqual(report['factor_coordinate']['ticks_per_price_factor'], 1000000000)
+            self.assertIn('observation_n_price', report['factor_coordinate']['rule'])
+            self.assertEqual(source.read_bytes(), untouched)
 
     def test_both_standards_match_frozen_structure_and_confirmation(self):
         tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')

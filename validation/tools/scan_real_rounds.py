@@ -17,10 +17,14 @@ ticks。first_raw_count按逐原始bar前缀首次可见冻结; 日线15:05到�
 仅测试约定。构造允许constructing结局（引发中枢未形成或三类尝试
 全部fail）, 与0.9.11只冻结已裁定底顶的编译口径互补。
 标准同时用于全窗分笔和每个原始前缀, 不能只换最终笔链而沿用106确认。
-仅接受完整且为正的恒定因子; 当行/末因子为1, 原价和原因子均保留。
+默认仅接受完整正恒因子; 显式factor-product仅用于已核原价/因子日线。
+固定q=p*factor*10^6的精确整数坐标, 每观察价=q/(10^6*当次末因子)。
+源包不改写; 输出ticks/面积属于声明坐标, 不能直接作为实际报价。
 """
 import argparse
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 import json
 import math
 from numbers import Real
@@ -141,11 +145,87 @@ def constant_factor(rows):
     return factors[0]
 
 
-def scan(packet, granularity='day', standard='106'):
+def scan(packet, granularity='day', standard='106', coordinate='raw'):
     if standard not in ('81', '106'):
         raise ValueError('不支持的笔标准: ' + str(standard))
+    if coordinate == 'factor-product' and granularity != 'day':
+        raise ValueError('factor-product当前仅支持日线')
+    rows, _ = price_coordinate(packet, coordinate)
+    return _scan_rows(rows, granularity, standard)
+
+
+def _positive_decimal(value, name, zero=False):
+    """数值输入按其十进制表示取精确值; 不接收布尔/字符串或静默取整。"""
+    try:
+        if (isinstance(value, bool) or not isinstance(value, Real) or
+                not math.isfinite(value) or (value < 0 if zero else value <= 0)):
+            raise ValueError()
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError, OverflowError):
+        raise ValueError('因子价格坐标要求有限合法实数: ' + name)
+
+
+def price_coordinate(packet, coordinate='raw'):
+    """返回发现视图及逆变换; 默认合同不变, 新模式须显式声明日线原价。
+
+    q_i=p_i*f_i*10^6为固定坐标, 乘积精确至1e-9且ticks不超2^53-1。
+    任意观察n的调整价=q_i/(10^6*f_n); 倍率不依赖未来行或其精度。
+    同一正比例保持包含/分型/MA5和相对MACD条件的数学关系。MACD仍按
+    原浮点递推, 数值误差与源因子版本另行核验, 不宣称严格理论证明。
+    成交量保持源值, 本视图不得用于量价/金额计算或当作真实交易报价。
+    调用方先截已收盘观察前缀; 不从元数据猜测历史因子可用时间。
+    """
     rows = packet['rows']
-    constant_factor(rows)
+    if coordinate == 'raw':
+        return rows, dict(source_factor=constant_factor(rows),
+            rule='constant positive factor;factor/final_factor=1;raw prices unchanged')
+    if coordinate != 'factor-product':
+        raise ValueError('不支持的价格坐标: ' + str(coordinate))
+    if (packet.get('adjustment') != 'none' or
+            packet.get('timezone') != 'Asia/Shanghai' or
+            packet.get('sampling_rule', {}).get('periods') != ['1d']):
+        raise ValueError('factor-product须显式声明北京时间未复权日线')
+    if not rows:
+        raise ValueError('原始包为空')
+    result, factors = [], []
+    previous = None
+    for row in rows:
+        dt = row.get('dt')
+        if not isinstance(dt, str) or (previous is not None and dt <= previous):
+            raise ValueError('因子价格坐标要求时间严格递增的已截日线前缀')
+        if len(dt) not in (10, 19) or (previous is not None and len(dt) != len(previous)):
+            raise ValueError('日线时间须为一致的ISO日期或零时刻')
+        datetime.strptime(dt, '%Y-%m-%d' if len(dt) == 10 else '%Y-%m-%d %H:%M:%S')
+        if len(dt) == 19 and dt[11:] != '00:00:00':
+            raise ValueError('日线时间须为一致的ISO日期或零时刻')
+        previous = dt
+        factor = _positive_decimal(row.get('adj_factor'), 'adj_factor')
+        prices = {k: _positive_decimal(row.get(k), k)
+                  for k in ('open', 'high', 'low', 'close')}
+        _positive_decimal(row.get('vol'), 'vol', zero=True)
+        if not (prices['low'] <= min(prices['open'], prices['close']) and
+                prices['high'] >= max(prices['open'], prices['close'])):
+            raise ValueError('因子价格坐标的原始OHLC包络无效')
+        view = dict(row)
+        for key, value in prices.items():
+            ticks = Fraction(value) * Fraction(factor) * 1000000000
+            if ticks.denominator != 1 or ticks > 2**53 - 1:
+                raise ValueError('乘积不在精确1e-9坐标或超安全ticks;不取整')
+            view[key] = ticks.numerator / 1000.0
+            if Decimal(str(view[key])) * 1000 != ticks.numerator:
+                raise ValueError('乘积坐标不能保真转成发现视图;不取整')
+        result.append(view)
+        if str(factor) not in factors:
+            factors.append(str(factor))
+    return result, dict(kind='factor-product', price_multiplier=1000000,
+        ticks_per_price_factor=1000000000, source_factor_values=factors,
+        source_rows_unchanged=True, volume_rule='source volume unchanged;price-only discovery',
+        rule='q_i=p_i*f_i*1000000;observation_n_price=q_i/(1000000*f_n)',
+        limits='fixed supplied factor snapshot;not historical availability or theoretical labels')
+
+
+def _scan_rows(rows, granularity='day', standard='106'):
+    """仅消费price_coordinate已校验视图; 角色及冻结算术沿用原实现。"""
     groups, fxs, bis = foundation(rows, standard)
     fixed = components(rows, bis[:-1], 10 if granularity == 'day' else None)
     pseudo = dict(expected_bis=records(bis), standard=standard)
@@ -214,6 +294,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--standard', choices=('81', '106'), default='106',
                         help='全窗及逐前缀使用同一笔标准; 默认保持106')
+    parser.add_argument('--coordinate', choices=('raw', 'factor-product'), default='raw',
+                        help='默认恒因子原价;显式日线乘积坐标须先核验因子来源/算术')
     args = parser.parse_args()
     if args.output.exists():
         parser.error('拒绝覆盖已有扫描报告, 使用新输出路径')
@@ -222,12 +304,12 @@ def main():
     granularity = 'day' if period == '1d' else period
     if granularity not in ('day', '60m', '30m', '5m'):
         parser.error('不支持的原始包粒度: ' + str(period))
-    result = scan(packet, granularity, args.standard)
+    rows, coordinate = price_coordinate(packet, args.coordinate)
+    result = _scan_rows(rows, granularity, args.standard)
     report = dict(schema_version='chan-real-rounds-scan-v1',
                   annotation='rounds_discovery_scan_not_labels',
                   standard=args.standard,
-                  factor_coordinate=dict(source_factor=constant_factor(packet['rows']),
-                      rule='constant positive factor;factor/final_factor=1;raw prices unchanged'),
+                  factor_coordinate=coordinate,
                   generated_at=datetime.now(
                       timezone(timedelta(hours=8))).isoformat(),
                   packet=args.packet.name, packet_sha256=digest(args.packet),
