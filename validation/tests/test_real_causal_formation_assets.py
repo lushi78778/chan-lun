@@ -40,6 +40,42 @@ def packet_of(case):
 
 
 class TestRealCausalFormationAssets(unittest.TestCase):
+    def test_legacy_anchor_f1_completion_witnesses_recompute_from_original_rows(self):
+        """六个旧锚点的完整F1反证表；AST读取，不导入包测试或识别器。"""
+        source = ROOT / 'tests/test_real_causal_formation.py'
+        table = next(ast.literal_eval(n.value) for n in ast.parse(source.read_text()).body
+                     if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and
+                     t.id == 'LEGACY_CAUSAL_F1_AUDIT' for t in n.targets))
+        tool = compiler()
+        cases = []
+        for name in ('real_causal_formation.json', 'real_causal_formation_81.json'):
+            cases.extend(json.loads((ROOT / 'tests/fixtures' / name).read_text())['cases'])
+        self.assertEqual(set(table), {c['window_key'] for c in cases})
+        for case in cases:
+            audit = table[case['window_key']]
+            a, z, kind, direction, triples, cores, proof = audit['f1']
+            rows = case['raw_rows']
+            anchor = case['first_point']['c_unit']
+            self.assertTrue(a <= anchor <= z)
+            self.assertGreater(audit['confirmed_raw_count'], case['first_point']['first_raw_count'])
+            visibility = []
+            for count in (case['first_point']['first_raw_count'],
+                          audit['confirmed_raw_count']-1, audit['confirmed_raw_count']):
+                _, _, bis = tool.foundation(rows[:count], case['standard'])
+                fixed = tool.components(rows[:count], bis[:-1], dt_slice=None)
+                visibility.append(len(fixed) > proof)
+            self.assertEqual(visibility, [False, False, True])
+            self.assertEqual((fixed[z]['end_dt'], fixed[z]['end_ticks']),
+                             (audit['end_dt'], audit['end_ticks']))
+            self.assertEqual((min(u['low_ticks'] for u in fixed[a:z+1]),
+                              max(u['high_ticks'] for u in fixed[a:z+1])), audit['range_ticks'])
+            actual = tuple((max(u['low_ticks'] for u in fixed[j:j+3]),
+                            min(u['high_ticks'] for u in fixed[j:j+3])) for j in triples)
+            self.assertEqual(actual, cores)
+            width = 10 if case.get('granularity', 'day') == 'day' else None
+            self.assertNotEqual((audit['end_dt'][:width], audit['end_ticks']),
+                                (case['units'][anchor]['end_dt'], case['units'][anchor]['end_ticks']))
+
     def test_frozen_sources_and_independent_rebuild(self):
         """原始包与人工表保真；重复编译逐字节一致且不能覆盖证据。"""
         tool = compiler()

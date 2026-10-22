@@ -11,11 +11,12 @@
 不跳过、成立即止、触沿允许); 结局映射: 底×sell3先出现=失败、底×
 buy3先出现=完成、顶×sell3先出现=完成、顶×buy3先出现=失败; 可见
 =回试单元首确认, first_raw_count按逐原始bar前缀首次可见冻结;
-构造区间=[一类点可见, 三类回试首确认]; 前提为一类买卖点成立
-(0.9.9口径)。60m/30m bar以结束时刻为标签, 到达按结束+1分钟计;
+构造区间=[一类点可见, 三类回试首确认]; 前提为历史笔级R2声明的
+一类条件(0.9.9口径)，不证明当前完整F1/F2自动链的一类成立。
+60m/30m bar以结束时刻为标签, 到达按结束+1分钟计;
 日线到达15:05(测试约定)。覆盖: 底部失败F1(512880日线)、顶部完成
 G1(588000 30m)、顶部失败H1(518880日线)、底部完成E1(159915 60m),
-底/顶×完成/失败四格闭合。
+历史笔级条件下底/顶×完成/失败四格闭合，旧锚点均在未完成F1内部。
 
 新增81两窗只验证R2辅助前提下的结构、确认和失败映射；其MACD零轴比值
 均>0.005，不等同当前自动接口通过，也不提供完整F1或严格一类点证明。
@@ -190,7 +191,105 @@ def enumerate_attempts(ticks, center):
     return out
 
 
+# 六个旧笔级条件锚点与最低完整F1的角色，静态整数表；不是新底顶标签。
+LEGACY_CAUSAL_F1_AUDIT = {
+    'F1': {
+        'index': 2,
+        'completed_then': 2,
+        'f1': (6, 8, 'consolidation', None, (6,), ((1021, 1059),), 9),
+        'confirmed_raw_count': 88,
+        'end_dt': '2017-12-01 00:00:00',
+        'end_ticks': 1059,
+        'range_ticks': (1012, 1077),
+    },
+    'G1': {
+        'index': 2,
+        'completed_then': 2,
+        'f1': (6, 15, 'down', 'down', (6, 10, 13), ((1203, 1224), (1149, 1169), (1076, 1090)), 16),
+        'confirmed_raw_count': 229,
+        'end_dt': '2022-09-01 10:30:00',
+        'end_ticks': 1090,
+        'range_ticks': (1072, 1230),
+    },
+    'H1': {
+        'index': 2,
+        'completed_then': 2,
+        'f1': (6, 8, 'consolidation', None, (6,), ((4320, 4383),), 9),
+        'confirmed_raw_count': 105,
+        'end_dt': '2023-05-19 00:00:00',
+        'end_ticks': 4320,
+        'range_ticks': (4276, 4426),
+    },
+    'E1': {
+        'index': 4,
+        'completed_then': 4,
+        'f1': (15, 17, 'consolidation', None, (15,), ((1406, 1441),), 18),
+        'confirmed_raw_count': 319,
+        'end_dt': '2019-05-30 14:00:00',
+        'end_ticks': 1406,
+        'range_ticks': (1378, 1445),
+    },
+    'M3T81': {
+        'index': 2,
+        'completed_then': 2,
+        'f1': (9, 11, 'consolidation', None, (9,), ((1663, 1763),), 12),
+        'confirmed_raw_count': 165,
+        'end_dt': '2016-11-28 00:00:00',
+        'end_ticks': 1849,
+        'range_ticks': (1630, 1849),
+    },
+    'M3B81': {
+        'index': 2,
+        'completed_then': 2,
+        'f1': (6, 8, 'consolidation', None, (6,), ((1626, 1702),), 9),
+        'confirmed_raw_count': 87,
+        'end_dt': '2018-01-26 00:00:00',
+        'end_ticks': 1751,
+        'range_ticks': (1601, 1751),
+    },
+}
+
+
 class TestRealCausalFormation(unittest.TestCase):
+    def test_legacy_first_points_are_internal_to_later_complete_f1(self):
+        """课35/38/108：六个旧笔级锚点不等于完整F1端点，不能沿用为新链正例。"""
+        cases = load_labels()['cases']
+        self.assertEqual(set(LEGACY_CAUSAL_F1_AUDIT), {c['window_key'] for c in cases})
+        for case in cases:
+            key = case['window_key']
+            audit = LEGACY_CAUSAL_F1_AUDIT[key]
+            a, z, kind, direction, _, centers, _ = audit['f1']
+            anchor = case['units'][case['first_point']['c_unit']]
+            legacy_count = case['first_point']['first_raw_count']
+            width = 10 if case.get('granularity', 'day') == 'day' else None
+            bars = raw_bars(case)
+            seen = None
+            for count in range(1, audit['confirmed_raw_count']+1):
+                fixed = chan.chan_fx_bi(bars[:count], standard=case['standard'])[2][:-1]
+                moves = chan.same_level_decompose(fixed)
+                complete = [m for m in moves if m.complete]
+                target = [m for m in complete if m.seg_start == a]
+                if count == legacy_count:
+                    self.assertEqual(len(complete), audit['completed_then'], key)
+                    containing, = [m for m in moves if m.seg_start <=
+                                   case['first_point']['c_unit'] <= m.seg_end]
+                    self.assertFalse(containing.complete, key)
+                    self.assertEqual(containing.seg_start, a)
+                    self.assertFalse(any(str(m.end_dt)[:width] == anchor['end_dt'] and
+                                         round(fixed[m.seg_end].end_value*1000) == anchor['end_ticks']
+                                         for m in complete), key)
+                if target:
+                    seen = count if seen is None else seen
+                    move, = target
+                    self.assertEqual((move.seg_start, move.seg_end, move.kind, move.direction),
+                                     (a, z, kind, direction), key)
+                    self.assertEqual(str(move.end_dt), audit['end_dt'])
+                    self.assertEqual(round(fixed[z].end_value*1000), audit['end_ticks'])
+                    self.assertEqual((round(move.low*1000), round(move.high*1000)), audit['range_ticks'])
+                    self.assertEqual(tuple((round(lo*1000), round(hi*1000)) for lo, hi in move.centers), centers)
+            self.assertEqual(seen, audit['confirmed_raw_count'], key)
+            self.assertGreater(seen, legacy_count)
+
     def assert_area_close(self, actual, expected, label):
         """MACD面积按相对误差1e-12比较: 内建sum自Python 3.12对浮点
         改用Neumaier补偿求和, 3.6/3.10为顺序累加, 两种算法存在末位
