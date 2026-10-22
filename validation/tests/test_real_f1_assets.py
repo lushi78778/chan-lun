@@ -28,6 +28,40 @@ def embedded_table(name):
 
 
 class TestRealF1Assets(unittest.TestCase):
+    def test_factor_product_fixed_parts_and_f1_proof_table(self):
+        """仅复算显式q坐标表的19个F1交集/后继角色，不将计算表升为理论真值。"""
+        table = embedded_table('M3_FACTOR_F1_AUDIT')
+        self.assertEqual(table['source_zip_sha256'],
+                         'a6bff9dc97915b70807a2327104d2609c38f44418407ab843981a5c6ed9c3b7e')
+        self.assertEqual(table['price_multiplier'], 1000000)
+        self.assertFalse(table['independent_theory_labels'])
+        spec = importlib.util.spec_from_file_location('factor_f1_integer',
+            str(ROOT / 'validation/tools/gen_real_f1_originals.py'))
+        integer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(integer)
+        total = 0
+        for case in table['cases'].values():
+            rows = case['parts']
+            self.assertEqual([r[6] for r in rows], sorted(r[6] for r in rows))
+            self.assertEqual([factor for _, factor in case['factors']], ['1.003886', '1.005408'])
+            parts = [dict(start_index=a, end_index=z, start_dt=start, end_dt=end,
+                          start_ticks=p0, end_ticks=p1, low_ticks=min(p0, p1),
+                          high_ticks=max(p0, p1), direction='up' if p1 > p0 else 'down')
+                     for a, z, start, end, p0, p1, _ in rows]
+            for previous, current in zip(rows, rows[1:]):
+                self.assertEqual(previous[3], current[2])
+                self.assertEqual(previous[5], current[4])
+            for item in case['f1']:
+                record = integer.move_record(parts, item[:7])
+                proof, count, known = item[6:]
+                self.assertEqual(rows[proof][6], count)
+                self.assertGreater(proof, record['seg_end'])
+                self.assertGreater(count, rows[record['seg_end']][6])
+                self.assertGreater(known[:10], record['end_dt'])
+                total += 1
+        self.assertEqual(sum(len(c['parts']) for c in table['cases'].values()), 84)
+        self.assertEqual(total, 19)
+
     def test_joined_f2_role_table_recomputes_declared_intersections_and_proofs(self):
         """课20/35/38：显式F1输入的10个核心、完整波动与证明角色，独立整数复算。"""
         table = embedded_table('M3_JOINED_F2_AUDIT')
