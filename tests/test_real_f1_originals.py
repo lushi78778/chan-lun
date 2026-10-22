@@ -11,6 +11,8 @@ F2未完成边界；独立区间表先于库比较声明, 不覆盖原条件fixt
 严格接口的波动重叠、未创新低与内部极值待判分别保留；输入为明示
 最低F1-bi合同，不提升为精确理论一类点、严格成立或真实周期级别证明。
 同一完整F1表另接三类条件；三组窗口六个中枢全部保留，不择样本或改切点。
+另以600721已冻结的显式F1输入核三个完成F2的组成/证明与严格返回角色；
+该条件表不新增独立F1理论标签，也不提供严格成立或真实周期级别证明。
 """
 import json
 import hashlib
@@ -819,6 +821,222 @@ class TestRealM3CompleteF1ThirdPoints(unittest.TestCase):
                     confirmed_dt=moves[leave].start_dt+timedelta(microseconds=1)))
                 self.assertFalse(any(p.leave_move_id == moves[leave].move_id for p in
                                      chan.find_third_points(moves, [late_center], moves[-1].confirmed_dt)))
+
+
+# 显式F1-bi输入；来源为已冻结接续算术，不新增独立F1理论标签。
+# 输入行：(起/末笔,kind,进入方向,起/末日,起/末价,全段低/高,首确认行,确认日时,证据笔数,核心)。
+M3_JOINED_F2_AUDIT = {
+    'source_expectations_sha256': '8b00e438b838b894e5616f3e1755654f5cabad5d1d6b873f9362e1875d2ac431',
+    'inputs': {
+        '81': (
+            (0, 2, 'consolidation', None, '2013-11-14', '2013-12-19', 6820, 8190, 6820, 8190, 83, '2014-02-14 15:05:00', 4, ((7220, 8000),)),
+            (3, 5, 'consolidation', None, '2013-12-19', '2014-02-28', 8190, 6540, 6470, 8190, 135, '2014-04-30 15:05:00', 7, ((6540, 7990),)),
+            (6, 8, 'consolidation', None, '2014-02-28', '2014-05-14', 6540, 7520, 6480, 7520, 156, '2014-06-03 15:05:00', 10, ((6540, 7370),)),
+            (9, 11, 'consolidation', None, '2014-05-14', '2014-06-20', 7520, 6910, 6900, 8260, 210, '2014-08-18 15:05:00', 13, ((6910, 7520),)),
+            (12, 17, 'up', 'up', '2014-06-20', '2014-10-24', 6910, 9000, 6910, 11300, 274, '2014-11-24 15:05:00', 19, ((8090, 8500), (9170, 9800))),
+            (18, 20, 'consolidation', None, '2014-10-24', '2014-12-16', 9000, 10200, 9000, 11190, 310, '2015-01-15 15:05:00', 22, ((9250, 10200),)),
+            (21, 23, 'consolidation', None, '2014-12-16', '2015-02-10', 10200, 8600, 8510, 10200, 380, '2015-05-04 15:05:00', 25, ((8600, 9980),)),
+            (24, 28, 'consolidation', None, '2015-02-10', '2015-06-18', 8600, 23300, 8600, 23300, 439, '2015-07-27 15:05:00', 30, ((13220, 18780),)),
+            (29, 31, 'consolidation', None, '2015-06-18', '2016-03-11', 23300, 13030, 9190, 23300, 633, '2016-05-13 15:05:00', 33, ((13030, 20790),)),
+            (32, 34, 'consolidation', None, '2016-03-11', '2016-06-13', 13030, 17310, 13030, 17640, 669, '2016-07-06 15:05:00', 36, ((14550, 17310),)),
+            (35, 38, 'consolidation', 'down', '2016-06-13', '2016-08-09', 17310, 21000, 16200, 21000, 733, '2016-10-13 15:05:00', 40, ((17600, 19200),)),
+            (39, 41, 'consolidation', None, '2016-08-09', '2016-11-04', 21000, 18420, 18000, 21000, 765, '2016-11-28 15:05:00', 43, ((18420, 20540),)),
+            (42, 44, 'consolidation', None, '2016-11-04', '2016-12-27', 18420, 19000, 17210, 19270, 813, '2017-02-10 15:05:00', 46, ((18420, 19000),)),
+            (45, 47, 'consolidation', None, '2016-12-27', '2017-02-16', 19000, 16880, 15880, 19000, 836, '2017-03-15 15:05:00', 49, ((16880, 17440),)),
+            (48, 51, 'consolidation', 'up', '2017-02-16', '2017-06-01', 16880, 12480, 12480, 19710, 921, '2017-07-19 15:05:00', 53, ((13650, 15400),)),
+            (52, 54, 'consolidation', None, '2017-06-01', '2017-08-09', 12480, 14630, 12480, 15390, 950, '2017-08-29 15:05:00', 56, ((12700, 14630),)),
+            (55, 64, 'down', 'down', '2017-08-09', '2018-01-09', 14630, 11950, 9960, 15120, 1050, '2018-01-24 15:05:00', 66, ((13310, 14630), (12000, 12410), (10330, 11180))),
+            (65, 67, 'consolidation', None, '2018-01-09', '2018-02-09', 11950, 7020, 7020, 11950, 1089, '2018-03-27 15:05:00', 69, ((10040, 10510),)),
+            (68, 70, 'consolidation', None, '2018-02-09', '2018-04-04', 7020, 10750, 7020, 11690, 1112, '2018-05-03 15:05:00', 72, ((8680, 10750),)),
+        ),
+        '106': (
+            (0, 2, 'consolidation', None, '2013-11-14', '2013-12-19', 6820, 8190, 6820, 8190, 68, '2014-01-17 15:05:00', 4, ((7220, 8000),)),
+            (3, 5, 'consolidation', None, '2013-12-19', '2014-01-21', 8190, 6470, 6470, 8190, 92, '2014-02-27 15:05:00', 7, ((6500, 6900),)),
+            (6, 8, 'consolidation', None, '2014-01-21', '2014-04-17', 6470, 7370, 6470, 7990, 138, '2014-05-07 15:05:00', 10, ((6540, 7370),)),
+            (9, 11, 'consolidation', None, '2014-04-17', '2014-05-23', 7370, 6900, 6480, 7520, 162, '2014-06-11 15:05:00', 13, ((6900, 7370),)),
+            (12, 14, 'consolidation', None, '2014-05-23', '2014-06-13', 6900, 7640, 6900, 8260, 179, '2014-07-04 15:05:00', 16, ((7210, 7640),)),
+            (15, 18, 'consolidation', 'down', '2014-06-13', '2014-08-28', 7640, 9800, 6910, 9800, 261, '2014-11-05 15:05:00', 22, ((8090, 8500),)),
+            (19, 21, 'consolidation', None, '2014-08-28', '2014-10-24', 9800, 9000, 9000, 11300, 274, '2014-11-24 15:05:00', 23, ((9170, 9800),)),
+            (22, 24, 'consolidation', None, '2014-10-24', '2014-12-16', 9000, 10200, 9000, 11190, 310, '2015-01-15 15:05:00', 26, ((9250, 10200),)),
+            (25, 27, 'consolidation', None, '2014-12-16', '2015-02-10', 10200, 8600, 8510, 10200, 373, '2015-04-22 15:05:00', 29, ((8600, 9980),)),
+            (28, 32, 'consolidation', None, '2015-02-10', '2015-06-15', 8600, 23740, 8600, 23740, 431, '2015-07-15 15:05:00', 34, ((13220, 18780),)),
+            (33, 35, 'consolidation', None, '2015-06-15', '2016-03-11', 23740, 13030, 9190, 23740, 604, '2016-03-31 15:05:00', 37, ((13030, 20790),)),
+            (36, 38, 'consolidation', None, '2016-03-11', '2016-04-19', 13030, 17610, 13030, 17610, 623, '2016-04-28 15:05:00', 40, ((14850, 16350),)),
+            (39, 41, 'consolidation', None, '2016-04-19', '2016-05-12', 17610, 14550, 14550, 17640, 641, '2016-05-25 15:05:00', 43, ((15770, 17610),)),
+            (42, 48, 'up', 'up', '2016-05-12', '2016-08-31', 14550, 20700, 14550, 21000, 733, '2016-10-13 15:05:00', 50, ((15850, 16590), (19610, 20700))),
+            (49, 51, 'consolidation', None, '2016-08-31', '2016-11-04', 20700, 18420, 18000, 20700, 765, '2016-11-28 15:05:00', 53, ((18420, 20540),)),
+            (52, 54, 'consolidation', None, '2016-11-04', '2016-12-01', 18420, 18520, 17910, 19270, 780, '2016-12-19 15:05:00', 56, ((18420, 18520),)),
+            (55, 57, 'consolidation', None, '2016-12-01', '2017-01-18', 18520, 15880, 15880, 19000, 818, '2017-02-17 15:05:00', 59, ((17210, 18520),)),
+            (58, 60, 'consolidation', None, '2017-01-18', '2017-03-06', 15880, 19710, 15880, 19710, 870, '2017-05-05 15:05:00', 62, ((16880, 17440),)),
+            (61, 63, 'consolidation', None, '2017-03-06', '2017-05-23', 19710, 12550, 12550, 19710, 896, '2017-06-14 15:05:00', 65, ((13650, 15400),)),
+            (64, 66, 'consolidation', None, '2017-05-23', '2017-06-29', 12550, 15390, 12550, 15390, 927, '2017-07-27 15:05:00', 68, ((12940, 13950),)),
+            (67, 69, 'consolidation', None, '2017-06-29', '2017-08-03', 15390, 13140, 12700, 15390, 942, '2017-08-17 15:05:00', 71, ((13140, 13870),)),
+            (70, 72, 'consolidation', None, '2017-08-03', '2017-08-22', 13140, 14670, 13140, 14670, 955, '2017-09-05 15:05:00', 74, ((13310, 14630),)),
+            (73, 78, 'down', 'down', '2017-08-22', '2017-11-03', 14670, 13170, 12000, 15120, 1014, '2017-12-04 15:05:00', 80, ((13990, 14670), (12650, 13170))),
+            (79, 81, 'consolidation', None, '2017-11-03', '2017-12-15', 13170, 9960, 9960, 13170, 1045, '2018-01-17 15:05:00', 83, ((10330, 11180),)),
+            (82, 84, 'consolidation', None, '2017-12-15', '2018-01-23', 9960, 10510, 9960, 11950, 1070, '2018-02-28 15:05:00', 86, ((10040, 10510),)),
+            (85, 87, 'consolidation', None, '2018-01-23', '2018-03-26', 10510, 8680, 7020, 11690, 1105, '2018-04-20 15:05:00', 89, ((8680, 10510),)),
+            (88, 90, 'consolidation', None, '2018-03-26', '2018-05-11', 8680, 10090, 8040, 10750, 1131, '2018-05-30 15:05:00', 92, ((8680, 10090),)),
+            (91, 93, 'consolidation', None, '2018-05-11', '2018-06-05', 10090, 8680, 8680, 10920, 1146, '2018-06-21 15:05:00', 95, ((8860, 10090),)),
+            (94, 97, 'consolidation', 'up', '2018-06-05', '2018-07-11', 8680, 6270, 6270, 9430, 1180, '2018-08-08 15:05:00', 99, ((7070, 7790),)),
+            (98, 100, 'consolidation', None, '2018-07-11', '2018-08-10', 6270, 6540, 5790, 7290, 1195, '2018-08-29 15:05:00', 102, ((6270, 6540),)),
+            (101, 103, 'consolidation', None, '2018-08-10', '2018-09-03', 6540, 5480, 5430, 6540, 1210, '2018-09-19 15:05:00', 105, ((5480, 6030),)),
+            (104, 106, 'consolidation', None, '2018-09-03', '2018-09-28', 5480, 6860, 5480, 6860, 1232, '2018-10-29 15:05:00', 108, ((5520, 5950),)),
+            (107, 109, 'consolidation', None, '2018-09-28', '2018-11-30', 6860, 5470, 4300, 6860, 1274, '2018-12-26 15:05:00', 111, ((5470, 6390),)),
+            (110, 112, 'consolidation', None, '2018-11-30', '2019-01-28', 5470, 6570, 5110, 6570, 1312, '2019-02-27 15:05:00', 114, ((5470, 5830),)),
+            (113, 115, 'consolidation', None, '2019-01-28', '2019-03-01', 6570, 5830, 4460, 6570, 1328, '2019-03-21 15:05:00', 117, ((5830, 6360),)),
+            (116, 118, 'consolidation', None, '2019-03-01', '2019-04-10', 5830, 7070, 5620, 7530, 1352, '2019-04-25 15:05:00', 120, ((5830, 7070),)),
+            (119, 124, 'down', 'down', '2019-04-10', '2019-07-05', 7070, 5720, 4840, 7130, 1410, '2019-07-22 15:05:00', 126, ((6490, 7070), (5080, 5660))),
+            (125, 127, 'consolidation', None, '2019-07-05', '2019-08-15', 5720, 5580, 5520, 6470, 1443, '2019-09-05 15:05:00', 129, ((5580, 5720),)),
+            (128, 130, 'consolidation', None, '2019-08-15', '2019-09-16', 5580, 5940, 5580, 6240, 1467, '2019-10-17 15:05:00', 132, ((5720, 5940),)),
+            (131, 133, 'consolidation', None, '2019-09-16', '2019-11-01', 5940, 5480, 5300, 6040, 1492, '2019-11-21 15:05:00', 135, ((5480, 5940),)),
+            (134, 139, 'up', 'up', '2019-11-01', '2020-03-02', 5480, 6040, 5270, 7240, 1574, '2020-03-25 15:05:00', 141, ((5480, 5880), (6040, 7230))),
+        ),
+    },
+    'cases': {
+        '81-up': {
+            'standard': '81',
+            'f2': [0, 14, 'up', 'up', [0, 5, 10], [[6820, 7520], [9000, 10200], [18000, 19270]], 18],
+            'spans': [[0, 2, 4], [5, 7, 8], [10, 12, 14]],
+            'tails': (8, 14),
+            'reference': (9, 9),
+            'leave': None,
+            'waves': [[8510, 23300], [12480, 21000]],
+            'wave_overlap': (12480, 21000),
+            'status': 'skipped',
+            'reason': 'no_compare_legs',
+            'confirmed_raw_count': 1112,
+            'completion': ('reverse_center', 15, (16, 17, 18), (9960, 11690)),
+        },
+        '106-up': {
+            'standard': '106',
+            'f2': [0, 15, 'up', 'up', [0, 6, 11], [[6820, 7990], [9000, 10200], [14550, 17610]], 16],
+            'spans': [[0, 2, 5], [6, 8, 10], [11, 13, 13]],
+            'tails': (10, None),
+            'reference': None,
+            'leave': None,
+            'waves': [[8510, 23740], [13030, 21000]],
+            'wave_overlap': (13030, 21000),
+            'status': 'skipped',
+            'reason': 'no_comparable_center_tail',
+            'confirmed_raw_count': 818,
+            'completion': ('first_return', 14, None, None),
+        },
+        '106-down': {
+            'standard': '106',
+            'f2': [16, 39, 'down', 'down', [16, 19, 24, 28], [[15880, 19000], [13140, 14670], [9960, 10750], [6270, 6540]], 40],
+            'spans': [[16, 18, 18], [19, 21, 23], [24, 26, 27], [28, 30, 37]],
+            'tails': (26, 35),
+            'reference': (27, 27),
+            'leave': (36, 39),
+            'waves': [[7020, 11950], [4300, 9430]],
+            'wave_overlap': (7020, 9430),
+            'status': 'rejected',
+            'reason': 'center_waves_overlap',
+            'confirmed_raw_count': 1574,
+            'completion': ('first_return', 38, None, None),
+        },
+    },
+}
+
+
+def joined_f1_inputs(standard):
+    """仅装配已声明的F1快照；不由F2结果反推切点或重新搜索行情。"""
+    records = []
+    for row in M3_JOINED_F2_AUDIT['inputs'][standard]:
+        a, z, kind, direction, start, end, p0, p1, lo, hi, count, known, evidence, cores = row
+        records.append(dict(seg_start=a, seg_end=z, kind=kind, direction=direction,
+                            start_dt=start, end_dt=end, start_ticks=p0, end_ticks=p1,
+                            low_ticks=lo, high_ticks=hi, confirmed_raw_count=count,
+                            confirmed_dt=known, proof_unit=evidence-1, centers_ticks=cores))
+    return confirmed_inputs(dict(completed=records))
+
+
+class TestJoinedF2Roles(unittest.TestCase):
+    def test_successor_proofs_close_f2_without_joining_its_composition(self):
+        """课35/38：反向新核或首次回入的证明独立于组成；实际到达才确认。"""
+        for key, audit in sorted(M3_JOINED_F2_AUDIT['cases'].items()):
+            units = joined_f1_inputs(audit['standard'])
+            a, z, kind, direction, _, centers, proof = audit['f2']
+            now = units[proof].confirmed_dt
+            for cutoff in (units[z].end_dt, units[z].confirmed_dt,
+                           now.replace(hour=15, minute=0), now-timedelta(microseconds=1)):
+                early = chan.confirm_level_up(units, cutoff, 'F2')
+                self.assertFalse(any(m.unit_ids[0] == units[a].move_id for m in early), key)
+            closed = chan.confirm_level_up(units, now, 'F2')
+            move, = [m for m in closed if m.unit_ids[0] == units[a].move_id]
+            self.assertEqual((move.kind, move.direction), (kind, direction), key)
+            self.assertEqual((move.start_dt, move.end_dt), (units[a].start_dt, units[z].end_dt))
+            self.assertEqual((move.start_price, move.end_price), (units[a].start_price, units[z].end_price))
+            self.assertEqual(move.unit_ids, tuple(u.move_id for u in units[a:z+1]))
+            self.assertEqual(move.evidence_ids, tuple(u.move_id for u in units[:proof+1]))
+            self.assertTrue(set(u.move_id for u in units[z+1:proof+1]).isdisjoint(move.unit_ids))
+            self.assertEqual(move.confirmed_dt, now)
+            self.assertGreater(now, max(u.confirmed_dt for u in units[a:z+1]))
+            self.assertEqual((move.low, move.high),
+                             (min(u.low for u in units[a:z+1]), max(u.high for u in units[a:z+1])))
+            self.assertEqual(move.centers, tuple((lo/1000., hi/1000.) for lo, hi in centers))
+            delay = now+timedelta(days=1)
+            late = [u._replace(confirmed_dt=delay) if i == proof else u for i, u in enumerate(units)]
+            self.assertFalse(any(m.move_id == move.move_id for m in chan.confirm_level_up(late, now, 'F2')))
+            delayed, = [m for m in chan.confirm_level_up(late, delay, 'F2') if m.move_id == move.move_id]
+            self.assertEqual(delayed, move._replace(confirmed_dt=delay))
+
+    def test_missing_roles_and_wave_rejection_do_not_reach_force(self):
+        """课20/37：核心分离不充分；缺角色先跳过，完整波动重叠才按条件否决。"""
+        def forbidden_force(reference, leave):
+            raise AssertionError('三个结构均不得进入力度判断')
+
+        for key, audit in sorted(M3_JOINED_F2_AUDIT['cases'].items()):
+            units = joined_f1_inputs(audit['standard'])
+            a, _, _, _, _, _, proof = audit['f2']
+            now = units[proof].confirmed_dt
+            move, = [m for m in chan.confirm_level_up(units, now, 'F2')
+                     if m.unit_ids[0] == units[a].move_id]
+            scan = chan.scan_strict_divergence(units, now, 'F2',
+                                               force_fn=forbidden_force, force_method='unused')
+            found = [r for r in scan.results if r.trend_id == move.move_id]
+            if audit['status'] == 'skipped':
+                self.assertEqual(found, [], key)
+                self.assertIn((move.move_id, audit['reason']), scan.skipped, key)
+            else:
+                result, = found
+                self.assertEqual((result.status, result.reason), (audit['status'], audit['reason']))
+                self.assertEqual(result.conditions, (('trend', True), ('separated_centers', False)))
+                self.assertIsNone(result.center_range)
+                self.assertIsNone(json.loads(json.dumps(result.to_dict()))['center_range'])
+                ra, rz = audit['reference']
+                ca, cz = audit['leave']
+                self.assertEqual(result.reference_ids, tuple(u.move_id for u in units[ra:rz+1]))
+                self.assertEqual(result.leave_ids, tuple(u.move_id for u in units[ca:cz+1]))
+            json.dumps(scan.to_dict())
+
+    def test_visible_f1_prefixes_keep_closed_results_and_ignore_future_fields(self):
+        """60个显式F1到达前缀：未来毒值不提前读取；已完成F2及否决结果不回写。"""
+        for standard in ('81', '106'):
+            units = joined_f1_inputs(standard)
+            closed, rejected = {}, {}
+            for unit in units:
+                now = unit.confirmed_dt
+                visible = [u for u in units if u.confirmed_dt <= now]
+                future = [u if u.confirmed_dt <= now else u._replace(
+                    move_id=None, level=None, low=float('nan'), centers=None) for u in units]
+                moves = chan.confirm_level_up(visible, now, 'F2')
+                self.assertEqual(chan.confirm_level_up(future, now, 'F2'), moves)
+                scan = chan.scan_strict_divergence(visible, now, 'F2')
+                self.assertEqual(chan.scan_strict_divergence(future, now, 'F2'), scan)
+                for move in moves:
+                    if move.move_id in closed:
+                        self.assertEqual(move, closed[move.move_id])
+                    closed[move.move_id] = move
+                for result in scan.results:
+                    if result.status == chan.STRICT_CANDIDATE:
+                        continue
+                    if result.divergence_id in rejected:
+                        self.assertEqual(result, rejected[result.divergence_id])
+                    rejected[result.divergence_id] = result
+            self.assertEqual(len(closed), 1 if standard == '81' else 2)
+            self.assertEqual(len(rejected), 0 if standard == '81' else 1)
 
 
 if __name__ == '__main__':

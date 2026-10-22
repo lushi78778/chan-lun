@@ -28,6 +28,69 @@ def embedded_table(name):
 
 
 class TestRealF1Assets(unittest.TestCase):
+    def test_joined_f2_role_table_recomputes_declared_intersections_and_proofs(self):
+        """课20/35/38：显式F1输入的10个核心、完整波动与证明角色，独立整数复算。"""
+        table = embedded_table('M3_JOINED_F2_AUDIT')
+        self.assertEqual(table['source_expectations_sha256'],
+                         '8b00e438b838b894e5616f3e1755654f5cabad5d1d6b873f9362e1875d2ac431')
+        self.assertEqual({k: len(v) for k, v in table['inputs'].items()}, {'81': 19, '106': 41})
+        self.assertEqual(set(table['cases']), {'81-up', '106-up', '106-down'})
+        core_count = 0
+        for key, audit in sorted(table['cases'].items()):
+            rows = table['inputs'][audit['standard']]
+            for previous, current in zip(rows, rows[1:]):
+                self.assertEqual((previous[5], previous[7]), (current[4], current[6]))
+                self.assertLess(previous[10], current[10])
+                self.assertLess(previous[11], current[11])
+            a, z, kind, _, triples, cores, proof = audit['f2']
+            for j, (start, formed, extended), core in zip(triples, audit['spans'], cores):
+                self.assertEqual((j, j+2), (start, formed))
+                self.assertEqual((max(u[8] for u in rows[j:j+3]),
+                                  min(u[9] for u in rows[j:j+3])), tuple(core))
+                for u in rows[formed+1:extended+1]:
+                    self.assertTrue(u[8] <= core[1] and u[9] >= core[0])
+                core_count += 1
+            for left, right in zip(cores, cores[1:]):
+                self.assertGreater(right[0] if kind == 'up' else left[0],
+                                   left[1] if kind == 'up' else right[1])
+            waves, tails = [], []
+            for start, formed, extended in audit['spans'][-2:]:
+                waves.append((min(u[8] for u in rows[start:extended+1]),
+                              max(u[9] for u in rows[start:extended+1])))
+                reverse = [i for i in range(formed, extended+1)
+                           if rows[i][7] != rows[i][6] and
+                           (rows[i][7] > rows[i][6]) == (kind == 'down')]
+                tails.append(reverse[-1] if reverse else None)
+            self.assertEqual(waves, [tuple(w) for w in audit['waves']])
+            self.assertEqual((max(w[0] for w in waves), min(w[1] for w in waves)), audit['wave_overlap'])
+            self.assertLessEqual(*audit['wave_overlap'])
+            self.assertEqual(tuple(tails), audit['tails'])
+            if None not in tails:
+                reference = (tails[0]+1, audit['spans'][-1][0]-1)
+                leave = (tails[1]+1, z)
+                self.assertEqual(reference if reference[0] <= reference[1] else None, audit['reference'])
+                self.assertEqual(leave if leave[0] <= leave[1] else None, audit['leave'])
+            else:
+                self.assertEqual((audit['reference'], audit['leave']), (None, None))
+            completion, first_leave, new_triple, new_core = audit['completion']
+            last_core = cores[-1]
+            self.assertGreater(proof, z)
+            self.assertEqual(rows[proof][10], audit['confirmed_raw_count'])
+            self.assertGreater(rows[proof][11], max(u[11] for u in rows[a:z+1]))
+            for u in rows[first_leave:proof]:
+                self.assertTrue(u[9] < last_core[0] or u[8] > last_core[1])
+            if completion == 'first_return':
+                self.assertTrue(rows[proof][8] <= last_core[1] and rows[proof][9] >= last_core[0])
+            else:
+                self.assertEqual(completion, 'reverse_center')
+                self.assertEqual((z, proof), (first_leave-1, new_triple[-1]))
+                self.assertEqual((max(rows[i][8] for i in new_triple),
+                                  min(rows[i][9] for i in new_triple)), new_core)
+                self.assertLess(new_core[1], last_core[0])
+                self.assertGreater(max(u[8] for u in rows[first_leave:first_leave+3]),
+                                   min(u[9] for u in rows[first_leave:first_leave+3]))
+        self.assertEqual(core_count, 10)
+
     def test_embedded_m3_f1_tables_recompute_without_importing_package_tests(self):
         """复用整数编译器核验34个F1/三个F2表；AST读取避免执行包测试或调用chan。"""
         table = embedded_table('M3_STRICT_F2_AUDIT')
