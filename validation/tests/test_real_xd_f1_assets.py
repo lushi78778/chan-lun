@@ -28,6 +28,61 @@ def compiler():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def test_factor_xd_local_proofs_and_shared_second_feature(self):
+        """独立整数核8条给定分界的局部证明；不穷举或声称全局分界唯一性。"""
+        def table(filename,name):
+            tree = ast.parse((ROOT/'tests'/filename).read_text())
+            return next(ast.literal_eval(n.value) for n in tree.body if isinstance(n,ast.Assign)
+                        and any(isinstance(t,ast.Name) and t.id==name for t in n.targets))
+
+        inputs = table('test_real_f1_originals.py','M3_FACTOR_F1_AUDIT')['cases']
+        audit = table('test_real_xd_f1.py','M3_FACTOR_XD_AUDIT')
+        self.assertFalse(audit['independent_theory_labels'])
+        self.assertFalse(audit['global_segmentation_independently_proven'])
+        totals = [0,0]
+        for key,case in audit['cases'].items():
+            self.assertEqual(len(case['events']),len(case['local_proofs']))
+            rows = inputs[key]['parts']
+            bounds = lambda i:(min(rows[i][4:6]),max(rows[i][4:6]))
+            for event,proof in zip(case['events'],case['local_proofs']):
+                a,z,mode,last,count,known = event
+                self.assertEqual(proof['event'],[a,z,mode,last])
+                self.assertEqual(rows[last][6],count)
+                self.assertGreater(known[:10],rows[last][3])
+                self.assertGreater(last,z)
+                self.assertEqual(proof['initial_core'],[max(bounds(i)[0] for i in range(a,a+3)),
+                                                        min(bounds(i)[1] for i in range(a,a+3))])
+                if mode == 1:
+                    reverse = [bounds(i) for i in range(z+1,last+1)]
+                    self.assertEqual(last-z,3)
+                    self.assertLessEqual(max(r[0] for r in reverse),min(r[1] for r in reverse))
+                    self.assertEqual(proof['reverse_core'],[max(r[0] for r in reverse),min(r[1] for r in reverse)])
+                    up = rows[a][5] > rows[a][4]
+                    self.assertTrue(bounds(z+1)[1] > bounds(z-1)[1] if up else bounds(z+1)[0] < bounds(z-1)[0])
+                    self.assertTrue(bounds(z+1)[0] <= bounds(z-1)[1] if up else bounds(z+1)[1] >= bounds(z-1)[0])
+                    if up:
+                        self.assertLess(rows[last][5],rows[z+1][5])
+                    else:
+                        self.assertGreater(rows[last][5],rows[z+1][5])
+                else:
+                    self.assertEqual(key,'2022-01-01-106')
+                    self.assertEqual(bounds(6)[0]-bounds(8)[1],11052784860)
+                    self.assertEqual(proof['gap_ticks'],11052784860)
+                    self.assertFalse(proof['gap_unfilled_at_proof'])
+                    self.assertGreaterEqual(max(bounds(i)[1] for i in range(9,last+1)),bounds(6)[0])
+                    self.assertTrue(bounds(8)[0]<min(bounds(6)[0],bounds(10)[0]))
+                    self.assertTrue(bounds(8)[1]<min(bounds(6)[1],bounds(10)[1]))
+                    first,container,later = bounds(13),bounds(15),bounds(17)
+                    self.assertTrue(first[0]>=container[0] and first[1]<=container[1])
+                    merged = (max(first[0],container[0]),max(first[1],container[1]))
+                    self.assertTrue(later[0]<=merged[0] and later[1]>=merged[1])
+                    merged = (max(merged[0],later[0]),max(merged[1],later[1]))
+                    self.assertEqual(proof['second_top'],[*bounds(11),*merged,*bounds(19)])
+                    self.assertGreater(merged[0],max(bounds(11)[0],bounds(19)[0]))
+                    self.assertGreater(merged[1],max(bounds(11)[1],bounds(19)[1]))
+                totals[mode-1] += 1
+        self.assertEqual(totals,[7,1])
+
     def test_xd_f1_lineage_third_table_uses_first_known_core_and_whole_return(self):
         """七个核心全部保留; 首回试破沿与重新离开分开, 不靠库输出反推预期。"""
         tree = ast.parse((ROOT / 'tests/test_real_xd_f1.py').read_text())

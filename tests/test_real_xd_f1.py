@@ -15,10 +15,14 @@
 另复用五条既有独立完成XD链, 核38个完整F1、一个完成盘整F2及开放
 尾部。F2允许延伸; 后继F1的确认只作完成证据, 不并入原F2的区间。
 反向中枢证明的三条XD按实际到达整批处理, 不制造批内确认时刻。
+
+跨调整追加表复用既定宁德两窗的固定笔, 只独立核验给定XD分界的局部
+证明与其F1组成；全局分段唯一性尚未独立裁定, 不增加独立理论标签。
 """
 from bisect import bisect_right
 from datetime import datetime, timedelta
 from types import SimpleNamespace
+import ast
 import json
 import os
 import unittest
@@ -854,6 +858,187 @@ class TestRealM3XdLineageThird(unittest.TestCase):
                     self.assertEqual(points[0].confirmed_dt,late)
                     self.assertEqual(str(points[0].dt),endpoint)
                     self.assertLess(points[0].dt,points[0].confirmed_dt)
+
+
+# 固定分界的局部证明核验，不声明全局分段已独立裁定。
+M3_FACTOR_XD_AUDIT = {'expectations_sha256': '73107066f4eb70c4165928aa6abdd53099fe1e89532a6c237fee547e0d1f0233',
+ 'independent_theory_labels': False,
+ 'global_segmentation_independently_proven': False,
+ 'cases': {'2022-01-01-81': {'events': ((0, 12, 1, 15, 191, '2022-10-20 15:05:00'),
+                                        (13, 17, 1, 20, 239, '2022-12-27 15:05:00')),
+                             'f1': [],
+                             'local_proofs': [{'event': [0, 12, 1, 15],
+                                               'initial_core': [526277196640, 550209838880],
+                                               'boundary_left': [490900254000, 546103945140],
+                                               'reverse_first': [445604917680, 577234450000],
+                                               'reverse_core': [445604917680, 461988337200],
+                                               'selection_ticks': -52259145840,
+                                               'proof_scope': 'first-break local overlap and direction '
+                                                              'selection'},
+                                              {'event': [13, 17, 1, 20],
+                                               'initial_core': [445604917680, 461988337200],
+                                               'boundary_left': [393345771840, 444390336000],
+                                               'reverse_first': [358508384640, 425086502400],
+                                               'reverse_core': [372011014080, 425086502400],
+                                               'selection_ticks': 7339478400,
+                                               'proof_scope': 'first-break local overlap and direction '
+                                                              'selection'}]},
+           '2022-01-01-106': {'events': ((0, 4, 1, 7, 88, '2022-05-19 15:05:00'),
+                                         (5, 7, 2, 19, 180, '2022-09-28 15:05:00'),
+                                         (8, 16, 1, 19, 180, '2022-09-28 15:05:00'),
+                                         (17, 23, 1, 26, 231, '2022-12-15 15:05:00')),
+                              'f1': [{'body': {'kind': 'consolidation',
+                                               'complete': True,
+                                               'direction': None,
+                                               'seg_start': 0,
+                                               'seg_end': 2,
+                                               'start_dt': '2022-01-10',
+                                               'end_dt': '2022-08-24',
+                                               'start_ticks': 526277196640,
+                                               'end_ticks': 577234450000,
+                                               'low_ticks': 354371758000,
+                                               'high_ticks': 612350382280,
+                                               'centers_ticks': [[486944943160, 550209838880]]},
+                                      'confirmed_raw_count': 231,
+                                      'confirmed_dt': '2022-12-15 15:05:00'}],
+                              'local_proofs': [{'event': [0, 4, 1, 7],
+                                                'initial_core': [526277196640, 545612041000],
+                                                'boundary_left': [494283349820, 545612041000],
+                                                'reverse_first': [444731536860, 550209838880],
+                                                'reverse_core': [444731536860, 537079010000],
+                                                'selection_ticks': -90359778860,
+                                                'proof_scope': 'first-break local overlap and direction '
+                                                               'selection'},
+                                               {'event': [5, 7, 2, 19],
+                                                'initial_core': [444731536860, 537079010000],
+                                                'gap_ticks': 11052784860,
+                                                'first_sequence': [6, 8, 10],
+                                                'second_sequence': [[11], [13, 15, 17], [19]],
+                                                'second_top': [430365928200,
+                                                               470832572860,
+                                                               511981860000,
+                                                               577234450000,
+                                                               407577716000,
+                                                               461988337200],
+                                                'gap_unfilled_at_proof': False,
+                                                'proof_scope': 'gap plus contained second-sequence top'},
+                                               {'event': [8, 16, 1, 19],
+                                                'initial_core': [390391187680, 433678752000],
+                                                'boundary_left': [490900254000, 567165473420],
+                                                'reverse_first': [445604917680, 577234450000],
+                                                'reverse_core': [445604917680, 461988337200],
+                                                'selection_ticks': -38027201680,
+                                                'proof_scope': 'first-break local overlap and direction '
+                                                               'selection'},
+                                               {'event': [17, 23, 1, 26],
+                                                'initial_core': [445604917680, 461988337200],
+                                                'boundary_left': [393345771840, 444390336000],
+                                                'reverse_first': [358508384640, 425086502400],
+                                                'reverse_core': [372011014080, 425086502400],
+                                                'selection_ticks': 2915683200,
+                                                'proof_scope': 'first-break local overlap and direction '
+                                                               'selection'}]},
+           '2022-04-15-81': {'events': ((0, 12, 1, 15, 173, '2022-12-27 15:05:00'),),
+                             'f1': [],
+                             'local_proofs': [{'event': [0, 12, 1, 15],
+                                               'initial_core': [390391187680, 433678752000],
+                                               'boundary_left': [393345771840, 444390336000],
+                                               'reverse_first': [358508384640, 425086502400],
+                                               'reverse_core': [372011014080, 425086502400],
+                                               'selection_ticks': 7339478400,
+                                               'proof_scope': 'first-break local overlap and direction '
+                                                              'selection'}]},
+           '2022-04-15-106': {'events': ((0, 16, 1, 19, 165, '2022-12-15 15:05:00'),),
+                              'f1': [],
+                              'local_proofs': [{'event': [0, 16, 1, 19],
+                                                'initial_core': [390391187680, 433678752000],
+                                                'boundary_left': [393345771840, 444390336000],
+                                                'reverse_first': [358508384640, 425086502400],
+                                                'reverse_core': [372011014080, 425086502400],
+                                                'selection_ticks': 2915683200,
+                                                'proof_scope': 'first-break local overlap and direction '
+                                                               'selection'}]}}}
+
+def factor_xd_input_cases():
+    """复用同目录已冻结的84个固定笔输入表，不执行另一测试模块或复制行情。"""
+    path = os.path.join(os.path.dirname(__file__), 'test_real_f1_originals.py')
+    with open(path, encoding='utf-8') as stream:
+        tree = ast.parse(stream.read())
+    table = next(ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
+                 and any(isinstance(t, ast.Name) and t.id == 'M3_FACTOR_F1_AUDIT' for t in node.targets))
+    return table['cases']
+
+
+def factor_xd_parts(case):
+    return [SimpleNamespace(start_index=a, end_index=z,
+            start_dt=datetime.strptime(start, '%Y-%m-%d'), end_dt=datetime.strptime(end, '%Y-%m-%d'),
+            start_value=p0/1000.0, end_value=p1/1000.0, low=min(p0,p1)/1000.0,
+            high=max(p0,p1)/1000.0, direction='up' if p1 > p0 else 'down')
+            for a,z,start,end,p0,p1,_ in case['parts']]
+
+
+def factor_xd_expected(case, event):
+    a,z,mode,proof,count,_ = event
+    parts = case['parts']
+    return dict(start_index=parts[a][0], end_index=parts[z][1], start_dt=parts[a][2], end_dt=parts[z][3],
+        start_ticks=parts[a][4], end_ticks=parts[z][5],
+        low_ticks=min(min(r[4:6]) for r in parts[a:z+1]), high_ticks=max(max(r[4:6]) for r in parts[a:z+1]),
+        direction='up' if parts[a][5] > parts[a][4] else 'down', mode=mode, proof_bi=proof,
+        evidence_end_index=parts[proof][1], evidence_dt=parts[proof][3], confirmed_raw_count=count)
+
+
+class TestFactorProductXdProofs(unittest.TestCase):
+    def test_declared_xd_and_f1_at_all_component_arrival_counts(self):
+        """836个显式部件计数快照；给定局部分界的证明不等同全局独立XD真值。"""
+        cases = factor_xd_input_cases()
+        snapshots = 0
+        for key,audit in sorted(M3_FACTOR_XD_AUDIT['cases'].items()):
+            case = cases[key]
+            parts = factor_xd_parts(case)
+            seen,first_f1 = {},{}
+            for count in range(1,case['rows']+1):
+                visible = [p for p,r in zip(parts,case['parts']) if r[6] <= count]
+                xds = [x for x in chan.find_xds(visible) if x.complete]
+                actual = []
+                for x in xds:
+                    identity = xd_identity(x)
+                    seen.setdefault(identity,count)
+                    actual.append(xd_record(x,visible,seen[identity]))
+                self.assertEqual(actual,[factor_xd_expected(case,e) for e in audit['events'] if e[4] <= count],
+                                 (key,count))
+                moves = [m for m in chan.same_level_decompose(xds) if m.complete]
+                expected = [m for m in audit['f1'] if m['confirmed_raw_count'] <= count]
+                self.assertEqual([move_record(m) for m in moves],
+                                 [expected_shape(m['body']) for m in expected],(key,count))
+                for m in moves:
+                    first_f1.setdefault(move_identity(m),count)
+                snapshots += 1
+            self.assertEqual(sorted(first_f1.values()),[m['confirmed_raw_count'] for m in audit['f1']])
+        self.assertEqual(snapshots,836)
+
+    def test_shared_second_sequence_proof_does_not_complete_f1_early(self):
+        """同一证明笔令mode2/mode1同批完成；F1另等12月后继XD，不回填到8月端点。"""
+        key = '2022-01-01-106'
+        case = factor_xd_input_cases()[key]
+        parts = factor_xd_parts(case)
+        for count,xd_count,f1_count in ((179,1,0),(180,3,0),(230,3,0),(231,4,1)):
+            visible = [p for p,r in zip(parts,case['parts']) if r[6] <= count]
+            xds = [x for x in chan.find_xds(visible) if x.complete]
+            self.assertEqual(len(xds),xd_count)
+            complete = [m for m in chan.same_level_decompose(xds) if m.complete]
+            self.assertEqual(len(complete),f1_count)
+            if count == 180:
+                self.assertEqual([x.mode for x in xds],[1,2,1])
+                self.assertEqual(xds[1].evidence_dt,xds[2].evidence_dt)
+                self.assertEqual(xds[1].evidence_end_index,xds[2].evidence_end_index)
+                self.assertEqual(str(xds[1].evidence_dt)[:10],'2022-09-22')
+            if complete:
+                self.assertEqual((complete[0].seg_start,complete[0].seg_end),(0,2))
+                self.assertEqual(str(complete[0].end_dt)[:10],'2022-08-24')
+        events = M3_FACTOR_XD_AUDIT['cases'][key]['events']
+        self.assertEqual([e[5] for e in events[1:3]],['2022-09-28 15:05:00']*2)
+        self.assertEqual(M3_FACTOR_XD_AUDIT['cases'][key]['f1'][0]['confirmed_dt'],
+                         '2022-12-15 15:05:00')
 
 
 if __name__ == '__main__':
