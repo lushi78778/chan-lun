@@ -155,6 +155,32 @@ class TestCsvStockIntake(unittest.TestCase):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 self.packet(**changes)
 
+    def test_unknown_minute_grid_and_volume_are_preserved_without_repairs(self):
+        """09:30可为非平价桶; 零量不推停牌, 大量值不自动除100。"""
+        self.path.write_text(
+            'ts_code,dt,open,high,low,close,vol,adj_factor\n'
+            '600721.XSHG,2024-07-02 09:30:00,1734,1736,1733.4599609375,1736,19397500,1.25\n'
+            '600721.XSHG,2024-07-02 09:35:00,1736,1736,1736,1736,0,1.25\n'
+            '600721.XSHG,2024-07-02 10:00:00,1735,1738,1734,1737,100,1.25\n')
+        original = self.path.read_bytes()
+        # 合成输入只验证接收边界, 不证明某个供应商的真实周期或数量单位。
+        for period in ('5m', '30m'):
+            with self.subTest(period=period):
+                packet = self.packet(period=period, time_label='unknown',
+                                     volume_unit='unknown', layout='canonical')
+                self.assertEqual(packet['time_label'], 'unknown')
+                self.assertEqual(packet['volume_unit'], 'unknown')
+                self.assertEqual(len(packet['rows']), 3)
+                self.assertEqual([r['vol'] for r in packet['rows']],
+                                 [19397500.0, 0.0, 100.0])
+                self.assertEqual(packet['rows'][0]['dt'], '2024-07-02 09:30:00')
+                self.assertEqual(packet['rows'][0]['low'], 1733.4599609375)
+                self.assertFalse(packet['theoretical_acceptance'])
+                for row in packet['rows']:
+                    for name in ('paused', 'closed_dt', 'available_dt'):
+                        self.assertNotIn(name, row)
+        self.assertEqual(self.path.read_bytes(), original)
+
     def test_visible_bad_rows_are_not_repaired_or_dropped(self):
         """缺因子、坏包络/量/停牌、重复及乱序均拒绝, 不能静默生成可用包。"""
         variants = [
