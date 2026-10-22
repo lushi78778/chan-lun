@@ -122,7 +122,8 @@ class StrictDivergence(namedtuple('StrictDivergenceBase',
     kind为buy1/sell1; reason为该语义的最小条件码; conditions为
     已评估结构条件(code, passed/None)元组, 供逐项审计; 开放尾部
     候选中未决条件记None。center_id/center_range为末中枢身份与
-    冻结(zd,zg); reference_ids/leave_ids为比较段单元身份; 价格
+    冻结(zd,zg)，在波动分离必要条件提前否决、尚未评估区间时为None；
+    to_dict保留该空值，有区间时转列表。reference_ids/leave_ids为比较段单元身份; 价格
     单位沿用输入坐标。force_method为力度方法身份(未注入或候选
     未评估为None), force_reference/force_leave为注入方法返回的
     比较段力度值(未评估为None)。confirmed_dt为该结果所需证据的
@@ -134,7 +135,8 @@ class StrictDivergence(namedtuple('StrictDivergenceBase',
         out = dict(self._asdict())
         for key in ('confirmed_dt', 'dt'):
             out[key] = str(out[key])
-        out['center_range'] = list(self.center_range)
+        out['center_range'] = (None if self.center_range is None
+                               else list(self.center_range))
         out['conditions'] = [list(pair) for pair in self.conditions]
         return out
 

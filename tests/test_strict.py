@@ -83,13 +83,25 @@ class TestStrictDivergenceSemantics(unittest.TestCase):
         self.assertEqual(r.center_range, (128.0, 130.0))
 
     def test_rejected_center_waves_overlap(self):
-        """课20: 中枢周围波动重叠即否决, 不只是ZD/ZG。"""
+        """课20: 买卖两侧波动重叠即否决；未评估区间保持空值并可存档。"""
         prices = [140, 110, 125, 122, 128, 75, 74, 71, 74, 70, 110, 70, 66, 64, 75, 70, 78]
-        units, now = sample(prices)
-        r = scan_strict_divergence(units, now, 'main').results[0]
-        self.assertEqual((r.status, r.reason), (STRICT_REJECTED, 'center_waves_overlap'))
-        self.assertEqual(r.conditions, (('trend', True), ('separated_centers', False)))
-        self.assertIsNone(r.center_range)
+        for values in (prices, [200-p for p in prices]):
+            with self.subTest(prices=values):
+                units, now = sample(values)
+                scan = scan_strict_divergence(units, now, 'main')
+                r = scan.results[0]
+                self.assertEqual((r.status, r.reason), (STRICT_REJECTED, 'center_waves_overlap'))
+                self.assertEqual(r.conditions, (('trend', True), ('separated_centers', False)))
+                self.assertIsNone(r.center_range)
+                payload = r.to_dict()
+                self.assertEqual(set(payload), set(r._fields))
+                self.assertIsNone(payload['center_range'])
+                self.assertIsNone(json.loads(json.dumps(payload))['center_range'])
+                nested = json.loads(json.dumps(scan.to_dict()))['results'][0]
+                self.assertEqual((nested['status'], nested['reason']),
+                                 (STRICT_REJECTED, 'center_waves_overlap'))
+                self.assertIsNone(nested['center_range'])
+                self.assertIsNone(r.center_range)
 
     def test_rejected_no_new_extreme(self):
         """课61: 背驰如果没有创新高新低, 是不存在的。"""

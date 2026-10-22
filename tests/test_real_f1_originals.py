@@ -633,6 +633,11 @@ class TestRealM3StrictF2Boundaries(unittest.TestCase):
             self.assertEqual(len(scan.results), 1, key)
             result = scan.results[0]
             self.assertEqual((result.status, result.reason), (audit['status'], audit['reason']), key)
+            serialized = json.loads(json.dumps(scan.to_dict()))['results'][0]
+            self.assertEqual((serialized['status'], serialized['reason']),
+                             (audit['status'], audit['reason']), key)
+            self.assertEqual(serialized['center_range'],
+                             None if result.center_range is None else list(result.center_range), key)
             self.assertEqual(result.confirmed_dt, now)
             self.assertEqual(result.kind, 'sell1' if audit['f2'][2] == 'up' else 'buy1')
             ra, rz = audit['reference']

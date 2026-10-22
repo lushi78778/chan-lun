@@ -99,6 +99,10 @@ JSON 可写快照。底层 `NewBar.to_dict()` 则保留原始 `dt` 类型，只�
 `AnalysisResult.to_dict()` 存档。不能将任意底层对象或其 dict 一概视为可直接
 `json.dumps`。其他对象的时间和空值转换按下表、各类 docstring 与模块测试执行。
 
+`StrictDivergence.center_range` 在波动分离必要条件提前否决、区间尚未评估时
+为 `None`；其 `to_dict()` 及 `StrictScan.to_dict()` 中保留为 JSON `null`，
+已有区间仍转为两项列表。键集、对象属性与严格判定结果保持。
+
 核心链键集（0.13.1 快照）：
 
 | 对象 | 键 |
