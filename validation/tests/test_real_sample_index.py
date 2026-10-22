@@ -204,6 +204,22 @@ class TestCsvStockIntake(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.packet(start='2024-07-03', observation='2024-07-02')
 
+    def test_zero_minute_volume_does_not_override_explicit_pause(self):
+        """合成零量分钟分别保留给定paused=0/1, 不从零量推断停牌。"""
+        self.path.write_text(
+            'date,open,high,low,close,volume,factor,paused\n'
+            '2024-07-01 09:31:00,10,10,10,10,0,1.25,0\n'
+            '2024-07-02 09:31:00,10,10,10,10,0,1.25,1\n')
+        original = self.path.read_bytes()
+        packet = self.packet(period='1m', time_label='end')
+        self.assertEqual([r['vol'] for r in packet['rows']], [0.0, 0.0])
+        self.assertEqual([r['paused'] for r in packet['rows']], [0, 1])
+        self.assertFalse(packet['theoretical_acceptance'])
+        for row in packet['rows']:
+            self.assertNotIn('closed_dt', row)
+            self.assertNotIn('available_dt', row)
+        self.assertEqual(self.path.read_bytes(), original)
+
     def test_malformed_headers_and_missing_factor_do_not_get_defaults(self):
         """重复/冲突列与截断CSV不得被pandas自动改名或补空后接受。"""
         for text in [self.text.replace('volume', 'open'),
