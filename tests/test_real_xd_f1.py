@@ -16,8 +16,9 @@
 尾部。F2允许延伸; 后继F1的确认只作完成证据, 不并入原F2的区间。
 反向中枢证明的三条XD按实际到达整批处理, 不制造批内确认时刻。
 
-跨调整追加表复用既定宁德两窗的固定笔, 只独立核验给定XD分界的局部
-证明与其F1组成；全局分段唯一性尚未独立裁定, 不增加独立理论标签。
+跨调整追加表复用既定宁德两窗的固定笔, 核给定XD分界的原邻笔几何
+条件与其F1组成。标准旧侧及特殊逆时间前提另由资产补充审计；首段
+种子上下文和全局分段唯一性尚未独立裁定, 不增加独立理论标签。
 """
 from bisect import bisect_right
 from datetime import datetime, timedelta
@@ -860,7 +861,7 @@ class TestRealM3XdLineageThird(unittest.TestCase):
                     self.assertLess(points[0].dt,points[0].confirmed_dt)
 
 
-# 固定分界的局部证明核验，不声明全局分段已独立裁定。
+# 给定分界的原邻笔条件复算，不等同标准特征或全局分段证明。
 M3_FACTOR_XD_AUDIT = {'expectations_sha256': '73107066f4eb70c4165928aa6abdd53099fe1e89532a6c237fee547e0d1f0233',
  'independent_theory_labels': False,
  'global_segmentation_independently_proven': False,
@@ -989,7 +990,7 @@ def factor_xd_expected(case, event):
 
 class TestFactorProductXdProofs(unittest.TestCase):
     def test_declared_xd_and_f1_at_all_component_arrival_counts(self):
-        """836个显式部件计数快照；给定局部分界的证明不等同全局独立XD真值。"""
+        """836个显式部件计数快照；给定分界的输出回归不等同独立XD真值。"""
         cases = factor_xd_input_cases()
         snapshots = 0
         for key,audit in sorted(M3_FACTOR_XD_AUDIT['cases'].items()):

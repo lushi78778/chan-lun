@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """完成XD构造F1的来源、独立编译与人工表防错契约。"""
 import ast
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -13,6 +14,13 @@ ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'validation/tools/gen_real_xd_f1.py'
 MANUAL = ROOT / 'validation/chan-real-xd-f1-manual-0.9.1.json'
 FIXTURE = ROOT / 'tests/fixtures/real_xd_f1.json'
+
+
+def embedded_table(filename, name):
+    """只读已有常量，不执行另一测试模块或用算法回填预期。"""
+    tree = ast.parse((ROOT / 'tests' / filename).read_text(encoding='utf-8'))
+    return next(ast.literal_eval(n.value) for n in tree.body if isinstance(n, ast.Assign)
+                and any(isinstance(t, ast.Name) and t.id == name for t in n.targets))
 
 
 def compiler():
@@ -28,15 +36,97 @@ def compiler():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
-    def test_factor_xd_local_proofs_and_shared_second_feature(self):
-        """独立整数核8条给定分界的局部证明；不穷举或声称全局分界唯一性。"""
-        def table(filename,name):
-            tree = ast.parse((ROOT/'tests'/filename).read_text())
-            return next(ast.literal_eval(n.value) for n in tree.body if isinstance(n,ast.Assign)
-                        and any(isinstance(t,ast.Name) and t.id==name for t in n.targets))
+    def test_factor_xd_standard_left_and_second_sequence_stages(self):
+        """课67/71/78/81：保留标准旧侧，区分原邻笔条件与未知种子上下文。"""
+        inputs = embedded_table('test_real_f1_originals.py', 'M3_FACTOR_F1_AUDIT')
+        legacy = embedded_table('test_real_xd_f1.py', 'M3_FACTOR_XD_AUDIT')
+        for value,wanted in ((inputs,'8100b6d1128eb2fcf38813678729051831b17798c33315bccef61f9629efd004'),
+                             (legacy,'a5e29d244716a2147c97f5f6e83255ab8e9b8cdeac0fed3085926d674953901c')):
+            blob = json.dumps(value,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode('utf-8')
+            self.assertEqual(hashlib.sha256(blob).hexdigest(),wanted)
+        self.assertFalse(legacy['independent_theory_labels'])
+        self.assertFalse(legacy['global_segmentation_independently_proven'])
 
-        inputs = table('test_real_f1_originals.py','M3_FACTOR_F1_AUDIT')['cases']
-        audit = table('test_real_xd_f1.py','M3_FACTOR_XD_AUDIT')
+        def groups(parts,indices,up):
+            """整数区间顺序包含；旧侧初始方向显式给定，第二序列由相邻项建立。"""
+            result = []
+            for i in indices:
+                low,high = min(parts[i][4:6]),max(parts[i][4:6])
+                if result and (low <= result[-1][1] and high >= result[-1][2] or
+                               low >= result[-1][1] and high <= result[-1][2]):
+                    self.assertIsNotNone(up)
+                    pick = max if up else min
+                    ids,old_low,old_high = result[-1]
+                    result[-1] = (ids+(i,),pick(low,old_low),pick(high,old_high))
+                else:
+                    if result:
+                        up = high > result[-1][2]
+                    result.append(((i,),low,high))
+            return [(ids,(low,high)) for ids,low,high in result]
+
+        # 调库前补充表：6条标准侧局部条件、1条raw-only、1条第二序列。
+        # 起点是给定假设；此表不裁定完整候选生命周期或全局分界。
+        sides = [
+            ('2022-01-01-106',0,4,1,7,(1,3),(494283349820,612350382280),False),
+            ('2022-01-01-106',5,7,2,19,(6,),(444731536860,537079010000),None),
+            ('2022-01-01-106',8,16,1,19,(13,15),(511981860000,567165473420),True),
+            ('2022-01-01-106',17,23,1,26,(20,22),(393345771840,437021692380),True),
+            ('2022-01-01-81',0,12,1,15,(11,),(490900254000,546103945140),True),
+            ('2022-01-01-81',13,17,1,20,(16,),(393345771840,444390336000),True),
+            ('2022-04-15-106',0,16,1,19,(13,15),(393345771840,437021692380),True),
+            ('2022-04-15-81',0,12,1,15,(11,),(393345771840,444390336000),True)]
+        self.assertEqual(len(sides),sum(len(c['events']) for c in legacy['cases'].values()))
+        supported = []
+        for key,a,z,mode,proof,ids,left,wanted in sides:
+            parts = inputs['cases'][key]['parts']
+            up = parts[a][5] > parts[a][4]
+            self.assertEqual(groups(parts,range(a+1,z,2),up)[-1],(ids,left))
+            self.assertIn((a,z,mode,proof),[tuple(e[:4]) for e in legacy['cases'][key]['events']])
+            if mode == 1:
+                first = (min(parts[z+1][4:6]),max(parts[z+1][4:6]))
+                protrudes = first[1] > left[1] if up else first[0] < left[0]
+                self.assertEqual(protrudes,wanted)
+                supported.append(protrudes)
+                if wanted:
+                    self.assertLessEqual(max(left[0],first[0]),min(left[1],first[1]))
+                    reverse = parts[z+1:proof+1]
+                    self.assertEqual(len(reverse),3)
+                    self.assertLessEqual(max(min(p[4:6]) for p in reverse),min(max(p[4:6]) for p in reverse))
+                    self.assertTrue(parts[proof][5] < parts[z+1][5] if up else parts[proof][5] > parts[z+1][5])
+                    right = (min(parts[proof][4:6]),max(parts[proof][4:6]))
+                    first_break = first[0] < left[0] if up else first[1] > left[1]
+                    standard_fx = (all(first[k] > max(left[k],right[k]) for k in (0,1)) if up else
+                                   all(first[k] < min(left[k],right[k]) for k in (0,1)))
+                    self.assertTrue(first_break or standard_fx)
+                else:
+                    # BI1包含BI3后高点仍在；不能以较低原BI3直接证明标准顶。
+                    self.assertEqual((key,a,z),('2022-01-01-106',0,4))
+                    self.assertLess(max(parts[z-1][4:6]),first[1])
+                    self.assertGreater(left[1],first[1])
+        self.assertEqual((supported.count(True),supported.count(False)),(6,1))
+
+        parts = inputs['cases']['2022-01-01-106']['parts']
+        stages = [
+            (11,115,(((9,),(390391187680,433678752000)),((11,),(430365928200,470832572860))),False),
+            (13,124,(((9,),(390391187680,433678752000)),((11,),(430365928200,470832572860)),((13,),(511981860000,567165473420))),False),
+            (15,153,(((9,),(390391187680,433678752000)),((11,),(430365928200,470832572860)),((13,15),(511981860000,567165473420))),False),
+            (17,170,(((9,),(390391187680,433678752000)),((11,),(430365928200,470832572860)),((13,15,17),(511981860000,577234450000))),False),
+            (19,180,(((9,),(390391187680,433678752000)),((11,),(430365928200,470832572860)),((13,15,17),(511981860000,577234450000)),((19,),(407577716000,461988337200))),True)]
+        self.assertEqual(parts[10][6],106)  # 第一序列底先到，不代替第二序列顶。
+        for last,count,wanted,complete in stages:
+            self.assertEqual(parts[last][6],count)
+            current = groups(parts,range(9,last+1,2),None)
+            self.assertEqual(current,list(wanted))
+            tops = [i for i in range(1,len(current)-1)
+                    if all(current[i][1][k] > max(current[i-1][1][k],current[i+1][1][k]) for k in (0,1))]
+            self.assertEqual(bool(tops),complete)
+            if complete:
+                self.assertEqual([current[i][0] for i in range(tops[0]-1,tops[0]+2)],[(11,),(13,15,17),(19,)])
+
+    def test_factor_xd_local_proofs_and_shared_second_feature(self):
+        """核给定分界的原邻笔几何；标准旧侧与种子前提另核，不称完整证明。"""
+        inputs = embedded_table('test_real_f1_originals.py','M3_FACTOR_F1_AUDIT')['cases']
+        audit = embedded_table('test_real_xd_f1.py','M3_FACTOR_XD_AUDIT')
         self.assertFalse(audit['independent_theory_labels'])
         self.assertFalse(audit['global_segmentation_independently_proven'])
         totals = [0,0]
