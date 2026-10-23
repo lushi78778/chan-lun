@@ -36,6 +36,65 @@ def compiler():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def test_first_seed_candidate_lifecycle_keeps_revocation_order(self):
+        """保持start0的14个假设；局部条件、撤销与未知前提分开，不给替代分界。"""
+        parts = embedded_table('test_real_f1_originals.py','M3_FACTOR_F1_AUDIT')['cases']['2022-01-01-106']['parts']
+        # 候选反向笔、端点首次可见行、更高峰首次可见行、反向三笔齐备行。
+        frozen = [(1,26,None,37),(3,32,42,49),(5,42,120,88),(7,52,120,101),
+                  (9,94,106,115),(11,106,120,124),(13,120,166,153),(15,133,166,170),
+                  (17,166,None,180),(19,173,None,191),(21,184,195,205),
+                  (23,195,None,217),(25,212,231,None),(27,231,None,None)]
+        self.assertEqual([r[0] for r in frozen],list(range(1,len(parts)+1,2)))
+        valid_net = []
+        for candidate,endpoint_count,higher_count,three_count in frozen:
+            endpoint = candidate-1
+            self.assertEqual(parts[endpoint][6],endpoint_count)
+            peak = parts[endpoint][5]
+            higher = [p for p in parts[endpoint+2::2] if p[5] > peak]
+            self.assertEqual(higher[0][6] if higher else None,higher_count)
+            self.assertEqual(parts[candidate+2][6] if candidate+2 < len(parts) else None,three_count)
+            self.assertEqual(max(p[5] for p in parts[:candidate:2]),612350382280)
+            if peak > parts[0][4]:
+                valid_net.append(candidate)
+        self.assertEqual(valid_net,[1,3,5,7,13,15,17])
+        self.assertLess(frozen[0][0],3)  # 最高峰自身不足最低三笔，不能直接用它闭合。
+        self.assertEqual((max(min(p[4:6]) for p in parts[:3]),min(max(p[4:6]) for p in parts[:3])),
+                         (526277196640,545612041000))
+
+        # 13有正缺口但第二序列第三项须raw173；更高峰raw166已先到。
+        self.assertEqual(min(parts[13][4:6])-max(parts[11][4:6]),41149287140)
+        self.assertEqual(max(parts[13][4:6]),max(parts[15][4:6]))
+        self.assertEqual([parts[i][6] for i in (14,16,18)],[133,166,173])
+        self.assertLess(parts[16][6],parts[18][6])
+        # 15的反向三笔还要等raw170，不能在更高峰到达前认定完成。
+        self.assertLess(parts[16][6],max(parts[i][6] for i in (15,16,17)))
+        # 5/17各有局部三笔，仍不得据此推定课78上下文已成立。
+        for candidate,count in ((5,88),(17,180)):
+            reverse = parts[candidate:candidate+3]
+            self.assertEqual(reverse[-1][6],count)
+            self.assertLessEqual(max(min(p[4:6]) for p in reverse),min(max(p[4:6]) for p in reverse))
+            self.assertLess(reverse[-1][5],reverse[0][5])
+            self.assertLess(parts[candidate-1][5],612350382280)
+
+    def test_raw_crossed_start_threshold_is_not_standard_feature_proof(self):
+        """8笔整数见证仅证明门槛不等价，不用识别器输出或赋予全局分界标签。"""
+        original = [50,100,40,70,45,80,30,60,20]  # 抽象价位以0.1为单位。
+        for points,up in ((original,True),([150-p for p in original],False)):
+            bis = [(min(a,b),max(a,b)) for a,b in zip(points,points[1:])]
+            self.assertEqual(len(bis),8)
+            self.assertLessEqual(max(b[0] for b in bis[:3]),min(b[1] for b in bis[:3]))
+            self.assertTrue(bis[1][0] <= bis[3][0] and bis[1][1] >= bis[3][1])
+            pick = max if up else min
+            standard = (pick(bis[1][0],bis[3][0]),pick(bis[1][1],bis[3][1]))
+            raw,first = bis[3],bis[5]
+            raw_turn = first[1] > raw[1] if up else first[0] < raw[0]
+            standard_turn = first[1] > standard[1] if up else first[0] < standard[0]
+            self.assertTrue(raw_turn)
+            self.assertFalse(standard_turn)
+            self.assertLessEqual(max(b[0] for b in bis[5:8]),min(b[1] for b in bis[5:8]))
+            self.assertTrue(points[8] < points[6] if up else points[8] > points[6])
+            self.assertTrue(points[8] < points[0] if up else points[8] > points[0])
+
     def test_factor_xd_standard_left_and_second_sequence_stages(self):
         """课67/71/78/81：保留标准旧侧，区分原邻笔条件与未知种子上下文。"""
         inputs = embedded_table('test_real_f1_originals.py', 'M3_FACTOR_F1_AUDIT')

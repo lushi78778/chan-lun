@@ -57,7 +57,7 @@ class XD(object):
         mode: 1 = 第一种情况(特征序列分型直接确认),
               2 = 第二种情况(缺口, 由第二特征序列分型确认)。
               序列末尾未完成线段的 mode 恒为 1。
-        complete: 给定笔前缀下是否已满足线段破坏定义。
+        complete: 当前工程规则在给定笔前缀上的完成状态; 特殊回退仍需上下文证明。
         evidence_dt/evidence_end_index: 最后一笔证据端点(不等于行情确认时间)。
         gg / dd: 线段内部高低极值(所有构成笔的范围),
             中枢重叠计算用 high/low 属性即返回它们。
@@ -200,9 +200,9 @@ def _candidate_end(bis, start, candidate, left):
             # 仍在首笔内时方向未选择, 单笔反弹不完成旧段。
             selected = (bi.end_value < first.end_value if up else
                         bi.end_value > first.end_value)
-            # 课78回复03/38/811: 首笔虽含内部更大极值, 反向三笔
-            # 已越过旧段起价时破坏仍成立。保留这一充分证据, 不
-            # 强制所有新段的极值都在净端点。
+            # 课78回复03/38/811对应特定前史条件。这里保留穿越起价的
+            # 工程回退; 三笔重叠或越起价本身不证明前段破坏状态,
+            # 不能把该布尔门槛称为普遍理论充分条件。
             crossed_start = (bi.end_value < bis[start].start_value if up else
                              bi.end_value > bis[start].start_value)
             if selected or crossed_start:
@@ -232,8 +232,8 @@ def _segment_end(bis, start):
             end = _candidate_end(bis, start, i, features[-1])
             if end is not None:
                 endings.append(end)
-            # 课65线段分解定理/课78内部极值: 三笔反向段已穿越旧段
-            # 起价时破坏成立, 不能因较早内部极值被包含而漏掉局部端点。
+            # 原相邻笔穿越起价的条件性工程回退。课67标准序列仍须
+            # 保留更高旧顶; 课78特殊状态前提须另证, 不由本分支补足。
             raw = bis[i-2]
             local = _candidate_end(bis, start, i, (raw.low, raw.high, raw))
             if local is not None:
@@ -256,8 +256,9 @@ def find_xds(bis: List[BI]) -> List[XD]:
     输入是按顺序首尾衔接的交替笔; 仅消费给定前缀。不足三笔或
     首三笔无重叠不输出伪线段; 若窗口从趋势中间开始, 向后寻找最早
     三笔重叠起点, 不保证覆盖前面的残笔。末段complete=False。
-    complete=True只表示给定笔序列已满足线段破坏定义, 不证明输入
-    笔在该端点日已经最终确认。evidence_dt是最后证据笔的端点,
+    complete=True是当前工程规则在给定前缀上的完成状态; 特殊回退
+    不替代其所需上下文证明, 也不证明输入笔在端点日已最终确认。
+    evidence_dt是最后证据笔的端点,
     不是原始行情的实际可用时间; 回放仍须逐原始行情前缀计算。
 
     首段以给定笔前缀中按三笔重叠规则选出的起点作为工程种子。
