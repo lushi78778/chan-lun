@@ -2,6 +2,7 @@
 """完成XD构造F1的来源、独立编译与人工表防错契约。"""
 import ast
 import copy
+from decimal import Decimal
 import hashlib
 import importlib.util
 import json
@@ -17,19 +18,60 @@ MANUAL = ROOT / 'validation/chan-real-xd-f1-manual-0.9.1.json'
 FIXTURE = ROOT / 'tests/fixtures/real_xd_f1.json'
 
 
-# 独立修订的有限条件表；历史fixture不变，不作为当前包算法的输出预期。
-# X1前七段沿用显式基底，只核其后的原文局部证明与相邻发布时间。
-PENDING_GAP_REVISIONS = {
-    'G': dict(fixture='real_xd_f1.json', id='512880-day-20181008-20191108', base=0,
-              events=[[0,2,1,5], [3,5,1,8], [6,8,2,20], [9,17,1,20],
-                      [18,20,2,26], [21,23,1,26], [24,26,1,29]],
-              local_counts=[65,109,179,179,239,239,267],
-              published_counts=[65,109,179,179,239,239,267]),
-    'X1': dict(fixture='real_first_point.json', id='159915-60m-20240101-20250331', base=7,
-               events=[[56,66,2,84], [67,69,1,74], [70,78,1,81], [79,81,1,84],
-                       [82,84,1,87], [85,93,1,96], [94,104,1,107]],
-               local_counts=[1138,1018,1100,1138,1165,1285,1403],
-               published_counts=[1138,1138,1138,1138,1165,1285,1403]),
+# 课65/67/71/77/78/81独立有限后缀；只保存事件/首次raw与来源摘要，不复制行情。
+# Y1前7段及M2前27段为给定基底；M2的175..200为既有相邻条件证书。
+# 独立收据SHA仅作来源锚点；运行时只读核心仓库资产，不依赖外层临时目录。
+M3_FINITE_SUFFIX_AUDIT = {
+    'Y1': dict(
+        fixture='real_second_point.json', id='518880-5m-20260501-20260724',
+        fixture_sha256='745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6',
+        packet_sha256='fe56c1ed02f0e63500f0eec385580b37f0206d107e61842549d86a12d3d23773',
+        receipt_sha256='7df9217fb0692b17ab1f5aae11b90e267ff6fd1c4ce5fc6893b2fb0877e9dbee',
+        raw_rows=2793, fixed_bis=264, inherited_prefix=7, given_adjacent=0,
+        events=((1,7,1,14),(8,26,1,29),(27,29,1,32),(30,32,1,35),
+                (33,35,1,38),(36,48,1,51),(49,51,2,65),(52,58,1,61),
+                (59,63,2,79),(64,76,2,86),(77,83,1,86),(84,86,2,94),
+                (87,91,1,94),(92,94,1,97),(95,97,1,100),(98,106,1,109),
+                (107,109,1,112),(110,112,2,122),(113,123,2,129),(124,126,2,136),
+                (127,131,2,147),(132,144,1,147),(145,147,1,150),(148,158,2,164),
+                (159,161,1,164),(162,164,1,169),(165,171,1,176),(172,176,2,182),
+                (177,179,1,182),(180,182,1,185),(183,191,1,194),(192,200,1,203),
+                (201,205,1,208),(206,208,1,211),(209,211,1,214),(212,220,2,228),
+                (221,225,1,228),(226,240,1,243),(241,251,2,263)),
+        local_counts=(163,299,323,352,381,557,661,630,840,946,946,1017,1017,
+                      1067,1115,1218,1296,1377,1456,1520,1624,1624,1675,1773,
+                      1773,1830,1881,1963,1963,1993,2113,2189,2235,2279,
+                      2323,2440,2440,2580,2793),
+        published_counts=(163,299,323,352,381,557,661,661,840,946,946,1017,1017,
+                          1067,1115,1218,1296,1377,1456,1520,1624,1624,1675,1773,
+                          1773,1830,1881,1963,1963,1993,2113,2189,2235,2279,
+                          2323,2440,2440,2580,2793),
+        tail=(252,263,260,8360)),
+    'M2': dict(
+        fixture='real_third_point_xd_margin0.json', id='512880-5m-20260201-20260724',
+        fixture_sha256='5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+        packet_sha256='0ce13561dd32e43d6b2c9f71e4d27fcf52e652c29be22aa84280b6f10f455d8e',
+        receipt_sha256='b0a3cda8cb9719ce714a55a710001e7cd87cfa922e64c2889107555256d26ad5',
+        raw_rows=5586, fixed_bis=322, inherited_prefix=27, given_adjacent=4,
+        events=((0,10,1,13),(11,15,1,18),(16,34,1,37),(35,37,1,48),
+                (38,48,1,51),(49,55,1,58),(56,64,2,72),(65,67,1,72),
+                (68,74,1,77),(75,77,1,80),(78,86,1,89),(87,89,1,92),
+                (90,92,1,97),(93,97,1,102),(98,102,1,110),(103,107,1,110),
+                (108,110,1,113),(111,113,1,118),(114,122,1,125),(123,125,2,131),
+                (126,128,2,136),(129,133,1,136),(134,138,1,141),(139,143,1,146),
+                (144,160,1,163),(161,163,1,168),(164,174,2,180),(175,177,2,197),
+                (178,180,1,189),(181,189,1,194),(190,200,1,203),(201,227,2,241),
+                (228,238,1,255),(239,257,1,260),(258,262,1,265),(263,267,1,270),
+                (268,290,1,293),(291,293,2,305),(294,302,1,305)),
+        local_counts=(277,546,940,1139,1183,1349,1648,1648,1745,1775,2003,
+                      2063,2133,2208,2321,2321,2365,2476,2660,2759,2872,2872,
+                      2994,3077,3362,3480,3681,3956,3811,3928,4016,4563,4727,
+                      4774,4848,4894,5235,5364,5364),
+        published_counts=(277,546,940,1139,1183,1349,1648,1648,1745,1775,2003,
+                          2063,2133,2208,2321,2321,2365,2476,2660,2759,2872,2872,
+                          2994,3077,3362,3480,3681,3956,3956,3956,4016,4563,4727,
+                          4774,4848,4894,5235,5364,5364),
+        tail=(303,321,309,1131)),
 }
 
 
@@ -52,7 +94,207 @@ def compiler(path=TOOL):
         sys.path.pop(0)
 
 
+def pending_gap_revisions():
+    """复用包测试同一显式修订表；只读AST，不执行包测试或其识别器。"""
+    table = embedded_table('test_real_xd_f1.py', 'M3_GAP_REVISION_AUDIT')
+    return dict((key, dict(fixture=a['fixture'], id=a['id'], base=a['base'],
+                events=[list(e) for e in a['events'][a['base']:]],
+                local_counts=[u[9] for u in a['units'][a['base']:]],
+                published_counts=[u[10] for u in a['units'][a['base']:]]))
+                for key,a in table.items())
+
+
 class TestRealXdF1Assets(unittest.TestCase):
+    def test_finite_suffix_events_keep_sources_geometry_and_ordered_raw_visibility(self):
+        """两条显式有限后缀由独立基础/结构/逐前缀回放验收，旧标签保持历史。"""
+        tool = compiler()
+        strict = compiler(ROOT / 'validation/tools/gen_real_strict_trend.py')
+        self.assertEqual(set(M3_FINITE_SUFFIX_AUDIT), {'Y1','M2'})
+        for key, audit in sorted(M3_FINITE_SUFFIX_AUDIT.items()):
+            path = ROOT / 'tests/fixtures' / audit['fixture']
+            self.assertEqual(tool.digest(path), audit['fixture_sha256'])
+            case = next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+            packet_path = ROOT / 'validation' / case['source']['packet']
+            self.assertEqual(tool.digest(packet_path), audit['packet_sha256'])
+            packet = json.loads(packet_path.read_text())
+            self.assertEqual(packet['rows'], case['raw_rows'])
+            self.assertEqual(packet['manifest_sha256'], case['source']['dataset_manifest_sha256'])
+            rows, events = packet['rows'], audit['events']
+            self.assertEqual(len(rows), audit['raw_rows'])
+            self.assertEqual(len(events), 39)
+            base = audit['inherited_prefix']
+            self.assertEqual(tuple(tuple(e) for e in case['foundation']['xd_events'][:base]), events[:base])
+            self.assertEqual((base,audit['given_adjacent']), (7,0) if key=='Y1' else (27,4))
+            _, _, bis = tool.foundation(rows, '106')
+            self.assertEqual(tool.records(bis), case['foundation']['bis'])
+            fixed = tool.components(rows, bis[:-1], None)
+            self.assertEqual(len(fixed), audit['fixed_bis'])
+            strict.validate_xd_events(dict(xd_events=events), fixed)
+            reference = dict(standard='106',expected_bis=case['foundation']['bis'])
+            bi_seen, published = strict.replay_confirmations(rows, reference, events)
+            self.assertEqual(bi_seen, case['foundation']['bis_confirmed_raw_count'])
+            self.assertEqual(tuple(bi_seen[e[3]] for e in events), audit['local_counts'])
+            self.assertEqual(tuple(published), audit['published_counts'])
+            units = tool.xd_records(fixed, events)
+            strict.check_adjacency(units)
+            self.assertEqual(tuple(u['proof_bi'] for u in units), tuple(e[3] for e in events))
+            for count in sorted(set(n for value in published for n in (value-1,value))):
+                visible = [u for u, seen in zip(fixed,bi_seen) if seen<=count]
+                expected = sum(seen<=count for seen in published)
+                self.assertEqual(tool.xd_records(visible,events), units[:expected], (key,count))
+            start, last, endpoint, value = audit['tail']
+            self.assertEqual((events[-1][1]+1,len(fixed)-1), (start,last))
+            self.assertEqual(fixed[endpoint]['end_ticks'], value)
+            if key != 'Y1':
+                continue
+
+            def band(i):
+                return fixed[i]['low_ticks'],fixed[i]['high_ticks']
+
+            def standard(indices, up):
+                nodes = []
+                for i in indices:
+                    low, high = band(i)
+                    if nodes and ((low<=nodes[-1][1] and high>=nodes[-1][2]) or
+                                  (low>=nodes[-1][1] and high<=nodes[-1][2])):
+                        ids, old_low, old_high = nodes[-1]
+                        pick = max if up else min
+                        nodes[-1] = (ids+(i,),pick(low,old_low),pick(high,old_high))
+                    else:
+                        if nodes:
+                            up = high>nodes[-1][2]
+                        nodes.append(((i,),low,high))
+                return nodes
+
+            # 原132/后134同高包含；上向合并仍是原gap元素，不能改取134/proof138。
+            self.assertEqual((band(130),band(132),band(134),band(136)),
+                             ((8937,8967),(8972,8986),(8933,8986),(8944,8963)))
+            middle = tuple(max(band(132)[k],band(134)[k]) for k in (0,1))
+            self.assertEqual(middle, band(132))
+            self.assertEqual(middle[0]-band(130)[1], 5)
+            self.assertTrue(all(middle[k]>max(band(130)[k],band(136)[k]) for k in (0,1)))
+            self.assertIn((127,131,2,147), events)
+            self.assertNotIn((127,133,1,138), events)
+            self.assertEqual(max(u['high_ticks'] for u in fixed[132:148]),8986)
+            second_bottoms = []
+            for last_bi in range(133,148,2):
+                nodes = standard(range(133,last_bi+1,2),False)
+                if len(nodes)>=3:
+                    left, mid, right = nodes[-3:]
+                    if all(mid[k]<min(left[k],right[k]) for k in (1,2)):
+                        second_bottoms.append(last_bi)
+            self.assertEqual(second_bottoms,[147])
+            self.assertEqual(nodes[-3:], [((141,),8892,8910),((143,145),8655,8705),
+                                         ((147,),8694,8731)])
+            # down226首上231尚未越8395，就被238跌破原首底8347；按78原段延续。
+            self.assertEqual((fixed[231]['start_ticks'],fixed[231]['end_ticks']), (8347,8395))
+            selected = next(i for i in range(233,len(fixed),2) if fixed[i]['end_ticks']>8395)
+            revoked = next(i for i in range(232,len(fixed),2) if fixed[i]['end_ticks']<8347)
+            self.assertEqual((selected,revoked), (249,238))
+            self.assertLess(fixed[238]['end_ticks'],8347)
+            for first, revoked in ((233,234),(235,236),(237,238),(239,240)):
+                selected = next(i for i in range(first+2,len(fixed),2)
+                                if fixed[i]['end_ticks']>fixed[first]['end_ticks'])
+                actual = next(i for i in range(first+1,len(fixed),2)
+                              if fixed[i]['end_ticks']<fixed[first]['start_ticks'])
+                self.assertEqual(actual,revoked)
+                self.assertLess(revoked,selected)
+            self.assertIn((226,240,1,243), events)
+            # 252尾部原gap13，第一底已齐；第二序列只有262，不能制造第二分型。
+            self.assertEqual((band(259),band(261),band(263)),
+                             ((8396,8412),(8360,8383),(8362,8388)))
+            self.assertEqual(band(259)[0]-band(261)[1],13)
+            self.assertTrue(all(band(261)[k]<min(band(259)[k],band(263)[k]) for k in (0,1)))
+            self.assertEqual(list(range(262,len(fixed),2)), [262])
+            self.assertEqual(min(u['low_ticks'] for u in fixed[start:]),value)
+
+    def test_m2_natural_240_context_preserves_original_first239_and_incomplete_303(self):
+        """课78先核自然240及父段已破坏状态，不借242/248局部证书重设自然新起点。"""
+        tool = compiler()
+        audit = M3_FINITE_SUFFIX_AUDIT['M2']
+        data = json.loads((ROOT / 'tests/fixtures' / audit['fixture']).read_text())
+        case = next(c for c in data['cases'] if c['id']==audit['id'])
+        rows = case['raw_rows']
+        _, _, bis = tool.foundation(rows, '106')
+        fixed, active = tool.components(rows,bis[:-1],None),tool.components(rows,bis,None)
+        seen = case['foundation']['bis_confirmed_raw_count']
+        # first239后的自然下行从240开始；不能跳到242或248才选择承重上下文。
+        self.assertEqual([fixed[239]['start_ticks']]+[u['end_ticks'] for u in fixed[239:256]],
+                         [1100,1157,1137,1150,1131,1138,1119,1135,1105,1137,
+                          1111,1124,1115,1132,1113,1123,1114,1181])
+        overlap = (max(u['low_ticks'] for u in fixed[240:243]),
+                   min(u['high_ticks'] for u in fixed[240:243]))
+        self.assertEqual(overlap, (1137,1150))
+        self.assertEqual(min(u['low_ticks'] for u in fixed[240:247]),1105)
+        self.assertGreater(1105,fixed[239]['start_ticks'])
+        self.assertEqual((seen[241],seen[242],seen[255]), (4563,4571,4727))
+        self.assertIn((201,227,2,241),audit['events'])
+        self.assertIn((228,238,1,255),audit['events'])
+        self.assertLess(seen[241],seen[242])  # 原down228已破前段201，早于自然第三笔。
+        for first, revoked in ((243,244),(245,246)):
+            self.assertLess(fixed[revoked]['end_ticks'],fixed[first]['start_ticks'])
+        # 自然down240末246，原首反247的1137直到255才先被严格上破。
+        self.assertEqual((fixed[247]['start_ticks'],fixed[247]['end_ticks']), (1105,1137))
+        self.assertTrue(all(fixed[i]['end_ticks']<=1137 for i in (249,251,253)))
+        self.assertTrue(all(fixed[i]['end_ticks']>1105 for i in (248,250,252,254)))
+        self.assertGreater(fixed[255]['end_ticks'],1137)
+        self.assertGreater(fixed[255]['end_ticks'],fixed[239]['end_ticks'])
+        self.assertEqual(min(u['low_ticks'] for u in fixed[240:256]),1105)
+        # 1157只在首一笔后出现，不能作为完成上段端点；1181又先被257新高撤销。
+        self.assertGreater(fixed[257]['end_ticks'],fixed[256]['start_ticks'])
+        self.assertIn((239,257,1,260),audit['events'])
+        self.assertNotIn((239,241,1,255),audit['events'])
+        self.assertNotIn((239,247,1,255),audit['events'])
+        self.assertLess(fixed[260]['end_ticks'],fixed[258]['end_ticks'])
+        self.assertEqual((seen[255],seen[260]), (4727,4774))
+        # 303尾部的原首反310终1106始1131；等价触达不补严格选向/撤销。
+        self.assertEqual(audit['tail'], (303,321,309,1131))
+        self.assertEqual((fixed[310]['start_ticks'],fixed[310]['end_ticks']), (1131,1106))
+        self.assertTrue(all(fixed[i]['end_ticks']>=1106 for i in range(312,len(fixed),2)))
+        self.assertTrue(all(fixed[i]['end_ticks']<=1131 for i in range(311,len(fixed),2)))
+        self.assertEqual(fixed[319]['end_ticks'],1131)
+        self.assertEqual((len(fixed),len(active)), (322,323))
+        self.assertEqual(active[322]['end_ticks'],1106)
+        self.assertLess(Decimal(str(rows[-1]['low']))*1000,1106)  # 原始低价不是新固定证明笔。
+
+    def test_portable_revised_parts_and_recursion_match_independent_integer_sources(self):
+        """同一显式修订表自足随sdist；独立来源/事件/时序/F1F2算术逐项复核。"""
+        table = embedded_table('test_real_xd_f1.py', 'M3_GAP_REVISION_AUDIT')
+        tool = compiler()
+        strict = compiler(ROOT / 'validation/tools/gen_real_strict_trend.py')
+        self.assertEqual(set(table), {'G','X1'})
+        for key, audit in sorted(table.items()):
+            path = ROOT / 'tests/fixtures' / audit['fixture']
+            self.assertEqual(tool.digest(path), audit['fixture_sha256'])
+            case = next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+            packet = ROOT / 'validation' / case['source']['packet']
+            self.assertEqual(tool.digest(packet), case['source']['sha256'])
+            self.assertEqual(json.loads(packet.read_text())['rows'], case['raw_rows'])
+            rows = case['raw_rows']
+            _, _, bis = tool.foundation(rows, '106')
+            self.assertEqual(tool.records(bis), case['foundation']['bis'])
+            fixed = tool.components(rows, bis[:-1], 10 if '-day-' in case['id'] else None)
+            reference = dict(standard='106',expected_bis=case['foundation']['bis'])
+            bi_seen, published = strict.replay_confirmations(rows, reference, audit['events'])
+            units = tool.xd_records(fixed, audit['events'])
+            rebuilt = [(u['direction'],u['start_dt'],u['end_dt'],u['start_ticks'],u['end_ticks'],
+                        u['low_ticks'],u['high_ticks'],u['mode'],u['proof_bi'],
+                        bi_seen[u['proof_bi']],known) for u,known in zip(units,published)]
+            self.assertEqual(tuple(rebuilt), audit['units'], key)
+            f1 = [tool.move_record(units, spec) for spec in audit['f1']]
+            self.assertEqual(tuple(published[spec[-1]] for spec in audit['f1']),audit['f1_first_counts'])
+            self.assertEqual(sum(record['complete'] for record in f1),1 if key=='G' else 4)
+            tail = tool.move_record(units,audit['tail'])
+            self.assertFalse(tail['complete'])
+            self.assertLess(tail['seg_end']-tail['seg_start'],2)
+            f2 = [tool.move_record(f1, spec) for spec in audit['f2']]
+            self.assertFalse(any(record['complete'] for record in f2))
+            if key == 'G':
+                waves = [(min(u['low_ticks'] for u in units[j:j+3]),
+                          max(u['high_ticks'] for u in units[j:j+3])) for j in (0,3)]
+                self.assertEqual(waves, [(613,1185),(871,1185)])
+                self.assertGreaterEqual(waves[0][1],waves[1][0])
+
     def test_512880_second_bottom_uses_observed_active_proof_without_future_extension(self):
         """2022窗局部第二种：活动proof12在raw152出现，不预读最终12-06极值。"""
         tool = compiler()
@@ -162,7 +404,7 @@ class TestRealXdF1Assets(unittest.TestCase):
         """课67/71/81局部修订：实际proof不改写，X1四段须等父缺口同批发布。"""
         tool = compiler()
         strict = compiler(ROOT / 'validation/tools/gen_real_strict_trend.py')
-        for key, audit in sorted(PENDING_GAP_REVISIONS.items()):
+        for key, audit in sorted(pending_gap_revisions().items()):
             data = json.loads((ROOT / 'tests/fixtures' / audit['fixture']).read_text())
             case = next(c for c in data['cases'] if c['id'] == audit['id'])
             original = copy.deepcopy(case)
@@ -190,7 +432,7 @@ class TestRealXdF1Assets(unittest.TestCase):
         """工程三段核心与严格Zn角色分开；新ZG下旧c未离开，不继承一二类裁定。"""
         tool = compiler()
         strict = compiler(ROOT / 'validation/tools/gen_real_strict_trend.py')
-        audit = PENDING_GAP_REVISIONS['X1']
+        audit = pending_gap_revisions()['X1']
         manual = json.loads((ROOT / 'validation/chan-real-first-point-manual-0.9.9.json').read_text())
         case = next(c for c in manual['cases'] if c['id'] == audit['id'])
         packet = json.loads((ROOT / 'validation' / case['packet']).read_text())

@@ -24,6 +24,7 @@ from bisect import bisect_right
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 import ast
+import hashlib
 import json
 import os
 import unittest
@@ -673,6 +674,285 @@ class TestRealM3XdRecursion(unittest.TestCase):
                     if ready:
                         self.assertEqual(f2[0].confirmed_dt,late)
                         self.assertEqual(round(f2[0].high*1000),1113)
+
+
+# 独立修订XD作为显式部件，仅验证其后的F1/F2公开组合；不验证raw→XD已修复。
+# 单位=(方向,起/止时间,起/止价,低/高,mode,原proof,局部raw,顺序发布raw)。
+# 原始fixture保留，X1前七段为声明基底；两组均不提供严格趋势/点位新标签。
+M3_GAP_REVISION_AUDIT = {'G': {'fixture': 'real_xd_f1.json',
+       'fixture_sha256': '3defd45833e0dd5339ffb43e6d3aad7cdf3617887961acedfee03df8204fec0f',
+       'id': '512880-day-20181008-20191108',
+       'base': 0,
+       'events': ((0, 2, 1, 5),
+                  (3, 5, 1, 8),
+                  (6, 8, 2, 20),
+                  (9, 17, 1, 20),
+                  (18, 20, 2, 26),
+                  (21, 23, 1, 26),
+                  (24, 26, 1, 29)),
+       'units': (('up', '2018-10-19', '2018-11-19', 613, 842, 613, 842, 1, 5, 65, 65),
+                 ('down', '2018-11-19', '2018-12-26', 842, 695, 695, 842, 1, 8, 109, 109),
+                 ('up', '2018-12-26', '2019-03-07', 695, 1185, 695, 1185, 2, 20, 179, 179),
+                 ('down', '2019-03-07', '2019-05-24', 1185, 887, 887, 1185, 1, 20, 179, 179),
+                 ('up', '2019-05-24', '2019-06-24', 887, 1017, 887, 1017, 2, 26, 239, 239),
+                 ('down', '2019-06-24', '2019-08-07', 1017, 871, 871, 1017, 1, 26, 239, 239),
+                 ('up', '2019-08-07', '2019-09-16', 871, 1039, 871, 1039, 1, 29, 267, 267)),
+       'f1': ((0, 5, 'up', 'up', (0, 3), ((695, 842), (887, 1017)), 6),),
+       'tail': (6, 6, 'incomplete', None, (), (), None),
+       'f2': ((0, 0, 'incomplete', None, (), (), None),),
+       'f1_first_counts': (267,),
+       'complete_f2': 0},
+ 'X1': {'fixture': 'real_first_point.json',
+        'fixture_sha256': '2c70070c2917c343cdfc182518996bb71bc8c0e6724c3482c22337fc9f337ad7',
+        'id': '159915-60m-20240101-20250331',
+        'base': 7,
+        'events': ((1, 5, 1, 8),
+                   (6, 16, 1, 19),
+                   (17, 21, 1, 26),
+                   (22, 26, 1, 29),
+                   (27, 45, 1, 48),
+                   (46, 48, 1, 51),
+                   (49, 55, 1, 64),
+                   (56, 66, 2, 84),
+                   (67, 69, 1, 74),
+                   (70, 78, 1, 81),
+                   (79, 81, 1, 84),
+                   (82, 84, 1, 87),
+                   (85, 93, 1, 96),
+                   (94, 104, 1, 107)),
+        'units': (('down',
+                   '2024-01-11 15:00:00',
+                   '2024-02-05 11:30:00',
+                   1744,
+                   1444,
+                   1444,
+                   1744,
+                   1,
+                   8,
+                   165,
+                   165),
+                  ('up',
+                   '2024-02-05 11:30:00',
+                   '2024-03-19 09:30:00',
+                   1444,
+                   1875,
+                   1444,
+                   1875,
+                   1,
+                   19,
+                   340,
+                   340),
+                  ('down',
+                   '2024-03-19 09:30:00',
+                   '2024-04-22 10:30:00',
+                   1875,
+                   1687,
+                   1687,
+                   1875,
+                   1,
+                   26,
+                   414,
+                   414),
+                  ('up',
+                   '2024-04-22 10:30:00',
+                   '2024-05-09 14:00:00',
+                   1687,
+                   1860,
+                   1687,
+                   1860,
+                   1,
+                   29,
+                   443,
+                   443),
+                  ('down',
+                   '2024-05-09 14:00:00',
+                   '2024-07-09 11:30:00',
+                   1860,
+                   1584,
+                   1584,
+                   1860,
+                   1,
+                   48,
+                   678,
+                   678),
+                  ('up',
+                   '2024-07-09 11:30:00',
+                   '2024-07-22 10:30:00',
+                   1584,
+                   1702,
+                   1584,
+                   1702,
+                   1,
+                   51,
+                   725,
+                   725),
+                  ('down',
+                   '2024-07-22 10:30:00',
+                   '2024-08-29 10:30:00',
+                   1702,
+                   1484,
+                   1484,
+                   1702,
+                   1,
+                   64,
+                   893,
+                   893),
+                  ('up',
+                   '2024-08-29 10:30:00',
+                   '2024-10-08 10:30:00',
+                   1484,
+                   2678,
+                   1484,
+                   2678,
+                   2,
+                   84,
+                   1138,
+                   1138),
+                  ('down',
+                   '2024-10-08 10:30:00',
+                   '2024-10-16 15:00:00',
+                   2678,
+                   1989,
+                   1989,
+                   2678,
+                   1,
+                   74,
+                   1018,
+                   1138),
+                  ('up',
+                   '2024-10-16 15:00:00',
+                   '2024-11-12 10:30:00',
+                   1989,
+                   2402,
+                   1989,
+                   2402,
+                   1,
+                   81,
+                   1100,
+                   1138),
+                  ('down',
+                   '2024-11-12 10:30:00',
+                   '2024-11-27 10:30:00',
+                   2402,
+                   2079,
+                   2079,
+                   2402,
+                   1,
+                   84,
+                   1138,
+                   1138),
+                  ('up',
+                   '2024-11-27 10:30:00',
+                   '2024-12-10 09:30:00',
+                   2079,
+                   2320,
+                   2079,
+                   2320,
+                   1,
+                   87,
+                   1165,
+                   1165),
+                  ('down',
+                   '2024-12-10 09:30:00',
+                   '2025-01-13 09:30:00',
+                   2320,
+                   1916,
+                   1916,
+                   2320,
+                   1,
+                   96,
+                   1285,
+                   1285),
+                  ('up',
+                   '2025-01-13 09:30:00',
+                   '2025-02-24 09:30:00',
+                   1916,
+                   2242,
+                   1916,
+                   2242,
+                   1,
+                   107,
+                   1403,
+                   1403)),
+        'f1': ((0, 2, 'consolidation', None, (0,), ((1687, 1744),), 3),
+               (3, 5, 'consolidation', None, (3,), ((1687, 1702),), 6),
+               (6, 9, 'consolidation', 'down', (7,), ((1989, 2402),), 10),
+               (10, 12, 'consolidation', None, (10,), ((2079, 2320),), 13)),
+        'tail': (13, 13, 'incomplete', None, (), (), None),
+        'f2': ((0, 3, 'consolidation', None, (0,), ((1584, 1860),), None),),
+        'f1_first_counts': (443, 893, 1138, 1403),
+        'complete_f2': 0}}
+
+
+def gap_revision_input(audit):
+    """显式修订部件和原始源行；不调用笔/线段识别器或修改旧fixture。"""
+    path = os.path.join(os.path.dirname(__file__), 'fixtures', audit['fixture'])
+    with open(path, 'rb') as stream:
+        payload = stream.read()
+    if hashlib.sha256(payload).hexdigest() != audit['fixture_sha256']:
+        raise AssertionError('修订部件的原始fixture摘要漂移')
+    case = next(c for c in json.loads(payload.decode('utf-8'))['cases'] if c['id'] == audit['id'])
+    names = ('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks',
+             'mode','proof_bi','local_raw_count','confirmed_raw_count')
+    return case, [dict(zip(names, row)) for row in audit['units']]
+
+
+def gap_revision_time(case, count):
+    """沿既有日线15:05/分钟标签+1分钟测试约定，不证明供应实际到达。"""
+    value = case['raw_rows'][count-1]['dt']
+    return (date(value[:10])+timedelta(hours=15,minutes=5) if '-day-' in case['id']
+            else date(value)+timedelta(minutes=1))
+
+
+class TestConditionalGapRevisionRecursion(unittest.TestCase):
+    """修订XD作为给定部件验收公开下游；raw→XD仍待算法和全组联合验收。"""
+
+    def test_given_revision_batches_confirm_f1_without_rewriting_local_proofs(self):
+        for key, audit in sorted(M3_GAP_REVISION_AUDIT.items()):
+            case, units = gap_revision_input(audit)
+            counts = {0,len(case['raw_rows'])}
+            for row in units:
+                counts.update((row['confirmed_raw_count']-1,row['confirmed_raw_count']))
+                counts.update((row['local_raw_count']-1,row['local_raw_count']))
+            first = {}
+            for count in sorted(counts):
+                parts = m3_xd_parts(dict(units=units),count)
+                actual = chan.same_level_decompose(parts)
+                expected = [s for s in audit['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+                complete = [m for m in actual if m.complete]
+                self.assertEqual([m3_xd_shape(m) for m in complete],
+                                 [m3_xd_expected(units,s) for s in expected],(key,count))
+                for move in complete:
+                    first.setdefault(move.seg_start,count)
+                if count == len(case['raw_rows']):
+                    self.assertEqual([m3_xd_shape(m) for m in actual],
+                                     [m3_xd_expected(units,s) for s in audit['f1']+(audit['tail'],)])
+            self.assertEqual([first[s[0]] for s in audit['f1']],list(audit['f1_first_counts']))
+            if key == 'X1':
+                self.assertEqual([u['proof_bi'] for u in units[7:11]],[84,74,81,84])
+                self.assertEqual([u['local_raw_count'] for u in units[7:11]],[1138,1018,1100,1138])
+                self.assertEqual([u['confirmed_raw_count'] for u in units[7:11]],[1138]*4)
+
+    def test_given_completed_f1_types_preserve_open_f2_and_filter_future_bad_types(self):
+        for key, audit in sorted(M3_GAP_REVISION_AUDIT.items()):
+            case, units = gap_revision_input(audit)
+            parts = m3_xd_parts(dict(units=units),len(case['raw_rows']))
+            complete = [m for m in chan.same_level_decompose(parts) if m.complete]
+            types = [m3_xd_type('gap:'+key,m,
+                               [u for u in units if u['confirmed_raw_count']<=count],
+                               gap_revision_time(case,count))
+                     for m,count in zip(complete,audit['f1_first_counts'])]
+            self.assertEqual([len(t.evidence_ids) for t in types], [7] if key=='G' else [4,7,11,14])
+            now = gap_revision_time(case,len(case['raw_rows']))
+            self.assertEqual(chan.confirm_level_up(types,now,'F2'),[])
+            records = [dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),
+                            low_ticks=round(t.low*1000),high_ticks=round(t.high*1000)) for t in types]
+            self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],
+                             [m3_xd_expected(records,s) for s in audit['f2']])
+            self.assertEqual(audit['complete_f2'],0)
+            future = types[-1]._replace(move_id='gap:'+key+':future',start_price=float('nan'),
+                                       confirmed_dt=now+timedelta(days=2))
+            self.assertEqual(chan.confirm_level_up(types+[future],now,'F2'),[])
 
 
 # 同一五条XD→F1链的全部七个递归核心, 不筛选有点位的中枢。
