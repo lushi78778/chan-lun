@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """完成XD构造F1的来源、独立编译与人工表防错契约。"""
 import ast
+import copy
 import hashlib
 import importlib.util
 import json
@@ -16,6 +17,22 @@ MANUAL = ROOT / 'validation/chan-real-xd-f1-manual-0.9.1.json'
 FIXTURE = ROOT / 'tests/fixtures/real_xd_f1.json'
 
 
+# 独立修订的有限条件表；历史fixture不变，不作为当前包算法的输出预期。
+# X1前七段沿用显式基底，只核其后的原文局部证明与相邻发布时间。
+PENDING_GAP_REVISIONS = {
+    'G': dict(fixture='real_xd_f1.json', id='512880-day-20181008-20191108', base=0,
+              events=[[0,2,1,5], [3,5,1,8], [6,8,2,20], [9,17,1,20],
+                      [18,20,2,26], [21,23,1,26], [24,26,1,29]],
+              local_counts=[65,109,179,179,239,239,267],
+              published_counts=[65,109,179,179,239,239,267]),
+    'X1': dict(fixture='real_first_point.json', id='159915-60m-20240101-20250331', base=7,
+               events=[[56,66,2,84], [67,69,1,74], [70,78,1,81], [79,81,1,84],
+                       [82,84,1,87], [85,93,1,96], [94,104,1,107]],
+               local_counts=[1138,1018,1100,1138,1165,1285,1403],
+               published_counts=[1138,1138,1138,1138,1165,1285,1403]),
+}
+
+
 def embedded_table(filename, name):
     """只读已有常量，不执行另一测试模块或用算法回填预期。"""
     tree = ast.parse((ROOT / 'tests' / filename).read_text(encoding='utf-8'))
@@ -23,11 +40,11 @@ def embedded_table(filename, name):
                 and any(isinstance(t, ast.Name) and t.id == name for t in n.targets))
 
 
-def compiler():
+def compiler(path=TOOL):
     """只加载独立开发工具，不把包算法引入真值编译。"""
     sys.path.insert(0, str(ROOT / 'validation/tools'))
     try:
-        spec = importlib.util.spec_from_file_location('real_xd_f1_compiler', TOOL)
+        spec = importlib.util.spec_from_file_location('real_xd_f1_compiler', path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
@@ -36,6 +53,178 @@ def compiler():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def test_512880_second_bottom_uses_observed_active_proof_without_future_extension(self):
+        """2022窗局部第二种：活动proof12在raw152出现，不预读最终12-06极值。"""
+        tool = compiler()
+        data = json.loads((ROOT / 'tests/fixtures/real_xd_originals.json').read_text())
+        case = next(c for c in data if c['id'] == '512880-day-2022-04-20-2022-12-09')
+        events, previous = [[0,2,2,12], [3,9,1,12]], None
+        for count in (151,152,157):
+            rows = case['raw_rows'][:count]
+            _, _, bis = tool.foundation(rows, '106')
+            parts = tool.components(rows, bis)
+            left, first, right = [parts[i] for i in (1,3,5)]
+            self.assertEqual(first['low_ticks']-left['high_ticks'], 12)
+            self.assertGreater(first['low_ticks'], right['low_ticks'])
+            self.assertGreater(first['high_ticks'], max(left['high_ticks'],right['high_ticks']))
+            units = tool.xd_records(parts, events)
+            self.assertEqual(len(units), 0 if count == 151 else 2)
+            self.assertEqual(tool.xd_records(parts[:-1], events), [])
+            if not units:
+                continue
+            second = [(min(parts[a]['low_ticks'],parts[z]['low_ticks']),
+                       min(parts[a]['high_ticks'],parts[z]['high_ticks'])) for a,z in ((4,6),(8,10))]
+            second.append((parts[12]['low_ticks'],parts[12]['high_ticks']))
+            self.assertEqual(second[:2], [(861,926),(797,863)])
+            self.assertLess(second[1][0], min(second[0][0],second[2][0]))
+            self.assertLess(second[1][1], min(second[0][1],second[2][1]))
+            self.assertEqual((parts[12]['end_dt'],parts[12]['end_ticks']),
+                             ('2022-12-01',929) if count == 152 else ('2022-12-06',933))
+            shape = [(u['start_index'],u['end_index'],u['start_ticks'],u['end_ticks'],
+                      u['low_ticks'],u['high_ticks'],u['mode']) for u in units]
+            self.assertEqual([u['end_ticks'] for u in units], [1052,797])
+            if previous is not None:
+                self.assertEqual(shape, previous)
+            previous = shape
+
+    def test_first_pen_selection_survives_containment_equalities_and_revocation(self):
+        """课65/71独立整数见证：原首笔边界选向，不以包含后元素数代替。"""
+        cases = [
+            ([12,5,10,3,9,3,11], 5, None, 0, 1),
+            ([12,5,10,3,9,3,9], None, None, 0, 1),
+            ([12,5,10,3,9,3,10], 5, None, 0, 1),
+            ([12,5,10,3,9,2,11], 5, 4, 0, 1),
+            ([12,5,10,3,9,4,11], 5, None, 0, 2),
+            ([12,5,10,3,9,5,8,3,11], 7, None, 0, 1),
+            ([12,5,10,3,4,3,6], 5, None, 1, 1),
+            ([1048,1031,1043,1025,1042,1028,1038,1025,1033,1025,1042,1025,1044],
+             11, None, 0, 1),
+        ]
+        for prices, selected, revoked, gap, feature_count in cases:
+            for mirrored in (False, True):
+                values = [3000-v for v in prices] if mirrored else prices
+                parts = [tuple(sorted((a,z))) for a,z in zip(values,values[1:])]
+                self.assertLessEqual(max(p[0] for p in parts[:3]), min(p[1] for p in parts[:3]))
+                self.assertLessEqual(max(p[0] for p in parts[3:6]), min(p[1] for p in parts[3:6]))
+                original_start, original_end = values[3:5]
+                observed_selected = next((i for i in range(5,len(parts),2)
+                    if (values[i+1] < original_end if mirrored else values[i+1] > original_end)), None)
+                observed_revoked = next((i for i in range(4,len(parts),2)
+                    if (values[i+1] > original_start if mirrored else values[i+1] < original_start)), None)
+                actual_gap = max(0, parts[3][0]-parts[1][1] if mirrored else parts[1][0]-parts[3][1])
+                self.assertEqual((observed_selected,observed_revoked,actual_gap), (selected,revoked,gap))
+                nodes = [parts[3]]
+                choose = max if mirrored else min
+                for item in parts[5::2]:
+                    node = nodes[-1]
+                    contained = ((node[0]<=item[0] and node[1]>=item[1]) or
+                                 (item[0]<=node[0] and item[1]>=node[1]))
+                    if contained:
+                        nodes[-1] = (choose(node[0],item[0]), choose(node[1],item[1]))
+                    else:
+                        nodes.append(item)
+                # 上移右侧低点是两个标准元素的对照；等低包含例仍仅一个。
+                self.assertEqual(len(nodes), feature_count)
+
+    def test_local_first_pen_proofs_wait_for_pending_gap_predecessors(self):
+        """M2/Y1局部首笔证明先到，须等父第二种证明；不替换两条旧尾链。"""
+        tool = compiler()
+        strict = compiler(ROOT / 'validation/tools/gen_real_strict_trend.py')
+        audits = [
+            ('real_third_point_xd_margin0.json', 'M2',
+             [[175,177,2,197],[178,180,1,189],[181,189,1,194],[190,200,1,203]],
+             [3956,3811,3928,4016],[3956,3956,3956,4016],
+             [1048,1031,1043,1025,1042,1028,1038,1025,1033,1025,1042,1025,1044]),
+            ('real_second_point.json', 'Y1', [[49,51,2,65],[52,58,1,61]],
+             [661,630],[661,661],[9543,9472,9492,9451,9487,9447,9471,9445,9460,9445,9474]),
+        ]
+        for filename, key, events, local, published, values in audits:
+            labels = json.loads((ROOT / 'tests/fixtures' / filename).read_text())
+            case = next(c for c in labels['cases'] if c['window_key'] == key)
+            rows, expected = case['raw_rows'], case['foundation']['bis']
+            seen = case['foundation']['bis_confirmed_raw_count']
+            start, proof = events[1][0], events[1][3]
+            self.assertEqual([seen[e[3]] for e in events], local)
+            self.assertEqual([expected[start][3]]+[b[4] for b in expected[start:proof+1]], values)
+            for count in sorted(set(n for value in local for n in (value-1,value))):
+                _, _, bis = tool.foundation(rows[:count], '106')
+                self.assertEqual(tool.records(bis[:-1]), expected[:len(bis)-1])
+                fixed = tool.components(rows[:count], bis[:-1], None)
+                for event, own in zip(events, local):
+                    self.assertEqual(len(fixed)>event[3], count>=own)
+                units = tool.xd_records(fixed, events)
+                self.assertEqual(len(units), sum(value<=count for value in published))
+                if units:
+                    strict.validate_xd_events(dict(xd_events=events[:len(units)]), fixed)
+                    self.assertEqual([u['proof_bi'] for u in units], [e[3] for e in events[:len(units)]])
+
+    def test_pending_gap_conditional_chains_keep_local_proofs_and_ordered_visibility(self):
+        """课67/71/81局部修订：实际proof不改写，X1四段须等父缺口同批发布。"""
+        tool = compiler()
+        strict = compiler(ROOT / 'validation/tools/gen_real_strict_trend.py')
+        for key, audit in sorted(PENDING_GAP_REVISIONS.items()):
+            data = json.loads((ROOT / 'tests/fixtures' / audit['fixture']).read_text())
+            case = next(c for c in data['cases'] if c['id'] == audit['id'])
+            original = copy.deepcopy(case)
+            rows = case['raw_rows']
+            reference = dict(standard='106', expected_bis=case['foundation']['bis'])
+            _, _, bis = tool.foundation(rows, '106')
+            self.assertEqual(tool.records(bis), reference['expected_bis'], key)
+            fixed = tool.components(rows, bis[:-1], None)
+            events = (case['foundation']['xd_events'][:audit['base']]
+                      if audit['base'] else []) + audit['events']
+            strict.validate_xd_events(dict(xd_events=events), fixed)
+            bi_seen, published = strict.replay_confirmations(rows, reference, events)
+            self.assertEqual([bi_seen[e[3]] for e in audit['events']], audit['local_counts'], key)
+            self.assertEqual(published[audit['base']:], audit['published_counts'], key)
+            units = tool.xd_records(fixed, events)
+            self.assertEqual([u['proof_bi'] for u in units[audit['base']:]],
+                             [e[3] for e in audit['events']], key)
+            for count in sorted(set(audit['published_counts'])):
+                visible = [u for u, seen in zip(fixed, bi_seen) if seen <= count]
+                expected = sum(seen <= count for seen in published)
+                self.assertEqual(len(tool.xd_records(visible, events)), expected, (key,count))
+            self.assertEqual(case, original)
+
+    def test_x1_revised_f1_core_does_not_preserve_old_strict_or_point_premises(self):
+        """工程三段核心与严格Zn角色分开；新ZG下旧c未离开，不继承一二类裁定。"""
+        tool = compiler()
+        strict = compiler(ROOT / 'validation/tools/gen_real_strict_trend.py')
+        audit = PENDING_GAP_REVISIONS['X1']
+        manual = json.loads((ROOT / 'validation/chan-real-first-point-manual-0.9.9.json').read_text())
+        case = next(c for c in manual['cases'] if c['id'] == audit['id'])
+        packet = json.loads((ROOT / 'validation' / case['packet']).read_text())
+        self.assertEqual(tool.digest(ROOT / 'validation' / case['packet']), case['packet_sha256'])
+        _, _, bis = tool.foundation(packet['rows'], '106')
+        fixed = tool.components(packet['rows'], bis[:-1], None)
+        events = case['xd_events'][:audit['base']] + audit['events']
+        units = strict.xd_units(fixed, events)
+        self.assertEqual([(u['low_ticks'],u['high_ticks']) for u in units[7:11]],
+                         [(1484,2678),(1989,2678),(1989,2402),(2079,2402)])
+        engineering_core = (max(u['low_ticks'] for u in units[7:10]),
+                            min(u['high_ticks'] for u in units[7:10]))
+        zn_core = (max(units[i]['low_ticks'] for i in (8,10)),
+                   min(units[i]['high_ticks'] for i in (8,10)))
+        self.assertEqual(engineering_core, (1989,2402))
+        self.assertEqual(zn_core, (2079,2402))
+        self.assertNotEqual(engineering_core, zn_core)
+        self.assertLessEqual(units[11]['high_ticks'], zn_core[1])
+        self.assertEqual(units[11]['high_ticks'], 2320)
+        with self.assertRaisesRegex(ValueError, 'B 首对核心与声明不一致'):
+            strict.validate_roles(case, units)
+        corrected = copy.deepcopy(case)
+        corrected['roles']['B'].update(zd=2079, zg=2402, dd=1989, gg=2678)
+        with self.assertRaisesRegex(ValueError, 'B 冻结须中间反向单元离开核心'):
+            strict.validate_roles(corrected, units)
+        # c11没有离开，不能冻结在旧Zn；u12触核，必须继续延伸。
+        extended = dict(zn=[8,10,12], zd=2079, zg=2402, dd=1916, gg=2678,
+                        closed_by=None)
+        center = strict.validate_zhongshu('B', extended, units)
+        self.assertEqual(center['zn'], [8,10,12])
+        self.assertFalse(center['frozen_by_departure'])
+        self.assertLess(units[13]['high_ticks'], center['zg'])
+        self.assertEqual(units[13]['high_ticks'], 2242)
+
     def test_completed_xd_views_do_not_skip_unavailable_predecessors(self):
         """前段proof9晚于后段proof8；两段应同时发布，不倒填后段已可见。"""
         tool = compiler()
