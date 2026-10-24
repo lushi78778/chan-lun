@@ -36,6 +36,50 @@ def compiler():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def test_ipo_context_jan10_fixed_bi_is_not_ordinary_xd_confirmation(self):
+        """上市史固定笔可映射，不以BI端点或前三笔重叠补课78特殊前提。"""
+        parts = embedded_table('test_real_f1_originals.py', 'M3_FACTOR_F1_AUDIT')['cases']['2022-01-01-106']['parts']
+        # 同源IPO上下文：full81为11-16→12-03的上笔，12-22已固定。
+        # 以01-10为假设下段端点的4个基本几何候选，其末标准旧侧均为该笔。
+        # 完整42假设与原始1110日前缀另存源审计；本测试只核有限条件算术。
+        left = (609358802000, 694689112000)
+        first, right = [tuple(sorted(parts[i][4:6])) for i in (0, 2)]
+        self.assertLessEqual(max(left[0], first[0]), min(left[1], first[1]))
+        self.assertLess(first[0], left[0])
+        self.assertLess(first[1], left[1])
+        self.assertLess(right[0], first[0])
+        self.assertLess(right[1], first[1])  # 右侧更低，不能确认以first为底的普通分型。
+        self.assertLess(parts[1][5], parts[0][4])
+        # full84在raw897(02-18)固定低于01-10；第三笔full85须raw900(02-23)。
+        self.assertEqual((parts[1][6] + 868, parts[2][6] + 868), (897, 900))
+        self.assertLess(parts[1][6], parts[2][6])
+
+    def test_ipo_context_given_dec3_start_has_later_ordinary_local_boundaries(self):
+        """给定12-03起段的普通局部正例；不裁定其全局归属或替换原两窗。"""
+        parts = embedded_table('test_real_f1_originals.py', 'M3_FACTOR_F1_AUDIT')['cases']['2022-01-01-106']['parts']
+        band = lambda i: tuple(sorted(parts[i][4:6]))
+        overlap = lambda rows: (max(r[0] for r in rows), min(r[1] for r in rows))
+        # full82..84从12-03到02-14。01-10是内部折点，不将它改写为新起点。
+        prior = (526277196640, 694689112000)
+        self.assertEqual(prior[0], parts[0][4])
+        self.assertEqual(overlap([prior, band(0), band(1)]), (526277196640, 612350382280))
+        left, middle, right = [band(i) for i in (0, 2, 4)]
+        self.assertTrue(all(middle[k] < min(left[k], right[k]) for k in (0, 1)))
+        self.assertLessEqual(max(left[0], middle[0]), min(left[1], middle[1]))
+        self.assertEqual(overlap([band(i) for i in (2, 3, 4)]), (494283349820, 545612041000))
+        self.assertGreater(parts[4][5], parts[2][5])
+        self.assertEqual(parts[4][6] + 868, 910)  # 03-09可见，不能倒填为02-14。
+
+        # 给定上述后段，03-01端点依课71首反向破坏+第三笔延伸，非严格标准顶。
+        left, first, third = [band(i) for i in (3, 5, 7)]
+        self.assertGreater(first[1], left[1])
+        self.assertLess(first[0], left[0])
+        self.assertFalse(all(first[k] > max(left[k], third[k]) for k in (0, 1)))
+        self.assertLessEqual(max(left[0], first[0]), min(left[1], first[1]))
+        self.assertEqual(overlap([band(i) for i in (5, 6, 7)]), (444731536860, 537079010000))
+        self.assertLess(parts[7][5], parts[5][5])
+        self.assertEqual(parts[7][6] + 868, 956)  # 05-19固定证据到齐。
+
     def test_first_seed_candidate_lifecycle_keeps_revocation_order(self):
         """保持start0的14个假设；局部条件、撤销与未知前提分开，不给替代分界。"""
         parts = embedded_table('test_real_f1_originals.py','M3_FACTOR_F1_AUDIT')['cases']['2022-01-01-106']['parts']
