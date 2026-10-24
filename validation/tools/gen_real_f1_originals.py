@@ -93,7 +93,8 @@ def completed_xds(units, events):
     """
     out=[]
     for a,z,mode,proof in events:
-        if len(units)<=proof:continue
+        # 相邻分段必须从前段开始可见；后段局部证明较早时也不能跳过前段。
+        if len(units)<=proof:break
         covered=units[a:z+1]
         out.append(dict(start_index=units[a]['start_index'],end_index=units[z]['end_index'],
                     start_ticks=units[a]['start_ticks'],end_ticks=units[z]['end_ticks'],

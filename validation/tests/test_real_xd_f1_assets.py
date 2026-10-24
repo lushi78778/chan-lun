@@ -36,6 +36,27 @@ def compiler():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def test_completed_xd_views_do_not_skip_unavailable_predecessors(self):
+        """前段proof9晚于后段proof8；两段应同时发布，不倒填后段已可见。"""
+        tool = compiler()
+        values = [10,20,15,25,12,22,11,21,13,23,14,24,16,26]
+        fixed = [dict(start_index=i, end_index=i+1, start_ticks=a,
+                      end_ticks=z, low_ticks=min(a,z), high_ticks=max(a,z),
+                      start_dt=str(i), end_dt=str(i+1), direction='up' if z>a else 'down')
+                 for i, (a,z) in enumerate(zip(values, values[1:]))]
+        # 交替、衔接且前三笔重叠的给定部件；只核事件表的发布时序。
+        events = [[0, 2, 2, 9], [3, 5, 1, 8], [6, 8, 1, 12]]
+        integer_path = ROOT / 'validation/tools/gen_real_f1_originals.py'
+        spec = importlib.util.spec_from_file_location('ordered_xd_integer', integer_path)
+        integer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(integer)
+        for build in (tool.xd_records, integer.completed_xds):
+            self.assertEqual(build(fixed[:9], events), [])
+            both = build(fixed[:10], events)
+            self.assertEqual([u['start_index'] for u in both], [0, 3])
+            self.assertEqual([u['proof_bi'] for u in both], [9, 8])
+            self.assertEqual([u['start_index'] for u in build(fixed, events)], [0, 3, 6])
+
     def test_ipo_context_jan10_fixed_bi_is_not_ordinary_xd_confirmation(self):
         """上市史固定笔可映射，不以BI端点或前三笔重叠补课78特殊前提。"""
         parts = embedded_table('test_real_f1_originals.py', 'M3_FACTOR_F1_AUDIT')['cases']['2022-01-01-106']['parts']

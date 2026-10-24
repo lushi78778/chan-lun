@@ -340,7 +340,11 @@ def xd_units(fixed, events):
 
 
 def replay_confirmations(rows, case, events):
-    """逐原始日前缀重放：固定链前缀稳定与单元/台账首确认。"""
+    """逐原始前缀核固定链及顺序发布；后段同时等待全部前段可见。
+
+    事件的局部proof_bi保持原值；首次发布是自身证明与前段发布的最晚者。
+    证据在前段以前齐备的后段，只能在前段实际可见时同批发布，不倒填。
+    """
     expected = case['expected_bis']
     proofs = [event[3] for event in events] if events else []
     fixed_total = len(expected) - 1
@@ -356,7 +360,7 @@ def replay_confirmations(rows, case, events):
             if bi_seen[i] is None:
                 bi_seen[i] = count
         for k, proof in enumerate(proofs):
-            if xd_seen[k] is None and n_fixed > proof:
+            if xd_seen[k] is None and n_fixed > proof and (k == 0 or xd_seen[k-1] is not None):
                 xd_seen[k] = count
     if any(value is None for value in bi_seen) or \
             any(value is None for value in xd_seen):

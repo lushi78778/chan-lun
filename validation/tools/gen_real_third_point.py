@@ -21,6 +21,7 @@ import json
 from pathlib import Path
 
 from gen_real_f1_originals import components, digest, foundation, records
+from gen_real_strict_trend import replay_confirmations
 
 
 def arrival_dt(row_dt, granularity):
@@ -273,31 +274,6 @@ def xd_units(fixed, events):
                         evidence_end_index=fixed[proof]['end_index'],
                         evidence_dt=fixed[proof]['end_dt']))
     return out
-
-
-def replay_confirmations(rows, case, events):
-    """逐原始bar前缀重放：固定链前缀稳定与单元/证明首确认。"""
-    expected = case['expected_bis']
-    proofs = [event[3] for event in events] if events else []
-    fixed_total = len(expected) - 1
-    bi_seen = [None] * fixed_total
-    xd_seen = [None] * len(proofs)
-    for count in range(1, len(rows) + 1):
-        _, _, prefix_bis = foundation(rows[:count], case['standard'])
-        prefix_records = records(prefix_bis)
-        n_fixed = max(0, len(prefix_bis) - 1)
-        if prefix_records[:n_fixed] != expected[:n_fixed]:
-            raise ValueError('前缀固定链漂移: count=%d' % count)
-        for i in range(n_fixed):
-            if bi_seen[i] is None:
-                bi_seen[i] = count
-        for k, proof in enumerate(proofs):
-            if xd_seen[k] is None and n_fixed > proof:
-                xd_seen[k] = count
-    if any(value is None for value in bi_seen) or \
-            any(value is None for value in xd_seen):
-        raise ValueError('存在未在前缀内确认的单元')
-    return bi_seen, xd_seen
 
 
 def compile_case(case, packet, packet_path):

@@ -39,6 +39,33 @@ def packet_of(case):
 
 
 class TestRealStrictTrendAssets(unittest.TestCase):
+    def test_xd_confirmations_wait_for_all_prior_segment_proofs(self):
+        """前段证明较迟时，后段局部证明不提前发布；实际证据笔保持原值。"""
+        labels = json.loads(FIXTURE.read_text())['cases'][0]
+        case = manual_cases()[0]
+        _, packet = packet_of(case)
+        # 给定事件只测试确认编译契约，不声明它们为该行情的理论分界。
+        events = [[0, 2, 2, 9], [3, 5, 1, 8]]
+        unchanged = copy.deepcopy(events)
+        seen = labels['foundation']['bis_confirmed_raw_count']
+        expected = [seen[9], max(seen[9], seen[8])]
+        self.assertGreater(seen[9], seen[8])
+        tools = [compiler()]
+        sys.path.insert(0, str(ROOT / 'validation/tools'))
+        try:
+            spec = importlib.util.spec_from_file_location(
+                'third_confirmation_compiler', ROOT / 'validation/tools/gen_real_third_point.py')
+            third = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(third)
+            tools.append(third)
+        finally:
+            sys.path.pop(0)
+        for tool in tools:
+            bi_seen, xd_seen = tool.replay_confirmations(packet['rows'], case, events)
+            self.assertEqual(bi_seen, seen)
+            self.assertEqual(xd_seen, expected)
+            self.assertEqual(events, unchanged)
+
     def test_frozen_sources_and_independent_rebuild(self):
         """原始包与人工表保真；重复编译逐字节一致且不能覆盖证据。"""
         tool = compiler()

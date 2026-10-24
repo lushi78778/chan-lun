@@ -60,11 +60,11 @@ def validate_manual(case, fixed):
 
 
 def xd_records(fixed, events):
-    """只在人工证明笔已固定时装配完成段，包络只含组成笔。"""
+    """按相邻顺序装配；先前段未可见时后段不发布，实际证据笔不改写。"""
     out = []
     for a, z, mode, proof in events:
         if len(fixed) <= proof:
-            continue
+            break
         covered = fixed[a:z + 1]
         record = dict(covered[0])
         record.update(end_index=covered[-1]['end_index'],
