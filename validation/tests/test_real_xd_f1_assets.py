@@ -75,6 +75,145 @@ M3_FINITE_SUFFIX_AUDIT = {
 }
 
 
+# 额外实际消费者的有限声明；摘要是来源锚点，测试不读取外层收据或复制行情。
+# E固定BI0近期顶737；all_current使用各原始前缀的实际活动末笔，不回填最终端点。
+# G1只核实际消费上限1623内给定BI35后的共同后缀，不裁定seed0/1全球归属。
+M3_ADDITIONAL_CONSUMERS_AUDIT = {
+    'E': {
+        'fixture': 'real_f1_originals.json', 'id': '512880-day-2018-08-24-2019-11-20',
+        'fixture_sha256': '7c8408bf8beaf9f9c492460cb00353856c15dec56951a310de8522b1db9b5d29',
+        'packet_sha256': '749db65b58f409c48b9f7e8b90e6b904dac596ed5400c45bc1026f853c861a80',
+        'receipt_sha256': 'd55126633a153c0c0b9948c2c33b5184d6393f848eb94c7516116e0476d5dc8d',
+        'limit': 300, 'all_bis': 35, 'fixed_bis': 34,
+        'seed': (0, '2018-08-28', 737, (687,735)),
+        'events': ((0,2,1,5),(3,5,1,8),(6,8,1,11),(9,11,2,23),
+                   (12,20,1,23),(21,23,2,29),(24,26,1,29),(27,29,1,32)),
+        'local_counts': {
+            'all_current': (57,84,113,200,200,255,255,279),
+            'fixed_without_active': (63,90,134,204,204,264,264,292)},
+        'published_counts': {
+            'all_current': (57,84,113,200,200,255,255,279),
+            'fixed_without_active': (63,90,134,204,204,264,264,292)},
+        # (首次raw, 当时证明端点日, 当时证明价)，活动证据与后来固定值分列。
+        'special_proof_first': {
+            'all_current': {11: (113,'2019-02-14',845),29: (255,'2019-09-09',1024)},
+            'fixed_without_active': {11: (134,'2019-03-07',1185),29: (264,'2019-09-16',1039)}},
+        # (尾起点, 末输入BI, 最后同向BI, 末同向价, 原首反向33撤销BI或None)。
+        'tail': {'all_current': (30,34,34,893,34),
+                 'fixed_without_active': (30,33,32,913,None)},
+        'raw_crosses': {964: (251,'2019-09-04',969),1017: (252,'2019-09-05',1024)},
+        'first_available_bi29': 255, 'active_tail_revoke_raw': 299,
+        'global_theory_labels': False,
+    },
+    'G1': {
+        'fixture': 'real_causal_formation.json', 'id': '588000-30m-20220801-20230501',
+        'fixture_sha256': '6e72f6931e6cbe957ee40d184c51ab0bf9a666aefd6f9c521333343b7e3dbf5b',
+        'packet_sha256': '35e7a15319477a7628edf2ac1a8869969a60534ed632db8535b2d3fb1978a009',
+        'receipt_sha256': '675b97d6eb3b08263428c4c5b91fa31f41f7f7893a62a37d8a92475dff9adbe7',
+        'source_rows': 1638, 'limit': 1623, 'actual_prefixes': (125,126,1623),
+        'all_bis': 133, 'fixed_bis': 132, 'given_common_start': (35,910,(968,983)),
+        'events': ((35,49,2,63),(50,60,1,63),(61,63,1,66),(64,76,1,79),
+                   (77,89,1,94),(90,100,2,126),(101,123,1,126),(124,126,1,129)),
+        'local_counts': (748,748,777,924,1137,1535,1540,1580),
+        'published_counts': (748,748,777,924,1137,1535,1540,1580),
+        # 每个事件分别记录(birth raw/价、首次成立raw/价、固定raw/价)。
+        # 同proof126的两事件首次成立不同时，不能改成proof索引字典合并。
+        'proof_stages': ((748,1056,748,1056,757,1066),
+                         (748,1056,748,1056,757,1066),
+                         (777,1044,777,1044,787,1044),
+                         (924,1011,924,1011,935,1011),
+                         (1125,1058,1137,1048,1146,1048),
+                         (1535,1155,1535,1155,1553,1139),
+                         (1535,1155,1540,1141,1553,1139),
+                         (1573,1196,1580,1206,1583,1206)),
+        'tail': (127,129,1206,130,1106,132,1108),
+        'global_theory_labels': False, 'seed0_seed1_resolved': False,
+    },
+}
+
+
+# M2仅给定起点下的局部证书；不替换继承基底或宣称自然发布时间提前。
+M3_M2_GIVEN_PROOFS_AUDIT = {'receipt_sha256': '4420c9adb0523577aeb56aec8cd5d2d7b3b81a3fd3ecff8595df3398a459398b',
+ 'events': ((65, 67, 1, 70), (111, 113, 1, 116)),
+ 'old_proofs': (72, 118),
+ 'local_counts': (1618, 2437),
+ 'parent_events': ((56, 64, 2, 72), (108, 110, 1, 113)),
+ 'parent_counts': (1648, 2365),
+ 'conditional_publication': (1648, 2437),
+ 'original_first': ((68, 1060, 1054, 69), (114, 1079, 1075, 115)),
+ 'recent_seed87_ticks': (1010,
+                         1043,
+                         1039,
+                         1056,
+                         1036,
+                         1038,
+                         1029,
+                         1091,
+                         1066,
+                         1080,
+                         1058,
+                         1084,
+                         1074,
+                         1080,
+                         1074,
+                         1081,
+                         1067,
+                         1086),
+ 'state_counts': (2063, 2122),
+ 'natural_events': ((87, 89, 1, 92), (94, 96, 1, 103)),
+ 'natural_start111_proven': False}
+
+
+def manual_xd_certificate_ready(parts, event):
+    """只验给定分界的整数证书，不搜索XD；课67包含与课71原首笔选向分列。"""
+    a, z, mode, proof = event
+    if len(parts) <= proof:
+        return False
+    up = parts[a]['direction'] == 'up'
+    turn = z + 1
+
+    def standard(indices, initial_up):
+        nodes = []
+        for i in indices:
+            p = (parts[i]['low_ticks'],parts[i]['high_ticks'])
+            if nodes and ((nodes[-1][0]<=p[0] and p[1]<=nodes[-1][1]) or
+                          (p[0]<=nodes[-1][0] and nodes[-1][1]<=p[1])):
+                direction = initial_up if len(nodes)==1 else nodes[-1][1]>nodes[-2][1]
+                choose = max if direction else min
+                nodes[-1] = tuple(choose(nodes[-1][j],p[j]) for j in (0,1))
+            else:
+                nodes.append(p)
+        return nodes
+
+    def fractal(nodes, top):
+        return len(nodes)==3 and all(nodes[1][j]>max(nodes[0][j],nodes[2][j]) if top else
+                                    nodes[1][j]<min(nodes[0][j],nodes[2][j]) for j in (0,1))
+
+    for start in (a,turn):
+        group = parts[start:start+3]
+        if len(group)!=3 or max(p['low_ticks'] for p in group)>min(p['high_ticks'] for p in group):
+            return False
+    left = standard(range(a+1,turn,2),up)[-1]
+    first = parts[turn]
+    if first['high_ticks']<=left[1] if up else first['low_ticks']>=left[0]:
+        return False
+    gap = first['low_ticks']-left[1] if up else left[0]-first['high_ticks']
+    canceled = next((i for i in range(turn+1,proof+1,2) if
+                    (parts[i]['end_ticks']>first['start_ticks'] if up else
+                     parts[i]['end_ticks']<first['start_ticks'])),None)
+    if mode == 1:
+        selected = next((i for i in range(turn+2,proof+1,2) if
+                        (parts[i]['end_ticks']<first['end_ticks'] if up else
+                         parts[i]['end_ticks']>first['end_ticks'])),None)
+        return gap<=0 and selected==proof and canceled is None
+    right = standard(range(turn,proof+1,2),up)
+    if gap<=0 or len(right)<2 or not fractal([left]+right[:2],up):
+        return False
+    second = standard(range(turn+1,proof+1,2),not up)
+    # 同一可用BI快照的第二分型可与新极值同批；不声称原始price先后已证。
+    return fractal(second[-3:],not up) and (canceled is None or canceled>=proof)
+
+
 def embedded_table(filename, name):
     """只读已有常量，不执行另一测试模块或用算法回填预期。"""
     tree = ast.parse((ROOT / 'tests' / filename).read_text(encoding='utf-8'))
@@ -105,6 +244,298 @@ def pending_gap_revisions():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def test_m2_given_first_pen_proofs_keep_parent_gates_and_natural_scope(self):
+        """65/111局部首笔选向已证；原首起价等价不撤销，发布仍带给定链前提。"""
+        tool = compiler()
+        source = M3_FINITE_SUFFIX_AUDIT['M2']
+        audit = M3_M2_GIVEN_PROOFS_AUDIT
+        path = ROOT / 'tests/fixtures' / source['fixture']
+        self.assertEqual(tool.digest(path),source['fixture_sha256'])
+        case = next(c for c in json.loads(path.read_text())['cases'] if c['id']==source['id'])
+        rows = case['raw_rows']
+        _, _, bis = tool.foundation(rows,'106')
+        fixed = tool.components(rows,bis[:-1],None)
+        self.assertEqual(tool.records(bis),case['foundation']['bis'])
+        seen = case['foundation']['bis_confirmed_raw_count']
+        for j,event in enumerate(audit['events']):
+            a,z,mode,proof = event
+            first,start,end,equal = audit['original_first'][j]
+            self.assertEqual((fixed[first]['start_ticks'],fixed[first]['end_ticks']),(start,end))
+            self.assertEqual(fixed[equal]['end_ticks'],start)
+            self.assertLess(fixed[proof]['end_ticks'],end)
+            self.assertEqual(seen[proof],audit['local_counts'][j])
+            self.assertEqual(seen[audit['old_proofs'][j]],1648 if a==65 else 2476)
+            self.assertTrue(manual_xd_certificate_ready(fixed,event))
+            parent = audit['parent_events'][j]
+            self.assertEqual(seen[parent[3]],audit['parent_counts'][j])
+            self.assertTrue(manual_xd_certificate_ready(fixed,parent))
+            # 仅装配给定的parent+子段；局部证据不改成父证明笔。
+            published = max(audit['local_counts'][j],audit['parent_counts'][j])
+            self.assertEqual(published,audit['conditional_publication'][j])
+            for count in sorted({audit['local_counts'][j]-1,audit['local_counts'][j],
+                                 published-1,published}):
+                _, _, current = tool.foundation(rows[:count],'106')
+                parts = tool.components(rows[:count],current[:-1],None)
+                self.assertEqual(tool.records(current[:-1]),case['foundation']['bis'][:len(current)-1])
+                self.assertEqual(manual_xd_certificate_ready(parts,event),
+                                 count>=audit['local_counts'][j])
+                units = tool.xd_records(parts,(parent,event))
+                self.assertEqual(len(units)==2,count>=published)
+                if len(units)==2:
+                    self.assertEqual(units[-1]['proof_bi'],proof)
+            # 历史声明保持；新证书并不静默改写继承27项。
+            original = next(e for e in source['events'] if e[0]==a)
+            self.assertEqual(original,(a,z,mode,audit['old_proofs'][j]))
+        self.assertEqual(audit['conditional_publication'][0],1648)
+        self.assertEqual(2476-audit['conditional_publication'][1],39)
+        self.assertFalse(audit['natural_start111_proven'])
+
+    def test_m2_recent_seed87_requires_pending_natural_reaction_before_later_turns(self):
+        """课78近期种子87：前段已破坏，首反93后的自然94未破首底；不得凭旧表补自然起点。"""
+        tool = compiler()
+        source = M3_FINITE_SUFFIX_AUDIT['M2']
+        audit = M3_M2_GIVEN_PROOFS_AUDIT
+        case = next(c for c in json.loads((ROOT/'tests/fixtures'/source['fixture']).read_text())['cases']
+                    if c['id']==source['id'])
+        _, _, bis = tool.foundation(case['raw_rows'],'106')
+        fixed = tool.components(case['raw_rows'],bis[:-1],None)
+        self.assertEqual(tuple([fixed[87]['start_ticks']]+[u['end_ticks'] for u in fixed[87:104]]),
+                         audit['recent_seed87_ticks'])
+        seen = case['foundation']['bis_confirmed_raw_count']
+        self.assertEqual((seen[92],seen[96]),audit['state_counts'])
+        self.assertLess(seen[92],seen[96])
+        for mirrored in (False,True):
+            parts = fixed if not mirrored else [dict(u,
+                direction='down' if u['direction']=='up' else 'up',
+                start_ticks=3000-u['start_ticks'],end_ticks=3000-u['end_ticks'],
+                low_ticks=3000-u['high_ticks'],high_ticks=3000-u['low_ticks']) for u in fixed]
+            for event in audit['natural_events']:
+                self.assertTrue(manual_xd_certificate_ready(parts,event))
+            first = parts[93]
+            reaction = parts[94:97]
+            if mirrored:
+                self.assertLess(max(u['high_ticks'] for u in reaction),first['start_ticks'])
+                self.assertGreater(min(parts[i]['end_ticks'] for i in (95,97,99,101,103)),first['end_ticks'])
+            else:
+                self.assertGreater(min(u['low_ticks'] for u in reaction),first['start_ticks'])
+                self.assertLess(max(parts[i]['end_ticks'] for i in (95,97,99,101,103)),first['end_ticks'])
+            # 固定BI前缀截至102时，自然94的103证明未到；None应保持待定，原始行另计。
+            self.assertFalse(manual_xd_certificate_ready(parts[:103],audit['natural_events'][1]))
+        self.assertEqual(min(u['low_ticks'] for u in fixed[94:97])-fixed[93]['start_ticks'],29)
+
+    def test_additional_g1_common_suffix_uses_bounded_event_specific_active_proofs(self):
+        """G1实际消费不超1623；逐事件核首次价，不把同proof126放行时刻合并。"""
+        tool = compiler()
+        strict = compiler(ROOT / 'validation/tools/gen_real_strict_trend.py')
+        audit = M3_ADDITIONAL_CONSUMERS_AUDIT['G1']
+        path = ROOT / 'tests/fixtures' / audit['fixture']
+        self.assertEqual(tool.digest(path),audit['fixture_sha256'])
+        case = next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+        packet_path = ROOT / 'validation' / case['source']['packet']
+        self.assertEqual(tool.digest(packet_path),audit['packet_sha256'])
+        packet = json.loads(packet_path.read_text())
+        self.assertEqual(packet['rows'],case['raw_rows'])
+        self.assertEqual(packet['manifest_sha256'],case['source']['dataset_manifest_sha256'])
+        self.assertEqual(len(packet['rows']),audit['source_rows'])
+        first = case['first_point']['first_raw_count']
+        actual = (first-1,first,case['formation']['resolution']['first_raw_count'])
+        self.assertEqual(actual,audit['actual_prefixes'])
+        self.assertEqual(max(actual),audit['limit'])
+        rows, events = packet['rows'][:audit['limit']],audit['events']
+        self.assertEqual(audit['source_rows']-len(rows),15)
+        self.assertTrue(all(r['adj_factor']==1 for r in rows))
+        self.assertFalse(audit['global_theory_labels'])
+        self.assertFalse(audit['seed0_seed1_resolved'])
+        _, _, bis = tool.foundation(rows,'106')
+        final = tool.components(rows,bis,None)
+        self.assertEqual((len(final),len(final[:-1])),(audit['all_bis'],audit['fixed_bis']))
+        self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(final)-1])
+        strict.validate_xd_events(dict(xd_events=events),final)
+        start, price, overlap = audit['given_common_start']
+        self.assertEqual((events[0][0],final[start]['start_ticks']),(start,price))
+        self.assertEqual((max(p['low_ticks'] for p in final[start:start+3]),
+                          min(p['high_ticks'] for p in final[start:start+3])),overlap)
+        fields = ('direction','start_dt','end_dt','start_ticks','end_ticks',
+                  'low_ticks','high_ticks','mode','proof_bi')
+        shape = [tuple(u[k] for k in fields) for u in tool.xd_records(final,events)]
+        local, published, birth, fixed = {},{},{},{}
+        first_prices, actual_lengths = {},{}
+        for count in range(1,len(rows)+1):
+            _, _, current_bis = tool.foundation(rows[:count],'106')
+            current = tool.components(rows[:count],current_bis,None)
+            self.assertEqual(tool.records(current_bis[:-1]),tool.records(bis)[:len(current_bis[:-1])])
+            ready = [manual_xd_certificate_ready(current,e) for e in events]
+            for i,(event,present) in enumerate(zip(events,ready)):
+                proof = event[3]
+                if len(current)>proof:
+                    birth.setdefault(proof,(count,current[proof]['end_ticks']))
+                if len(current)>proof+1:
+                    fixed.setdefault(proof,(count,current[proof]['end_ticks']))
+                if present:
+                    local.setdefault(i,count)
+                    first_prices.setdefault(i,(count,current[proof]['end_ticks']))
+                self.assertEqual(present,audit['local_counts'][i]<=count,(count,i))
+            length = next((i for i,present in enumerate(ready) if not present),len(events))
+            for i in range(length):
+                published.setdefault(i,count)
+            self.assertEqual(length,sum(n<=count for n in audit['published_counts']),count)
+            # 活动proof索引存在不够；先验价格证书，再装配相邻ready前缀。
+            units = tool.xd_records(current,events[:length])
+            self.assertEqual([tuple(u[k] for k in fields) for u in units],shape[:length],count)
+            if count in actual:
+                actual_lengths[count] = length
+        self.assertEqual(actual_lengths,{125:0,126:0,1623:8})
+        self.assertEqual(tuple(local[i] for i in range(len(events))),audit['local_counts'])
+        self.assertEqual(tuple(published[i] for i in range(len(events))),audit['published_counts'])
+        stages = tuple(birth[e[3]]+first_prices[i]+fixed[e[3]] for i,e in enumerate(events))
+        self.assertEqual(stages,audit['proof_stages'])
+
+    def test_additional_g1_shared_proof126_and_tail132_do_not_use_future_source_rows(self):
+        """同一活动126的第二种先成立，第一种另待跨价；132仍在原130范围内。"""
+        tool = compiler()
+        audit = M3_ADDITIONAL_CONSUMERS_AUDIT['G1']
+        labels = json.loads((ROOT / 'tests/fixtures' / audit['fixture']).read_text())
+        case = next(c for c in labels['cases'] if c['id']==audit['id'])
+        rows = case['raw_rows'][:audit['limit']]
+        second, first = audit['events'][5:7]
+        self.assertEqual((second[2:],first[2:]),((2,126),(1,126)))
+        for count in (1535,1539,1540):
+            _, _, bis = tool.foundation(rows[:count],'106')
+            parts = tool.components(rows[:count],bis,None)
+            self.assertEqual(len(parts)-1,126)
+            self.assertEqual(parts[124]['end_ticks'],1152)
+            self.assertTrue(manual_xd_certificate_ready(parts,second))
+            self.assertEqual(manual_xd_certificate_ready(parts,first),count>=1540)
+            if count<1540:
+                self.assertGreaterEqual(parts[126]['end_ticks'],parts[124]['end_ticks'])
+            else:
+                self.assertEqual(parts[126]['end_ticks'],1141)
+                self.assertLess(parts[126]['end_ticks'],parts[124]['end_ticks'])
+        for count,value,ready in ((1573,1196,False),(1580,1206,True)):
+            _, _, bis = tool.foundation(rows[:count],'106')
+            parts = tool.components(rows[:count],bis,None)
+            self.assertEqual((parts[127]['end_ticks'],parts[129]['end_ticks']),(1196,value))
+            self.assertEqual(manual_xd_certificate_ready(parts,audit['events'][-1]),ready)
+        _, _, bis = tool.foundation(rows,'106')
+        parts = tool.components(rows,bis,None)
+        start, endpoint, high, first, threshold, third, price = audit['tail']
+        self.assertEqual((audit['events'][-1][1]+1,len(parts)-1),(start,third))
+        self.assertEqual((len(parts),len(parts[:-1])),(133,132))
+        self.assertEqual((parts[endpoint]['end_ticks'],parts[first]['end_ticks'],
+                          parts[third]['end_ticks']),(high,threshold,price))
+        self.assertEqual((threshold,price),(1106,1108))
+        self.assertTrue(all(parts[i]['end_ticks']>=threshold for i in range(first+2,len(parts),2)))
+        self.assertTrue(all(parts[i]['end_ticks']<=high for i in range(first+1,len(parts),2)))
+        self.assertLessEqual(max(p['low_ticks'] for p in parts[first:third+1]),
+                             min(p['high_ticks'] for p in parts[first:third+1]))
+
+    def test_additional_e_sources_and_both_contracts_use_actual_raw_prefixes(self):
+        """E长窗给定近期顶；两BI合同逐300原始前缀核事件和串行可见性。"""
+        tool = compiler()
+        audit = M3_ADDITIONAL_CONSUMERS_AUDIT['E']
+        path = ROOT / 'tests/fixtures' / audit['fixture']
+        self.assertEqual(tool.digest(path),audit['fixture_sha256'])
+        case = next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+        packet_path = ROOT / 'validation' / case['source']['packet']
+        self.assertEqual(tool.digest(packet_path),audit['packet_sha256'])
+        packet = json.loads(packet_path.read_text())
+        self.assertEqual(packet['rows'],case['raw_rows'])
+        self.assertEqual(packet['manifest_sha256'],case['source']['dataset_manifest_sha256'])
+        rows, events = packet['rows'],audit['events']
+        self.assertEqual(len(rows),audit['limit'])
+        self.assertTrue(all(r['adj_factor']==1 for r in rows))
+        _, _, bis = tool.foundation(rows,'106')
+        self.assertEqual(tool.records(bis),case['foundation_106']['bis'])
+        final = tool.components(rows,bis,10)
+        self.assertEqual((len(final),len(final[:-1])),(audit['all_bis'],audit['fixed_bis']))
+        a, day, value, overlap = audit['seed']
+        self.assertEqual((a,final[a]['start_dt'],final[a]['start_ticks']), (0,day,value))
+        self.assertEqual((max(p['low_ticks'] for p in final[a:a+3]),
+                          min(p['high_ticks'] for p in final[a:a+3])),overlap)
+        self.assertFalse(audit['global_theory_labels'])
+        final_units = tool.xd_records(final,events)
+        fields = ('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        final_shape = [tuple(u[k] for k in fields) for u in final_units]
+        local = dict((key,{}) for key in audit['local_counts'])
+        serial = dict((key,{}) for key in local)
+        special = dict((key,{}) for key in local)
+        first_bi29 = None
+        for count in range(1,len(rows)+1):
+            _, _, current_bis = tool.foundation(rows[:count],'106')
+            self.assertEqual(tool.records(current_bis[:-1]),tool.records(bis)[:len(current_bis[:-1])])
+            current = tool.components(rows[:count],current_bis,10)
+            if len(current)>29 and first_bi29 is None:
+                first_bi29 = count
+            for key,parts in (('all_current',current),('fixed_without_active',current[:-1])):
+                ready = [manual_xd_certificate_ready(parts,event) for event in events]
+                for i,present in enumerate(ready):
+                    if present:
+                        local[key].setdefault(i,count)
+                        p = events[i][3]
+                        if p in audit['special_proof_first'][key]:
+                            special[key].setdefault(p,(count,parts[p]['end_dt'],parts[p]['end_ticks']))
+                    self.assertEqual(present,audit['local_counts'][key][i]<=count,(key,count,i))
+                length = next((i for i,present in enumerate(ready) if not present),len(events))
+                for i in range(length):
+                    serial[key].setdefault(i,count)
+                expected = sum(n<=count for n in audit['published_counts'][key])
+                self.assertEqual(length,expected,(key,count))
+                units = tool.xd_records(parts,events)
+                self.assertEqual([tuple(u[k] for k in fields) for u in units],final_shape[:expected],(key,count))
+        self.assertEqual(first_bi29,audit['first_available_bi29'])
+        for key in local:
+            self.assertEqual(tuple(local[key][i] for i in range(len(events))),audit['local_counts'][key])
+            self.assertEqual(tuple(serial[key][i] for i in range(len(events))),audit['published_counts'][key])
+            self.assertEqual(special[key],audit['special_proof_first'][key])
+            parts = final if key=='all_current' else final[:-1]
+            start,last,last_same,end,revoke = audit['tail'][key]
+            self.assertEqual((events[-1][1]+1,len(parts)-1),(start,last))
+            self.assertEqual((parts[last_same]['direction'],parts[last_same]['end_ticks']),('down',end))
+            self.assertEqual((parts[33]['start_ticks'],parts[33]['end_ticks']),(913,955))
+            self.assertFalse(any(parts[i]['end_ticks']>955 for i in range(35,len(parts),2)))
+            actual_revoke = next((i for i in range(34,len(parts),2) if parts[i]['end_ticks']<913),None)
+            self.assertEqual(actual_revoke,revoke)
+
+    def test_additional_e_active_endpoints_and_raw_price_layers_do_not_backfill(self):
+        """活动845/1024与固定1185/1039分列；raw跨价不等于BI29已经可用。"""
+        tool = compiler()
+        foundation_tool = compiler(ROOT / 'validation/tools/gen_real_f1_originals.py')
+        audit = M3_ADDITIONAL_CONSUMERS_AUDIT['E']
+        data = json.loads((ROOT / 'tests/fixtures' / audit['fixture']).read_text())
+        case = next(c for c in data['cases'] if c['id']==audit['id'])
+        rows = case['raw_rows'][:audit['limit']]
+        for key,proofs in audit['special_proof_first'].items():
+            for proof,(count,day,value) in proofs.items():
+                _, _, bis = tool.foundation(rows[:count],'106')
+                parts = tool.components(rows[:count],bis,10)
+                selected = parts if key=='all_current' else parts[:-1]
+                self.assertEqual((selected[proof]['end_dt'],selected[proof]['end_ticks']),(day,value))
+                if key=='all_current':
+                    self.assertEqual(len(parts)-1,proof)
+                    self.assertLess(len(parts[:-1]),proof+1)
+                    self.assertNotEqual(value,audit['special_proof_first']['fixed_without_active'][proof][2])
+                else:
+                    self.assertGreater(len(parts)-1,proof)
+        for threshold,(count,day,high) in audit['raw_crosses'].items():
+            first = next(i+1 for i,row in enumerate(rows) if row['dt'][:10]>='2019-08-30'
+                         and foundation_tool.ticks(row['high'])>threshold)
+            self.assertEqual(first,count)
+            self.assertEqual((rows[count-1]['dt'][:10],foundation_tool.ticks(rows[count-1]['high'])),(day,high))
+            _, _, bis = tool.foundation(rows[:count],'106')
+            self.assertEqual(len(bis),29)  # 末索引28，尚无proof29。
+            self.assertEqual(bis[-1]['direction'],'down')
+        self.assertEqual((audit['raw_crosses'][964][0],audit['raw_crosses'][1017][0],
+                          audit['first_available_bi29']),(251,252,255))
+        for count in (254,255):
+            _, _, bis = tool.foundation(rows[:count],'106')
+            self.assertEqual(len(bis),29 if count==254 else 30)
+        # 同一可用BI快照的第二底和新高，不提升为原始price先后或最早理论确认。
+        for count in (audit['active_tail_revoke_raw']-1,audit['active_tail_revoke_raw']):
+            _, _, bis = tool.foundation(rows[:count],'106')
+            current = tool.components(rows[:count],bis,10)
+            revoked = len(current)>34 and current[34]['end_ticks']<913
+            self.assertEqual(revoked,count==audit['active_tail_revoke_raw'])
+
     def test_finite_suffix_events_keep_sources_geometry_and_ordered_raw_visibility(self):
         """两条显式有限后缀由独立基础/结构/逐前缀回放验收，旧标签保持历史。"""
         tool = compiler()
