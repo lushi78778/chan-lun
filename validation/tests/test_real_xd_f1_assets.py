@@ -164,6 +164,17 @@ M3_M2_GIVEN_PROOFS_AUDIT = {'receipt_sha256': '4420c9adb0523577aeb56aec8cd5d2d7b
  'natural_start111_proven': False}
 
 
+# 近期87种子有限公开完成项的目标合同；当前包算法尚未采用该修正。
+# 两份独立原文/整数推导在原型比较之前冻结，不读取外层收据作测试输入。
+M3_NATURAL_STATE_AUDIT = dict(
+    public_contract_sha256='151ee6dcf197ed4704e2d42dcb9f0c40caab3e36b55ae9312dbb4c47e1671644',
+    state_contract_sha256='8ae5afd41ebff09c90b2e0fea493b7ee190927f6276f7ac7d2cf8d9ca5075fe3',
+    publication_contract_sha256='be44209957f564ecc593e8c86481023ede7d01b3be1c726594f6e34df4d07183',
+    owner=3, first=6, predecessor=(0,2,1,5), reaction=(7,9,1,16),
+    completed_at17=((0,2,1,5),(3,5,1,16)),
+    forbidden=((6,10,1,15),(7,9,1,16)))
+
+
 def manual_xd_certificate_ready(parts, event):
     """只验给定分界的整数证书，不搜索XD；课67包含与课71原首笔选向分列。"""
     a, z, mode, proof = event
@@ -214,6 +225,72 @@ def manual_xd_certificate_ready(parts, event):
     return fractal(second[-3:],not up) and (canceled is None or canceled>=proof)
 
 
+def manual_natural_reaction_state(parts, seen, observed, owner, first, predecessor, reaction):
+    """课71/78给定证书的独立时序参考；不搜索分界或调用包识别器。
+
+    parts只含当前可用固定笔，seen逐笔记录实际可见计数；observed与
+    predecessor['published_count']使用同一观察单位，不能用BI序号冒充raw。
+    predecessor绑定owner前段的身份；reaction必须从原首反向笔紧接起算。
+    调用方须另证原首反向笔已构成课65第一种笔破坏、原转折无正缺口；
+    不适用于第二种缺口或任意内部子段。reaction=None表示没有给定完成
+    证书，不能从中推断自然反应不存在。四态先按最早可见事件裁定，
+    再施加资格发布门控；未知前史、资格
+    尚未可见与已可见分别保留。这里只验证给定自然起点的条件证书。
+    published_count仅为该状态条件齐备的计数，不自行生成公开XD链。
+    同一不可变笔输入及来源/祖先路径的自然资格由调用方另证，不能
+    仅凭相同数值或索引把其他路径的条件证书移来使用。
+    """
+    if len(parts)!=len(seen) or not parts or any(a>b for a,b in zip(seen,seen[1:])):
+        raise ValueError('可见固定笔与到达计数须逐项对应且有序')
+    if seen[-1]>observed or owner<0 or first<owner+3 or first>=len(parts):
+        raise ValueError('只允许当前观察前缀内的首反向笔')
+    if parts[owner]['direction']==parts[first]['direction']:
+        raise ValueError('首反向笔须与原段反向')
+    qualification, identity, prior_count = 'unknown', None, None
+    if predecessor is not None:
+        identity = tuple(predecessor['event'])
+        a,z,mode,proof = identity
+        prior_count = predecessor['published_count']
+        if a<0 or z<a+2 or mode not in (1,2) or proof<=z or z+1!=owner:
+            raise ValueError('前驱证书身份与原段起点不衔接')
+        if prior_count is not None and proof<len(parts) and prior_count<seen[proof]:
+            raise ValueError('累计发布不能早于前驱局部证明')
+        qualification = 'visible' if prior_count is not None and prior_count<=observed else 'waiting'
+        if qualification=='visible' and not manual_xd_certificate_ready(parts,identity):
+            raise ValueError('资格可见时前驱局部证书也须成立')
+    if reaction is not None:
+        a,z,mode,proof = reaction
+        if a!=first+1 or z<a+2 or mode not in (1,2) or proof<=z:
+            raise ValueError('自然反应证书须绑定紧邻起点')
+    r = parts[first]
+    up = r['direction']=='up'
+    events = []
+    triple = parts[first:first+3]
+    overlap = (len(triple)==3 and
+               max(p['low_ticks'] for p in triple)<=min(p['high_ticks'] for p in triple))
+    for i in range(first+1,len(parts)):
+        p = parts[i]
+        broken = (p['end_ticks']<r['start_ticks'] if up else p['end_ticks']>r['start_ticks'])
+        selected = (p['end_ticks']>r['end_ticks'] if up else p['end_ticks']<r['end_ticks'])
+        if p['direction']!=r['direction'] and broken:
+            events.append((seen[i],0,i,'first_start_broken'))
+        elif p['direction']==r['direction'] and i>=first+2 and overlap and selected:
+            events.append((seen[i],1,i,'first_end_selected'))
+    if reaction is not None and proof<len(parts):
+        if not manual_xd_certificate_ready(parts[:proof+1],reaction):
+            raise ValueError('自然反应局部证书未成立')
+        events.append((seen[proof],2,proof,'confirmed_without_start_break'))
+    if events:
+        # 同批破首起价否决“未破”条件；选终价与自然确认同批均支持反转。
+        local_count,_,local_proof,state = min(events)
+    else:
+        local_count,local_proof,state = None,None,'pending'
+    published = (max(prior_count,local_count) if qualification=='visible' and
+                 local_count is not None else None)
+    return dict(qualification=qualification,state=state,local_proof=local_proof,
+                local_count=local_count,published_count=published,predecessor=identity)
+
+
 def embedded_table(filename, name):
     """只读已有常量，不执行另一测试模块或用算法回填预期。"""
     tree = ast.parse((ROOT / 'tests' / filename).read_text(encoding='utf-8'))
@@ -244,6 +321,147 @@ def pending_gap_revisions():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    @staticmethod
+    def _natural_parts(values):
+        return [dict(direction='up' if z>a else 'down',start_ticks=a,end_ticks=z,
+                     low_ticks=min(a,z),high_ticks=max(a,z))
+                for a,z in zip(values,values[1:])]
+
+    def test_natural_state_seed87_all_visible_prefixes_keep_pending_contract(self):
+        """17笔有限目标合同：102前仅种子完成，103才逆传；不调用未修正的包算法。"""
+        audit = M3_NATURAL_STATE_AUDIT
+        source = M3_FINITE_SUFFIX_AUDIT['M2']
+        path = ROOT/'tests/fixtures'/source['fixture']
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),source['fixture_sha256'])
+        case = next(c for c in json.loads(path.read_text())['cases'] if c['id']==source['id'])
+        values = M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks']
+        self.assertEqual(tuple([case['foundation']['bis'][87][3]]+
+            [b[4] for b in case['foundation']['bis'][87:104]]),values)
+        seen = case['foundation']['bis_confirmed_raw_count'][87:104]
+        for mirrored in (False,True):
+            parts = self._natural_parts([3000-v for v in values] if mirrored else values)
+            # 本参考适用前提：给定90的标准旧侧91与首反93无正gap且已笔破坏。
+            left,r = parts[4],parts[audit['first']]
+            self.assertLessEqual(r['low_ticks'],left['high_ticks'])
+            self.assertGreaterEqual(r['high_ticks'],left['low_ticks'])
+            self.assertTrue(r['end_ticks']<=left['high_ticks'] if mirrored else
+                            r['end_ticks']>=left['low_ticks'])
+            context = dict(event=audit['predecessor'],published_count=seen[5])
+            for count in range(1,18):
+                completed = [audit['predecessor']] if count>=6 else []
+                if count>=7:
+                    state = manual_natural_reaction_state(parts[:count],seen[:count],seen[count-1],
+                        audit['owner'],audit['first'],context,audit['reaction'])
+                    self.assertEqual(state['qualification'],'visible')
+                    self.assertEqual(state['state'],'pending' if count<17 else
+                                     'confirmed_without_start_break')
+                    if count<17:
+                        self.assertIsNone(state['published_count'])
+                    else:
+                        self.assertEqual((state['local_proof'],state['local_count'],state['published_count']),
+                                         (16,seen[16],seen[16]))
+                        completed.append(audit['completed_at17'][1])
+                    if count>=16:
+                        # 内部93..97/proof102局部确实成立，仍不授予自然新起点。
+                        self.assertTrue(manual_xd_certificate_ready(parts[:count],audit['forbidden'][0]))
+                expected = () if count<6 else (audit['predecessor'],) if count<17 else audit['completed_at17']
+                self.assertEqual(tuple(completed),expected)
+                self.assertTrue(all(event not in completed for event in audit['forbidden']))
+
+    def test_natural_state_strict_first_boundaries_and_mirrors(self):
+        """等首起/终价仍未选向；严格边界和自然反应确认四态分别保留。"""
+        values = list(M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'])
+        variants = [(values[:17],None,'pending',None),
+                    (values[:16]+[1029],None,'pending',None),
+                    (values[:16]+[1028],None,'first_start_broken',15),
+                    (values[:17]+[1091],(7,9,1,16),'confirmed_without_start_break',16),
+                    (values[:17]+[1092],(7,9,1,16),'first_end_selected',16),
+                    (values,(7,9,1,16),'confirmed_without_start_break',16)]
+        for prices,reaction,kind,proof in variants:
+            for mirrored in (False,True):
+                parts = self._natural_parts([3000-v for v in prices] if mirrored else prices)
+                seen = list(range(len(parts)))
+                result = manual_natural_reaction_state(parts,seen,seen[-1],3,6,
+                    dict(event=(0,2,1,5),published_count=5),reaction)
+                self.assertEqual((result['state'],result['local_proof']),(kind,proof))
+
+    def test_natural_state_earlier_confirmation_survives_later_boundary_break(self):
+        """自然反应16先确认后，17破首起/18选首终不回撤已成立事件。"""
+        values = list(M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'])+[1028,1092]
+        for mirrored in (False,True):
+            parts = self._natural_parts([3000-v for v in values] if mirrored else values)
+            for count in (17,18,19):
+                seen = list(range(count))
+                result = manual_natural_reaction_state(parts[:count],seen,seen[-1],3,6,
+                    dict(event=(0,2,1,5),published_count=5),(7,9,1,16))
+                self.assertEqual((result['state'],result['local_proof'],result['published_count']),
+                                 ('confirmed_without_start_break',16,16))
+
+    def test_natural_state_unknown_waiting_and_late_visible_qualification(self):
+        """资格晚到只延后发布，局部证明不改写，也不把已知等待降成未知前史。"""
+        parts = self._natural_parts(M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'])
+        seen = list(range(100,117))
+        unknown = manual_natural_reaction_state(parts,seen,116,3,6,None,(7,9,1,16))
+        self.assertEqual((unknown['qualification'],unknown['local_proof'],unknown['published_count']),
+                         ('unknown',16,None))
+        unpublished = manual_natural_reaction_state(parts,seen,116,3,6,
+            dict(event=(0,2,1,5),published_count=None),(7,9,1,16))
+        self.assertEqual((unpublished['qualification'],unpublished['predecessor'],unpublished['published_count']),
+                         ('waiting',(0,2,1,5),None))
+        context = dict(event=(0,2,1,5),published_count=200)
+        for observed in (116,199,200):
+            result = manual_natural_reaction_state(parts,seen,observed,3,6,context,(7,9,1,16))
+            self.assertEqual((result['local_proof'],result['local_count']),(16,116))
+            self.assertEqual(result['qualification'],'visible' if observed==200 else 'waiting')
+            self.assertEqual(result['published_count'],200 if observed==200 else None)
+        # 自然第三笔9在109可见；资格110晚到仍可在当前116应用，不强加<=第三笔。
+        late = manual_natural_reaction_state(parts,seen,116,3,6,
+            dict(event=(0,2,1,5),published_count=110),(7,9,1,16))
+        self.assertEqual((late['qualification'],late['published_count']),('visible',116))
+
+    def test_natural_state_same_observation_start_break_cannot_be_revived(self):
+        """同批完成和破首起价不构成未破；晚资格不能复活被否决条件。"""
+        values = list(M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'])+[1028]
+        for mirrored in (False,True):
+            parts = self._natural_parts([3000-v for v in values] if mirrored else values)
+            seen = list(range(100,116))+[200,200]
+            for observed in (200,250):
+                result = manual_natural_reaction_state(parts,seen,observed,3,6,
+                    dict(event=(0,2,1,5),published_count=250),(7,9,1,16))
+                self.assertEqual((result['state'],result['local_proof'],result['local_count']),
+                                 ('first_start_broken',17,200))
+                self.assertEqual(result['published_count'],250 if observed==250 else None)
+
+    def test_natural_state_late_local_certificate_cannot_revive_broken_first_start(self):
+        """反应S有有效局部证书也不能复活先破首起价的R；同批/晚资格两侧均核。"""
+        values = [30,40,35,50,12,16,10,20,15,18,9,17,12,19]
+        for mirrored in (False,True):
+            parts = self._natural_parts([100-v for v in values] if mirrored else values)
+            self.assertTrue(manual_xd_certificate_ready(parts,(7,9,1,12)))
+            seen = list(range(1,10))+[13,13,13,13]
+            for observed in (13,20):
+                result = manual_natural_reaction_state(parts,seen,observed,3,6,
+                    dict(event=(0,2,1,5),published_count=20),(7,9,1,12))
+                self.assertEqual((result['state'],result['local_proof'],result['local_count']),
+                                 ('first_start_broken',9,13))
+                self.assertEqual(result['published_count'],20 if observed==20 else None)
+
+    def test_natural_state_rejects_mismatched_identity_and_future_parts(self):
+        """仅同一前驱/R/S身份可累积资格，不能借相同proof索引或未来笔放行。"""
+        parts = self._natural_parts(M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'])
+        seen = list(range(17))
+        cases = [((1,3,1,6),6,(7,9,1,16),'前驱证书身份'),
+                 ((0,2,1,5),4,(7,9,1,16),'累计发布'),
+                 ((0,2,1,5),5,(8,10,1,16),'紧邻起点')]
+        for event,published,reaction,error in cases:
+            with self.assertRaisesRegex(ValueError,error):
+                manual_natural_reaction_state(parts,seen,16,3,6,
+                    dict(event=event,published_count=published),reaction)
+        with self.assertRaisesRegex(ValueError,'当前观察前缀'):
+            manual_natural_reaction_state(parts,seen,15,3,6,None,(7,9,1,16))
+        with self.assertRaisesRegex(ValueError,'逐项对应且有序'):
+            manual_natural_reaction_state(parts,seen[:-1],16,3,6,None,(7,9,1,16))
+
     def test_m2_given_first_pen_proofs_keep_parent_gates_and_natural_scope(self):
         """65/111局部首笔选向已证；原首起价等价不撤销，发布仍带给定链前提。"""
         tool = compiler()
