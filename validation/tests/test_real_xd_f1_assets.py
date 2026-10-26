@@ -196,6 +196,33 @@ M3_NATURAL_SUCCESSOR_AUDIT = {
 }
 
 
+# 新增三源只固定近期种子后的首处分歧，不把原型整窗输出当作真值。
+# current首价来自当时活动笔，fixed计数来自后继笔固定；二者不得混填。
+M3_EXPANDED_FIRST_AUDIT = {
+    'M1_30m': dict(
+        fixture='real_third_point_xd_margin0.json',id='588000-30m-20230501-20250228',
+        source_sha256='5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+        seed=38,owner=41,first=54,parent=(38,40,1,43),target=(41,67,1,72),
+        reaction=(55,67,1,72),local_competitor=(54,58,1,61),cancel=67,
+        current_counts=(637,930),fixed_counts=(642,943),raw_limit=943,
+        current_proof_prices=(963,930),fixed_proof_prices=(963,934)),
+    'S3_day': dict(
+        fixture='real_strict_trend.json',id='518880-day-20210101-20260731',
+        source_sha256='ac9101f3cb99de1a9e8612a6366aa87be4e4627664ccf1b4884ffe60fc39ffde',
+        seed=10,owner=13,first=16,parent=(10,12,1,15),target=(13,23,1,26),
+        reaction=(17,23,1,26),local_competitor=(16,20,1,23),cancel=23,
+        current_counts=(141,232),fixed_counts=(149,239),raw_limit=239,
+        current_proof_prices=(3730,3550),fixed_proof_prices=(3730,3550)),
+    'T_day': dict(
+        fixture='real_third_point_margin0.json',id='588000-day-20210101-20231231',
+        source_sha256='64c4f4b80eca2f31f262b86c26523ddc9c13d59195ca33a5c5aa5904460c0217',
+        seed=22,owner=31,first=40,parent=(22,30,2,38),target=(31,39,1,59),
+        reaction=(41,53,2,59),local_competitor=(31,53,2,59),cancel=None,
+        current_counts=(370,586),fixed_counts=(377,589),raw_limit=589,
+        current_proof_prices=(1088,1113),fixed_proof_prices=(1088,1113)),
+}
+
+
 def manual_xd_certificate_ready(parts, event):
     """只验给定分界的整数证书，不搜索XD；课67包含与课71原首笔选向分列。"""
     a, z, mode, proof = event
@@ -386,6 +413,126 @@ class TestRealXdF1Assets(unittest.TestCase):
         return [dict(direction='up' if z>a else 'down',start_ticks=a,end_ticks=z,
                      low_ticks=min(a,z),high_ticks=max(a,z))
                 for a,z in zip(values,values[1:])]
+
+    def _expanded_first_source(self,key):
+        audit=M3_EXPANDED_FIRST_AUDIT[key]
+        path=ROOT/'tests/fixtures'/audit['fixture']
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),audit['source_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+        rows=case['raw_rows'][:audit['raw_limit']]
+        tool=compiler()
+        _,_,bis=tool.foundation(rows,'106')
+        parts=tool.components(rows,bis[:-1],None)
+        seen=case['foundation']['bis_confirmed_raw_count'][:len(parts)]
+        self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(parts)])
+        self.assertEqual(tuple(seen[audit[name][3]] for name in ('parent','target')),audit['fixed_counts'])
+        return audit,case,parts,seen
+
+    def _expanded_first_arrival_boundaries(self,audit,case):
+        """仅给定证书的必要raw边界；未运行识别器或回填活动端点。"""
+        tool=compiler()
+        for contract in ('current','fixed'):
+            counts=audit[contract+'_counts']
+            for count in sorted({n for at in counts for n in (at-1,at)}):
+                rows=case['raw_rows'][:count]
+                _,_,bis=tool.foundation(rows,'106')
+                self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+                parts=tool.components(rows,bis if contract=='current' else bis[:-1],None)
+                parent=manual_xd_certificate_ready(parts,audit['parent'])
+                if audit['cancel'] is not None:
+                    target=parent and manual_xd_certificate_ready(parts,audit['target'])
+                    if target:
+                        first=parts[audit['first']]
+                        up=first['direction']=='up'
+                        canceled=next((i for i in range(audit['first']+1,audit['target'][3]+1,2)
+                            if (parts[i]['end_ticks']<first['start_ticks'] if up else
+                                parts[i]['end_ticks']>first['start_ticks'])),None)
+                        self.assertEqual(canceled,audit['cancel'])
+                else:
+                    target=parent and manual_xd_certificate_ready(parts,audit['reaction'])
+                    if target:
+                        first=parts[audit['first']]
+                        group=parts[audit['reaction'][0]:audit['reaction'][1]+1]
+                        self.assertLess(max(p['high_ticks'] for p in group),first['start_ticks'])
+                        self.assertTrue(all(parts[i]['end_ticks']>=first['end_ticks']
+                                           for i in range(audit['first']+2,audit['target'][3]+1,2)))
+                        self.assertTrue(all(parts[i]['end_ticks']<=first['start_ticks']
+                                           for i in range(audit['first']+1,audit['target'][3]+1,2)))
+                for j,(name,ready) in enumerate((('parent',parent),('target',target))):
+                    self.assertEqual(ready,count>=counts[j],(audit['id'],contract,count,name))
+                    if ready and count==counts[j]:
+                        self.assertEqual(parts[audit[name][3]]['end_ticks'],audit[contract+'_proof_prices'][j])
+
+    def test_expanded_m1_first_reverse_waits_instead_of_using_one_tick_lower_local_peak(self):
+        """给seed38：R54终994未被993选向，local proof61不越过自然S55待定。"""
+        audit,case,original,seen=self._expanded_first_source('M1_30m')
+        self._expanded_first_arrival_boundaries(audit,case)
+        self.assertEqual((original[54]['start_ticks'],original[54]['end_ticks'],original[58]['end_ticks']),
+                         (906,994,993))
+        for mirrored in (False,True):
+            parts=original if not mirrored else [dict(p,
+                direction='down' if p['direction']=='up' else 'up',start_ticks=5000-p['start_ticks'],
+                end_ticks=5000-p['end_ticks'],low_ticks=5000-p['high_ticks'],high_ticks=5000-p['low_ticks'])
+                for p in original]
+            parent=dict(event=audit['parent'],published_count=642)
+            for event in (audit['parent'],audit['target'],audit['reaction'],audit['local_competitor']):
+                self.assertTrue(manual_xd_certificate_ready(parts,event))
+            pending=manual_natural_reaction_state(parts[:62],seen[:62],815,41,54,parent,audit['reaction'])
+            self.assertEqual((pending['state'],pending['published_count']),('pending',None))
+            broken=manual_natural_reaction_state(parts,seen,943,41,54,parent,audit['reaction'])
+            self.assertEqual((broken['state'],broken['local_proof'],broken['published_count']),
+                             ('first_start_broken',67,902))
+            self.assertLess(broken['published_count'],seen[audit['target'][3]])
+        self.assertEqual(audit['current_proof_prices'][1],930)
+        self.assertEqual(audit['fixed_proof_prices'][1],934)
+
+    def test_expanded_s3_crossing_old_start_does_not_replace_original_first_end_selection(self):
+        """给seed10：3542越旧起3579但未破首终3541；须等撤销后24的26证明。"""
+        audit,case,original,seen=self._expanded_first_source('S3_day')
+        self._expanded_first_arrival_boundaries(audit,case)
+        self.assertLess(original[20]['end_ticks'],original[13]['start_ticks'])
+        self.assertEqual(original[20]['end_ticks']-original[16]['end_ticks'],1)
+        for mirrored in (False,True):
+            parts=original if not mirrored else [dict(p,
+                direction='down' if p['direction']=='up' else 'up',start_ticks=10000-p['start_ticks'],
+                end_ticks=10000-p['end_ticks'],low_ticks=10000-p['high_ticks'],high_ticks=10000-p['low_ticks'])
+                for p in original]
+            parent=dict(event=audit['parent'],published_count=149)
+            self.assertTrue(manual_xd_certificate_ready(parts,audit['local_competitor']))
+            self.assertFalse(manual_xd_certificate_ready(parts,(13,15,1,20)))
+            pending=manual_natural_reaction_state(parts[:21],seen[:21],189,13,16,parent,audit['reaction'])
+            self.assertEqual(pending['state'],'pending')
+            broken=manual_natural_reaction_state(parts,seen,239,13,16,parent,audit['reaction'])
+            self.assertEqual((broken['state'],broken['local_proof'],broken['published_count']),
+                             ('first_start_broken',23,218))
+            self.assertTrue(manual_xd_certificate_ready(parts,audit['target']))
+
+    def test_expanded_daily_same_proof_gap_certificate_keeps_earlier_original_turn_identity(self):
+        """给seed22：父gap22与自然S gap46；同proof59不交换R40与较低gap54。"""
+        audit,case,original,seen=self._expanded_first_source('T_day')
+        self._expanded_first_arrival_boundaries(audit,case)
+        parent=dict(event=audit['parent'],published_count=377)
+        for mirrored in (False,True):
+            parts=original if not mirrored else [dict(p,
+                direction='down' if p['direction']=='up' else 'up',start_ticks=5000-p['start_ticks'],
+                end_ticks=5000-p['end_ticks'],low_ticks=5000-p['high_ticks'],high_ticks=5000-p['low_ticks'])
+                for p in original]
+            for event in (audit['parent'],audit['reaction'],audit['local_competitor']):
+                self.assertTrue(manual_xd_certificate_ready(parts,event))
+            waiting=manual_natural_reaction_state(parts[:38],seen[:38],370,31,34,parent,None)
+            self.assertEqual(waiting['qualification'],'waiting')
+            visible=manual_natural_reaction_state(parts[:39],seen[:39],377,31,34,parent,None)
+            self.assertEqual((visible['qualification'],visible['state']),('visible','pending'))
+            canceled=manual_natural_reaction_state(parts[:40],seen[:40],395,31,34,parent,None)
+            self.assertEqual((canceled['state'],canceled['local_proof']),('first_start_broken',39))
+            actual=manual_natural_reaction_state(parts,seen,589,31,40,parent,audit['reaction'])
+            self.assertEqual((actual['state'],actual['local_proof'],actual['published_count']),
+                             ('confirmed_without_start_break',59,589))
+        self.assertEqual(original[40]['start_ticks']-max(p['high_ticks'] for p in original[41:54]),14)
+        self.assertEqual(original[29]['low_ticks']-original[31]['high_ticks'],22)
+        self.assertEqual(original[54]['low_ticks']-max(original[i]['high_ticks'] for i in (50,52)),46)
+        self.assertEqual(audit['target'],(31,39,1,59))
+        self.assertEqual(audit['local_competitor'],(31,53,2,59))
 
     def _natural_successor_source(self,key):
         audit=M3_NATURAL_SUCCESSOR_AUDIT[key]
