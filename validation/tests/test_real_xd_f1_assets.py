@@ -175,6 +175,27 @@ M3_NATURAL_STATE_AUDIT = dict(
     forbidden=((6,10,1,15),(7,9,1,16)))
 
 
+# S确认后，R后继需另给D的组成和完成证书；不把旧前史基底升级为自然证明。
+# M2同批自审更正仅替代旧38..52的唯一性结论，旧原始收据/表均保留。
+M3_NATURAL_SUCCESSOR_AUDIT = {
+    'Y1': dict(
+        fixture='real_second_point.json',id='518880-5m-20260501-20260724',
+        source_sha256='745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6',
+        receipt_sha256='e406c9ba128aef579b5f7c145080de08f955485aae17e43e377236d4f80e1c02',
+        d_receipt_sha256='7a7b771da6a5754edf231c4e6101eae8a3bf0cc03595c03fb2c241e9d8413899',
+        seed=1,owner=8,first=19,parent=(1,7,1,14),reaction=(20,26,1,29),
+        successor=(27,29,1,32),extended=(19,29,1,32),old_boundary=(8,18,1,29),
+        counts=(163,299,323),original_first=(9714,9906),net_end=9834),
+    'M2': dict(
+        fixture='real_third_point_xd_margin0.json',id='512880-5m-20260201-20260724',
+        source_sha256='5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+        receipt_sha256='686712846dec30a4dedef89fd2e0d2b0590b47aab580028e9f98879065287456',
+        seed=16,owner=35,first=38,parent=(16,34,1,37),reaction=(39,41,2,51),
+        successor=(42,48,1,51),extended=(38,48,1,51),old_boundary=(35,37,1,51),
+        counts=(940,1183,1183),original_first=(1135,1105),net_end=1112),
+}
+
+
 def manual_xd_certificate_ready(parts, event):
     """只验给定分界的整数证书，不搜索XD；课67包含与课71原首笔选向分列。"""
     a, z, mode, proof = event
@@ -291,6 +312,45 @@ def manual_natural_reaction_state(parts, seen, observed, owner, first, predecess
                 local_count=local_count,published_count=published,predecessor=identity)
 
 
+def manual_natural_successor_certificate(parts, seen, observed, audit, predecessor):
+    """给定R/S/D证书的条件装配；D最低形态不代替完成或自然归属证明。
+
+    S可先支持R形成；D紧接S且与R同向，R拟终点须在D末。局部完成
+    分别由原笔检验，再合并可见时刻；不额外要求候选序号晚于S证明。
+    本函数不搜索自然起点，不把S/D内部部件直接输出为全局XD。
+    """
+    r,s,d = audit['extended'],audit['reaction'],audit['successor']
+    if r[0]!=audit['first'] or s[0]!=r[0]+1 or d[0]!=s[1]+1 or d[1]!=r[1]:
+        raise ValueError('R/S/D组成身份不衔接')
+    if audit['old_boundary']!=(audit['owner'],audit['first']-1,1,s[3]):
+        raise ValueError('原段分界与给定自然反应证明不一致')
+    if d[1]-d[0]+1<3:
+        raise ValueError('给定自然后继D至少三笔')
+    if max(r[3],s[3],d[3])>=len(parts):
+        return None
+    first_d=parts[d[0]:d[0]+3]
+    if (parts[d[0]]['direction']!=parts[r[0]]['direction'] or
+            max(p['low_ticks'] for p in first_d)>min(p['high_ticks'] for p in first_d)):
+        raise ValueError('D方向及首三笔重叠须另证')
+    up=parts[r[0]]['direction']=='up'
+    if parts[s[0]]['direction']==parts[r[0]]['direction']:
+        raise ValueError('S须与R反向')
+    for event in (r,s,d):
+        a,z=parts[event[0]]['start_ticks'],parts[event[1]]['end_ticks']
+        event_up=not up if event==s else up
+        if not (z>a if event_up else z<a):
+            raise ValueError('R/S/D净端方向须成立')
+    for event in (r,s,d):
+        if not manual_xd_certificate_ready(parts,event):
+            raise ValueError('R/S/D局部完成证书未成立')
+    state=manual_natural_reaction_state(parts,seen,observed,audit['owner'],audit['first'],predecessor,s)
+    if state['qualification']!='visible' or state['state']!='confirmed_without_start_break':
+        return None
+    return dict(local_proof=r[3],local_count=seen[r[3]],successor_proof=d[3],
+                published_count=max(state['published_count'],seen[r[3]],seen[d[3]]),
+                reaction=s,successor=d,extended=r)
+
+
 def embedded_table(filename, name):
     """只读已有常量，不执行另一测试模块或用算法回填预期。"""
     tree = ast.parse((ROOT / 'tests' / filename).read_text(encoding='utf-8'))
@@ -326,6 +386,87 @@ class TestRealXdF1Assets(unittest.TestCase):
         return [dict(direction='up' if z>a else 'down',start_ticks=a,end_ticks=z,
                      low_ticks=min(a,z),high_ticks=max(a,z))
                 for a,z in zip(values,values[1:])]
+
+    def _natural_successor_source(self,key):
+        audit=M3_NATURAL_SUCCESSOR_AUDIT[key]
+        path=ROOT/'tests/fixtures'/audit['fixture']
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),audit['source_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+        limit=max(audit[name][3] for name in ('parent','reaction','successor','extended'))+1
+        seen=case['foundation']['bis_confirmed_raw_count'][:limit]
+        parts=[dict(direction=b[0],start_ticks=b[3],end_ticks=b[4],
+                    low_ticks=min(b[3],b[4]),high_ticks=max(b[3],b[4]))
+               for b in case['foundation']['bis'][:limit]]
+        self.assertEqual(tuple(seen[audit[name][3]] for name in ('parent','reaction','extended')),
+                         audit['counts'])
+        return audit,parts,seen
+
+    def test_y1_confirmed_reaction_allows_certified_successor_after_its_composition(self):
+        """给seed1：自然S20确认后允许D27，原首高9906不永久封死净端9834。"""
+        audit,original,seen=self._natural_successor_source('Y1')
+        for mirrored in (False,True):
+            parts=original if not mirrored else [dict(p,
+                direction='down' if p['direction']=='up' else 'up',
+                start_ticks=20000-p['start_ticks'],end_ticks=20000-p['end_ticks'],
+                low_ticks=20000-p['high_ticks'],high_ticks=20000-p['low_ticks']) for p in original]
+            parent=dict(event=audit['parent'],published_count=seen[audit['parent'][3]])
+            for event in (audit['parent'],audit['reaction'],audit['successor'],audit['extended']):
+                self.assertTrue(manual_xd_certificate_ready(parts,event))
+            for count in (29,30,32,33):
+                result=manual_natural_successor_certificate(parts[:count],seen[:count],seen[count-1],audit,parent)
+                if count<33:
+                    self.assertIsNone(result)
+                else:
+                    self.assertEqual((result['local_proof'],result['successor_proof'],result['published_count']),
+                                     (32,32,323))
+            self.assertGreater(audit['successor'][0],audit['reaction'][1])
+        self.assertEqual((original[19]['start_ticks'],original[19]['end_ticks']),audit['original_first'])
+        self.assertEqual(original[29]['end_ticks'],audit['net_end'])
+        self.assertLess(audit['net_end'],audit['original_first'][1])
+
+    def test_m2_same_batch_successor_uses_composition_instead_of_proof_index_order(self):
+        """给seed16：S39与D42局部证书同51成立，49早于proof51不构成否决。"""
+        audit,original,seen=self._natural_successor_source('M2')
+        for mirrored in (False,True):
+            parts=original if not mirrored else [dict(p,
+                direction='down' if p['direction']=='up' else 'up',
+                start_ticks=3000-p['start_ticks'],end_ticks=3000-p['end_ticks'],
+                low_ticks=3000-p['high_ticks'],high_ticks=3000-p['low_ticks']) for p in original]
+            parent=dict(event=audit['parent'],published_count=940)
+            for event in (audit['parent'],audit['reaction'],audit['successor'],audit['extended']):
+                self.assertTrue(manual_xd_certificate_ready(parts,event))
+            self.assertIsNone(manual_natural_successor_certificate(parts[:-1],seen[:-1],1182,audit,parent))
+            result=manual_natural_successor_certificate(parts,seen,1183,audit,parent)
+            self.assertEqual((result['local_proof'],result['successor_proof'],result['published_count']),
+                             (51,51,1183))
+            state=manual_natural_reaction_state(parts,seen,1183,35,38,parent,audit['reaction'])
+            self.assertEqual((state['state'],state['local_proof'],state['published_count']),
+                             ('confirmed_without_start_break',51,1183))
+        self.assertLess(audit['extended'][1]+1,audit['reaction'][3])
+        self.assertEqual((original[38]['start_ticks'],original[38]['end_ticks']),audit['original_first'])
+        self.assertGreater(audit['net_end'],audit['original_first'][1])
+        # 旧表的35/proof48保留为历史声明，不被当作已证明的更早发布。
+        self.assertIn((35,37,1,48),M3_FINITE_SUFFIX_AUDIT['M2']['events'])
+
+    def test_natural_successor_requires_own_completion_and_visible_same_path_parent(self):
+        """D最少三笔/交集/净向只是必要条件，须另有完成证书和可见前驱。"""
+        audit,parts,seen=self._natural_successor_source('M2')
+        for parent in (None,dict(event=audit['parent'],published_count=None),
+                       dict(event=audit['parent'],published_count=1200)):
+            self.assertIsNone(manual_natural_successor_certificate(parts,seen,1183,audit,parent))
+        parent=dict(event=audit['parent'],published_count=940)
+        short=dict(audit,successor=(42,42,1,51),extended=(38,42,1,51))
+        with self.assertRaisesRegex(ValueError,'至少三笔'):
+            manual_natural_successor_certificate(parts,seen,1183,short,parent)
+        unproved=dict(audit,successor=(42,48,1,50))
+        with self.assertRaisesRegex(ValueError,'局部完成证书'):
+            manual_natural_successor_certificate(parts,seen,1183,unproved,parent)
+        mismatch=dict(audit,successor=(44,48,1,51))
+        with self.assertRaisesRegex(ValueError,'身份不衔接'):
+            manual_natural_successor_certificate(parts,seen,1183,mismatch,parent)
+        stale=dict(audit,old_boundary=(35,37,1,48))
+        with self.assertRaisesRegex(ValueError,'原段分界'):
+            manual_natural_successor_certificate(parts,seen,1183,stale,parent)
 
     def test_natural_state_seed87_all_visible_prefixes_keep_pending_contract(self):
         """17笔有限目标合同：102前仅种子完成，103才逆传；不调用未修正的包算法。"""
