@@ -272,6 +272,27 @@ M3_EXPANDED_BOUNDARY_AUDIT = {
 }
 
 
+# 本表仅承接既有M2/Y1有限分界；活动证据价、固定证据价和前驱资格分列。
+M3_CONTEXT_COUNTEREXAMPLES_AUDIT = {
+    'M2': dict(seed=201,events=((201,227,2,241),(228,238,1,255),(239,257,1,260)),
+               owner=239,first=248,predecessor=(228,238,1,255),cancel=255,
+               false_following=(248,252,1,255),raw_window=(4016,4774),
+               current_counts=(4554,4716,4767),fixed_counts=(4563,4727,4774),
+               current_cancel=4716,fixed_cancel=4727,
+               current_proof_prices=(1150,1170,1146),fixed_proof_prices=(1150,1181,1146),
+               current_proof_dates=('2026-06-25 14:40:00','2026-07-01 10:20:00','2026-07-02 10:30:00'),
+               fixed_proof_dates=('2026-06-25 14:40:00','2026-07-01 10:50:00','2026-07-02 10:30:00')),
+    'Y1': dict(seed=221,events=((221,225,1,228),(226,240,1,243)),
+               owner=226,first=231,predecessor=(221,225,1,228),cancel=238,
+               false_following=(231,235,1,238),raw_window=(2392,2580),
+               current_counts=(2434,2568),fixed_counts=(2440,2580),
+               current_cancel=2507,fixed_cancel=2512,
+               current_proof_prices=(8351,8362),fixed_proof_prices=(8351,8362),
+               current_proof_dates=('2026-07-15 13:35:00','2026-07-20 11:00:00'),
+               fixed_proof_dates=('2026-07-15 13:35:00','2026-07-20 11:00:00')),
+}
+
+
 def manual_feature_nodes(parts, indices, initial_up):
     """课67/78整数标准元素；仅处理指定同一侧，不搜索分界或调用包算法。"""
     nodes = []
@@ -382,6 +403,8 @@ def manual_natural_reaction_state(parts, seen, observed, owner, first, predecess
     published_count仅为该状态条件齐备的计数，不自行生成公开XD链。
     同一不可变笔输入及来源/祖先路径的自然资格由调用方另证，不能
     仅凭相同数值或索引把其他路径的条件证书移来使用。
+    proposed_boundary=(起笔,假设分界后起笔)只绑定待证前驱；即使只含
+    一笔也不能省略成未知前史，更不能携带已发布计数冒充完成线段。
     """
     if len(parts)!=len(seen) or not parts or any(a>b for a,b in zip(seen,seen[1:])):
         raise ValueError('可见固定笔与到达计数须逐项对应且有序')
@@ -391,16 +414,24 @@ def manual_natural_reaction_state(parts, seen, observed, owner, first, predecess
         raise ValueError('首反向笔须与原段反向')
     qualification, identity, prior_count = 'unknown', None, None
     if predecessor is not None:
-        identity = tuple(predecessor['event'])
-        a,z,mode,proof = identity
-        prior_count = predecessor['published_count']
-        if a<0 or z<a+2 or mode not in (1,2) or proof<=z or z+1!=owner:
-            raise ValueError('前驱证书身份与原段起点不衔接')
-        if prior_count is not None and proof<len(parts) and prior_count<seen[proof]:
-            raise ValueError('累计发布不能早于前驱局部证明')
-        qualification = 'visible' if prior_count is not None and prior_count<=observed else 'waiting'
-        if qualification=='visible' and not manual_xd_certificate_ready(parts,identity):
-            raise ValueError('资格可见时前驱局部证书也须成立')
+        if 'proposed_boundary' in predecessor:
+            a,stop = predecessor['proposed_boundary']
+            if (a<0 or stop<=a or stop!=owner or predecessor.get('event') is not None or
+                    predecessor.get('published_count') is not None):
+                raise ValueError('待证前驱仅绑定衔接边界，不能声明完成或发布')
+            identity = ('provisional',a,stop)
+            qualification = 'waiting'
+        else:
+            identity = tuple(predecessor['event'])
+            a,z,mode,proof = identity
+            prior_count = predecessor['published_count']
+            if a<0 or z<a+2 or mode not in (1,2) or proof<=z or z+1!=owner:
+                raise ValueError('前驱证书身份与原段起点不衔接')
+            if prior_count is not None and proof<len(parts) and prior_count<seen[proof]:
+                raise ValueError('累计发布不能早于前驱局部证明')
+            qualification = 'visible' if prior_count is not None and prior_count<=observed else 'waiting'
+            if qualification=='visible' and not manual_xd_certificate_ready(parts,identity):
+                raise ValueError('资格可见时前驱局部证书也须成立')
     if reaction is not None:
         a,z,mode,proof = reaction
         if a!=first+1 or z<a+2 or mode not in (1,2) or proof<=z:
@@ -1773,6 +1804,104 @@ class TestRealXdF1Assets(unittest.TestCase):
                         nodes.append(item)
                 # 上移右侧低点是两个标准元素的对照；等低包含例仍仅一个。
                 self.assertEqual(len(nodes), feature_count)
+
+    def _context_counterexample_source(self,key):
+        source = M3_FINITE_SUFFIX_AUDIT[key]
+        path = ROOT/'tests/fixtures'/source['fixture']
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),source['fixture_sha256'])
+        case = next(c for c in json.loads(path.read_text())['cases'] if c['id']==source['id'])
+        tool = compiler()
+        _,_,bis = tool.foundation(case['raw_rows'],'106')
+        self.assertEqual(tool.records(bis),case['foundation']['bis'])
+        return M3_CONTEXT_COUNTEREXAMPLES_AUDIT[key],case,tool.components(case['raw_rows'],bis[:-1],None)
+
+    def test_context_counterexamples_revoke_original_first_before_accepting_local_following(self):
+        """M2/Y1局部同起点小段虽成立，原首起已破就不能反传旧段完成。"""
+        for key in ('M2','Y1'):
+            audit,_,original = self._context_counterexample_source(key)
+            values = [original[0]['start_ticks']]+[p['end_ticks'] for p in original]
+            for mirrored in (False,True):
+                parts = self._natural_parts([20000-v for v in values] if mirrored else values)
+                owner,first,cancel = audit['owner'],audit['first'],audit['cancel']
+                seen = list(range(len(parts)))  # 本项只比笔快照；raw到达另项核验。
+                parent = dict(event=audit['predecessor'],published_count=audit['predecessor'][3])
+                before = manual_natural_reaction_state(parts[:cancel],seen[:cancel],cancel-1,
+                    owner,first,parent,None)
+                self.assertEqual(before['state'],'pending')
+                at = manual_natural_reaction_state(parts[:cancel+1],seen[:cancel+1],cancel,
+                    owner,first,parent,None)
+                self.assertEqual((at['qualification'],at['state'],at['local_proof']),
+                                 ('visible','first_start_broken',cancel))
+                # 错误路线从first自身找完成小段；自然反应应从first+1起，方向相反。
+                self.assertEqual(audit['false_following'][0],first)
+                self.assertTrue(manual_xd_certificate_ready(parts[:cancel+1],audit['false_following']))
+                self.assertNotEqual(parts[first]['direction'],parts[first+1]['direction'])
+                later = manual_natural_reaction_state(parts,seen,seen[-1],owner,first,parent,None)
+                self.assertEqual((later['state'],later['local_proof']),('first_start_broken',cancel))
+                self.assertTrue(manual_xd_certificate_ready(parts,audit['events'][-1]))
+
+    def test_provisional_parent_keeps_original_first247_waiting_before_active_price_selection(self):
+        """M2 raw4705..4715的局部253不能替换原247；待证R239不改成未知前史。"""
+        audit,case,_ = self._context_counterexample_source('M2')
+        tool = compiler()
+        for raw,price in ((4705,1126),(4715,1135),(4716,1170)):
+            _,_,bis = tool.foundation(case['raw_rows'][:raw],'106')
+            original = tool.components(case['raw_rows'][:raw],bis,None)
+            self.assertEqual((len(original),original[255]['end_ticks']),(256,price))
+            values = [original[0]['start_ticks']]+[p['end_ticks'] for p in original]
+            for mirrored in (False,True):
+                parts = self._natural_parts([20000-v for v in values] if mirrored else values)
+                seen = list(range(len(parts)))
+                provisional = dict(proposed_boundary=(239,240),published_count=None)
+                state = manual_natural_reaction_state(parts,seen,255,240,247,provisional,(248,252,1,255))
+                self.assertEqual(state['qualification'],'waiting')
+                self.assertEqual(state['predecessor'],('provisional',239,240))
+                self.assertIsNone(state['published_count'])
+                self.assertEqual(state['state'],'first_end_selected' if raw==4716 else
+                                 'confirmed_without_start_break')
+                self.assertTrue(manual_xd_certificate_ready(parts,(240,252,1,255)))
+                self.assertEqual(manual_xd_certificate_ready(parts,(240,246,1,255)),raw==4716)
+                self.assertEqual(manual_xd_certificate_ready(parts,audit['events'][1]),raw==4716)
+                # 原first247底1105低于later253底1113；没有新低撤销原首身份。
+                self.assertTrue(parts[247]['start_ticks']>parts[253]['start_ticks'] if mirrored else
+                                parts[247]['start_ticks']<parts[253]['start_ticks'])
+                bad = dict(provisional,published_count=255)
+                with self.assertRaisesRegex(ValueError,'待证前驱'):
+                    manual_natural_reaction_state(parts,seen,255,240,247,bad,(248,252,1,255))
+                with self.assertRaisesRegex(ValueError,'待证前驱'):
+                    manual_natural_reaction_state(parts,seen,255,240,247,
+                        dict(proposed_boundary=(239,241)),(248,252,1,255))
+
+    def test_context_counterexample_actual_raw_boundaries_keep_active_and_fixed_proofs_separate(self):
+        """948点独立收据的首达边界防回填；本测试不依赖临时目录或原型。"""
+        tool = compiler()
+        for key in ('M2','Y1'):
+            audit,case,_ = self._context_counterexample_source(key)
+            counts = set(audit['current_counts']+audit['fixed_counts']+
+                         (audit['current_cancel'],audit['fixed_cancel']))
+            counts = sorted(n for c in counts for n in (c-1,c)
+                            if audit['raw_window'][0]<=n<=audit['raw_window'][1])
+            for raw in counts:
+                rows = case['raw_rows'][:raw]
+                _,_,bis = tool.foundation(rows,'106')
+                self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+                for contract,visible in (('current',bis),('fixed',bis[:-1])):
+                    parts = tool.components(rows,visible,None)
+                    for i,event in enumerate(audit['events']):
+                        ready = manual_xd_certificate_ready(parts,event)
+                        first_raw = audit[contract+'_counts'][i]
+                        self.assertEqual(ready,raw>=first_raw,(key,contract,raw,event))
+                        if raw==first_raw:
+                            proof = parts[event[3]]
+                            self.assertEqual((proof['end_ticks'],proof['end_dt']),
+                                (audit[contract+'_proof_prices'][i],audit[contract+'_proof_dates'][i]))
+                    first,cancel = audit['first'],audit['cancel']
+                    broken = False
+                    if len(parts)>cancel:
+                        broken = (parts[cancel]['end_ticks']>parts[first]['start_ticks'] if
+                                  parts[first]['direction']=='down' else
+                                  parts[cancel]['end_ticks']<parts[first]['start_ticks'])
+                    self.assertEqual(broken,raw>=audit[contract+'_cancel'],(key,contract,raw))
 
     def _m2_gap_parts(self):
         audit = M3_FINITE_SUFFIX_AUDIT['M2']
