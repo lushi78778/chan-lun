@@ -272,6 +272,69 @@ M3_EXPANDED_BOUNDARY_AUDIT = {
 }
 
 
+def manual_feature_nodes(parts, indices, initial_up):
+    """课67/78整数标准元素；仅处理指定同一侧，不搜索分界或调用包算法。"""
+    nodes = []
+    for i in indices:
+        p = (parts[i]['low_ticks'],parts[i]['high_ticks'])
+        if nodes and ((nodes[-1][0]<=p[0] and p[1]<=nodes[-1][1]) or
+                      (p[0]<=nodes[-1][0] and nodes[-1][1]<=p[1])):
+            direction = initial_up if len(nodes)==1 else nodes[-1][1]>nodes[-2][1]
+            choose = max if direction else min
+            nodes[-1] = tuple(choose(nodes[-1][j],p[j]) for j in (0,1))
+        else:
+            nodes.append(p)
+    return nodes
+
+
+def manual_feature_fractal(nodes, top):
+    """课67严格顶/底；反向形状不代替本次所需分型。"""
+    return len(nodes)==3 and all(nodes[1][j]>max(nodes[0][j],nodes[2][j]) if top else
+                                nodes[1][j]<min(nodes[0][j],nodes[2][j]) for j in (0,1))
+
+
+def manual_gap_lifecycle(parts, owner, first, observed):
+    """课67/71/78给定正缺口的独立状态证书，不寻找或发布自然XD。
+
+    逐前缀重算标准元素，固定原缺口和原首起价；第一分型尚未形成、
+    等待所需第二分型、严格撤销与确认分别返回。同笔先核所需第二
+    分型，后核首起突破。observed是待检验分界的证据前缀，不是全窗末笔。
+    """
+    if not owner+3 <= first <= observed < len(parts):
+        raise ValueError('须显式给定旧起点、首反向笔和可见证据前缀')
+    up = parts[owner]['direction'] == 'up'
+    original = parts[first]
+    left = manual_feature_nodes(parts, range(owner+1,first,2), up)[-1]
+    gap = original['low_ticks']-left[1] if up else left[0]-original['high_ticks']
+    record = dict(original_gap_ticks=gap, first_fractal_proof_bi=None,
+                  second_fractal_proof_bi=None, strict_revocation_bi=None,
+                  state='not_gap', last_old=left)
+    if gap <= 0:
+        return record
+    record['state'] = 'await_first'
+    for stop in range(first+1,observed+1):
+        right = manual_feature_nodes(parts, range(first,stop+1,2), up)
+        second = manual_feature_nodes(parts, range(first+1,stop+1,2), not up)
+        if (record['first_fractal_proof_bi'] is None and len(right)>=2 and
+                manual_feature_fractal([left]+right[:2],up)):
+            record['first_fractal_proof_bi'] = stop
+        revokes = (parts[stop]['direction']!=original['direction'] and
+                   (parts[stop]['end_ticks']>original['start_ticks'] if up else
+                    parts[stop]['end_ticks']<original['start_ticks']))
+        if revokes:
+            record['strict_revocation_bi'] = stop
+        if (record['first_fractal_proof_bi'] is not None and
+                manual_feature_fractal(second[-3:],not up)):
+            record.update(state='confirmed',second_fractal_proof_bi=stop)
+            return record
+        if revokes:
+            record['state'] = 'revoked'
+            return record
+    if record['first_fractal_proof_bi'] is not None:
+        record['state'] = 'waiting'
+    return record
+
+
 def manual_xd_certificate_ready(parts, event):
     """只验给定分界的整数证书，不搜索XD；课67包含与课71原首笔选向分列。"""
     a, z, mode, proof = event
@@ -280,28 +343,11 @@ def manual_xd_certificate_ready(parts, event):
     up = parts[a]['direction'] == 'up'
     turn = z + 1
 
-    def standard(indices, initial_up):
-        nodes = []
-        for i in indices:
-            p = (parts[i]['low_ticks'],parts[i]['high_ticks'])
-            if nodes and ((nodes[-1][0]<=p[0] and p[1]<=nodes[-1][1]) or
-                          (p[0]<=nodes[-1][0] and nodes[-1][1]<=p[1])):
-                direction = initial_up if len(nodes)==1 else nodes[-1][1]>nodes[-2][1]
-                choose = max if direction else min
-                nodes[-1] = tuple(choose(nodes[-1][j],p[j]) for j in (0,1))
-            else:
-                nodes.append(p)
-        return nodes
-
-    def fractal(nodes, top):
-        return len(nodes)==3 and all(nodes[1][j]>max(nodes[0][j],nodes[2][j]) if top else
-                                    nodes[1][j]<min(nodes[0][j],nodes[2][j]) for j in (0,1))
-
     for start in (a,turn):
         group = parts[start:start+3]
         if len(group)!=3 or max(p['low_ticks'] for p in group)>min(p['high_ticks'] for p in group):
             return False
-    left = standard(range(a+1,turn,2),up)[-1]
+    left = manual_feature_nodes(parts,range(a+1,turn,2),up)[-1]
     first = parts[turn]
     if first['high_ticks']<=left[1] if up else first['low_ticks']>=left[0]:
         return False
@@ -314,12 +360,12 @@ def manual_xd_certificate_ready(parts, event):
                         (parts[i]['end_ticks']<first['end_ticks'] if up else
                          parts[i]['end_ticks']>first['end_ticks'])),None)
         return gap<=0 and selected==proof and canceled is None
-    right = standard(range(turn,proof+1,2),up)
-    if gap<=0 or len(right)<2 or not fractal([left]+right[:2],up):
+    right = manual_feature_nodes(parts,range(turn,proof+1,2),up)
+    if gap<=0 or len(right)<2 or not manual_feature_fractal([left]+right[:2],up):
         return False
-    second = standard(range(turn+1,proof+1,2),not up)
+    second = manual_feature_nodes(parts,range(turn+1,proof+1,2),not up)
     # 同一可用BI快照的第二分型可与新极值同批；不声称原始price先后已证。
-    return fractal(second[-3:],not up) and (canceled is None or canceled>=proof)
+    return manual_feature_fractal(second[-3:],not up) and (canceled is None or canceled>=proof)
 
 
 def manual_natural_reaction_state(parts, seen, observed, owner, first, predecessor, reaction):
@@ -1727,6 +1773,91 @@ class TestRealXdF1Assets(unittest.TestCase):
                         nodes.append(item)
                 # 上移右侧低点是两个标准元素的对照；等低包含例仍仅一个。
                 self.assertEqual(len(nodes), feature_count)
+
+    def _m2_gap_parts(self):
+        audit = M3_FINITE_SUFFIX_AUDIT['M2']
+        path = ROOT/'tests/fixtures'/audit['fixture']
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),audit['fixture_sha256'])
+        case = next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+        tool = compiler()
+        _,_,bis = tool.foundation(case['raw_rows'],'106')
+        self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:-1])
+        return tool.components(case['raw_rows'],bis[:-1],None)
+
+    def test_positive_gap_waits_for_required_second_fractal_before_later_lower_top(self):
+        """M2已知前驱201：原first212未撤销时，218的局部证明没有自然准入。"""
+        original = self._m2_gap_parts()
+        cases = ((212,214,'await_first',None,None,None,10),
+                 (212,216,'waiting',216,None,None,10),
+                 (212,220,'waiting',216,None,None,10),
+                 (212,222,'waiting',216,None,None,10),
+                 (212,226,'waiting',216,None,None,10),
+                 (212,227,'revoked',216,None,227,10),
+                 (228,230,'waiting',230,None,None,84),
+                 (228,240,'waiting',230,None,None,84),
+                 (228,241,'confirmed',230,241,None,84))
+        for mirrored in (False,True):
+            values = [original[0]['start_ticks']]+[p['end_ticks'] for p in original]
+            parts = self._natural_parts([10000-v for v in values] if mirrored else values)
+            for first,stop,state,first_proof,second_proof,cancel,gap in cases:
+                result = manual_gap_lifecycle(parts,201,first,stop)
+                actual = tuple(result[k] for k in ('state','first_fractal_proof_bi',
+                               'second_fractal_proof_bi','strict_revocation_bi','original_gap_ticks'))
+                self.assertEqual(actual,(state,first_proof,second_proof,cancel,gap),(mirrored,first,stop))
+            self.assertTrue(manual_xd_certificate_ready(parts,(201,217,1,220)))
+            self.assertTrue(manual_xd_certificate_ready(parts,(201,227,2,241)))
+            stronger = (parts[212]['start_ticks']<parts[218]['start_ticks'] if mirrored else
+                        parts[212]['start_ticks']>parts[218]['start_ticks'])
+            self.assertTrue(stronger)
+            # 222已有第二序列顶(镜像底)，不是向上旧段所需的第二底(镜像顶)。
+            second = manual_feature_nodes(parts,range(213,223,2),mirrored)
+            self.assertTrue(manual_feature_fractal(second[-3:],not mirrored))
+            self.assertFalse(manual_feature_fractal(second[-3:],mirrored))
+            # 后续回补缺口也不把原正缺口改判为第一种；first218本身却无正缺口。
+            self.assertEqual(manual_gap_lifecycle(parts,201,218,220)['state'],'not_gap')
+
+    def test_gap_revocation_is_strict_and_cannot_authorize_a_past_evidence_prefix(self):
+        """原首起价等值继续等；未来227的严格撤销不能回写220的自然资格。"""
+        original = self._m2_gap_parts()
+        prices = [original[0]['start_ticks']]+[p['end_ticks'] for p in original]
+        for mirrored in (False,True):
+            values = [10000-v for v in prices] if mirrored else list(prices)
+            parts = self._natural_parts(values)
+            at220 = manual_gap_lifecycle(parts,201,212,220)
+            self.assertEqual(at220,manual_gap_lifecycle(parts[:221],201,212,220))
+            self.assertEqual(at220['state'],'waiting')
+            self.assertEqual(manual_gap_lifecycle(parts,201,212,227)['state'],'revoked')
+            # 严格穿越前一格、等价、严格穿越后一格使用同一个原首身份。
+            original_start = values[212]
+            for delta,state in ((-1,'waiting'),(0,'waiting'),(1,'revoked')):
+                changed = list(values[:229])
+                changed[228] = original_start+(-delta if mirrored else delta)
+                result = manual_gap_lifecycle(self._natural_parts(changed),201,212,227)
+                self.assertEqual(result['state'],state,(mirrored,delta))
+                self.assertEqual(result['strict_revocation_bi'],227 if state=='revoked' else None)
+            # 较长输入中的极值毒值不改变较早的证据前缀。
+            future = list(values)
+            future[228:] = [20000 if i%2 else -20000 for i in range(len(future)-228)]
+            self.assertEqual(manual_gap_lifecycle(self._natural_parts(future),201,212,220),at220)
+
+    def test_gap_second_fractal_and_same_snapshot_extreme_keep_confirmation_precedence(self):
+        """课67/78同笔第二分型与新极值先确认；较早撤销则不能被未来分型复活。"""
+        prices = [0,5,3,10,8,9,6,8,4,7,6,11]
+        for mirrored in (False,True):
+            values = [100-v for v in prices] if mirrored else list(prices)
+            parts = self._natural_parts(values)
+            self.assertEqual(manual_gap_lifecycle(parts,0,3,4)['state'],'await_first')
+            before = manual_gap_lifecycle(parts,0,3,9)
+            self.assertEqual((before['state'],before['first_fractal_proof_bi']),('waiting',5))
+            after = manual_gap_lifecycle(parts,0,3,10)
+            self.assertEqual((after['state'],after['second_fractal_proof_bi'],
+                              after['strict_revocation_bi']),('confirmed',10,10))
+            early = list(prices)
+            early[9],early[11] = 11,12
+            early_parts = self._natural_parts([100-v for v in early] if mirrored else early)
+            revoked = manual_gap_lifecycle(early_parts,0,3,10)
+            self.assertEqual((revoked['state'],revoked['strict_revocation_bi'],
+                              revoked['second_fractal_proof_bi']),('revoked',8,None))
 
     def test_local_first_pen_proofs_wait_for_pending_gap_predecessors(self):
         """M2/Y1局部首笔证明先到，须等父第二种证明；不替换两条旧尾链。"""
