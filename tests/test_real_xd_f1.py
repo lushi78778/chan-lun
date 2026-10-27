@@ -1574,5 +1574,223 @@ class TestConditionalF1Admission(unittest.TestCase):
         self.assertEqual((audit['fixed_local_counts'][-1],audit['fixed_counts'][-1]),(1618,1648))
 
 
+# 给定seed1修正头部与保留后缀的固定合同；旧表保持，原型不生成预期。
+M3_Y1_JOINED_ROLE_AUDIT = {
+    'fixture': 'real_second_point.json',
+    'id': '518880-5m-20260501-20260724',
+    'fixture_sha256': '745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6',
+    'seed': 1,
+    'scope': 'given_recent_seed1_fixed_without_active',
+    'certificate_sha256': 'ee58a32f2af125706a60a384624854de3777117cbd131e42ea951b32b4b17d3d',
+    'events': (
+        (1, 7, 1, 14),
+        (8, 18, 1, 29),
+        (19, 29, 1, 32),
+        (30, 32, 1, 35),
+        (33, 35, 1, 38),
+        (36, 48, 1, 51),
+        (49, 51, 2, 65),
+        (52, 58, 1, 61),
+        (59, 63, 2, 79),
+        (64, 76, 2, 86),
+        (77, 83, 1, 86),
+        (84, 86, 2, 94),
+        (87, 91, 1, 94),
+        (92, 94, 1, 97),
+        (95, 97, 1, 100),
+        (98, 106, 1, 109),
+        (107, 109, 1, 112),
+        (110, 112, 2, 122),
+        (113, 123, 2, 129),
+        (124, 126, 2, 136),
+        (127, 131, 2, 147),
+        (132, 144, 1, 147),
+        (145, 147, 1, 150),
+        (148, 158, 2, 164),
+        (159, 161, 1, 164),
+        (162, 164, 1, 169),
+        (165, 171, 1, 176),
+        (172, 176, 2, 182),
+        (177, 179, 1, 182),
+        (180, 182, 1, 185),
+        (183, 191, 1, 194),
+        (192, 200, 1, 203),
+        (201, 205, 1, 208),
+        (206, 208, 1, 211),
+        (209, 211, 1, 214),
+        (212, 220, 2, 228),
+        (221, 225, 1, 228),
+        (226, 240, 1, 243),
+        (241, 251, 2, 263),
+    ),
+    'units': (
+        ('up', '2026-05-06 10:00:00', '2026-05-07 14:45:00', 9702, 9933, 9702, 9933, 1, 14, 163, 163),
+        ('down', '2026-05-07 14:45:00', '2026-05-11 14:00:00', 9933, 9714, 9714, 9933, 1, 29, 299, 299),
+        ('up', '2026-05-11 14:00:00', '2026-05-13 14:20:00', 9714, 9834, 9714, 9906, 1, 32, 323, 323),
+        ('down', '2026-05-13 14:20:00', '2026-05-14 11:15:00', 9834, 9761, 9761, 9834, 1, 35, 352, 352),
+        ('up', '2026-05-14 11:15:00', '2026-05-14 15:00:00', 9761, 9797, 9761, 9797, 1, 38, 381, 381),
+        ('down', '2026-05-14 15:00:00', '2026-05-20 11:15:00', 9797, 9332, 9332, 9797, 1, 51, 557, 557),
+        ('up', '2026-05-20 11:15:00', '2026-05-21 09:45:00', 9332, 9543, 9332, 9543, 2, 65, 661, 661),
+        ('down', '2026-05-21 09:45:00', '2026-05-22 10:40:00', 9543, 9445, 9445, 9543, 1, 61, 630, 661),
+        ('up', '2026-05-22 10:40:00', '2026-05-25 09:35:00', 9445, 9540, 9441, 9540, 2, 79, 840, 840),
+        ('down', '2026-05-25 09:35:00', '2026-05-28 13:10:00', 9540, 9108, 9108, 9540, 2, 86, 946, 946),
+        ('up', '2026-05-28 13:10:00', '2026-06-01 09:45:00', 9108, 9414, 9108, 9414, 1, 86, 946, 946),
+        ('down', '2026-06-01 09:45:00', '2026-06-02 10:00:00', 9414, 9266, 9266, 9414, 2, 94, 1017, 1017),
+        ('up', '2026-06-02 10:00:00', '2026-06-02 14:40:00', 9266, 9414, 9266, 9414, 1, 94, 1017, 1017),
+        ('down', '2026-06-02 14:40:00', '2026-06-03 13:35:00', 9414, 9268, 9268, 9414, 1, 97, 1067, 1067),
+        ('up', '2026-06-03 13:35:00', '2026-06-04 13:20:00', 9268, 9311, 9268, 9311, 1, 100, 1115, 1115),
+        ('down', '2026-06-04 13:20:00', '2026-06-08 14:45:00', 9311, 8937, 8937, 9311, 1, 109, 1218, 1218),
+        ('up', '2026-06-08 14:45:00', '2026-06-09 13:50:00', 8937, 9046, 8937, 9046, 1, 112, 1296, 1296),
+        ('down', '2026-06-09 13:50:00', '2026-06-11 10:50:00', 9046, 8418, 8418, 9046, 2, 122, 1377, 1377),
+        ('up', '2026-06-11 10:50:00', '2026-06-15 10:55:00', 8418, 8988, 8418, 8988, 2, 129, 1456, 1456),
+        ('down', '2026-06-15 10:55:00', '2026-06-15 14:45:00', 8988, 8910, 8910, 8988, 2, 136, 1520, 1520),
+        ('up', '2026-06-15 14:45:00', '2026-06-17 09:35:00', 8910, 8986, 8910, 8986, 2, 147, 1624, 1624),
+        ('down', '2026-06-17 09:35:00', '2026-06-22 11:25:00', 8986, 8655, 8655, 8986, 1, 147, 1624, 1624),
+        ('up', '2026-06-22 11:25:00', '2026-06-22 14:55:00', 8655, 8731, 8655, 8731, 1, 150, 1675, 1675),
+        ('down', '2026-06-22 14:55:00', '2026-06-25 10:15:00', 8731, 8267, 8267, 8731, 2, 164, 1773, 1773),
+        ('up', '2026-06-25 10:15:00', '2026-06-25 13:15:00', 8267, 8329, 8267, 8329, 1, 164, 1773, 1773),
+        ('down', '2026-06-25 13:15:00', '2026-06-25 15:00:00', 8329, 8282, 8282, 8329, 1, 169, 1830, 1830),
+        ('up', '2026-06-25 15:00:00', '2026-06-29 11:30:00', 8282, 8479, 8282, 8479, 1, 176, 1881, 1881),
+        ('down', '2026-06-29 11:30:00', '2026-06-30 10:20:00', 8479, 8224, 8224, 8479, 2, 182, 1963, 1963),
+        ('up', '2026-06-30 10:20:00', '2026-06-30 14:55:00', 8224, 8389, 8224, 8389, 1, 182, 1963, 1963),
+        ('down', '2026-06-30 14:55:00', '2026-07-01 14:20:00', 8389, 8253, 8253, 8389, 1, 185, 1993, 1993),
+        ('up', '2026-07-01 14:20:00', '2026-07-06 09:50:00', 8253, 8738, 8253, 8738, 1, 194, 2113, 2113),
+        ('down', '2026-07-06 09:50:00', '2026-07-08 10:05:00', 8738, 8551, 8551, 8738, 1, 203, 2189, 2189),
+        ('up', '2026-07-08 10:05:00', '2026-07-08 14:30:00', 8551, 8605, 8551, 8605, 1, 208, 2235, 2235),
+        ('down', '2026-07-08 14:30:00', '2026-07-09 11:25:00', 8605, 8446, 8446, 8605, 1, 211, 2279, 2279),
+        ('up', '2026-07-09 11:25:00', '2026-07-10 11:10:00', 8446, 8587, 8446, 8587, 1, 214, 2323, 2323),
+        ('down', '2026-07-10 11:10:00', '2026-07-14 09:30:00', 8587, 8302, 8302, 8587, 2, 228, 2440, 2440),
+        ('up', '2026-07-14 09:30:00', '2026-07-15 09:35:00', 8302, 8420, 8302, 8420, 1, 228, 2440, 2440),
+        ('down', '2026-07-15 09:35:00', '2026-07-17 13:25:00', 8420, 8261, 8261, 8420, 1, 243, 2580, 2580),
+        ('up', '2026-07-17 13:25:00', '2026-07-22 11:25:00', 8261, 8614, 8261, 8614, 2, 263, 2793, 2793),
+    ),
+    'f1': (
+        (0, 2, 'consolidation', None, (0,), ((9714, 9906),), 3),
+        (3, 8, 'down', 'down', (3, 6), ((9761, 9797), (9445, 9540)), 9),
+        (9, 11, 'consolidation', None, (9,), ((9266, 9414),), 12),
+        (12, 14, 'consolidation', None, (12,), ((9268, 9311),), 15),
+        (15, 17, 'consolidation', None, (15,), ((8937, 9046),), 18),
+        (18, 20, 'consolidation', None, (18,), ((8910, 8986),), 21),
+        (21, 26, 'down', 'down', (21, 24), ((8655, 8731), (8282, 8329)), 27),
+        (27, 29, 'consolidation', None, (27,), ((8253, 8389),), 30),
+        (30, 32, 'consolidation', None, (30,), ((8551, 8605),), 33),
+        (33, 37, 'consolidation', None, (33,), ((8446, 8587),), 38),
+    ),
+    'f2': (
+        (0, 9, 'down', 'down', (1, 4), ((9332, 9414), (8418, 8986)), None),
+    ),
+    'f1_first_counts': (352, 946, 1017, 1218, 1456, 1624, 1963, 2113, 2279, 2793),
+    'f1_evidence_counts': (4, 11, 13, 16, 19, 22, 29, 31, 34, 39),
+    'tail': (38, 38, 'incomplete', None, (), (), None),
+    'f2_spans': (((1, 3, 3), (4, 6, 9)),),
+    'complete_f2': 0,
+    'strict_tail_skip': 'no_compare_legs',
+    'automatic_F2_points': 0,
+    'legacy_guard': {
+        'middle_low': 9445,
+        'middle_misses_ticks': 4,
+        'new_A_core': (9714, 9906),
+        'new_B_first_pair': (9441, 9540),
+        'old_anchor_event': (52, 76, 2, 86),
+        'old_first_and_second_reusable': False,
+        'remapped_B_zn': (6, 10),
+        'strict_roles_reusable': False,
+    },
+}
+
+
+class TestY1JoinedFixedRoles(unittest.TestCase):
+    """给定39个条件XD的固定合同；不把旧严格角色或原型结果当预期。"""
+
+    @staticmethod
+    def _data():
+        return gap_revision_input(M3_Y1_JOINED_ROLE_AUDIT)
+
+    @staticmethod
+    def _types(case,units,moves):
+        audit=M3_Y1_JOINED_ROLE_AUDIT
+        key='Y1-joined1-fixed:'+audit['certificate_sha256']
+        return [m3_xd_type(key,move,units[:size],gap_revision_time(case,count))
+                for move,count,size in zip(moves,audit['f1_first_counts'],audit['f1_evidence_counts'])]
+
+    def test_joined_unit_prefixes_and_mirrors_preserve_the_ten_declared_f1_cuts(self):
+        audit=M3_Y1_JOINED_ROLE_AUDIT
+        _,original=self._data()
+        self.assertEqual(audit['events'][:4],M3_CONDITIONAL_F1_ADMISSION_AUDIT['Y1_recent1']['events'])
+        self.assertEqual(audit['f1'][0],M3_CONDITIONAL_F1_ADMISSION_AUDIT['Y1_recent1']['f1'])
+        for mirrored in (False,True):
+            units=[dict(u,direction='down' if u['direction']=='up' else 'up',
+                        start_ticks=20000-u['start_ticks'],end_ticks=20000-u['end_ticks'],
+                        low_ticks=20000-u['high_ticks'],high_ticks=20000-u['low_ticks'])
+                   for u in original] if mirrored else original
+            specs=[]
+            for a,z,kind,entry,triples,cores,proof in audit['f1']+(audit['tail'],):
+                if mirrored:
+                    kind={'up':'down','down':'up'}.get(kind,kind)
+                    entry={'up':'down','down':'up'}.get(entry,entry)
+                    cores=tuple((20000-hi,20000-lo) for lo,hi in cores)
+                specs.append((a,z,kind,entry,triples,cores,proof))
+            for count in range(len(units)+1):
+                parts=m3_xd_parts(dict(units=units[:count]),2793)
+                actual=chan.same_level_decompose(parts)
+                expected=[s for s in specs if s[-1] is not None and s[-1]<count]
+                self.assertEqual([m3_xd_shape(m) for m in actual if m.complete],
+                                 [m3_xd_expected(units,s) for s in expected],(mirrored,count))
+                if count==len(units):
+                    self.assertEqual([m3_xd_shape(m) for m in actual],
+                                     [m3_xd_expected(units,s) for s in specs])
+
+    def test_fixed_arrival_batches_freeze_f1_evidence_and_keep_recursive_f2_open(self):
+        audit=M3_Y1_JOINED_ROLE_AUDIT
+        case,units=self._data()
+        counts=sorted({n for u in units for n in (u['confirmed_raw_count']-1,u['confirmed_raw_count'])})
+        first,types={},[]
+        key='Y1-joined1-fixed:'+audit['certificate_sha256']
+        for count in counts:
+            size=sum(u['confirmed_raw_count']<=count for u in units)
+            moves=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),count)) if m.complete]
+            expected=[s for s in audit['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+            self.assertEqual([m3_xd_shape(m) for m in moves],
+                             [m3_xd_expected(units,s) for s in expected])
+            for move in moves:
+                if move.seg_start not in first:
+                    first[move.seg_start]=count
+                    types.append(m3_xd_type(key,move,units[:size],gap_revision_time(case,count)))
+            self.assertEqual(chan.confirm_level_up(types,gap_revision_time(case,count),'F2'),[])
+        self.assertEqual([first[s[0]] for s in audit['f1']],list(audit['f1_first_counts']))
+        self.assertEqual([len(t.evidence_ids) for t in types],list(audit['f1_evidence_counts']))
+        self.assertEqual(types,self._types(case,units,moves))
+        self.assertEqual((types[1].unit_ids[-1],len(types[1].evidence_ids)),(key+':xd:8',11))
+        self.assertIsNone(types[0].direction)
+        self.assertGreater(types[0].end_price,types[0].start_price)
+        records=[dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),
+                      high_ticks=round(t.high*1000)) for t in types]
+        self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],
+                         [m3_xd_expected(records,s) for s in audit['f2']])
+
+    def test_f2_scans_keep_missing_completion_distinct_from_legacy_point_verdicts(self):
+        audit=M3_Y1_JOINED_ROLE_AUDIT
+        case,units=self._data()
+        moves=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),2793)) if m.complete]
+        types=self._types(case,units,moves)
+        now=gap_revision_time(case,2793)
+        rows=m3_xd_rows(case)
+        for supplied in (types,types+[types[-1]._replace(move_id='future',
+                        confirmed_dt=now+timedelta(days=1),start_price=float('nan'))]):
+            scan=chan.scan_strict_divergence(supplied,now,'F2')
+            self.assertEqual(scan.results,())
+            self.assertEqual([reason for _,reason in scan.skipped],[audit['strict_tail_skip']])
+            self.assertEqual(scan.completed_types,0)
+            first=chan.scan_first_points(supplied,rows,now,'F2')
+            self.assertEqual((first.points,first.exclusions,first.completed_types),([],(),0))
+            chain=chan.analyze_point_chain(supplied,rows,now,'F2')
+            self.assertEqual((chain.first_points,chain.contexts,chain.second_points,
+                              chain.third_points,chain.formations,chain.unresolved_move_ids),
+                             ([],[],[],[],[],()))
+        self.assertFalse(audit['legacy_guard']['strict_roles_reusable'])
+        self.assertFalse(audit['legacy_guard']['old_first_and_second_reusable'])
+        self.assertEqual(case['first_point']['reason'],'no_new_extreme')  # 历史原表保留。
+
+
 if __name__ == '__main__':
     unittest.main()

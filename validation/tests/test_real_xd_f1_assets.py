@@ -534,6 +534,109 @@ def pending_gap_revisions():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def _joined_y1_role_source(self):
+        audit=embedded_table('test_real_xd_f1.py','M3_Y1_JOINED_ROLE_AUDIT')
+        path=ROOT/'tests/fixtures'/audit['fixture']
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),audit['fixture_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+        tool=compiler()
+        _,_,bis=tool.foundation(case['raw_rows'],'106')
+        self.assertEqual(tool.records(bis),case['foundation']['bis'])
+        parts=tool.components(case['raw_rows'],bis[:-1],None)
+        units=tool.xd_records(parts,audit['events'])
+        seen=case['foundation']['bis_confirmed_raw_count']
+        local=[seen[e[3]] for e in audit['events']]
+        published=[]
+        for n in local:
+            published.append(max(published[-1] if published else 0,n))
+        fields=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        self.assertEqual(tuple(tuple(u[n] for n in fields)+(local[i],published[i])
+                               for i,u in enumerate(units)),audit['units'])
+        return audit,case,parts,units,published
+
+    def test_y1_joined39_keeps_corrected_head_bridge_and_retained_suffix_source_identity(self):
+        """给seed1，头部止29后经30..51普通/缺口桥接；不沿用旧头部角色。"""
+        audit,case,parts,units,published=self._joined_y1_role_source()
+        head=embedded_table('test_real_xd_f1.py','M3_CONDITIONAL_F1_ADMISSION_AUDIT')['Y1_recent1']
+        old=M3_FINITE_SUFFIX_AUDIT['Y1']
+        self.assertEqual(audit['events'][:4],head['events'])
+        self.assertEqual(audit['events'][4:],old['events'][4:])
+        self.assertEqual(audit['units'][:4],tuple(u+(n,n) for u,n in zip(head['units'],head['fixed_counts'])))
+        self.assertEqual(tuple(published),old['published_counts'])
+        self.assertEqual(len(units),39)
+        for event in audit['events'][3:7]:
+            self.assertTrue(manual_xd_certificate_ready(parts,event))
+        for left,right in zip(units,units[1:]):
+            self.assertEqual((left['end_dt'],left['end_ticks']),(right['start_dt'],right['start_ticks']))
+        self.assertEqual(audit['units'][7][-2:],(630,661))
+        self.assertEqual(audit['events'][7],(52,58,1,61))
+        self.assertEqual(audit['events'][6],(49,51,2,65))
+        for filename in ('real_strict_trend_5m.json','real_first_point.json'):
+            alias=next(c for c in json.loads((ROOT/'tests/fixtures'/filename).read_text())['cases']
+                       if c['id']==audit['id'])
+            for field in ('raw_rows','foundation','roles','trend'):
+                self.assertEqual(alias[field],case[field],(filename,field))
+
+    def test_y1_joined39_does_not_reuse_old_strict_B_or_first_second_point_roles(self):
+        """旧B成员重映射不满足Zn步2；改首对后，中间覆盖仍精确缺4格。"""
+        audit,case,_,units,_=self._joined_y1_role_source()
+        strict=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        old=case['roles']
+        self.assertEqual((old['A']['zd'],old['A']['zg']),(9780,9834))
+        with self.assertRaisesRegex(ValueError,'首对核心与声明不一致'):
+            strict.validate_zhongshu('A',old['A'],units)
+        revised_A=dict(old['A'],zd=9714,zg=9906)
+        checked=strict.validate_zhongshu('A',revised_A,units)
+        self.assertEqual((checked['dd'],checked['gg']),(9702,9933))
+        guard=audit['legacy_guard']
+        candidate_B=dict(old['B'],zd=9441,zg=9540,dd=9332,gg=9543)
+        self.assertEqual((units[8]['start_ticks'],units[8]['low_ticks']),(9445,9441))
+        self.assertEqual(units[7]['low_ticks']-candidate_B['zd'],guard['middle_misses_ticks'])
+        self.assertEqual((max(u['low_ticks'] for u in units[6:9]),
+                          min(u['high_ticks'] for u in units[6:9])),(9445,9540))
+        with self.assertRaisesRegex(ValueError,'中间单元未覆盖核心'):
+            strict.validate_zhongshu('B',candidate_B,units)
+        with self.assertRaisesRegex(ValueError,'Zn同向步2被破坏'):
+            strict.validate_zhongshu('B',dict(old['B'],zn=list(guard['remapped_B_zn'])),units)
+        self.assertNotIn(guard['old_anchor_event'],audit['events'])
+        self.assertFalse(guard['strict_roles_reusable'])
+        self.assertFalse(guard['old_first_and_second_reusable'])
+        # 只沿用数值下标会把先验低9108/c低9266，错换为9332/9108并翻转新低判定。
+        self.assertEqual((case['first_point']['prior_extreme_ticks'],case['first_point']['c_extreme_ticks']),
+                         (9108,9266))
+        self.assertEqual((min(u['low_ticks'] for u in units[:9]),units[9]['low_ticks']),(9332,9108))
+        self.assertEqual(case['first_point']['reason'],'no_new_extreme')
+        self.assertEqual(case['second_point']['premise']['category'],'minor_to_major')
+
+    def test_y1_joined39_f1_cuts_frozen_batches_and_open_f2_have_separate_semantics(self):
+        """同级切分10个F1；F2允许延伸，首F1进入方向None不替换为净上涨。"""
+        audit,_,_,units,published=self._joined_y1_role_source()
+        tool=compiler()
+        f1=[tool.move_record(units,s) for s in audit['f1']]
+        tail=tool.move_record(units,audit['tail'])
+        self.assertEqual([published[s[-1]] for s in audit['f1']],list(audit['f1_first_counts']))
+        self.assertEqual([sum(n<=at for n in published) for at in audit['f1_first_counts']],
+                         list(audit['f1_evidence_counts']))
+        self.assertEqual((audit['f1'][1][-1],audit['f1_evidence_counts'][1]),(9,11))
+        self.assertEqual((tail['seg_start'],tail['seg_end'],tail['kind'],tail['complete']),
+                         (38,38,'incomplete',False))
+        self.assertIsNone(f1[0]['direction'])
+        self.assertGreater(f1[0]['end_ticks'],f1[0]['start_ticks'])
+        for spec in (audit['f1'][1],audit['f1'][6]):
+            waves=[(min(u['low_ticks'] for u in units[j:j+3]),
+                    max(u['high_ticks'] for u in units[j:j+3])) for j in spec[4]]
+            self.assertGreaterEqual(waves[1][1],waves[0][0])  # 核心下移不证明完整波动严格分离。
+        f2=tool.move_record(f1,audit['f2'][0])
+        self.assertEqual((f2['kind'],f2['direction'],f2['complete'],f2['low_ticks'],f2['high_ticks']),
+                         ('down','down',False,8224,9933))
+        self.assertEqual(f2['centers_ticks'],[[9332,9414],[8418,8986]])
+        self.assertTrue(all(u['low_ticks']<=8986 and u['high_ticks']>=8418 for u in f1[7:10]))
+        # 最后反向回试3与8之间，b参考腿[4,4)为空，保持no_compare_legs而非背驰否决。
+        self.assertEqual(audit['f2_spans'],(((1,3,3),(4,6,9)),))
+        self.assertGreater(f1[3]['end_ticks'],f1[3]['start_ticks'])
+        self.assertGreater(f1[8]['end_ticks'],f1[8]['start_ticks'])
+        self.assertEqual(audit['strict_tail_skip'],'no_compare_legs')
+
     @staticmethod
     def _natural_parts(values):
         return [dict(direction='up' if z>a else 'down',start_ticks=a,end_ticks=z,
