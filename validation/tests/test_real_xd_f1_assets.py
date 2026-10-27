@@ -223,6 +223,32 @@ M3_EXPANDED_FIRST_AUDIT = {
 }
 
 
+# 仅裁定两处给定近期种子后的证明时刻；不替换完整来源或原静态标签。
+# parent与target可同批可见，extended另有D完成证书；current保留当时端价。
+M3_EXPANDED_PROOF_AUDIT = {
+    'M1_274': dict(
+        fixture='real_third_point_xd_margin0.json',id='588000-30m-20230501-20250228',
+        source_sha256='5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+        seed=266,owner=274,first=279,qualification=(266,270,1,273),
+        parent=(271,273,2,285),old_boundary=(274,278,1,285),
+        reaction=(280,282,1,285),successor=(283,285,1,288),extended=(279,285,1,288),
+        events=((266,270,1,273),(271,273,2,285),(274,278,1,285),(279,285,1,288)),
+        current_counts=(3665,3815,3815,3831),fixed_counts=(3692,3822,3822,3849),
+        current_proof_prices=(997,1012,1012,1069),fixed_proof_prices=(981,1008,1008,1093),
+        raw_window=(3598,3849),original_first=(1048,1001),reaction_margin=14),
+    'S3_27': dict(
+        fixture='real_strict_trend.json',id='518880-day-20210101-20260731',
+        source_sha256='ac9101f3cb99de1a9e8612a6366aa87be4e4627664ccf1b4884ffe60fc39ffde',
+        seed=24,owner=27,first=36,qualification=None,
+        parent=(24,26,1,29),old_boundary=(27,35,1,42),
+        reaction=(37,39,1,42),successor=(40,42,1,45),extended=(36,42,1,45),
+        events=((24,26,1,29),(27,35,1,42),(36,42,1,45)),
+        current_counts=(246,329,348),fixed_counts=(256,334,355),
+        current_proof_prices=(3643,3845,3942),fixed_proof_prices=(3658,3834,3942),
+        raw_window=(227,355),original_first=(4077,3792),reaction_margin=108),
+}
+
+
 def manual_xd_certificate_ready(parts, event):
     """只验给定分界的整数证书，不搜索XD；课67包含与课71原首笔选向分列。"""
     a, z, mode, proof = event
@@ -413,6 +439,113 @@ class TestRealXdF1Assets(unittest.TestCase):
         return [dict(direction='up' if z>a else 'down',start_ticks=a,end_ticks=z,
                      low_ticks=min(a,z),high_ticks=max(a,z))
                 for a,z in zip(values,values[1:])]
+
+    def _proof_pair_source(self,key):
+        audit=M3_EXPANDED_PROOF_AUDIT[key]
+        path=ROOT/'tests/fixtures'/audit['fixture']
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),audit['source_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+        rows=case['raw_rows'][:audit['raw_window'][1]]
+        tool=compiler()
+        _,_,bis=tool.foundation(rows,'106')
+        self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+        parts=tool.components(rows,bis[:-1],None)
+        seen=case['foundation']['bis_confirmed_raw_count'][:len(parts)]
+        self.assertEqual(tuple(seen[e[3]] for e in audit['events']),audit['fixed_counts'])
+        self.assertEqual((parts[audit['first']]['start_ticks'],parts[audit['first']]['end_ticks']),
+                         audit['original_first'])
+        return audit,case,parts,seen
+
+    def _proof_pair_arrival_boundaries(self,audit,case):
+        """独立给定证书的raw临界点，不调用识别器或外层临时脚本。"""
+        tool=compiler()
+        for contract in ('current','fixed'):
+            counts=audit[contract+'_counts']
+            for count in sorted({n for at in counts for n in (at-1,at)}):
+                rows=case['raw_rows'][:count]
+                _,_,bis=tool.foundation(rows,'106')
+                self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+                parts=tool.components(rows,bis if contract=='current' else bis[:-1],None)
+                qualified=(audit['qualification'] is None or
+                           manual_xd_certificate_ready(parts,audit['qualification']))
+                parent=qualified and manual_xd_certificate_ready(parts,audit['parent'])
+                target=parent and manual_xd_certificate_ready(parts,audit['reaction'])
+                if target:
+                    first=parts[audit['first']]
+                    self.assertTrue(all(parts[i]['end_ticks']<=first['start_ticks']
+                                        for i in range(audit['first']+1,audit['old_boundary'][3]+1,2)))
+                    self.assertTrue(all(parts[i]['end_ticks']>=first['end_ticks']
+                                        for i in range(audit['first']+2,audit['old_boundary'][3]+1,2)))
+                extended=(target and manual_xd_certificate_ready(parts,audit['extended']) and
+                          manual_xd_certificate_ready(parts,audit['successor']))
+                ready=[parent,target,extended]
+                if audit['qualification'] is not None:
+                    ready.insert(0,qualified)
+                for i,(event,good) in enumerate(zip(audit['events'],ready)):
+                    self.assertEqual(good,count>=counts[i],(audit['id'],contract,count,event))
+                    if good and count==counts[i]:
+                        self.assertEqual(parts[event[3]]['end_ticks'],audit[contract+'_proof_prices'][i])
+
+    def test_m1_later_proof_uses_same_batch_gap_parent_and_natural_reaction(self):
+        """给seed266：父gap47与S280同285确认，274不必等后继R的proof288。"""
+        audit,case,original,seen=self._proof_pair_source('M1_274')
+        self._proof_pair_arrival_boundaries(audit,case)
+        self.assertEqual(original[272]['low_ticks']-original[274]['high_ticks'],47)
+        self.assertEqual(original[279]['start_ticks']-max(p['high_ticks'] for p in original[280:283]),14)
+        parent=dict(event=audit['parent'],published_count=3822)
+        for mirrored in (False,True):
+            parts=original if not mirrored else [dict(p,
+                direction='down' if p['direction']=='up' else 'up',start_ticks=20000-p['start_ticks'],
+                end_ticks=20000-p['end_ticks'],low_ticks=20000-p['high_ticks'],high_ticks=20000-p['low_ticks'])
+                for p in original]
+            for name in ('qualification','parent','reaction','successor','extended'):
+                self.assertTrue(manual_xd_certificate_ready(parts,audit[name]))
+            self.assertFalse(manual_xd_certificate_ready(parts,audit['old_boundary']))
+            waiting=manual_natural_reaction_state(parts[:283],seen[:283],3788,274,279,parent,audit['reaction'])
+            self.assertEqual((waiting['qualification'],waiting['state'],waiting['published_count']),
+                             ('waiting','pending',None))
+            confirmed=manual_natural_reaction_state(parts[:286],seen[:286],3822,274,279,parent,audit['reaction'])
+            self.assertEqual((confirmed['qualification'],confirmed['state'],confirmed['published_count']),
+                             ('visible','confirmed_without_start_break',3822))
+            result=manual_natural_successor_certificate(parts,seen,3849,audit,parent)
+            self.assertEqual((result['reaction'],result['successor'],result['extended']),
+                             (audit['reaction'],audit['successor'],audit['extended']))
+            self.assertEqual(result['published_count'],3849)
+            # 288后来破原首起价，不回撤285已经成立的自然反应。
+            later=manual_natural_reaction_state(parts,seen,3849,274,279,parent,audit['reaction'])
+            self.assertEqual((later['state'],later['published_count']),('confirmed_without_start_break',3822))
+        self.assertEqual(audit['old_boundary'][3],285)
+        self.assertEqual(audit['extended'][3],288)
+
+    def test_s3_later_proof_uses_completed_reaction_before_reverse_successor(self):
+        """给seed24：S37..39在42完成且低于首起108格；45只证明后继R/D。"""
+        audit,case,original,seen=self._proof_pair_source('S3_27')
+        self._proof_pair_arrival_boundaries(audit,case)
+        self.assertEqual(original[36]['start_ticks']-max(p['high_ticks'] for p in original[37:40]),108)
+        parent=dict(event=audit['parent'],published_count=256)
+        for mirrored in (False,True):
+            parts=original if not mirrored else [dict(p,
+                direction='down' if p['direction']=='up' else 'up',start_ticks=20000-p['start_ticks'],
+                end_ticks=20000-p['end_ticks'],low_ticks=20000-p['high_ticks'],high_ticks=20000-p['low_ticks'])
+                for p in original]
+            for name in ('parent','reaction','successor','extended'):
+                self.assertTrue(manual_xd_certificate_ready(parts,audit[name]))
+            self.assertFalse(manual_xd_certificate_ready(parts,audit['old_boundary']))
+            for first,cancel in ((30,31),(32,33)):
+                canceled=manual_natural_reaction_state(parts[:cancel+1],seen[:cancel+1],seen[cancel],
+                                                       27,first,parent,None)
+                self.assertEqual((canceled['state'],canceled['local_proof']),('first_start_broken',cancel))
+            # 较早gap34先在35失效，42的晚分型不能复活该假设分界。
+            self.assertFalse(manual_xd_certificate_ready(parts,(27,33,2,42)))
+            pending=manual_natural_reaction_state(parts[:42],seen[:42],329,27,36,parent,audit['reaction'])
+            self.assertEqual((pending['state'],pending['published_count']),('pending',None))
+            confirmed=manual_natural_reaction_state(parts[:43],seen[:43],334,27,36,parent,audit['reaction'])
+            self.assertEqual((confirmed['state'],confirmed['published_count']),('confirmed_without_start_break',334))
+            self.assertIsNone(manual_natural_successor_certificate(parts[:43],seen[:43],334,audit,parent))
+            result=manual_natural_successor_certificate(parts,seen,355,audit,parent)
+            self.assertEqual((result['local_proof'],result['successor_proof'],result['published_count']),(45,45,355))
+        self.assertEqual(audit['old_boundary'][3],42)
+        self.assertEqual(audit['extended'][3],45)
 
     def _expanded_first_source(self,key):
         audit=M3_EXPANDED_FIRST_AUDIT[key]
