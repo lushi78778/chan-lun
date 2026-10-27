@@ -534,6 +534,111 @@ def pending_gap_revisions():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def _y1_current_clock_source(self):
+        role,case,_,units,_=self._joined_y1_role_source()
+        clock=embedded_table('test_real_xd_f1.py','M3_Y1_CURRENT_CLOCK_AUDIT')
+        self.assertEqual(clock['source_sha256'],role['fixture_sha256'])
+        self.assertEqual(clock['fixed_role_certificate_sha256'],role['certificate_sha256'])
+        return role,clock,case,units
+
+    @staticmethod
+    def _y1_current_given_ready(parts,events):
+        """给定39段的局部准入；头部R/S/D复用已裁定证书，不搜索自然分界。"""
+        ready=[manual_xd_certificate_ready(parts,e) for e in events]
+        head=M3_NATURAL_SUCCESSOR_AUDIT['Y1']
+        s,d=head['reaction'],head['successor']
+        s_ready=manual_xd_certificate_ready(parts,s)
+        if len(parts)>s[3] and s_ready:
+            first=head['first']
+            r=parts[first]
+            up=r['direction']=='up'
+            unselected=all(parts[i]['end_ticks']<=r['end_ticks'] if up else
+                           parts[i]['end_ticks']>=r['end_ticks'] for i in range(first+2,s[3]+1,2))
+            unbroken=all(parts[i]['end_ticks']>=r['start_ticks'] if up else
+                         parts[i]['end_ticks']<=r['start_ticks'] for i in range(first+1,s[3]+1,2))
+            ready[1]=ready[1] or (unselected and unbroken)
+        ready[2]=ready[2] and s_ready and manual_xd_certificate_ready(parts,d)
+        return ready
+
+    def test_y1_current39_actual_local_and_publication_boundaries_use_prefix_prices(self):
+        """每段局部和公开首达各核前一行/本行；活动证明版本不按固定计数推算。"""
+        role,clock,case,units=self._y1_current_clock_source()
+        tool=compiler()
+        counts=sorted({n for at in clock['local_counts']+clock['published_counts'] for n in (at-1,at)})
+        fields=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        for count in counts:
+            rows=case['raw_rows'][:count]
+            _,_,bis=tool.foundation(rows,'106')
+            self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis[:-1])])
+            parts=tool.components(rows,bis,None)
+            local=self._y1_current_given_ready(parts,role['events'])
+            self.assertEqual(local,[count>=at for at in clock['local_counts']],count)
+            size=next((i for i,good in enumerate(local) if not good),len(local))
+            self.assertEqual(size,sum(at<=count for at in clock['published_counts']),count)
+            visible=tool.xd_records(parts,role['events'][:size])
+            self.assertEqual([tuple(u[k] for k in fields) for u in visible],
+                             [tuple(u[k] for k in fields) for u in units[:size]])
+            for name in ('local','publication'):
+                firsts=clock['local_counts'] if name=='local' else clock['published_counts']
+                for i,at in enumerate(firsts):
+                    if count==at:
+                        proof=role['events'][i][3]
+                        actual=(parts[proof]['end_ticks'],parts[proof]['end_dt'],proof==len(parts)-1)
+                        self.assertEqual(actual,clock[name+'_proofs'][i],(name,i,count))
+        self.assertEqual(clock['published_counts'],tuple(max(clock['local_counts'][:i+1]) for i in range(39)))
+
+    def test_y1_current_proof94_has_two_qualification_prices_and_strict_boundary_mirrors(self):
+        """gap的第二分型先齐；下一段须再严格越原first92终9279，不能共享首达。"""
+        role,clock,case,_=self._y1_current_clock_source()
+        tool=compiler()
+        first,second=role['events'][11:13]
+        self.assertEqual((first,second),((84,86,2,94),(87,91,1,94)))
+        for count in (1006,1007,1012,1013,1017):
+            _,_,bis=tool.foundation(case['raw_rows'][:count],'106')
+            parts=tool.components(case['raw_rows'][:count],bis,None)
+            self.assertEqual(manual_xd_certificate_ready(parts,first),count>=1007)
+            self.assertEqual(manual_xd_certificate_ready(parts,second),count>=1013)
+            self.assertEqual((parts[92]['start_ticks'],parts[92]['end_ticks']),(9414,9279))
+            if count==1007:
+                self.assertEqual((parts[94]['end_ticks'],parts[94]['end_dt']),(9293,'2026-06-03 13:05:00'))
+                values=[parts[0]['start_ticks']]+[p['end_ticks'] for p in parts]
+                for delta in (-1,0,1):
+                    changed=list(values)
+                    changed[-1]=parts[92]['end_ticks']+delta
+                    for mirrored in (False,True):
+                        variant=self._natural_parts([20000-v for v in changed] if mirrored else changed)
+                        self.assertTrue(manual_xd_certificate_ready(variant,first))
+                        self.assertEqual(manual_xd_certificate_ready(variant,second),delta<0,(delta,mirrored))
+            if count>=1013:
+                self.assertEqual((parts[94]['end_ticks'],parts[94]['end_dt']),(9268,'2026-06-03 13:35:00'))
+        self.assertEqual((clock['publication_proofs'][11],clock['publication_proofs'][12]),
+                         ((9293,'2026-06-03 13:05:00',True),(9268,'2026-06-03 13:35:00',True)))
+
+    def test_y1_current_parent_gate_and_f1_clocks_keep_first_versions_and_fixed_contract_separate(self):
+        """child61先到但等parent65；十个F1提前量来自真实前缀，证明旧价不回填。"""
+        role,clock,case,_=self._y1_current_clock_source()
+        tool=compiler()
+        for count,size,active in ((624,6,True),(655,8,False)):
+            _,_,bis=tool.foundation(case['raw_rows'][:count],'106')
+            parts=tool.components(case['raw_rows'][:count],bis,None)
+            ready=self._y1_current_given_ready(parts,role['events'])
+            self.assertTrue(ready[7])
+            self.assertEqual(next((i for i,ok in enumerate(ready) if not ok),39),size)
+            self.assertEqual((parts[61]['end_ticks'],parts[61]['end_dt'],len(parts)-1==61),
+                             (9474,'2026-05-22 13:50:00',active))
+        self.assertEqual((clock['local_counts'][7],clock['published_counts'][7]),(624,655))
+        self.assertEqual(clock['publication_proofs'][0],(9801,'2026-05-11 09:45:00',True))
+        _,_,bis=tool.foundation(case['raw_rows'][:163],'106')
+        later=tool.components(case['raw_rows'][:163],bis,None)
+        self.assertEqual(later[14]['end_ticks'],9780)
+        self.assertNotEqual(clock['publication_proofs'][0][0],later[14]['end_ticks'])
+        self.assertEqual(clock['f1_first_counts'],tuple(clock['published_counts'][s[-1]] for s in role['f1']))
+        self.assertEqual(clock['f1_evidence_counts'],tuple(sum(at<=n for at in clock['published_counts'])
+                                                         for n in clock['f1_first_counts']))
+        self.assertEqual(clock['f1_evidence_counts'],role['f1_evidence_counts'])
+        self.assertTrue(all(a<b for a,b in zip(clock['f1_first_counts'],role['f1_first_counts'])))
+        self.assertEqual((clock['f1_first_counts'][2],role['f1_first_counts'][2]),(1013,1017))
+
     def _joined_y1_role_source(self):
         audit=embedded_table('test_real_xd_f1.py','M3_Y1_JOINED_ROLE_AUDIT')
         path=ROOT/'tests/fixtures'/audit['fixture']

@@ -1792,5 +1792,209 @@ class TestY1JoinedFixedRoles(unittest.TestCase):
         self.assertEqual(case['first_point']['reason'],'no_new_extreme')  # 历史原表保留。
 
 
+# 活动合同只扩展实际证明/发布时钟；组成与F1/F2规格复用上方固定角色表。
+M3_Y1_CURRENT_CLOCK_AUDIT = {
+    'certificate_sha256': 'c7f542460f4019da02ee93d8945504162f1faf5821f3b32a79cce7eef34e8dd0',
+    'fixed_role_certificate_sha256': 'ee58a32f2af125706a60a384624854de3777117cbd131e42ea951b32b4b17d3d',
+    'source_sha256': '745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6',
+    'scope': 'given_recent_seed1_all_current',
+    'local_counts': (152, 287, 317, 344, 377, 542, 655, 624, 836, 907, 907, 1007, 1013, 1059, 1084, 1212, 1277, 1371, 1450, 1513, 1612, 1612, 1642, 1761, 1761, 1809, 1869, 1953, 1953, 1981, 2110, 2182, 2230, 2276, 2306, 2434, 2434, 2568, 2788),
+    'published_counts': (152, 287, 317, 344, 377, 542, 655, 655, 836, 907, 907, 1007, 1013, 1059, 1084, 1212, 1277, 1371, 1450, 1513, 1612, 1612, 1642, 1761, 1761, 1809, 1869, 1953, 1953, 1981, 2110, 2182, 2230, 2276, 2306, 2434, 2434, 2568, 2788),
+    'f1_first_counts': (344, 907, 1013, 1212, 1450, 1612, 1953, 2110, 2276, 2788),
+    'f1_evidence_counts': (4, 11, 13, 16, 19, 22, 29, 31, 34, 39),
+    'local_proofs': (
+        (9801, '2026-05-11 09:45:00', True),
+        (9834, '2026-05-13 14:20:00', True),
+        (9761, '2026-05-14 11:15:00', True),
+        (9797, '2026-05-14 15:00:00', True),
+        (9540, '2026-05-15 13:40:00', True),
+        (9541, '2026-05-21 09:35:00', True),
+        (9524, '2026-05-25 10:50:00', True),
+        (9474, '2026-05-22 13:50:00', True),
+        (9386, '2026-05-29 09:35:00', True),
+        (9374, '2026-06-01 11:25:00', True),
+        (9374, '2026-06-01 11:25:00', True),
+        (9293, '2026-06-03 13:05:00', True),
+        (9268, '2026-06-03 13:35:00', True),
+        (9311, '2026-06-04 13:20:00', True),
+        (9241, '2026-06-05 09:50:00', True),
+        (9046, '2026-06-09 13:50:00', True),
+        (8550, '2026-06-11 09:35:00', True),
+        (8645, '2026-06-12 14:50:00', True),
+        (8967, '2026-06-16 13:15:00', True),
+        (8944, '2026-06-17 14:25:00', True),
+        (8711, '2026-06-22 14:30:00', True),
+        (8711, '2026-06-22 14:30:00', True),
+        (8570, '2026-06-23 11:25:00', True),
+        (8288, '2026-06-25 14:40:00', True),
+        (8288, '2026-06-25 14:40:00', True),
+        (8377, '2026-06-26 14:35:00', True),
+        (8240, '2026-06-30 09:55:00', True),
+        (8253, '2026-07-01 14:20:00', True),
+        (8253, '2026-07-01 14:20:00', True),
+        (8445, '2026-07-02 11:05:00', True),
+        (8588, '2026-07-07 09:35:00', True),
+        (8602, '2026-07-08 11:30:00', True),
+        (8446, '2026-07-09 11:25:00', True),
+        (8587, '2026-07-10 11:10:00', True),
+        (8470, '2026-07-13 09:35:00', True),
+        (8351, '2026-07-15 13:35:00', True),
+        (8351, '2026-07-15 13:35:00', True),
+        (8362, '2026-07-20 11:00:00', True),
+        (8388, '2026-07-24 14:30:00', True),
+    ),
+    'publication_proofs': (
+        (9801, '2026-05-11 09:45:00', True),
+        (9834, '2026-05-13 14:20:00', True),
+        (9761, '2026-05-14 11:15:00', True),
+        (9797, '2026-05-14 15:00:00', True),
+        (9540, '2026-05-15 13:40:00', True),
+        (9541, '2026-05-21 09:35:00', True),
+        (9524, '2026-05-25 10:50:00', True),
+        (9474, '2026-05-22 13:50:00', False),
+        (9386, '2026-05-29 09:35:00', True),
+        (9374, '2026-06-01 11:25:00', True),
+        (9374, '2026-06-01 11:25:00', True),
+        (9293, '2026-06-03 13:05:00', True),
+        (9268, '2026-06-03 13:35:00', True),
+        (9311, '2026-06-04 13:20:00', True),
+        (9241, '2026-06-05 09:50:00', True),
+        (9046, '2026-06-09 13:50:00', True),
+        (8550, '2026-06-11 09:35:00', True),
+        (8645, '2026-06-12 14:50:00', True),
+        (8967, '2026-06-16 13:15:00', True),
+        (8944, '2026-06-17 14:25:00', True),
+        (8711, '2026-06-22 14:30:00', True),
+        (8711, '2026-06-22 14:30:00', True),
+        (8570, '2026-06-23 11:25:00', True),
+        (8288, '2026-06-25 14:40:00', True),
+        (8288, '2026-06-25 14:40:00', True),
+        (8377, '2026-06-26 14:35:00', True),
+        (8240, '2026-06-30 09:55:00', True),
+        (8253, '2026-07-01 14:20:00', True),
+        (8253, '2026-07-01 14:20:00', True),
+        (8445, '2026-07-02 11:05:00', True),
+        (8588, '2026-07-07 09:35:00', True),
+        (8602, '2026-07-08 11:30:00', True),
+        (8446, '2026-07-09 11:25:00', True),
+        (8587, '2026-07-10 11:10:00', True),
+        (8470, '2026-07-13 09:35:00', True),
+        (8351, '2026-07-15 13:35:00', True),
+        (8351, '2026-07-15 13:35:00', True),
+        (8362, '2026-07-20 11:00:00', True),
+        (8388, '2026-07-24 14:30:00', True),
+    ),
+}
+
+
+class TestY1CurrentRoleClocks(unittest.TestCase):
+    """活动证明版本分别准入；组成复用固定角色，时钟和输入身份独立。"""
+
+    @staticmethod
+    def _data():
+        clock=M3_Y1_CURRENT_CLOCK_AUDIT
+        role=M3_Y1_JOINED_ROLE_AUDIT
+        if clock['fixed_role_certificate_sha256']!=role['certificate_sha256']:
+            raise AssertionError('活动时钟须绑定同一组成版本')
+        case,units=gap_revision_input(role)
+        for i,unit in enumerate(units):
+            unit['local_raw_count']=clock['local_counts'][i]
+            unit['confirmed_raw_count']=clock['published_counts'][i]
+        return case,units,clock
+
+    @staticmethod
+    def _types(case,units,moves,clock):
+        key='Y1joined1-current:'+clock['certificate_sha256']
+        return [m3_xd_type(key,move,units[:size],gap_revision_time(case,count))
+                for move,count,size in zip(moves,clock['f1_first_counts'],clock['f1_evidence_counts'])]
+
+    def test_proof94_versions_are_distinct_and_local_child61_waits_for_parent65(self):
+        case,units,clock=self._data()
+        role=M3_Y1_JOINED_ROLE_AUDIT
+        self.assertEqual(role['events'][11][3],role['events'][12][3])
+        self.assertEqual((clock['published_counts'][11],clock['published_counts'][12]),(1007,1013))
+        self.assertEqual(clock['publication_proofs'][11],(9293,'2026-06-03 13:05:00',True))
+        self.assertEqual(clock['publication_proofs'][12],(9268,'2026-06-03 13:35:00',True))
+        self.assertEqual((role['units'][11][-1],role['units'][12][-1]),(1017,1017))
+        self.assertEqual((clock['local_counts'][7],clock['published_counts'][7]),(624,655))
+        self.assertEqual((clock['local_proofs'][7],clock['publication_proofs'][7]),
+                         ((9474,'2026-05-22 13:50:00',True),(9474,'2026-05-22 13:50:00',False)))
+        for count,size,complete in ((624,6,1),(654,6,1),(655,8,1),(1007,12,2),(1012,12,2),(1013,13,3)):
+            visible=m3_xd_parts(dict(units=units),count)
+            moves=chan.same_level_decompose(visible)
+            self.assertEqual((len(visible),sum(m.complete for m in moves)),(size,complete))
+            if count==1007:
+                self.assertEqual((moves[-1].seg_start,moves[-1].seg_end,moves[-1].kind,moves[-1].complete),
+                                 (9,11,'consolidation',False))
+        self.assertLess(gap_revision_time(case,1007),gap_revision_time(case,1013))
+
+    def test_current_batches_freeze_ten_f1_at_actual_proof_prices_and_leave_f2_open(self):
+        case,units,clock=self._data()
+        role=M3_Y1_JOINED_ROLE_AUDIT
+        counts=sorted({2793}|{n for at in clock['local_counts']+clock['published_counts'] for n in (at-1,at)})
+        types,first=[],{}
+        key='Y1joined1-current:'+clock['certificate_sha256']
+        for count in counts:
+            visible=[u for u in units if u['confirmed_raw_count']<=count]
+            moves=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),count)) if m.complete]
+            specs=[s for s in role['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+            self.assertEqual([m3_xd_shape(m) for m in moves],[m3_xd_expected(units,s) for s in specs])
+            for move in moves:
+                if move.seg_start not in first:
+                    first[move.seg_start]=count
+                    types.append(m3_xd_type(key,move,visible,gap_revision_time(case,count)))
+            self.assertEqual(chan.confirm_level_up(types,gap_revision_time(case,count),'F2'),[])
+        self.assertEqual([first[s[0]] for s in role['f1']],list(clock['f1_first_counts']))
+        self.assertEqual([len(t.evidence_ids) for t in types],list(clock['f1_evidence_counts']))
+        self.assertEqual(types,self._types(case,units,moves,clock))
+        self.assertEqual(types[2].confirmed_dt,gap_revision_time(case,1013))
+        self.assertNotEqual(types[2].confirmed_dt,gap_revision_time(case,1007))
+        self.assertNotEqual(types[2].confirmed_dt,gap_revision_time(case,1017))
+        records=[dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),
+                      high_ticks=round(t.high*1000)) for t in types]
+        self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],
+                         [m3_xd_expected(records,s) for s in role['f2']])
+
+    def test_late_second_proof94_version_keeps_f1_pending_and_future_prices_unread(self):
+        case,units,clock=self._data()
+        role=M3_Y1_JOINED_ROLE_AUDIT
+        arrivals=[gap_revision_time(case,n) for n in clock['published_counts']]
+        now=arrivals[12]
+        late=now+timedelta(days=1)
+        delayed=list(arrivals)
+        delayed[12]=late
+        for i in range(13,len(delayed)):
+            delayed[i]=max(delayed[i],delayed[i-1])
+        self.assertEqual(delayed[11],arrivals[11])
+        for observed,ready in ((now-timedelta(microseconds=1),False),(now,False),
+                               (late-timedelta(microseconds=1),False),(late,True)):
+            size=next((i for i,at in enumerate(delayed) if at>observed),len(delayed))
+            moves=chan.same_level_decompose(m3_xd_parts(dict(units=units[:size]),2793))
+            target=next((m for m in moves if m.seg_start==9 and m.complete),None)
+            self.assertEqual(target is not None,ready)
+            if ready:
+                frozen=m3_xd_type('Y1current:late-proof94-version2',target,units[:size],observed)
+                self.assertEqual(frozen.confirmed_dt,late)
+                self.assertGreater(frozen.confirmed_dt,gap_revision_time(case,1013))
+        moves=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),2793)) if m.complete]
+        types=self._types(case,units,moves,clock)
+        cutoff=gap_revision_time(case,clock['f1_first_counts'][-1])
+        bars=m3_xd_rows(case)
+        for row in bars[clock['f1_first_counts'][-1]:]:
+            row.pop('open')
+            row.update(high=float('nan'),low=-999,close=99999)
+        supplied=types+[types[-1]._replace(move_id='future',confirmed_dt=cutoff+timedelta(days=1),
+                                         start_price=float('nan'))]
+        strict=chan.scan_strict_divergence(supplied,cutoff,'F2')
+        self.assertEqual((strict.results,strict.completed_types),((),0))
+        self.assertEqual([reason for _,reason in strict.skipped],[role['strict_tail_skip']])
+        first=chan.scan_first_points(supplied,bars,cutoff,'F2')
+        self.assertEqual((first.points,first.exclusions,first.completed_types),([],(),0))
+        chain=chan.analyze_point_chain(supplied,bars,cutoff,'F2')
+        self.assertEqual((chain.first_points,chain.contexts,chain.second_points,
+                          chain.third_points,chain.formations,chain.unresolved_move_ids),
+                         ([],[],[],[],[],()))
+
+
 if __name__ == '__main__':
     unittest.main()
