@@ -1322,5 +1322,185 @@ class TestFactorProductXdProofs(unittest.TestCase):
                          '2022-12-15 15:05:00')
 
 
+# 给定近期条件链→F1准入；独立整数证书先冻结，不改旧整窗表。
+# unit=(方向,起/止时间,起/止价,低/高,mode,proof BI)，双合同行计数另列。
+# 外部proof只入证据，未完成尾部不包装成已确认类型。
+M3_CONDITIONAL_F1_ADMISSION_AUDIT = {
+    'M1_recent266': {
+        'fixture': 'real_third_point_xd_margin0.json',
+        'id': '588000-30m-20230501-20250228',
+        'source_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+        'certificate_sha256': 'dbace4abdbf0b5acd47795a3caa36086a8756ac2f9deca4986a7e52c94eed532',
+        'seed': 266,
+        'events': ((266, 270, 1, 273), (271, 273, 2, 285), (274, 278, 1, 285), (279, 285, 1, 288)),
+        'units': (
+            ('up', '2024-12-19 10:00:00', '2024-12-27 11:30:00', 1019, 1099, 1019, 1099, 1, 273),
+            ('down', '2024-12-27 11:30:00', '2025-01-06 15:00:00', 1099, 981, 981, 1099, 2, 285),
+            ('up', '2025-01-06 15:00:00', '2025-01-16 10:00:00', 981, 1048, 981, 1048, 1, 285),
+            ('down', '2025-01-16 10:00:00', '2025-01-27 15:00:00', 1048, 1008, 1001, 1048, 1, 288),
+        ),
+        'current_counts': (3665, 3815, 3815, 3831),
+        'fixed_counts': (3692, 3822, 3822, 3849),
+        'current_available_dt': ('2025-01-03 10:01:00', '2025-01-27 14:31:00', '2025-01-27 14:31:00', '2025-02-06 13:31:00'),
+        'fixed_available_dt': ('2025-01-08 10:01:00', '2025-02-05 13:31:00', '2025-02-05 13:31:00', '2025-02-10 13:31:00'),
+        'f1': (0, 2, 'consolidation', None, (0,), ((1019, 1048),), 3),
+        'tail': (3, 3, 'incomplete', None, (), (), None),
+        'raw_window': (3598, 3849),
+        'complete_f2': 0,
+    },
+    'S3_recent10': {
+        'fixture': 'real_strict_trend.json',
+        'id': '518880-day-20210101-20260731',
+        'source_sha256': 'ac9101f3cb99de1a9e8612a6366aa87be4e4627664ccf1b4884ffe60fc39ffde',
+        'certificate_sha256': 'b1a50900e1ffcbc03c5e2cc20d83da300da04d1c5c81824783e4fe35b9a72520',
+        'seed': 10,
+        'events': ((10, 12, 1, 15), (13, 23, 1, 26), (24, 26, 1, 29), (27, 35, 1, 42), (36, 42, 1, 45), (43, 81, 1, 84)),
+        'units': (
+            ('down', '2021-05-26 00:00:00', '2021-06-30 00:00:00', 3865, 3579, 3579, 3865, 1, 15),
+            ('up', '2021-06-30 00:00:00', '2021-11-18 00:00:00', 3579, 3745, 3541, 3745, 1, 26),
+            ('down', '2021-11-18 00:00:00', '2021-12-15 00:00:00', 3745, 3550, 3550, 3745, 1, 29),
+            ('up', '2021-12-15 00:00:00', '2022-03-09 00:00:00', 3550, 4077, 3550, 4077, 1, 42),
+            ('down', '2022-03-09 00:00:00', '2022-05-18 00:00:00', 4077, 3834, 3792, 4077, 1, 45),
+            ('up', '2022-05-18 00:00:00', '2023-10-31 00:00:00', 3834, 4642, 3615, 4642, 1, 84),
+        ),
+        'current_counts': (141, 232, 246, 329, 348, 701),
+        'fixed_counts': (149, 239, 256, 334, 355, 705),
+        'current_available_dt': ('2021-08-02 15:05:00', '2021-12-16 15:05:00', '2022-01-06 15:05:00', '2022-05-17 15:05:00', '2022-06-14 15:05:00', '2023-11-24 15:05:00'),
+        'fixed_available_dt': ('2021-08-12 15:05:00', '2021-12-27 15:05:00', '2022-01-20 15:05:00', '2022-05-24 15:05:00', '2022-06-23 15:05:00', '2023-11-30 15:05:00'),
+        'f1': (0, 2, 'consolidation', None, (0,), ((3579, 3745),), 3),
+        'tail': (3, 5, 'consolidation', None, (3,), ((3792, 4077),), None),
+        'raw_window': (1, 705),
+        'complete_f2': 0,
+    },
+}
+
+class TestConditionalF1Admission(unittest.TestCase):
+    """仅给定近期XD条件链的F1接线；不验证生产raw→XD或整窗旧角色。"""
+
+    @staticmethod
+    def _parts(audit, mirrored=False):
+        out=[]
+        for u in audit['units']:
+            direction,a,z,s,e,lo,hi,mode,proof=u
+            if mirrored:
+                direction='down' if direction=='up' else 'up'
+                s,e,lo,hi=20000-s,20000-e,20000-hi,20000-lo
+            out.append(SimpleNamespace(direction=direction,start_dt=date(a),end_dt=date(z),
+                       start_value=s/1000.,end_value=e/1000.,low=lo/1000.,high=hi/1000.,
+                       mode=mode,proof_bi=proof))
+        return out
+
+    @staticmethod
+    def _cores(audit,name,mirrored=False):
+        return tuple((20000-hi,20000-lo) if mirrored else (lo,hi) for lo,hi in audit[name][5])
+
+    @staticmethod
+    def _expected(parts,a,z,kind,complete,cores=()):
+        return (a,z,kind,None,complete,parts[a].start_dt,parts[z].end_dt,
+                round(min(p.low for p in parts[a:z+1])*1000),
+                round(max(p.high for p in parts[a:z+1])*1000),tuple(cores))
+
+    def _confirmed(self,audit,move,parts,contract,mirrored=False):
+        self.assertTrue(move.complete)
+        proof=audit['f1'][-1]
+        namespace=('conditional-f1-v1:'+audit['certificate_sha256']+':'+audit['id']+
+                   ':seed'+str(audit['seed'])+':'+contract+':'+str(mirrored))
+        ids=tuple(namespace+':xd:'+str(i) for i in range(proof+1))
+        return chan.ConfirmedMoveType(namespace+':f1:0','F1',move.kind,move.direction,
+                move.start_dt,move.end_dt,parts[move.seg_start].start_value,
+                parts[move.seg_end].end_value,move.low,move.high,
+                date(audit[contract+'_available_dt'][proof]),ids[:move.seg_end+1],ids,tuple(move.centers))
+
+    def test_given_prefixes_keep_three_unit_candidate_pending_until_external_proof(self):
+        """三完整XD仅候选，第四段才完成；同批两XD不虚构中间raw时刻。"""
+        for audit in M3_CONDITIONAL_F1_ADMISSION_AUDIT.values():
+            for mirrored in (False,True):
+                parts=self._parts(audit,mirrored)
+                for size in range(len(parts)+1):
+                    expected=[]
+                    if size:
+                        if size<3:
+                            expected=[self._expected(parts,0,size-1,'incomplete',False)]
+                        elif size==3:
+                            expected=[self._expected(parts,0,2,'consolidation',False,self._cores(audit,'f1',mirrored))]
+                        else:
+                            tail=self._cores(audit,'tail',mirrored) if size==6 else ()
+                            expected=[self._expected(parts,0,2,'consolidation',True,self._cores(audit,'f1',mirrored)),
+                                      self._expected(parts,3,size-1,'consolidation' if tail else 'incomplete',False,tail)]
+                    self.assertEqual([m3_xd_shape(m) for m in chan.same_level_decompose(parts[:size])],expected)
+                for contract in ('current','fixed'):
+                    counts=audit[contract+'_counts']
+                    for count in sorted({n for at in counts for n in (at-1,at)}):
+                        size=sum(at<=count for at in counts)
+                        moves=chan.same_level_decompose(parts[:size])
+                        self.assertEqual(sum(m.complete for m in moves),int(count>=counts[3]))
+
+    def test_external_proof_is_evidence_and_never_changes_composition_or_confirmation(self):
+        """F1止于unit2，证明unit3只入证据；较晚尾部不改首见快照身份。"""
+        for audit in M3_CONDITIONAL_F1_ADMISSION_AUDIT.values():
+            for mirrored in (False,True):
+                parts=self._parts(audit,mirrored)
+                move=chan.same_level_decompose(parts[:4])[0]
+                for contract in ('current','fixed'):
+                    frozen=self._confirmed(audit,move,parts,contract,mirrored)
+                    later=chan.same_level_decompose(parts)[0]
+                    self.assertEqual(self._confirmed(audit,later,parts,contract,mirrored),frozen)
+                    self.assertEqual((move.seg_start,move.seg_end),(0,2))
+                    self.assertEqual((frozen.start_dt,frozen.end_dt),(parts[0].start_dt,parts[2].end_dt))
+                    self.assertEqual(frozen.end_price,parts[2].end_value)
+                    self.assertNotEqual(frozen.end_dt,parts[3].end_dt)
+                    self.assertNotEqual(frozen.end_price,parts[3].end_value)
+                    self.assertEqual((len(frozen.unit_ids),len(frozen.evidence_ids)),(3,4))
+                    self.assertNotIn(frozen.evidence_ids[3],frozen.unit_ids)
+                    self.assertIn(':seed'+str(audit['seed'])+':'+contract+':',frozen.move_id)
+                    self.assertIsNone(frozen.direction)
+                    self.assertEqual(frozen.kind,'consolidation')
+                    self.assertEqual(frozen.confirmed_dt,date(audit[contract+'_available_dt'][3]))
+                    self.assertGreater(frozen.confirmed_dt,max(date(s) for s in audit[contract+'_available_dt'][:3]))
+
+    def test_declared_external_arrival_delay_keeps_candidate_unconfirmed(self):
+        """给定XD到达时间表截断；不把形态端点或旧证明时刻当F1可用时刻。"""
+        for audit in M3_CONDITIONAL_F1_ADMISSION_AUDIT.values():
+            parts=self._parts(audit)
+            for contract in ('current','fixed'):
+                stamps=[date(s) for s in audit[contract+'_available_dt']]
+                now=stamps[3]
+                for delayed in (False,True):
+                    arrivals=list(stamps)
+                    arrivals[3]=now+timedelta(days=1) if delayed else now
+                    for observed,ready in ((now-timedelta(microseconds=1),False),
+                                           (now,not delayed),
+                                           (arrivals[3]-timedelta(microseconds=1),False),
+                                           (arrivals[3],True)):
+                        size=next((i for i,t in enumerate(arrivals) if t>observed),len(arrivals))
+                        moves=chan.same_level_decompose(parts[:size])
+                        self.assertEqual(any(m.complete for m in moves),ready)
+                        if ready:
+                            frozen=self._confirmed(audit,moves[0],parts,contract)
+                            frozen=frozen._replace(confirmed_dt=arrivals[3])
+                            self.assertGreater(frozen.confirmed_dt,frozen.end_dt)
+                            self.assertEqual(chan.confirm_level_up([frozen],observed,'F2'),[])
+
+    def test_recursive_admission_rejects_parts_and_bare_moves_and_retains_empty_f2(self):
+        """XD及裸MoveType不作递归输入；真实完成F1只一项，有限范围F2仍空。"""
+        for audit in M3_CONDITIONAL_F1_ADMISSION_AUDIT.values():
+            parts=self._parts(audit)
+            complete=chan.same_level_decompose(parts)[0]
+            candidate=chan.same_level_decompose(parts[:3])[0]
+            for contract in ('current','fixed'):
+                known=date(audit[contract+'_available_dt'][3])
+                for wrong in ([parts[0]],[candidate],[complete]):
+                    with self.assertRaises(ValueError):chan.confirm_level_up(wrong,known,'F2')
+                admitted=[self._confirmed(audit,m,parts,contract)
+                          for m in chan.same_level_decompose(parts) if m.complete]
+                self.assertEqual(len(admitted),1)
+                self.assertEqual(chan.confirm_level_up(admitted,known,'F2'),[])
+                self.assertFalse(any(m.complete for m in chan.level_up(admitted)))
+                future=admitted[0]._replace(move_id=None,level=None,low=None,start_price=float('nan'),
+                                           confirmed_dt=known+timedelta(days=2))
+                self.assertEqual(chan.confirm_level_up(admitted+[future],known,'F2'),[])
+                self.assertEqual(audit['complete_f2'],0)
+
+
 if __name__ == '__main__':
     unittest.main()

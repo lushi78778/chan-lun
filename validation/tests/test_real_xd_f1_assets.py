@@ -463,6 +463,103 @@ class TestRealXdF1Assets(unittest.TestCase):
                      low_ticks=min(a,z),high_ticks=max(a,z))
                 for a,z in zip(values,values[1:])]
 
+    def _conditional_f1_source(self,key):
+        audit=embedded_table('test_real_xd_f1.py','M3_CONDITIONAL_F1_ADMISSION_AUDIT')[key]
+        path=ROOT/'tests/fixtures'/audit['fixture']
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),audit['source_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+        rows=case['raw_rows'][:audit['raw_window'][1]]
+        tool=compiler()
+        _,_,bis=tool.foundation(rows,'106')
+        self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+        parts=tool.components(rows,bis[:-1],None)
+        units=tool.xd_records(parts,audit['events'])
+        fields=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        self.assertEqual(tuple(tuple(u[n] for n in fields) for u in units),audit['units'])
+        for left,right in zip(units,units[1:]):
+            self.assertEqual((left['end_dt'],left['end_ticks']),(right['start_dt'],right['start_ticks']))
+            self.assertNotEqual(left['direction'],right['direction'])
+        for a,b in zip(audit['events'],audit['events'][1:]):
+            self.assertEqual(a[1]+1,b[0])
+        return audit,case,units
+
+    def _conditional_f1_given_snapshot_boundaries(self,audit,case,units):
+        """按既有独立XD证书时刻装配，另核F1首次准入；不搜索XD或F1分界。"""
+        from datetime import datetime,timedelta
+        tool=compiler()
+        for contract in ('current','fixed'):
+            counts=audit[contract+'_counts']
+            for at,stamp in zip(counts,audit[contract+'_available_dt']):
+                raw_dt=case['raw_rows'][at-1]['dt']
+                dt=datetime.strptime(raw_dt,'%Y-%m-%d' if len(raw_dt)==10 else '%Y-%m-%d %H:%M:%S')
+                available=dt+timedelta(hours=15,minutes=5) if '-day-' in audit['id'] else dt+timedelta(minutes=1)
+                self.assertEqual(str(available),stamp)
+            for count in sorted({n for at in counts[2:4] for n in (at-1,at)}):
+                rows=case['raw_rows'][:count]
+                _,_,bis=tool.foundation(rows,'106')
+                self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+                parts=tool.components(rows,bis if contract=='current' else bis[:-1],None)
+                size=sum(at<=count for at in counts)
+                visible=tool.xd_records(parts,audit['events'][:size])
+                self.assertEqual(visible,[dict(u,evidence_dt=visible[i]['evidence_dt'],
+                                 evidence_end_index=visible[i]['evidence_end_index']) for i,u in enumerate(units[:size])])
+                if size<3:
+                    continue
+                spec=list(audit['f1'])
+                spec[-1]=3 if size>=4 else None
+                record=tool.move_record(visible,spec)
+                self.assertEqual(record['complete'],count>=counts[3])
+                self.assertEqual((record['seg_start'],record['seg_end']),(0,2))
+                self.assertEqual((record['end_dt'],record['end_ticks']),
+                                 (units[2]['end_dt'],units[2]['end_ticks']))
+                self.assertEqual(record['proof_unit'],3 if size>=4 else None)
+
+    def test_m1_given_four_xd_f1_admission_keeps_external_proof_and_real_end_separate(self):
+        """给seed266：三段core为1019..1048，第四XD到达后才完成F1的0..2。"""
+        audit,case,units=self._conditional_f1_source('M1_recent266')
+        previous=M3_EXPANDED_PROOF_AUDIT['M1_274']
+        self.assertEqual(audit['events'],tuple(previous[n] for n in ('qualification','parent','old_boundary','extended')))
+        for contract in ('current','fixed'):
+            self.assertEqual(audit[contract+'_counts'],previous[contract+'_counts'])
+        self.assertEqual([(u['low_ticks'],u['high_ticks']) for u in units],
+                         [(1019,1099),(981,1099),(981,1048),(1001,1048)])
+        tool=compiler()
+        record=tool.move_record(units,audit['f1'])
+        self.assertEqual((record['kind'],record['direction'],record['low_ticks'],record['high_ticks']),
+                         ('consolidation',None,981,1099))
+        self.assertEqual(record['centers_ticks'],[[1019,1048]])
+        self.assertNotEqual((record['end_dt'],record['end_ticks']),(units[3]['end_dt'],units[3]['end_ticks']))
+        self.assertFalse(tool.move_record(units,audit['tail'])['complete'])
+        self.assertEqual(audit['complete_f2'],0)
+        self._conditional_f1_given_snapshot_boundaries(audit,case,units)
+
+    def test_s3_joined_recent_certificates_form_one_f1_and_keep_later_tail_pending(self):
+        """给seed10：10/24/36三包同源衔接，重复36段只保留一次；尾部仍未完。"""
+        audit,case,units=self._conditional_f1_source('S3_recent10')
+        first=M3_EXPANDED_FIRST_AUDIT['S3_day']
+        middle=M3_EXPANDED_PROOF_AUDIT['S3_27']
+        last=M3_EXPANDED_BOUNDARY_AUDIT['S3_43']
+        self.assertEqual(audit['events'][:2],(first['parent'],first['target']))
+        self.assertEqual(audit['events'][2:5],middle['events'])
+        self.assertEqual(audit['events'][4:],(last['parent'],last['target']))
+        for contract in ('current','fixed'):
+            counts=audit[contract+'_counts']
+            self.assertEqual(counts[:2],first[contract+'_counts'])
+            self.assertEqual(counts[2:5],middle[contract+'_counts'])
+            self.assertEqual(counts[4:],last[contract+'_counts'])
+        self.assertEqual(len(units),6)
+        self.assertEqual(sum(e==(36,42,1,45) for e in audit['events']),1)
+        tool=compiler()
+        record=tool.move_record(units,audit['f1'])
+        tail=tool.move_record(units,audit['tail'])
+        self.assertEqual((record['seg_end'],record['end_ticks'],record['proof_unit']),(2,3550,3))
+        self.assertEqual(record['centers_ticks'],[[3579,3745]])
+        self.assertEqual((record['low_ticks'],record['high_ticks']),(3541,3865))
+        self.assertEqual((tail['seg_start'],tail['seg_end'],tail['complete']),(3,5,False))
+        self.assertEqual(tail['centers_ticks'],[[3792,4077]])
+        self.assertEqual(audit['complete_f2'],0)
+        self._conditional_f1_given_snapshot_boundaries(audit,case,units)
+
     def _boundary_pair_source(self,key):
         audit=M3_EXPANDED_BOUNDARY_AUDIT[key]
         path=ROOT/'tests/fixtures'/audit['fixture']
