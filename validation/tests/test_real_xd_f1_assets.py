@@ -560,6 +560,73 @@ class TestRealXdF1Assets(unittest.TestCase):
         self.assertEqual(audit['complete_f2'],0)
         self._conditional_f1_given_snapshot_boundaries(audit,case,units)
 
+    def test_m2_six_given_xds_keep_child_local_proof_separate_from_parent_publication(self):
+        """给seed16：first-end70可先有局部证书，父gap72未完成前不发布65段。"""
+        audit,case,units=self._conditional_f1_source('M2_recent16')
+        previous=M3_NATURAL_SUCCESSOR_AUDIT['M2']
+        self.assertEqual(audit['events'][:3],tuple(previous[n] for n in ('parent','old_boundary','extended')))
+        self.assertEqual(audit['fixed_counts'][:3],previous['counts'])
+        tool=compiler()
+        record=tool.move_record(units,audit['f1'])
+        self.assertEqual(record['centers_ticks'],[[1113,1135]])
+        self.assertEqual((record['low_ticks'],record['high_ticks'],record['end_ticks']),(1105,1200,1112))
+        self.assertLess(units[3]['low_ticks'],record['low_ticks'])
+        self.assertFalse(tool.move_record(units,audit['tail'])['complete'])
+        self.assertGreater(max(u['low_ticks'] for u in units[3:]),min(u['high_ticks'] for u in units[3:]))
+        self._conditional_f1_given_snapshot_boundaries(audit,case,units)
+        for contract in ('current','fixed'):
+            local=audit[contract+'_local_counts'][-1]
+            published=audit[contract+'_counts'][-1]
+            self.assertLess(local,published)
+            self.assertEqual(published,audit[contract+'_counts'][-2])
+            for count in (local,published-1,published):
+                parts=self._boundary_current_prefix(case,count)
+                if contract=='fixed':
+                    parts=parts[:-1]
+                self.assertTrue(manual_xd_certificate_ready(parts,audit['events'][-1]))
+                parent=manual_xd_certificate_ready(parts,audit['events'][-2])
+                self.assertEqual(parent,count>=published)
+                size=6 if parent else 4
+                self.assertEqual(len(tool.xd_records(parts,audit['events'][:size])),size)
+                if count==local:
+                    self.assertEqual(parts[70]['end_ticks'],audit[contract+'_local_proof_prices'][-1])
+                    if contract=='current':
+                        self.assertEqual(parts[70]['end_dt'],'2026-03-26 10:30:00')
+                if count==published:
+                    self.assertEqual((parts[70]['end_ticks'],parts[70]['end_dt']),
+                                     (1033,'2026-03-26 14:25:00'))
+            self.assertEqual(audit[contract+'_counts'][-1],audit[contract+'_counts'][-2])
+        self.assertEqual((audit['current_local_proof_prices'][-1],audit['fixed_local_proof_prices'][-1]),(1048,1033))
+
+    def test_y1_corrected_head_joins_next_segment_and_replaces_no_historical_core(self):
+        """给seed1：30..32由35严格选向；修正核心9714..9906，不沿用旧9780..9834。"""
+        audit,case,units=self._conditional_f1_source('Y1_recent1')
+        previous=M3_NATURAL_SUCCESSOR_AUDIT['Y1']
+        self.assertEqual(audit['events'][:3],tuple(previous[n] for n in ('parent','old_boundary','extended')))
+        self.assertEqual(audit['fixed_counts'][:3],previous['counts'])
+        alias=next(c for c in json.loads((ROOT/'tests/fixtures/real_first_point.json').read_text())['cases']
+                   if c['id']==audit['id'])
+        self.assertEqual(case['raw_rows'][:352],alias['raw_rows'][:352])
+        self.assertEqual(case['foundation']['bis'][:36],alias['foundation']['bis'][:36])
+        tool=compiler()
+        rows=case['raw_rows'][:352]
+        _,_,bis=tool.foundation(rows,'106')
+        parts=tool.components(rows,bis[:-1],None)
+        self.assertTrue(manual_xd_certificate_ready(parts,(30,32,1,35)))
+        self.assertEqual((parts[33]['start_ticks'],parts[33]['end_ticks'],parts[35]['end_ticks']),
+                         (9761,9793,9797))
+        self.assertGreater(parts[34]['end_ticks'],parts[33]['start_ticks'])
+        record=tool.move_record(units,audit['f1'])
+        self.assertEqual(record['centers_ticks'],[[9714,9906]])
+        self.assertEqual((record['start_ticks'],record['end_ticks'],record['low_ticks'],record['high_ticks']),
+                         (9702,9834,9702,9933))
+        old=embedded_table('test_real_xd_f1.py','M3_XD_RECURSION_AUDIT')['Y1']['f1'][0]
+        self.assertEqual(old[5],((9780,9834),))
+        self.assertNotEqual(audit['f1'][5],old[5])
+        self.assertEqual(audit['f1'][-1],old[-1])
+        self.assertFalse(tool.move_record(units,audit['tail'])['complete'])
+        self._conditional_f1_given_snapshot_boundaries(audit,case,units)
+
     def _boundary_pair_source(self,key):
         audit=M3_EXPANDED_BOUNDARY_AUDIT[key]
         path=ROOT/'tests/fixtures'/audit['fixture']

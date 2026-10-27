@@ -1372,6 +1372,58 @@ M3_CONDITIONAL_F1_ADMISSION_AUDIT = {
         'raw_window': (1, 705),
         'complete_f2': 0,
     },
+    'M2_recent16': {
+        'fixture': 'real_third_point_xd_margin0.json',
+        'id': '512880-5m-20260201-20260724',
+        'source_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+        'certificate_sha256': '4692e046fbd8c5ae9293868dc8e8126b3e314e3e250cbb1015cd38698fb93d22',
+        'seed': 16,
+        'events': ((16, 34, 1, 37), (35, 37, 1, 51), (38, 48, 1, 51), (49, 55, 1, 58), (56, 64, 2, 72), (65, 67, 1, 70)),
+        'units': (
+            ('down', '2026-02-10 10:10:00', '2026-03-06 09:35:00', 1200, 1113, 1113, 1200, 1, 37),
+            ('up', '2026-03-06 09:35:00', '2026-03-06 14:20:00', 1113, 1135, 1113, 1135, 1, 51),
+            ('down', '2026-03-06 14:20:00', '2026-03-13 09:55:00', 1135, 1112, 1105, 1135, 1, 51),
+            ('up', '2026-03-13 09:55:00', '2026-03-17 10:35:00', 1112, 1140, 1100, 1140, 1, 58),
+            ('down', '2026-03-17 10:35:00', '2026-03-23 14:55:00', 1140, 1031, 1031, 1140, 2, 72),
+            ('up', '2026-03-23 14:55:00', '2026-03-25 10:35:00', 1031, 1060, 1031, 1060, 1, 70),
+        ),
+        'raw_window': (372, 1648),
+        'complete_f2': 0,
+        'current_counts': (924, 1156, 1156, 1329, 1639, 1639),
+        'current_local_counts': (924, 1156, 1156, 1329, 1639, 1582),
+        'current_local_proof_prices': (1135, 1125, 1125, 1104, 1035, 1048),
+        'current_available_dt': ('2026-03-06 14:26:00', '2026-03-13 13:21:00', '2026-03-13 13:21:00', '2026-03-19 09:56:00', '2026-03-27 11:16:00', '2026-03-27 11:16:00'),
+        'fixed_counts': (940, 1183, 1183, 1349, 1648, 1648),
+        'fixed_local_counts': (940, 1183, 1183, 1349, 1648, 1618),
+        'fixed_local_proof_prices': (1135, 1125, 1125, 1101, 1035, 1033),
+        'fixed_available_dt': ('2026-03-09 10:11:00', '2026-03-16 10:01:00', '2026-03-16 10:01:00', '2026-03-19 13:06:00', '2026-03-27 13:31:00', '2026-03-27 13:31:00'),
+        'f1': (0, 2, 'consolidation', None, (0,), ((1113, 1135),), 3),
+        'tail': (3, 5, 'incomplete', None, (), (), None),
+    },
+    'Y1_recent1': {
+        'certificate_sha256': '211986891a02e3c3d4536e622746e51c034a94bfe7c88b25b6f873d2ca1adace',
+        'complete_f2': 0,
+        'current_available_dt': ('2026-05-11 09:51:00', '2026-05-13 14:26:00', '2026-05-14 11:21:00', '2026-05-15 09:31:00'),
+        'current_counts': (152, 287, 317, 344),
+        'current_proof_prices': (9801, 9834, 9761, 9797),
+        'events': ((1, 7, 1, 14), (8, 18, 1, 29), (19, 29, 1, 32), (30, 32, 1, 35)),
+        'f1': (0, 2, 'consolidation', None, (0,), ((9714, 9906),), 3),
+        'fixed_available_dt': ('2026-05-11 10:46:00', '2026-05-14 09:51:00', '2026-05-14 13:21:00', '2026-05-15 10:11:00'),
+        'fixed_counts': (163, 299, 323, 352),
+        'fixed_proof_prices': (9780, 9834, 9761, 9797),
+        'fixture': 'real_second_point.json',
+        'id': '518880-5m-20260501-20260724',
+        'raw_window': (1, 352),
+        'seed': 1,
+        'source_sha256': '745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6',
+        'tail': (3, 3, 'incomplete', None, (), (), None),
+        'units': (
+            ('up', '2026-05-06 10:00:00', '2026-05-07 14:45:00', 9702, 9933, 9702, 9933, 1, 14),
+            ('down', '2026-05-07 14:45:00', '2026-05-11 14:00:00', 9933, 9714, 9714, 9933, 1, 29),
+            ('up', '2026-05-11 14:00:00', '2026-05-13 14:20:00', 9714, 9834, 9714, 9906, 1, 32),
+            ('down', '2026-05-13 14:20:00', '2026-05-14 11:15:00', 9834, 9761, 9761, 9834, 1, 35),
+        ),
+    },
 }
 
 class TestConditionalF1Admission(unittest.TestCase):
@@ -1500,6 +1552,26 @@ class TestConditionalF1Admission(unittest.TestCase):
                                            confirmed_dt=known+timedelta(days=2))
                 self.assertEqual(chan.confirm_level_up(admitted+[future],known,'F2'),[])
                 self.assertEqual(audit['complete_f2'],0)
+
+    def test_m2_local_child_proof_waits_for_parent_publication_without_a_visible_hole(self):
+        """65的local70早于parent72；给定链仍须整批发布最后两项，不跳父段。"""
+        audit=M3_CONDITIONAL_F1_ADMISSION_AUDIT['M2_recent16']
+        parts=self._parts(audit)
+        self.assertEqual((audit['events'][-1][3],audit['events'][-2][3]),(70,72))
+        for contract in ('current','fixed'):
+            local=audit[contract+'_local_counts'][-1]
+            published=audit[contract+'_counts'][-1]
+            self.assertLess(local,published)
+            self.assertEqual(published,audit[contract+'_counts'][-2])
+            for observed,size in ((local,4),(published-1,4),(published,6)):
+                visible=sum(at<=observed for at in audit[contract+'_counts'])
+                self.assertEqual(visible,size)
+                moves=chan.same_level_decompose(parts[:visible])
+                self.assertEqual(sum(m.complete for m in moves),1)
+                self.assertEqual((moves[-1].seg_start,moves[-1].seg_end,moves[-1].kind,moves[-1].complete),
+                                 (3,size-1,'incomplete',False))
+        self.assertEqual((audit['current_local_counts'][-1],audit['current_counts'][-1]),(1582,1639))
+        self.assertEqual((audit['fixed_local_counts'][-1],audit['fixed_counts'][-1]),(1618,1648))
 
 
 if __name__ == '__main__':
