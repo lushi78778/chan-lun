@@ -1996,5 +1996,146 @@ class TestY1CurrentRoleClocks(unittest.TestCase):
                          ([],[],[],[],[],()))
 
 
+# 课20三段全程区间角色；不沿用旧Zn简化式或已完成严格趋势标签。
+M3_Y1_HEAD_ROLE_AUDIT = {'certificate_sha256': '91e2e0f58e1fdbda3ff9868016d85d03a2f37c55a458673ee22b4e4be02928c0',
+ 'fixed_role_certificate_sha256': 'ee58a32f2af125706a60a384624854de3777117cbd131e42ea951b32b4b17d3d',
+ 'current_clock_certificate_sha256': 'c7f542460f4019da02ee93d8945504162f1faf5821f3b32a79cce7eef34e8dd0',
+ 'source_sha256': '745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6',
+ 'scope': 'given_seed1_head_roles_not_complete_strict_trend',
+ 'roles': {'A': {'zn': (0, 2, 4),
+                 'zd': 9714,
+                 'zg': 9906,
+                 'dd': 9702,
+                 'gg': 9933,
+                 'closed_by': 6,
+                 'core_basis': 'three_units'},
+           'B': {'zn': (6, 8),
+                 'zd': 9445,
+                 'zg': 9540,
+                 'dd': 9332,
+                 'gg': 9543,
+                 'closed_by': 10,
+                 'core_basis': 'three_units'},
+           'C': {'zn': (10, 12, 14),
+                 'zd': 9266,
+                 'zg': 9414,
+                 'dd': 9108,
+                 'gg': 9414,
+                 'closed_by': 16,
+                 'core_basis': 'three_units'},
+           'a': None,
+           'b': {'unit': 5},
+           'c': {'unit': 9, 'outcome': 'departed'},
+           'proof': None,
+           'merge': {'pair': ['B', 'C'], 'branch': 'below', 'determined': True},
+           'gap_ticks': 159},
+ 'ledger': {'current': (('A_open', 2, 317),
+                        ('A_zn_extend', 4, 377),
+                        ('b_fixed', 5, 542),
+                        ('A_closed', 6, 655),
+                        ('B_open', 8, 836),
+                        ('c_fixed', 9, 907),
+                        ('c_departed', 9, 907),
+                        ('B_closed', 10, 907),
+                        ('C_open', 12, 1013),
+                        ('C_zn_extend', 14, 1084),
+                        ('C_closed', 16, 1277),
+                        ('merge_determined', 16, 1277)),
+            'fixed': (('A_open', 2, 323),
+                      ('A_zn_extend', 4, 381),
+                      ('b_fixed', 5, 557),
+                      ('A_closed', 6, 661),
+                      ('B_open', 8, 840),
+                      ('c_fixed', 9, 946),
+                      ('c_departed', 9, 946),
+                      ('B_closed', 10, 946),
+                      ('C_open', 12, 1017),
+                      ('C_zn_extend', 14, 1115),
+                      ('C_closed', 16, 1296),
+                      ('merge_determined', 16, 1296))},
+ 'pair_B_core': (9441, 9540),
+ 'return_gap_ticks': 31,
+ 'BC_wave_overlap_ticks': 82,
+ 'prior_low_ticks': 9332,
+ 'c_low_ticks': 9108}
+
+
+class TestY1HeadThreeUnitRoles(unittest.TestCase):
+    """给定Y1头部角色的全程交集、回核缺口和两合同首达。"""
+
+    @staticmethod
+    def _data():
+        case,units=gap_revision_input(M3_Y1_JOINED_ROLE_AUDIT)
+        audit=M3_Y1_HEAD_ROLE_AUDIT
+        if (audit['fixed_role_certificate_sha256']!=M3_Y1_JOINED_ROLE_AUDIT['certificate_sha256'] or
+                audit['current_clock_certificate_sha256']!=M3_Y1_CURRENT_CLOCK_AUDIT['certificate_sha256']):
+            raise AssertionError('角色须绑定组成和活动时钟版本')
+        return case,units,audit
+
+    def test_general_three_unit_core_keeps_internal_low_and_mirrored_middle_bound(self):
+        _,units,audit=self._data()
+        parts=m3_xd_parts(dict(units=units),2793)
+        for name in ('A','B','C'):
+            spec=audit['roles'][name]
+            i=spec['zn'][0]
+            center=chan.find_zs(parts[i:i+3])[0]
+            self.assertEqual((round(center.zd*1000),round(center.zg*1000)),(spec['zd'],spec['zg']))
+        self.assertEqual((units[8]['low_ticks'],units[8]['start_ticks']),(9441,9445))
+        self.assertEqual(audit['pair_B_core'],(9441,9540))
+        for middle_low,expected in ((9440,9441),(9441,9441),(9442,9442),(9445,9445)):
+            for mirror in (False,True):
+                triple=[]
+                for i in (6,7,8):
+                    lo=middle_low if i==7 else units[i]['low_ticks']
+                    hi=units[i]['high_ticks']
+                    triple.append(SimpleNamespace(low=(20000-hi if mirror else lo)/1000.,
+                                  high=(20000-lo if mirror else hi)/1000.,
+                                  direction=('down' if units[i]['direction']=='up' else 'up') if mirror else units[i]['direction'],
+                                  start_dt=parts[i].start_dt,end_dt=parts[i].end_dt))
+                actual=chan.find_zs(triple)[0]
+                core=(20000-9540,20000-expected) if mirror else (expected,9540)
+                self.assertEqual((round(actual.zd*1000),round(actual.zg*1000)),core)
+
+    def test_new_c_has_new_low_but_immediate_unit10_never_returns_to_B(self):
+        _,units,audit=self._data()
+        roles=audit['roles'];B=roles['B'];C=roles['C'];c=roles['c']['unit']
+        self.assertEqual((roles['b']['unit'],c),(5,9))
+        self.assertEqual((min(u['low_ticks'] for u in units[:c]),units[c]['low_ticks']),
+                         (audit['prior_low_ticks'],audit['c_low_ticks']))
+        self.assertLess(units[c]['low_ticks'],audit['prior_low_ticks'])
+        self.assertEqual(B['zd']-units[c+1]['high_ticks'],audit['return_gap_ticks'])
+        self.assertEqual([i for i in range(c+1,len(units)) if units[i]['low_ticks']<=B['zg'] and
+                          units[i]['high_ticks']>=B['zd']],[])
+        self.assertIsNone(roles['proof'])
+        self.assertEqual((C['zg']<B['zd'],C['gg']-B['dd']),(True,audit['BC_wave_overlap_ticks']))
+        def center(spec):
+            return chan.ZS(spec['zd']/1000.,spec['zg']/1000.,spec['gg']/1000.,spec['dd']/1000.,
+                           None,None,'up',len(spec['zn'])*2-1)
+        self.assertEqual(chan.zs_relation(center(B),center(C)),'expand')
+        # 历史旧c9没有创新低的结论不迁移到新c9；新c的回核/完成仍缺。
+        case,_,_=self._data()
+        self.assertEqual(case['first_point']['reason'],'no_new_extreme')
+
+    def test_head_role_formations_wait_for_their_actual_current_and_fixed_batches(self):
+        case,units,audit=self._data()
+        for contract in ('current','fixed'):
+            counts=(M3_Y1_CURRENT_CLOCK_AUDIT['published_counts'] if contract=='current'
+                    else tuple(u['confirmed_raw_count'] for u in units))
+            supplied=[dict(u,confirmed_raw_count=at) for u,at in zip(units,counts)]
+            for name in ('A','B','C'):
+                spec=audit['roles'][name];i=spec['zn'][0];formed=i+2;at=counts[formed]
+                for observed,ready in ((at-1,False),(at,True)):
+                    parts=m3_xd_parts(dict(units=supplied),observed)
+                    centers=chan.find_zs(parts[i:i+3])
+                    self.assertEqual(bool(centers),ready,(contract,name,observed))
+                    if ready:
+                        self.assertEqual((round(centers[0].zd*1000),round(centers[0].zg*1000)),
+                                         (spec['zd'],spec['zg']))
+            actual=tuple((event,index,counts[index]) for event,index,_ in audit['ledger'][contract])
+            self.assertEqual(actual,audit['ledger'][contract])
+        self.assertEqual((audit['ledger']['current'][-1][-1],audit['ledger']['fixed'][-1][-1]),(1277,1296))
+        self.assertLess(gap_revision_time(case,1277),gap_revision_time(case,1296))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,7 @@
 本地开发工具，不导入chan。基础包含、分型及笔复用独立整数参考；
 XD组成、模式与证明笔来自已冻结人工表，本工具不重推gate算术
 （该正确性由核心测试逐前缀回放find_xds恰好复现冻结事件保证）。
-Zn取中枢形成方向同向单元；ZD/ZG由首对同向段固定；存在性=三连续
+Zn取中枢形成方向同向单元；默认ZD/ZG由首对同向段固定；存在性=三连续
 单元重叠；延伸=闭区间与[ZD,ZG]触沿；DD/GG为zn[0]..zn[-1]全单元
 包络；c离开最后中枢核心才算departed，B+c扩展按a~+A~未完成延续
 登记。0.9.3：完成正例要求最后中枢B在c离开处冻结Zn延伸
@@ -15,6 +15,11 @@ proof_fixed事件。台账事件序列由角色推导比对，first_raw_count按
 算术冲突直接拒绝。0.9.4：granularity='60m'时单元时刻保留完整
 bar结束时刻、到达时刻按+1分钟约定，日线路径保持15:05不变。
 0.9.6：granularity='5m'沿用分钟约定（bar结束时刻+1分钟）。
+
+新角色可显式声明core_basis='three_units'，按课20三段全程区间交集
+固定ZD/ZG；其余Zn成员、包络及封口规则保持。默认same_direction_pair
+保留历史表的首对简化式及中间全覆盖检查，不重算或改写冻结标签。
+XD内部极值使中间段不能覆盖首对交集时，两种口径不得互换。
 """
 import argparse
 from datetime import datetime, timedelta
@@ -42,7 +47,7 @@ def index(value):
 
 
 def validate_zhongshu(name, spec, units):
-    """Zn同向步2、首对核心、存在性、延伸触沿、包络与封口算术。
+    """Zn同向步2、声明口径的核心、存在性、延伸触沿、包络与封口算术。
 
     0.9.3：frozen_by_departure=true时closed_by须为null，zn[-1]+1
     中间反向单元须离开核心（趋势方向判据），zn[-1]+2同向后继须
@@ -63,12 +68,19 @@ def validate_zhongshu(name, spec, units):
         if units[i]['direction'] != direction:
             raise ValueError(name + ' Zn成员方向不一致')
     first, second = units[zn[0]], units[zn[1]]
-    zd = max(first['low_ticks'], second['low_ticks'])
-    zg = min(first['high_ticks'], second['high_ticks'])
+    basis = spec.get('core_basis', 'same_direction_pair')
+    if basis not in ('same_direction_pair', 'three_units'):
+        raise ValueError(name + ' core_basis无效')
+    formation = ([first, units[zn[0] + 1], second]
+                 if basis == 'three_units' else [first, second])
+    zd = max(unit['low_ticks'] for unit in formation)
+    zg = min(unit['high_ticks'] for unit in formation)
     if zd > zg:
-        raise ValueError(name + ' 首对核心为空')
+        raise ValueError(name + (' 三段核心为空' if basis == 'three_units'
+                                 else ' 首对核心为空'))
     if [zd, zg] != [spec['zd'], spec['zg']]:
-        raise ValueError(name + ' 首对核心与声明不一致')
+        raise ValueError(name + (' 三段核心与声明不一致' if basis == 'three_units'
+                                 else ' 首对核心与声明不一致'))
     middle = units[zn[0] + 1]
     if middle['low_ticks'] > zd or middle['high_ticks'] < zg:
         raise ValueError(name + ' 中间单元未覆盖核心')
@@ -113,8 +125,11 @@ def validate_zhongshu(name, spec, units):
         unit = units[closed_by]
         if unit['low_ticks'] <= zg and unit['high_ticks'] >= zd:
             raise ValueError(name + ' 封口单元不得触沿')
-    return dict(zn=zn, zd=zd, zg=zg, dd=dd, gg=gg, closed_by=closed_by,
-                frozen_by_departure=frozen)
+    result = dict(zn=zn, zd=zd, zg=zg, dd=dd, gg=gg, closed_by=closed_by,
+                  frozen_by_departure=frozen)
+    if 'core_basis' in spec:
+        result['core_basis'] = basis
+    return result
 
 
 def validate_xd_events(case, fixed):

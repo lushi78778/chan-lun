@@ -534,6 +534,98 @@ def pending_gap_revisions():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def _y1_three_unit_roles(self):
+        role,case,_,units,_=self._joined_y1_role_source()
+        audit=embedded_table('test_real_xd_f1.py','M3_Y1_HEAD_ROLE_AUDIT')
+        clock=embedded_table('test_real_xd_f1.py','M3_Y1_CURRENT_CLOCK_AUDIT')
+        self.assertEqual(audit['source_sha256'],role['fixture_sha256'])
+        self.assertEqual(audit['fixed_role_certificate_sha256'],role['certificate_sha256'])
+        self.assertEqual(audit['current_clock_certificate_sha256'],clock['certificate_sha256'])
+        units=[dict(u,confirmed_raw_count=row[-1]) for u,row in zip(units,role['units'])]
+        return audit,case,units,clock
+
+    def test_y1_general_three_unit_roles_keep_legacy_pair_contract_and_mirror_bounds(self):
+        """课20完整公式显式选用；内部低9441不改价，核心下沿由中间9445约束。"""
+        audit,_,units,_=self._y1_three_unit_roles()
+        tool=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        spec=audit['roles']['B']
+        result=tool.validate_zhongshu('B',spec,units)
+        self.assertEqual((result['zd'],result['zg'],result['core_basis']),(9445,9540,'three_units'))
+        with self.assertRaisesRegex(ValueError,'首对核心与声明不一致'):
+            tool.validate_zhongshu('B',dict(spec,core_basis='same_direction_pair'),units)
+        with self.assertRaisesRegex(ValueError,'中间单元未覆盖核心'):
+            tool.validate_zhongshu('B',dict(spec,core_basis='same_direction_pair',zd=9441),units)
+        with self.assertRaisesRegex(ValueError,'三段核心与声明不一致'):
+            tool.validate_zhongshu('B',dict(spec,zd=9441),units)
+        with self.assertRaisesRegex(ValueError,'core_basis无效'):
+            tool.validate_zhongshu('B',dict(spec,core_basis='automatic'),units)
+        for middle_low,expected in ((9440,9441),(9441,9441),(9442,9442),(9445,9445)):
+            changed=[dict(u) for u in units]
+            changed[7]['low_ticks']=middle_low
+            for mirror in (False,True):
+                supplied=[dict(u) for u in changed]
+                declared=dict(spec,zd=expected)
+                if mirror:
+                    for u in supplied:
+                        u['low_ticks'],u['high_ticks']=20000-u['high_ticks'],20000-u['low_ticks']
+                        u['direction']='down' if u['direction']=='up' else 'up'
+                    declared.update(zd=20000-spec['zg'],zg=20000-expected,
+                                    dd=20000-spec['gg'],gg=20000-spec['dd'])
+                checked=tool.validate_zhongshu('B',declared,supplied)
+                self.assertEqual((checked['zd'],checked['zg']),(declared['zd'],declared['zg']))
+
+    def test_y1_new_head_bc_has_no_return_proof_and_lower_center_waves_overlap(self):
+        """独立角色只证头部条件划分，c9创新低但proof10差31格，不是新一类裁定。"""
+        audit,case,units,_=self._y1_three_unit_roles()
+        tool=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        given=dict(case,trend=dict(direction='down',status='ongoing'),roles=audit['roles'])
+        centers=tool.validate_roles(given,units)
+        self.assertEqual([(centers[n]['zd'],centers[n]['zg']) for n in ('A','B','C')],
+                         [(9714,9906),(9445,9540),(9266,9414)])
+        self.assertEqual((centers['A']['closed_by'],centers['B']['closed_by'],centers['C']['closed_by']),(6,10,16))
+        self.assertEqual((audit['roles']['b']['unit'],audit['roles']['c']['unit']),(5,9))
+        B,C=centers['B'],centers['C']
+        self.assertEqual((B['zd']-C['zg'],C['gg']-B['dd']),(31,82))
+        self.assertEqual((min(u['low_ticks'] for u in units[:9]),units[9]['low_ticks']),(9332,9108))
+        self.assertEqual([i for i in range(10,39) if units[i]['low_ticks']<=B['zg'] and units[i]['high_ticks']>=B['zd']],[])
+        forced=dict(given,trend=dict(direction='down',status='completed'),
+                    roles=dict(audit['roles'],proof=dict(unit=10)))
+        with self.assertRaisesRegex(ValueError,'证明段须为c后首个触核心单元'):
+            tool.validate_roles(forced,units)
+        first=compiler(ROOT/'validation/tools/gen_real_first_point.py')
+        with self.assertRaisesRegex(ValueError,'一类裁定仅施于完成严格趋势'):
+            first.derive_first_point(given,units,centers,case['raw_rows'],'5m',[],[],[],[])
+        self.assertEqual((case['first_point']['reason'],case['second_point']['premise']['category']),
+                         ('no_new_extreme','minor_to_major'))
+
+    def test_y1_head_role_ledger_keeps_actual_batches_and_general_core_identity(self):
+        """角色台账按组成发布；C形成/延伸/封口分开，不把后来封口当即时回B。"""
+        audit,case,units,clock=self._y1_three_unit_roles()
+        tool=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        given=dict(trend=dict(direction='down',status='ongoing'),roles=audit['roles'])
+        centers=tool.validate_roles(given,units)
+        ledger=tool.derive_ledger(audit['roles'],centers)
+        self.assertEqual(ledger,[[name,i] for name,i,_ in audit['ledger']['fixed']])
+        reference=compiler()
+        events=embedded_table('test_real_xd_f1.py','M3_Y1_JOINED_ROLE_AUDIT')['events']
+        for contract in ('current','fixed'):
+            counts=(clock['published_counts'] if contract=='current' else tuple(u['confirmed_raw_count'] for u in units))
+            self.assertEqual(tuple((name,i,counts[i]) for name,i in ledger),audit['ledger'][contract])
+            for count in sorted({n for _,_,at in audit['ledger'][contract] for n in (at-1,at)}):
+                rows=case['raw_rows'][:count]
+                _,_,bis=reference.foundation(rows,'106')
+                parts=reference.components(rows,bis if contract=='current' else bis[:-1],None)
+                # 组成发布沿用已独立验收的链门控，证明价仍从当前前缀取。
+                ready=self._y1_current_given_ready(parts,events)
+                size=next((i for i,ok in enumerate(ready) if not ok),39)
+                self.assertEqual(size,sum(at<=count for at in counts),(contract,count))
+                actual_units=reference.xd_records(parts,events[:size])
+                for name in ('A','B','C'):
+                    spec=audit['roles'][name];i=spec['zn'][0]
+                    if size>i+2:
+                        core=(max(u['low_ticks'] for u in actual_units[i:i+3]),min(u['high_ticks'] for u in actual_units[i:i+3]))
+                        self.assertEqual(core,(spec['zd'],spec['zg']))
+
     def _y1_current_clock_source(self):
         role,case,_,units,_=self._joined_y1_role_source()
         clock=embedded_table('test_real_xd_f1.py','M3_Y1_CURRENT_CLOCK_AUDIT')
