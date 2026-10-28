@@ -3225,6 +3225,90 @@ class TestRealXdF1Assets(unittest.TestCase):
             self.assertTrue(tuple(range(tails[0]+1,last[0])))
             self.assertEqual(tuple(range(tails[1]+1,end+1)),())
 
+    def _m2_zn_role_source(self):
+        suffix,head,full,case,parts,units=self._m2_suffix_source()
+        audit=embedded_table('test_real_xd_f1.py','M3_M2_ZN_ROLE_AUDIT')
+        self.assertEqual((audit['head_certificate_sha256'],audit['suffix_certificate_sha256'],audit['source_sha256']),
+                         (head['certificate_sha256'],suffix['certificate_sha256'],head['fixture_sha256']))
+        return audit,suffix,head,full,case,parts,units
+
+    def test_m2_zn_roles_c_fail_and_late_touch_cannot_be_frozen_as_completed(self):
+        audit,_,_,_,case,_,units=self._m2_zn_role_source();tool=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        given=dict(first_point={},trend=audit['trend'],roles=audit['roles']);centers=tool.validate_roles(given,units)
+        self.assertEqual([(centers[n]['zd'],centers[n]['zg'],centers[n]['dd'],centers[n]['gg']) for n in ('A','B','C')],
+                         [(1113,1135,1100,1140),(1031,1049,1010,1091),(1070,1079,1039,1111)])
+        self.assertEqual((centers['A']['closed_by'],centers['B']['closed_by'],centers['C']['closed_by']),(5,13,23))
+        self.assertEqual((audit['roles']['b']['unit'],audit['roles']['c']['unit']),(4,12))
+        B,C=centers['B'],centers['C'];self.assertEqual((C['zd']-B['zg'],B['gg']-C['dd']),(21,52))
+        self.assertEqual(units[12]['low_ticks']-B['zg'],21)
+        first=next(i for i in range(13,len(units)) if units[i]['low_ticks']<=B['zg'] and units[i]['high_ticks']>=B['zd'])
+        self.assertEqual(first,20)
+        for proof in (13,20):
+            forced=dict(given,trend=dict(direction='down',status='completed'),roles=dict(audit['roles'],proof=dict(unit=proof)))
+            with self.assertRaisesRegex(ValueError,'c_fail状态须为no_departure'):tool.validate_roles(forced,units)
+        forced=dict(given,roles=dict(audit['roles'],c=dict(unit=12,outcome='departed')))
+        with self.assertRaisesRegex(ValueError,'c结局与核心算术不一致'):tool.validate_roles(forced,units)
+        first_tool=compiler(ROOT/'validation/tools/gen_real_first_point.py')
+        with self.assertRaisesRegex(ValueError,'一类裁定仅施于完成严格趋势'):
+            first_tool.derive_first_point(given,units,centers,case['raw_rows'],'5m',[],[],[],[])
+
+    def test_m2_retained_old_A_needs_new_closure_and_old_attempt_bodies_are_missing(self):
+        audit,_,_,full,case,_,units=self._m2_zn_role_source();tool=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        old_events=[tuple(e) for e in case['foundation']['xd_events']];events=full['events']
+        for old,new in audit['legacy_A_member_map']:
+            self.assertEqual(old_events[old],events[new])
+        # 中间单元161的身体仍同，但proof168改172；身份/时钟必须另行绑定。
+        old,new=case['units'][25],units[21]
+        self.assertEqual(tuple(old[k] for k in ('direction','start_dt','end_dt','low_ticks','high_ticks')),
+                         tuple(new[k] for k in ('direction','start_dt','end_dt','low_ticks','high_ticks')))
+        self.assertEqual((old_events[25],events[21]),(audit['legacy_A_proof_changed_from'],audit['legacy_A_proof_changed_to']))
+        checked=tool.validate_zhongshu('retained_A',audit['retained_A'],units)
+        self.assertEqual(tuple(checked[k] for k in ('zd','zg','dd','gg','closed_by')),(1073,1100,1015,1111,24))
+        old_close,new_index=audit['legacy_A_closed_by_map'];self.assertEqual(old_events[old_close],events[new_index])
+        with self.assertRaisesRegex(ValueError,r'封口单元须为zn\[-1\]\+2且存在'):
+            tool.validate_zhongshu('retained_A',dict(audit['retained_A'],closed_by=new_index),units)
+        for i in audit['missing_legacy_units']:self.assertNotIn(old_events[i],events)
+        pairs=tuple((v['leave'],v['pull']) for name in ('A','B') for v in case['attempts'][name])
+        self.assertEqual(pairs,audit['legacy_attempt_pairs'])
+        self.assertTrue(all(old_events[leave] not in events for leave,_ in pairs))
+        old,new=audit['surviving_pullback_map'];self.assertEqual(old_events[old],events[new])
+        with self.assertRaisesRegex(ValueError,'首对核心与声明不一致'):
+            tool.validate_zhongshu('old_B',case['centers']['B'],units)
+        self.assertFalse(audit['old_labels_reusable'])
+
+    def test_m2_zn_actual_ledger_boundaries_keep_first_C_wave_and_retained_closure(self):
+        audit,suffix,head,full,case,_,_=self._m2_zn_role_source();tool=compiler();strict=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        # 只由既有角色工具推台账，再分别绑定两合同的实际累计发布时间。
+        centers=strict.validate_roles(dict(trend=audit['trend'],roles=audit['roles']),tool.xd_records(
+            tool.components(case['raw_rows'],tool.foundation(case['raw_rows'],'106')[2],None),full['events']))
+        ledger=strict.derive_ledger(audit['roles'],centers)
+        clocks={name:(head['current_counts'] if name=='current' else tuple(u[-1] for u in head['units']))+suffix['published_counts'][name] for name in ('current','fixed')}
+        for name,counts in clocks.items():self.assertEqual(tuple((n,i,counts[i]) for n,i in ledger),audit['ledger'][name])
+        indices={i for _,i in ledger}|set(audit['event_clock_units'])
+        observations=0
+        for count in sorted({5586}|{n for clock in clocks.values() for i in indices for n in (clock[i]-1,clock[i])}):
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+            self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+            for contract,pens in (('current',bis),('fixed',bis[:-1])):
+                observations+=1;p=tool.components(rows,pens,None);ready=self._m2_suffix_ready(p,full)
+                size=next((i for i,ok in enumerate(ready) if not ok),36)
+                self.assertEqual(size,sum(at<=count for at in clocks[contract]))
+                available=tool.xd_records(p,full['events'][:size])
+                for name in ('A','B','C'):
+                    spec=audit['roles'][name];start=spec['zn'][0]
+                    if size>start+2:
+                        triple=available[start:start+3]
+                        self.assertEqual((max(u['low_ticks'] for u in triple),min(u['high_ticks'] for u in triple)),(spec['zd'],spec['zg']))
+                if count==clocks[contract][15]:
+                    self.assertEqual(min(u['low_ticks'] for u in available[13:16]),1050)
+                if count==clocks[contract][20]:
+                    self.assertEqual(min(u['low_ticks'] for u in available[13:21]),1039)
+                    self.assertLess(count,clocks[contract][21])
+                if count==clocks[contract][24]:
+                    self.assertEqual(size,26)  # 23/24/25是同批，不构造批内封口时间。
+                    self.assertLess(count,clocks[contract][26])
+        self.assertEqual(observations,122)
+
 
 if __name__ == '__main__':
     unittest.main()

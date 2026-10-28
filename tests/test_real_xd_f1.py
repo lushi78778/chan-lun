@@ -3027,5 +3027,180 @@ class TestM2SuffixConsumers(unittest.TestCase):
             self.assertEqual(m3_xd_shape(final),m3_xd_expected(units,audit['tails'][contract]))
 
 
+# 课20/24/29给定seed16头部角色；c未离开，不复用旧三类标签。
+M3_M2_ZN_ROLE_AUDIT = {'certificate_sha256': '3e71d9f7eb30e98f5a41495379ec1d9bff1eac56d7db2779d5e077bd46355d51',
+ 'BC_wave_overlap_ticks': 52,
+ 'C_wave_snapshots': ((15, 1050, 1085, 41),
+                      (17, 1050, 1100, 41),
+                      (19, 1050, 1111, 41),
+                      (20, 1039, 1111, 52),
+                      (21, 1039, 1111, 52)),
+ 'c_low_ticks': 1070,
+ 'event_clock_units': (14, 20, 24, 26),
+ 'head_certificate_sha256': '7f592db0a28e4f6e120c28addd0e6d9ee661fdcb9b182ead07ed146e6a99efdc',
+ 'ledger': {'current': (('A_open', 3, 1329),
+                        ('b_fixed', 4, 1639),
+                        ('A_closed', 5, 1639),
+                        ('B_open', 7, 1764),
+                        ('B_zn_extend', 9, 2040),
+                        ('B_zn_extend', 11, 2254),
+                        ('c_fixed', 12, 2356),
+                        ('c_fail', 12, 2356),
+                        ('B_closed', 13, 2398),
+                        ('C_open', 15, 2740),
+                        ('C_zn_extend', 17, 2834),
+                        ('C_zn_extend', 19, 3052),
+                        ('C_zn_extend', 21, 3554),
+                        ('C_closed', 23, 3940),
+                        ('merge_determined', 23, 3940)),
+            'fixed': (('A_open', 3, 1349),
+                      ('b_fixed', 4, 1648),
+                      ('A_closed', 5, 1648),
+                      ('B_open', 7, 1775),
+                      ('B_zn_extend', 9, 2063),
+                      ('B_zn_extend', 11, 2261),
+                      ('c_fixed', 12, 2365),
+                      ('c_fail', 12, 2365),
+                      ('B_closed', 13, 2437),
+                      ('C_open', 15, 2759),
+                      ('C_zn_extend', 17, 2872),
+                      ('C_zn_extend', 19, 3077),
+                      ('C_zn_extend', 21, 3563),
+                      ('C_closed', 23, 3956),
+                      ('merge_determined', 23, 3956))},
+ 'legacy_A_closed_by_map': (28, 26),
+ 'legacy_A_member_map': ((22, 18), (24, 20), (26, 22)),
+ 'legacy_A_proof_changed_from': (161, 163, 1, 168),
+ 'legacy_A_proof_changed_to': (161, 163, 1, 172),
+ 'legacy_attempt_pairs': ((30, 31), (31, 32), (35, 36)),
+ 'missing_legacy_units': (30, 31, 32, 33, 34, 35),
+ 'near_return_gap_ticks': 1,
+ 'near_return_unit': 14,
+ 'old_labels_reusable': False,
+ 'prior_low_ticks': 1010,
+ 'retained_A': {'closed_by': 24,
+                'core_basis': 'three_units',
+                'dd': 1015,
+                'frozen_by_departure': False,
+                'gg': 1111,
+                'zd': 1073,
+                'zg': 1100,
+                'zn': (18, 20, 22)},
+ 'return_gap_ticks': 21,
+ 'return_unit': 20,
+ 'roles': {'A': {'closed_by': 5,
+                 'core_basis': 'three_units',
+                 'dd': 1100,
+                 'gg': 1140,
+                 'zd': 1113,
+                 'zg': 1135,
+                 'zn': (1, 3)},
+           'B': {'closed_by': 13,
+                 'core_basis': 'three_units',
+                 'dd': 1010,
+                 'gg': 1091,
+                 'zd': 1031,
+                 'zg': 1049,
+                 'zn': (5, 7, 9, 11)},
+           'C': {'closed_by': 23,
+                 'core_basis': 'three_units',
+                 'dd': 1039,
+                 'gg': 1111,
+                 'zd': 1070,
+                 'zg': 1079,
+                 'zn': (13, 15, 17, 19, 21)},
+           'a': {'unit': 0},
+           'b': {'unit': 4},
+           'c': {'outcome': 'fail', 'unit': 12},
+           'gap_ticks': 9,
+           'merge': {'branch': 'above', 'determined': True, 'pair': ['B', 'C']},
+           'proof': None},
+ 'scope': 'given_seed16_head_and_retained_roles_not_complete_strict_trend',
+ 'source_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+ 'suffix_certificate_sha256': 'ee14d65c88a367594a37eeb28b31689bdb19fd88d28d1f01357e910bb4ca2e3a',
+ 'surviving_pullback_map': (36, 30),
+ 'trend': {'direction': 'down', 'status': 'no_departure'}}
+
+
+class TestM2ZnRoles(unittest.TestCase):
+    """给定seed16头部Zn及b/c，独立于自动递归的工程走势身份。"""
+
+    @staticmethod
+    def _data(contract='fixed'):
+        case,units,_=m2_suffix_input(contract);audit=M3_M2_ZN_ROLE_AUDIT
+        if (audit['head_certificate_sha256']!=M3_M2_JOINED_ROLE_AUDIT['certificate_sha256'] or
+                audit['suffix_certificate_sha256']!=M3_M2_SUFFIX_ROLE_AUDIT['certificate_sha256']):
+            raise AssertionError('M2角色须绑定同一已验衔接与后缀')
+        return case,units,audit
+
+    @staticmethod
+    def _zs(spec,mirror=False):
+        lo,hi,dd,gg=[spec[k] for k in ('zd','zg','dd','gg')]
+        if mirror:lo,hi,dd,gg=3000-hi,3000-lo,3000-gg,3000-dd
+        return chan.ZS(lo/1000.,hi/1000.,gg/1000.,dd/1000.,None,None,
+                       'down' if mirror else 'up',2*len(spec['zn'])-1)
+
+    def test_zn_three_unit_cores_and_wave_separation_are_different_conditions(self):
+        _,units,audit=self._data();roles=audit['roles'];parts=m3_xd_parts(dict(units=units),5586)
+        for mirror in (False,True):
+            supplied=[SimpleNamespace(low=(3-p.high if mirror else p.low),high=(3-p.low if mirror else p.high),
+                      direction=('down' if p.direction=='up' else 'up') if mirror else p.direction,
+                      start_dt=p.start_dt,end_dt=p.end_dt) for p in parts]
+            for name in ('A','B','C'):
+                spec=roles[name];a,z=spec['zn'][0],spec['zn'][-1]
+                actual=chan.find_zs(supplied[a:z+1])[0];expected=self._zs(spec,mirror)
+                self.assertEqual(tuple(round(v*1000) for v in (actual.zd,actual.zg,actual.dd,actual.gg)),
+                                 tuple(round(v*1000) for v in (expected.zd,expected.zg,expected.dd,expected.gg)))
+            self.assertEqual(chan.zs_relation(self._zs(roles['A'],mirror),self._zs(roles['B'],mirror)),
+                             'up_continue' if mirror else 'down_continue')
+            self.assertEqual(chan.zs_relation(self._zs(roles['B'],mirror),self._zs(roles['C'],mirror)),'expand')
+            # A/B全程波动间隙为9格；等触不能算严格分离。
+            for delta in (-1,0,1):
+                changed=dict(roles['B'],gg=1100+delta)
+                self.assertEqual(chan.zs_relation(self._zs(roles['A'],mirror),self._zs(changed,mirror)),
+                                 ('up_continue' if mirror else 'down_continue') if delta<0 else 'expand')
+        self.assertEqual(roles['A']['dd']-roles['B']['gg'],roles['gap_ticks'])
+        self.assertEqual(roles['B']['gg']-roles['C']['dd'],audit['BC_wave_overlap_ticks'])
+
+    def test_c_failed_to_depart_and_later_touch_is_not_an_immediate_return(self):
+        _,units,audit=self._data();roles=audit['roles'];parts=m3_xd_parts(dict(units=units),5586)
+        A=chan.find_zs(parts[1:4])[0];B=chan.find_zs(parts[5:12])[0]
+        b,c=roles['b']['unit'],roles['c']['unit']
+        self.assertLess(parts[b].low,A.zd)
+        self.assertEqual((b,c,audit['trend']['status'],roles['c']['outcome']),(4,12,'no_departure','fail'))
+        self.assertEqual(units[c]['low_ticks']-round(B.zg*1000),audit['return_gap_ticks'])
+        self.assertEqual((min(u['low_ticks'] for u in units[:c]),units[c]['low_ticks']),
+                         (audit['prior_low_ticks'],audit['c_low_ticks']))
+        self.assertGreater(units[c]['low_ticks'],audit['prior_low_ticks'])
+        touches=[i for i in range(c+1,len(parts)) if parts[i].low<=B.zg and parts[i].high>=B.zd]
+        self.assertEqual(touches[0],audit['return_unit'])
+        self.assertGreater(touches[0],c+1)
+        self.assertEqual(units[audit['near_return_unit']]['low_ticks']-round(B.zg*1000),audit['near_return_gap_ticks'])
+        self.assertIsNone(roles['proof'])
+        # 角色c12不等于既有自动递归走势的离开比较腿；不移植旧点位标签。
+        self.assertFalse(audit['old_labels_reusable'])
+
+    def test_role_ledger_and_partial_C_ranges_wait_for_actual_publication(self):
+        for contract in ('current','fixed'):
+            _,units,audit=self._data(contract);counts=[u['confirmed_raw_count'] for u in units]
+            self.assertEqual(tuple((name,i,counts[i]) for name,i,_ in audit['ledger'][contract]),audit['ledger'][contract])
+            for name in ('A','B','C'):
+                spec=audit['roles'][name];start=spec['zn'][0];at=counts[start+2]
+                for now,formed in ((at-1,False),(at,True)):
+                    visible=m3_xd_parts(dict(units=units),now);zs=chan.find_zs(visible[start:start+3])
+                    self.assertEqual(bool(zs),formed)
+                    if formed:self.assertEqual((round(zs[0].zd*1000),round(zs[0].zg*1000)),(spec['zd'],spec['zg']))
+            self.assertEqual(counts[4],counts[5])  # b与A封口同批，不能制造中间快照。
+            self.assertLess(counts[20],counts[21])
+            self.assertLess(counts[24],counts[audit['legacy_A_closed_by_map'][1]])
+            for stop,lo,hi,overlap in audit['C_wave_snapshots']:
+                visible=m3_xd_parts(dict(units=units),counts[stop]);z=chan.find_zs(visible[13:stop+1])[0]
+                self.assertEqual((round(z.dd*1000),round(z.gg*1000),1091-round(z.dd*1000)),(lo,hi,overlap))
+            # C初成1050；20的中间反向波动才降至1039，早于21的Zn延伸。
+            formed=chan.find_zs(m3_xd_parts(dict(units=units),counts[15])[13:16])[0]
+            self.assertEqual(round(formed.dd*1000),1050)
+            self.assertEqual(audit['roles']['C']['dd'],1039)
+
+
 if __name__ == '__main__':
     unittest.main()
