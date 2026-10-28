@@ -534,6 +534,102 @@ def pending_gap_revisions():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def _y1_recursive_source(self):
+        head,case,units,clock=self._y1_three_unit_roles()
+        audit=embedded_table('test_real_xd_f1.py','M3_Y1_RECURSIVE_CONSUMERS_AUDIT')
+        self.assertEqual(audit['source_sha256'],head['source_sha256'])
+        self.assertEqual(audit['fixed_role_certificate_sha256'],head['fixed_role_certificate_sha256'])
+        self.assertEqual(audit['current_clock_certificate_sha256'],clock['certificate_sha256'])
+        self.assertEqual(audit['head_role_certificate_sha256'],head['certificate_sha256'])
+        return audit,case,units,clock
+
+    def test_y1_recursive_declared_centers_extensions_and_external_proofs_use_integer_ranges(self):
+        """有限角色不搜索切点；逐个核形成、延伸、首次全离开与反向三段外证。"""
+        audit,_,units,_=self._y1_recursive_source()
+        tool=compiler()
+        for j,(a,formed,last,zd,zg) in enumerate(audit['centers']):
+            self.assertEqual(formed,a+2)
+            self.assertEqual((max(u['low_ticks'] for u in units[a:formed+1]),
+                              min(u['high_ticks'] for u in units[a:formed+1])),(zd,zg))
+            self.assertTrue(all(u['low_ticks']<=zg and u['high_ticks']>=zd for u in units[formed+1:last+1]))
+            self.assertTrue(units[last+1]['high_ticks']<zd or units[last+1]['low_ticks']>zg)
+            if j and j!=5:
+                for k in range(audit['centers'][j-1][2]+1,a):
+                    self.assertGreater(max(u['low_ticks'] for u in units[k:k+3]),
+                                       min(u['high_ticks'] for u in units[k:k+3]))
+        first,second=[tool.move_record(units,s) for s in audit['completed']]
+        self.assertEqual((first['seg_start'],first['seg_end'],first['proof_unit'],
+                          first['low_ticks'],first['high_ticks']),(0,30,33,8224,9933))
+        self.assertEqual((second['seg_start'],second['seg_end'],second['proof_unit']),(31,37,38))
+        self.assertGreater(audit['centers'][5][3],audit['centers'][4][4])
+        self.assertTrue(units[38]['low_ticks']<=8605 and units[38]['high_ticks']>=8551)
+        self.assertEqual((first['end_dt'],second['start_dt']),(units[30]['end_dt'],units[31]['start_dt']))
+        # 第一完成项最后两枢的反向回试尾为20/30；c=[31,31)为空。
+        tails=[]
+        for a,formed,last,_,_ in audit['centers'][3:5]:
+            tails.append(next(i for i in range(last,formed-1,-1) if units[i]['direction']=='up'))
+        self.assertEqual(tails,[20,30])
+        self.assertEqual(tuple(range(tails[0]+1,audit['centers'][4][0])),audit['completed_reference'])
+        self.assertEqual(tuple(range(tails[1]+1,first['seg_end']+1)),audit['completed_leave'])
+
+    def test_y1_recursive_open_candidate_and_skipped_prefix_roles_are_distinct(self):
+        """手工范围上重算比较腿与波动；开放新低未知不是负标签，力度未参与。"""
+        audit,_,units,_=self._y1_recursive_source()
+        found=[]
+        for size in range(1,40):
+            cs=([c for c in audit['centers'][:5] if c[1]<size] if size<34
+                else [audit['centers'][5]] if size<39 else [])
+            spans=[(a,f,min(last,size-1)) for a,f,last,_,_ in cs]
+            reason='not_two_separated_centers';candidate=None
+            if size<34 and len(spans)>=2:
+                previous,last=spans[-2:]
+                ends=[next((i for i in range(z,f-1,-1) if units[i]['direction']=='up'),None)
+                      for a,f,z in (previous,last)]
+                reason='no_comparable_center_tail'
+                if all(v is not None for v in ends):
+                    reference=tuple(range(ends[0]+1,last[0]));leave=tuple(range(ends[1]+1,size))
+                    reason='no_compare_legs'
+                    if reference and leave:
+                        p=units[previous[0]:ends[0]+1];c=units[last[0]:ends[1]+1]
+                        reason='center_waves_overlap'
+                        if max(u['high_ticks'] for u in c)<min(u['low_ticks'] for u in p):
+                            made=min(units[i]['low_ticks'] for i in leave)<min(u['low_ticks'] for u in units[:ends[1]+1])
+                            third=any(units[i]['direction']=='up' for i in leave)
+                            candidate=(size,reference,leave,tuple(cs[-1][-2:]),True if made else None,True if third else None)
+            if candidate:found.append(candidate)
+            else:self.assertIn(size,audit['open_skip_sizes'][reason])
+        self.assertEqual(tuple(found),audit['candidates'])
+        self.assertEqual([s for s,_,_,_,made,_ in found if made is None],[20,22,23])
+        self.assertEqual(audit['final_first_exclusions'],('no_directional_compare_legs','not_trend'))
+
+    def test_y1_recursive_actual_raw_boundaries_do_not_observe_transient_batch_sizes(self):
+        """每个真实首达前一行/本行重建基础；同批10/24及fixed的12不伪造。"""
+        audit,case,units,clock=self._y1_recursive_source();tool=compiler()
+        role=embedded_table('test_real_xd_f1.py','M3_Y1_JOINED_ROLE_AUDIT')
+        for contract in ('current','fixed'):
+            counts=clock['published_counts'] if contract=='current' else tuple(u['confirmed_raw_count'] for u in units)
+            observed=[]
+            for count in sorted({n for at in counts for n in (at-1,at)}|{2793}):
+                rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+                self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis[:-1])])
+                parts=tool.components(rows,bis if contract=='current' else bis[:-1],None)
+                ready=self._y1_current_given_ready(parts,role['events'])
+                size=next((i for i,ok in enumerate(ready) if not ok),39)
+                self.assertEqual(size,sum(at<=count for at in counts))
+                actual=tool.xd_records(parts,role['events'][:size])
+                for spec in audit['completed']:
+                    if spec[-1]<size:self.assertEqual(tool.move_record(actual,spec),tool.move_record(units,spec))
+                if count in counts:observed.append(size)
+            self.assertNotIn(10,observed);self.assertNotIn(24,observed)
+            if contract=='fixed':self.assertNotIn(12,observed)
+            candidate_sizes={c[0] for c in audit['candidates']}
+            expected=tuple((n,sum(at<=n for at in counts)) for n in sorted(set(counts))
+                           if sum(at<=n for at in counts) in candidate_sizes)
+            self.assertEqual(expected,audit['arrivals'][contract]['candidate_raw'])
+            self.assertEqual(tuple(counts[s[-1]] for s in audit['completed']),audit['arrivals'][contract]['completed_raw'])
+            self.assertEqual(tuple(sum(at<=counts[s[-1]] for at in counts) for s in audit['completed']),
+                             audit['arrivals'][contract]['evidence_sizes'])
+
     def _y1_three_unit_roles(self):
         role,case,_,units,_=self._joined_y1_role_source()
         audit=embedded_table('test_real_xd_f1.py','M3_Y1_HEAD_ROLE_AUDIT')

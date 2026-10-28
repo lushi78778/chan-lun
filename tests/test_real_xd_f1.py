@@ -2137,5 +2137,170 @@ class TestY1HeadThreeUnitRoles(unittest.TestCase):
         self.assertLess(gap_revision_time(case,1277),gap_revision_time(case,1296))
 
 
+# 自动递归吸收延伸的独立有限角色；与同级切分10个F1的合同分开。
+M3_Y1_RECURSIVE_CONSUMERS_AUDIT = {'certificate_sha256': 'fc3b03ca135bd4b8f11f8716a2227dd37ea2c1e6caeb21b2db1bd1c36eeea3ee',
+ 'source_sha256': '745d73a5dc9370161e0cf619101542f823eaa257206f5f0864bd0f7a6a6880f6',
+ 'fixed_role_certificate_sha256': 'ee58a32f2af125706a60a384624854de3777117cbd131e42ea951b32b4b17d3d',
+ 'current_clock_certificate_sha256': 'c7f542460f4019da02ee93d8945504162f1faf5821f3b32a79cce7eef34e8dd0',
+ 'head_role_certificate_sha256': '91e2e0f58e1fdbda3ff9868016d85d03a2f37c55a458673ee22b4e4be02928c0',
+ 'scope': 'given39_XD_recursive_consumers_not_theory_F1_proof',
+ 'centers': ((0, 2, 5, 9714, 9906),
+             (6, 8, 9, 9445, 9540),
+             (10, 12, 15, 9266, 9414),
+             (16, 18, 21, 8937, 8988),
+             (23, 25, 30, 8282, 8329),
+             (31, 33, 35, 8551, 8605)),
+ 'completed': ((0,
+                30,
+                'down',
+                'down',
+                (0, 6, 10, 16, 23),
+                ((9714, 9906), (9445, 9540), (9266, 9414), (8937, 8988), (8282, 8329)),
+                33),
+               (31, 37, 'consolidation', None, (31,), ((8551, 8605),), 38)),
+ 'tail': (38, 38, 'incomplete', None, (), (), None),
+ 'open_skip_sizes': {'not_two_separated_centers': (1, 2, 3, 4, 5, 6, 7, 8, 34, 35, 36, 37, 38, 39),
+                     'no_compare_legs': (9, 13, 15, 19, 21, 27, 29, 31),
+                     'center_waves_overlap': (14, 16, 17, 18, 28, 30, 32, 33),
+                     'no_comparable_center_tail': (26,)},
+ 'candidates': ((10, (5,), (9,), (9445, 9540), True, None),
+                (11, (5,), (9, 10), (9445, 9540), True, True),
+                (12, (5,), (9, 10, 11), (9445, 9540), True, True),
+                (20, (15,), (19,), (8937, 8988), None, None),
+                (22, (15,), (21,), (8937, 8988), None, None),
+                (23, (15,), (21, 22), (8937, 8988), None, True),
+                (24, (15,), (21, 22, 23), (8937, 8988), True, True),
+                (25, (15,), (21, 22, 23, 24), (8937, 8988), True, True)),
+ 'arrivals': {'current': {'completed_raw': (2276, 2788),
+                          'evidence_sizes': (34, 39),
+                          'candidate_raw': ((907, 11), (1007, 12), (1513, 20), (1612, 22), (1642, 23), (1761, 25))},
+              'fixed': {'completed_raw': (2279, 2793),
+                        'evidence_sizes': (34, 39),
+                        'candidate_raw': ((946, 11), (1520, 20), (1624, 22), (1675, 23), (1773, 25))}},
+ 'completed_reference': (21, 22),
+ 'completed_leave': (),
+ 'final_strict_skipped': ('no_compare_legs', 'not_trend', 'not_two_separated_centers'),
+ 'final_first_exclusions': ('no_directional_compare_legs', 'not_trend')}
+
+
+class TestY1RecursiveConsumers(unittest.TestCase):
+    """给定XD上的自动递归消费；有限单元前缀与真实同批到达分别核对。"""
+
+    @staticmethod
+    def _data(contract):
+        case,units=gap_revision_input(M3_Y1_JOINED_ROLE_AUDIT)
+        audit=M3_Y1_RECURSIVE_CONSUMERS_AUDIT
+        if (audit['fixed_role_certificate_sha256']!=M3_Y1_JOINED_ROLE_AUDIT['certificate_sha256'] or
+                audit['current_clock_certificate_sha256']!=M3_Y1_CURRENT_CLOCK_AUDIT['certificate_sha256'] or
+                audit['head_role_certificate_sha256']!=M3_Y1_HEAD_ROLE_AUDIT['certificate_sha256']):
+            raise AssertionError('自动消费者须绑定已声明组成、活动时钟与头部角色')
+        counts=(M3_Y1_CURRENT_CLOCK_AUDIT['published_counts'] if contract=='current'
+                else tuple(u['confirmed_raw_count'] for u in units))
+        key='Y1recursive:'+contract+':'+audit['certificate_sha256']
+        given=[chan.ConfirmedMove(key+':xd:'+str(i),'given-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),
+                                 u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,
+                                 gap_revision_time(case,counts[i])) for i,u in enumerate(units)]
+        return case,units,audit,given,counts
+
+    def _strict(self,given,now):
+        def unavailable(reference,leave):
+            self.fail('结构未齐或开放候选不得执行力度方法')
+        return chan.scan_strict_divergence(given,now,'recursive-F1',unavailable,'structural_guard')
+
+    def _check(self,scan,audit,size):
+        candidate=next((c for c in audit['candidates'] if c[0]==size),None)
+        expected=[]
+        if size>=34:expected.append('no_compare_legs')
+        if size==39:expected.append('not_trend')
+        if candidate is None:
+            expected.append(next(reason for reason,counts in audit['open_skip_sizes'].items() if size in counts))
+        self.assertEqual([reason for _,reason in scan.skipped],expected)
+        self.assertEqual((scan.completed_types,scan.open_tail),(sum(s[-1]<size for s in audit['completed']),True))
+        self.assertEqual(len(scan.results),int(candidate is not None))
+        if candidate:
+            result=scan.results[0];_,reference,leave,core,new,third=candidate
+            self.assertEqual((result.status,result.reason),('candidate','trend_open'))
+            self.assertEqual(tuple(int(k.rsplit(':',1)[1]) for k in result.reference_ids),reference)
+            self.assertEqual(tuple(int(k.rsplit(':',1)[1]) for k in result.leave_ids),leave)
+            self.assertEqual(tuple(round(v*1000) for v in result.center_range),core)
+            self.assertEqual(dict(result.conditions),dict(trend=None,separated_centers=True,
+                                                        new_extreme=new,leave_third_point=third))
+            self.assertIsNone(result.force_method)
+
+    def test_declared_unit_prefixes_keep_recursive_composition_and_open_candidates_separate(self):
+        case,units,audit,given,_=self._data('current')
+        identity=None
+        for size in range(1,40):
+            prefix=given[:size];now=prefix[-1].confirmed_dt
+            scan=self._strict(prefix,now);self._check(scan,audit,size)
+            if scan.results:
+                identity=identity or scan.results[0].divergence_id
+                self.assertEqual(scan.results[0].divergence_id,identity)
+            specs=[s for s in audit['completed'] if s[-1]<size]
+            if size<3:tail=(0,size-1,'incomplete',None,(),(),None)
+            elif size<34:
+                cs=[c for c in audit['centers'][:5] if c[1]<size]
+                direction='down' if len(cs)>1 else None
+                tail=(0,size-1,'down' if direction else 'consolidation',direction,
+                      tuple(c[0] for c in cs),tuple((c[3],c[4]) for c in cs),None)
+            elif size<39:tail=(31,size-1,'consolidation',None,(31,),((8551,8605),),None)
+            else:tail=audit['tail']
+            self.assertEqual([m3_xd_shape(m) for m in chan.level_up(prefix)],
+                             [m3_xd_expected(units,s) for s in specs+[tail]])
+        # 这些有限单元前缀不等于实际raw观察；同批发布会跳过部分size。
+        self.assertEqual(tuple(c[0] for c in audit['candidates']),(10,11,12,20,22,23,24,25))
+        self.assertEqual(len(M3_Y1_JOINED_ROLE_AUDIT['f1']),10)
+        self.assertEqual((len(audit['completed']),audit['completed'][0][1]),(2,30))
+
+    def test_actual_batches_freeze_two_recursive_types_and_never_create_point_anchors(self):
+        for contract in ('current','fixed'):
+            case,_,audit,given,counts=self._data(contract);rows=m3_xd_rows(case)
+            candidates=[]
+            for count in sorted(set(counts)):
+                now=gap_revision_time(case,count);size=sum(at<=count for at in counts)
+                scan=self._strict(given,now);self._check(scan,audit,size)
+                if scan.results:candidates.append((count,size))
+                first=chan.scan_first_points(given,rows,now,'recursive-F1')
+                self.assertEqual(first.points,[])
+                expected=(() if size<34 else ('no_directional_compare_legs',) if size<39
+                          else audit['final_first_exclusions'])
+                self.assertEqual(tuple(reason for _,reason in first.exclusions),expected)
+                self.assertFalse(any(chan.analyze_point_chain(given,rows,now,'recursive-F1')))
+            self.assertEqual(tuple(candidates),audit['arrivals'][contract]['candidate_raw'])
+            done=chan.confirm_level_up(given,given[-1].confirmed_dt,'recursive-F1')
+            self.assertEqual([len(t.unit_ids) for t in done],[31,7])
+            self.assertEqual(tuple(len(t.evidence_ids) for t in done),audit['arrivals'][contract]['evidence_sizes'])
+            self.assertEqual([t.confirmed_dt for t in done],
+                             [gap_revision_time(case,n) for n in audit['arrivals'][contract]['completed_raw']])
+            first_time=done[0].confirmed_dt
+            self.assertEqual(chan.confirm_level_up(given,first_time,'recursive-F1'),[done[0]])
+            self.assertEqual(tuple(reason for _,reason in self._strict(given,given[-1].confirmed_dt).skipped),
+                             audit['final_strict_skipped'])
+
+    def test_reverse_center_and_last_return_confirm_only_at_actual_late_arrival(self):
+        for contract in ('current','fixed'):
+            case,_,audit,given,counts=self._data(contract)
+            for proof in (33,38):
+                late=given[proof].confirmed_dt+timedelta(days=1)
+                delayed=list(given);delayed[proof]=given[proof]._replace(confirmed_dt=late)
+                for i in range(proof+1,len(given)):
+                    delayed[i]=given[i]._replace(confirmed_dt=max(given[i].confirmed_dt,delayed[i-1].confirmed_dt))
+                earlier=chan.confirm_level_up(delayed,late-timedelta(microseconds=1),'recursive-F1')
+                after=chan.confirm_level_up(delayed,late,'recursive-F1')
+                self.assertEqual((len(earlier),len(after)),((0,1) if proof==33 else (1,2)))
+                self.assertEqual(after[-1].confirmed_dt,late)
+                self.assertLess(after[-1].end_dt,after[-1].confirmed_dt)
+                if earlier:self.assertEqual(after[0],earlier[0])
+                self.assertEqual(len(after[-1].evidence_ids),34 if proof==33 else 39)
+            cutoff=gap_revision_time(case,counts[-1]);rows=m3_xd_rows(case)
+            for row in rows[counts[-1]:]:
+                row.pop('open');row.update(high=float('nan'),low=-999,close=99999)
+            future=given[-1]._replace(move_id=None,level=None,start_price=float('nan'),confirmed_dt=cutoff+timedelta(days=1))
+            first=chan.scan_first_points(given+[future],rows,cutoff,'recursive-F1')
+            self.assertEqual((first.points,tuple(r for _,r in first.exclusions)),([],audit['final_first_exclusions']))
+            self.assertFalse(any(chan.analyze_point_chain(given+[future],rows,cutoff,'recursive-F1')))
+            self.assertEqual(len(self._strict(given+[future],cutoff).results),0)
+
+
 if __name__ == '__main__':
     unittest.main()
