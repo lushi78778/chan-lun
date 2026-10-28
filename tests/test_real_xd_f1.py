@@ -3202,5 +3202,188 @@ class TestM2ZnRoles(unittest.TestCase):
             self.assertEqual(audit['roles']['C']['dd'],1039)
 
 
+# 给定XD与因果中枢形成快照的首次回试；不沿用最终Zn成员排除或旧标签。
+M3_M2_THIRD_LIFECYCLE_AUDIT = {'certificate_sha256': 'cd4fb8185aa5b8dff3d4efcbd4c416ad6d99e0ca653104a2f95070e3559d3714',
+ 'source_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+ 'head_certificate_sha256': '7f592db0a28e4f6e120c28addd0e6d9ee661fdcb9b182ead07ed146e6a99efdc',
+ 'suffix_certificate_sha256': 'ee14d65c88a367594a37eeb28b31689bdb19fd88d28d1f01357e910bb4ca2e3a',
+ 'zn_certificate_sha256': '3e71d9f7eb30e98f5a41495379ec1d9bff1eac56d7db2779d5e077bd46355d51',
+ 'scope': 'given_seed16_causal_XD_contexts_not_automatic_theory_levels',
+ 'contexts': {'A': (1, 3, 1113, 1135, None),
+              'B': (5, 7, 1031, 1049, None),
+              'C': (13, 15, 1070, 1079, None),
+              'N': (29, 31, 1139, 1177, 'R'),
+              'R': (18, 20, 1073, 1100, None)},
+ 'attempts': {'A': (('sell3', 4, 5, 53, 1060, 'before_center_known'),
+                    ('buy3', 27, 28, -35, 1100, 'fail'),
+                    ('sell3', 28, 29, -78, 1191, 'fail'),
+                    ('buy3', 29, 30, 4, 1139, 'established')),
+              'B': (('sell3', 8, 9, -25, 1056, 'before_center_known'),
+                    ('buy3', 9, 10, -20, 1029, 'fail'),
+                    ('sell3', 10, 11, -60, 1086, 'fail'),
+                    ('buy3', 11, 12, 21, 1070, 'established')),
+              'C': (('sell3', 16, 17, -30, 1100, 'before_center_known'),
+                    ('buy3', 17, 18, -6, 1073, 'before_center_known'),
+                    ('buy3', 19, 20, -40, 1039, 'fail'),
+                    ('sell3', 20, 21, -22, 1092, 'fail'),
+                    ('buy3', 21, 22, -64, 1015, 'fail'),
+                    ('sell3', 22, 23, 22, 1048, 'established')),
+              'N': (('sell3', 32, 33, 0, 1139, 'before_center_known'), ('sell3', 34, 35, 8, 1131, 'established')),
+              'R': (('sell3', 22, 23, 25, 1048, 'before_center_known'), ('buy3', 27, 28, 0, 1100, 'established'))},
+ 'parent_N_pull': 28,
+ 'clock_units': (3,
+                 4,
+                 5,
+                 7,
+                 8,
+                 9,
+                 10,
+                 11,
+                 12,
+                 15,
+                 16,
+                 17,
+                 18,
+                 19,
+                 20,
+                 21,
+                 22,
+                 23,
+                 24,
+                 25,
+                 26,
+                 27,
+                 28,
+                 29,
+                 30,
+                 31,
+                 32,
+                 33,
+                 34,
+                 35),
+ 'legacy_Zn_members_do_not_filter_causal_attempts': (('B', 9), ('B', 11), ('C', 19), ('C', 21)),
+ 'terminal_counts': {'current': 5, 'fixed': 4},
+ 'points': {'A': ('buy3', 29, 30, 1139, 4),
+            'B': ('buy3', 11, 12, 1070, 21),
+            'C': ('sell3', 22, 23, 1048, 22),
+            'N': ('sell3', 34, 35, 1131, 8),
+            'R': ('buy3', 27, 28, 1100, 0)},
+ 'known_raw': {'current': {'A': 1329, 'B': 1764, 'C': 2740, 'N': 4885, 'R': 3343},
+               'fixed': {'A': 1349, 'B': 1775, 'C': 2759, 'N': 4894, 'R': 3362}},
+ 'point_raw': {'current': {'A': 4842, 'B': 2356, 'C': 3940, 'N': 5564, 'R': 4716},
+               'fixed': {'A': 4848, 'B': 2365, 'C': 3956, 'N': None, 'R': 4727}},
+ 'point_order': ('B', 'C', 'R', 'A', 'N'),
+ 'suppressed_pairs': {'A': ((32, 33), (33, 34), (34, 35)),
+                      'B': ((21, 22), (22, 23), (24, 25), (26, 27), (27, 28)),
+                      'C': ((27, 28),),
+                      'N': (),
+                      'R': ((29, 30), (33, 34))},
+ 'source_origin_bridge_proven': False,
+ 'production_merged': False}
+
+
+def m2_third_input(contract):
+    """给定XD级别与形成快照；新生N使用新身份并等待父中枢首个有效点。"""
+    case,units,_=m2_suffix_input(contract);a=M3_M2_THIRD_LIFECYCLE_AUDIT
+    if (a['suffix_certificate_sha256']!=M3_M2_SUFFIX_ROLE_AUDIT['certificate_sha256'] or
+            a['zn_certificate_sha256']!=M3_M2_ZN_ROLE_AUDIT['certificate_sha256']):
+        raise AssertionError('三类上下文须绑定同一给定链与角色证书')
+    root='M2-third16:'+contract+':'+a['certificate_sha256']
+    moves=[chan.ConfirmedMove(root+':xd:'+str(i),'given-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),
+           u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,
+           gap_revision_time(case,u['confirmed_raw_count'])) for i,u in enumerate(units)]
+    contexts=[]
+    for name,(first,formed,zd,zg,parent) in a['contexts'].items():
+        known=moves[formed].confirmed_dt
+        if parent:known=max(known,moves[a['parent_N_pull']].confirmed_dt)
+        contexts.append(chan.ThirdPointContext(root+':context:'+name,'given-center','given-XD',
+                        chan.ConfirmedCenter(root+':center:'+name,'given-center',zd/1000.,zg/1000.,known)))
+    return case,units,a,moves,contexts
+
+
+class TestM2CausalThirdLifecycle(unittest.TestCase):
+    """只核给定种子/级别/中枢形成快照下的条件三类，不迁移旧标签。"""
+
+    def test_actual_batches_freeze_first_points_and_keep_newborn_N_pending_in_fixed(self):
+        for contract in ('current','fixed'):
+            case,units,a,moves,contexts=m2_third_input(contract);previous={}
+            counts=sorted({5586}|{n for i in a['clock_units'] if i<len(units)
+                                  for n in (units[i]['confirmed_raw_count']-1,units[i]['confirmed_raw_count'])})
+            for count in counts:
+                points=chan.find_third_points(moves,contexts,gap_revision_time(case,count))
+                names=[n for n in a['point_order'] if a['point_raw'][contract][n] is not None and a['point_raw'][contract][n]<=count]
+                self.assertEqual(len(points),len(names))
+                for point,name in zip(points,names):
+                    kind,leave,pull,price,margin=a['points'][name]
+                    self.assertEqual((point.kind,point.leave_move_id,point.pull_move_id,round(point.price*1000),str(point.dt),point.confirmed_dt),
+                                     (kind,moves[leave].move_id,moves[pull].move_id,price,units[pull]['end_dt'],gap_revision_time(case,a['point_raw'][contract][name])))
+                    self.assertTrue(point.context_id.endswith(':context:'+name))
+                    self.assertTrue(point.center_id.endswith(':center:'+name))
+                    self.assertLess(point.dt,point.confirmed_dt)
+                current={p.context_id:p for p in points}
+                for key,point in previous.items():self.assertEqual(current[key],point)
+                previous=current
+            self.assertEqual(len(points),a['terminal_counts'][contract])
+            by_name={c.context_id.rsplit(':',1)[1]:c for c in contexts}
+            self.assertNotEqual(by_name['N'].center.center_id,by_name['R'].center.center_id)
+            self.assertGreater(by_name['N'].center.confirmed_dt,moves[a['parent_N_pull']].confirmed_dt)
+            self.assertEqual(a['contexts']['N'][0],a['parent_N_pull']+1)
+            if contract=='fixed':
+                self.assertEqual(len(moves),35)
+                self.assertEqual(chan.find_third_points(moves,[by_name['N']],gap_revision_time(case,5586)),[])
+
+    def test_failed_first_returns_and_center_known_time_are_distinct_gates(self):
+        for contract in ('current','fixed'):
+            case,units,a,moves,contexts=m2_third_input(contract);by_name={c.context_id.rsplit(':',1)[1]:c for c in contexts}
+            for name,rows in a['attempts'].items():
+                for side,leave,pull,margin,price,status in rows:
+                    if pull>=len(units):continue
+                    now=gap_revision_time(case,units[pull]['confirmed_raw_count'])
+                    if status in ('fail','before_center_known'):
+                        self.assertEqual(chan.find_third_points(moves,[by_name[name]],now),[])
+            # R的22/23几何守沿，但原首离开早于确认；等时边界为合成门控检查。
+            context=by_name['R'];edge=moves[22].start_dt
+            for delta in (-1,0,1):
+                changed=context._replace(center=context.center._replace(confirmed_dt=edge+timedelta(microseconds=delta)))
+                point,=chan.find_third_points(moves,[changed],gap_revision_time(case,5586))
+                self.assertEqual((point.leave_move_id,point.pull_move_id),
+                                 (moves[22].move_id,moves[23].move_id) if delta<=0 else (moves[27].move_id,moves[28].move_id))
+            for name in ('B','C','R'):
+                points=chan.find_third_points(moves,[by_name[name]],gap_revision_time(case,5586))
+                self.assertEqual(len(points),1)  # 后续再满足几何，也不重发已破坏中枢的点。
+
+    def test_touching_R_pullback_and_mirror_use_closed_edges(self):
+        case,units,_,moves,contexts=m2_third_input('current');context=next(c for c in contexts if c.context_id.endswith(':R'))
+        for delta in (-1,0,1):
+            for mirror in (False,True):
+                changed=list(moves[:29]);price=(1100+delta)/1000.
+                changed[28]=changed[28]._replace(end_price=price,low=price)
+                active=context
+                if mirror:
+                    flip=lambda v:(3000-round(v*1000))/1000.
+                    changed=[m._replace(direction='down' if m.direction=='up' else 'up',start_price=flip(m.start_price),
+                             end_price=flip(m.end_price),low=flip(m.high),high=flip(m.low)) for m in changed]
+                    active=context._replace(center=context.center._replace(zd=flip(context.center.zg),zg=flip(context.center.zd)))
+                points=chan.find_third_points(changed,[active],gap_revision_time(case,units[28]['confirmed_raw_count']))
+                self.assertEqual(len(points),int(delta>=0))
+                if points:self.assertEqual(points[0].kind,'sell3' if mirror else 'buy3')
+
+    def test_each_pull_waits_for_late_arrival_and_future_values_stay_unread(self):
+        for contract in ('current','fixed'):
+            case,units,a,moves,contexts=m2_third_input(contract)
+            for context in contexts:
+                name=context.context_id.rsplit(':',1)[1]
+                if a['point_raw'][contract][name] is None:continue
+                _,leave,pull,_,_=a['points'][name];late=moves[pull].confirmed_dt+timedelta(days=1)
+                delayed=list(moves);delayed[pull]=moves[pull]._replace(confirmed_dt=late)
+                for i in range(pull+1,len(moves)):delayed[i]=moves[i]._replace(confirmed_dt=max(moves[i].confirmed_dt,delayed[i-1].confirmed_dt))
+                self.assertEqual(chan.find_third_points(delayed,[context],late-timedelta(microseconds=1)),[])
+                point,=chan.find_third_points(delayed,[context],late)
+                self.assertEqual((point.leave_move_id,point.pull_move_id,point.confirmed_dt),(moves[leave].move_id,moves[pull].move_id,late))
+                future=moves[-1]._replace(move_id=None,level=None,low=float('nan'),confirmed_dt=late+timedelta(days=10))
+                future_context=context._replace(context_id=None,center=context.center._replace(center_id=None,zd=float('nan'),confirmed_dt=late+timedelta(days=10)))
+                self.assertEqual(chan.find_third_points(delayed+[future],[context,future_context],late),[point])
+
+
 if __name__ == '__main__':
     unittest.main()

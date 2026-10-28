@@ -3309,6 +3309,113 @@ class TestRealXdF1Assets(unittest.TestCase):
                     self.assertLess(count,clocks[contract][26])
         self.assertEqual(observations,122)
 
+    def _m2_third_source(self):
+        zn,suffix,head,full,case,parts,units=self._m2_zn_role_source()
+        a=embedded_table('test_real_xd_f1.py','M3_M2_THIRD_LIFECYCLE_AUDIT')
+        self.assertEqual((a['source_sha256'],a['head_certificate_sha256'],a['suffix_certificate_sha256'],a['zn_certificate_sha256']),
+                         (head['fixture_sha256'],head['certificate_sha256'],suffix['certificate_sha256'],zn['certificate_sha256']))
+        return a,zn,suffix,head,full,case,parts,units
+
+    @staticmethod
+    def _m2_causal_attempts(units,spec,known):
+        """给定形成三段及确认时刻，整数枚举首次回试；不搜索中枢或读取包算法。"""
+        first,formed,zd,zg,parent=spec;active=[];suppressed=[];terminal=False
+        for i in range(formed+1,len(units)-1):
+            leave,pull=units[i:i+2];up=leave['direction']=='up'
+            if leave['low_ticks']>zg or leave['high_ticks']<zd or not (leave['end_ticks']>zg if up else leave['end_ticks']<zd):continue
+            margin=pull['low_ticks']-zg if up else zd-pull['high_ticks']
+            status='before_center_known' if leave['start_dt']<known else 'established' if margin>=0 else 'fail'
+            row=('buy3' if up else 'sell3',i,i+1,margin,pull['end_ticks'],status)
+            if terminal:suppressed.append(row)
+            else:
+                active.append(row)
+                if status=='established':terminal=True
+        pending=None
+        if not terminal and len(units)>formed+1:
+            leave=units[-1];up=leave['direction']=='up'
+            if leave['start_dt']>=known and leave['low_ticks']<=zg and leave['high_ticks']>=zd and (leave['end_ticks']>zg if up else leave['end_ticks']<zd):pending=('buy3' if up else 'sell3',len(units)-1)
+        return active,suppressed,pending
+
+    def test_m2_causal_attempt_geometry_keeps_failed_excluded_and_terminal_rows_distinct(self):
+        a,_,_,_,_,case,_,units=self._m2_third_source();time_tool=compiler(ROOT/'validation/tools/gen_real_third_point.py')
+        for contract in ('current','fixed'):
+            supplied=units[:36 if contract=='current' else 35];totals=dict(fail=0,before_center_known=0,established=0)
+            for name,spec in a['contexts'].items():
+                known=time_tool.arrival_dt(case['raw_rows'][a['known_raw'][contract][name]-1]['dt'],'5m')
+                active,suppressed,pending=self._m2_causal_attempts(supplied,spec,known)
+                expected=[r for r in a['attempts'][name] if r[2]<len(supplied)]
+                self.assertEqual(active,expected)
+                self.assertEqual(tuple((r[1],r[2]) for r in suppressed),tuple(p for p in a['suppressed_pairs'][name] if p[1]<len(supplied)))
+                self.assertEqual(pending,('sell3',34) if name=='N' and contract=='fixed' else None)
+                for side,leave,pull,margin,price,status in active:
+                    totals[status]+=1
+                    self.assertEqual((supplied[leave]['end_dt'],supplied[leave]['end_ticks']),
+                                     (supplied[pull]['start_dt'],supplied[pull]['start_ticks']))
+                    self.assertNotEqual(supplied[leave]['direction'],supplied[pull]['direction'])
+            self.assertEqual(totals,dict(fail=7,before_center_known=6,established=a['terminal_counts'][contract]))
+
+    def test_m2_causal_point_boundaries_rebuild_raw_inputs_and_publish_batches(self):
+        a,_,suffix,head,full,case,_,_=self._m2_third_source();tool=compiler();time_tool=compiler(ROOT/'validation/tools/gen_real_third_point.py')
+        clocks={name:(head['current_counts'] if name=='current' else tuple(u[-1] for u in head['units']))+suffix['published_counts'][name] for name in ('current','fixed')}
+        total=0
+        counts=sorted({5586}|{n for clock in clocks.values() for i in a['clock_units'] if i<len(clock) for n in (clock[i]-1,clock[i])})
+        for count in counts:
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+            self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+            for contract,pens in (('current',bis),('fixed',bis[:-1])):
+                total+=1;parts=tool.components(rows,pens,None);ready=self._m2_suffix_ready(parts,full);size=next((i for i,ok in enumerate(ready) if not ok),36)
+                self.assertEqual(size,sum(at<=count for at in clocks[contract]))
+                visible=tool.xd_records(parts,full['events'][:size])
+                for name,spec in a['contexts'].items():
+                    first,formed,zd,zg,parent=spec
+                    if size<=formed:continue
+                    triple=visible[first:formed+1]
+                    self.assertEqual((max(u['low_ticks'] for u in triple),min(u['high_ticks'] for u in triple)),(zd,zg))
+                    known=time_tool.arrival_dt(case['raw_rows'][a['known_raw'][contract][name]-1]['dt'],'5m')
+                    active,_,_=self._m2_causal_attempts(visible,spec,known)
+                    successes=[r for r in active if r[-1]=='established'];raw=a['point_raw'][contract][name]
+                    self.assertEqual(bool(successes),raw is not None and raw<=count)
+                    if successes:
+                        side,leave,pull,margin,price,_=successes[0]
+                        self.assertEqual((side,leave,pull,price,margin),a['points'][name])
+                if count in (3940,3956) and count==clocks[contract][23]:self.assertEqual(size,26)
+        self.assertEqual(total,198)
+
+    def test_m2_newborn_N_has_fresh_core_and_fixed_tail_has_no_completed_return(self):
+        a,_,_,_,full,case,_,units=self._m2_third_source();tool=compiler()
+        self.assertEqual(a['contexts']['N'],(29,31,1139,1177,'R'))
+        self.assertEqual(a['contexts']['N'][0],a['parent_N_pull']+1)
+        for contract in ('current','fixed'):
+            self.assertLess(a['point_raw'][contract]['R'],a['known_raw'][contract]['N'])
+            self.assertEqual(a['points']['R'][2],a['parent_N_pull'])
+        self.assertNotEqual((a['contexts']['N'][2],a['contexts']['N'][3]),(1111,1137))  # 历史B核心不迁移。
+        for count in (5563,5564,5577,5586):
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+            for contract,pens in (('current',bis),('fixed',bis[:-1])):
+                p=tool.components(rows,pens,None);ready=self._m2_suffix_ready(p,full);size=next((i for i,ok in enumerate(ready) if not ok),36)
+                self.assertEqual(size,36 if contract=='current' and count>=5564 else 35)
+                if size==36:
+                    self.assertEqual((p[322]['end_ticks'],p[322]['end_dt']),
+                                     (1107,'2026-07-24 13:05:00') if count==5564 else (1106,'2026-07-24 14:10:00'))
+                    self.assertEqual(units[35]['end_ticks'],1131)
+                else:self.assertEqual(full['events'][34],(294,302,1,305))
+        self.assertEqual((a['point_raw']['current']['N'],a['point_raw']['fixed']['N']),(5564,None))
+
+    def test_m2_causal_attempts_do_not_apply_future_final_Zn_membership_filter(self):
+        a,zn,_,_,_,case,_,units=self._m2_third_source();tool=compiler(ROOT/'validation/tools/gen_real_third_point.py')
+        for name,i in a['legacy_Zn_members_do_not_filter_causal_attempts']:
+            self.assertIn(i,zn['roles'][name]['zn'])
+            self.assertIn(i,[r[1] for r in a['attempts'][name]])
+        legacy=tool.enumerate_attempts(units,zn['roles']['B'])
+        self.assertNotIn(11,[r['leave'] for r in legacy])
+        self.assertEqual(a['points']['B'][1:3],(11,12))
+        # R的早期几何25格守沿先被时间门控挡住；不能回填形成时刻取得早期点。
+        for contract in ('current','fixed'):
+            known=tool.arrival_dt(case['raw_rows'][a['known_raw'][contract]['R']-1]['dt'],'5m')
+            self.assertGreater(known,units[22]['start_dt'])
+            self.assertEqual(a['attempts']['R'][0],('sell3',22,23,25,1048,'before_center_known'))
+        self.assertEqual(a['attempts']['N'][0],('sell3',32,33,0,1139,'before_center_known'))
+
 
 if __name__ == '__main__':
     unittest.main()
