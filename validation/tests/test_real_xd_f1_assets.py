@@ -3074,6 +3074,157 @@ class TestRealXdF1Assets(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     tool.validate_manual(case, fixed)
 
+    def _m2_suffix_source(self):
+        head,case,_,_=self._m2_joined_source()
+        audit=embedded_table('test_real_xd_f1.py','M3_M2_SUFFIX_ROLE_AUDIT')
+        self.assertEqual(audit['head_certificate_sha256'],head['certificate_sha256'])
+        tool=compiler();_,_,bis=tool.foundation(case['raw_rows'],'106')
+        self.assertEqual(tool.records(bis),case['foundation']['bis'])
+        parts=tool.components(case['raw_rows'],bis,None)
+        full=dict(head,events=head['events']+audit['events']+(audit['current_tail_event'],),
+                  reactions=head['reactions']+(audit['reaction'],),successors=head['successors']+(audit['successor'],))
+        units=tool.xd_records(parts,full['events'])
+        self.assertEqual([tuple(u[k] for k in ('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')) for u in units],
+                         [u[:9] for u in head['units']+audit['units']+(audit['current_tail_unit'],)])
+        return audit,head,full,case,parts,units
+
+    def _m2_suffix_ready(self,parts,full):
+        ready=self._m2_joined_given_ready(parts,full)
+        reaction=full['reactions'][2];good=manual_xd_certificate_ready(parts,reaction)
+        if good:
+            first=parts[164]
+            good=(all(parts[i]['end_ticks']>=first['end_ticks'] for i in range(166,173,2)) and
+                  all(parts[i]['end_ticks']<=first['start_ticks'] for i in range(165,173,2)))
+        ready[21]=good
+        ready[22]=ready[22] and good and manual_xd_certificate_ready(parts,full['successors'][2])
+        ready[35]=(manual_xd_certificate_ready(parts,(311,319,1,322)) and
+                   all(parts[i]['end_ticks']>=1106 for i in range(312,min(323,len(parts)),2)) and
+                   all(parts[i]['end_ticks']<=1131 for i in range(311,min(323,len(parts)),2)))
+        return ready
+
+    def test_m2_suffix_equal_first_end_requires_adjacent_natural_reaction(self):
+        """168等终1034不选向；322等终1106亦不选向，但S311已独立完成。"""
+        audit,head,full,case,parts,_=self._m2_suffix_source()
+        self.assertEqual((parts[168]['end_ticks'],parts[164]['end_ticks']),(1034,1034))
+        self.assertFalse(manual_xd_certificate_ready(parts,(161,163,1,168)))
+        self.assertTrue(manual_xd_certificate_ready(parts,audit['reaction']))
+        seen=case['foundation']['bis_confirmed_raw_count'][:181]
+        bridge=dict(owner=161,first=164,old_boundary=full['events'][21],reaction=audit['reaction'],
+                    successor=audit['successor'],extended=full['events'][22])
+        parent=dict(event=full['events'][20],published_count=audit['published_counts']['fixed'][6])
+        self.assertIsNone(manual_natural_successor_certificate(parts[:180],seen[:180],seen[179],bridge,parent))
+        result=manual_natural_successor_certificate(parts[:181],seen,seen[180],bridge,parent)
+        self.assertEqual((result['local_proof'],result['successor_proof'],result['published_count']),(180,180,3681))
+        # 原首310保持；319仅等起价，S从311紧接而非从内部313另起。
+        self.assertEqual((parts[310]['start_ticks'],parts[319]['end_ticks'],parts[310]['end_ticks'],parts[322]['end_ticks']),
+                         (1131,1131,1106,1106))
+        self.assertFalse(manual_xd_certificate_ready(parts,audit['current_tail_event']))
+        self.assertTrue(manual_xd_certificate_ready(parts,audit['tail_reaction']))
+        for raw in (5563,5564,5577,5586):
+            rows=case['raw_rows'][:raw];tool=compiler();_,_,bis=tool.foundation(rows,'106');p=tool.components(rows,bis,None)
+            good=self._m2_suffix_ready(p,full)
+            self.assertEqual(good[35],raw>=5564)
+            if raw>=5564:
+                self.assertIn(p[322]['end_ticks'],(1107,1106))
+                self.assertGreaterEqual(p[322]['end_ticks'],p[310]['end_ticks'])
+            if raw==5564:
+                # 活动首证为1107；不把固定笔到达表套给活动322或回填1106。
+                self.assertEqual(p[322]['end_ticks'],1107)
+                values=[p[0]['start_ticks']]+[v['end_ticks'] for v in p]
+                values[320]+=1  # BI319严格越过原首起价，必须先撤销。
+                self.assertFalse(self._m2_suffix_ready(self._natural_parts(values),full)[35])
+            self.assertFalse(self._m2_suffix_ready(tool.components(rows,bis[:-1],None),full)[35])
+        # 这里只核严格选向分支的±1及镜像；自然反应是另一独立证书。
+        for owner,end,proof,bound in ((161,163,168,1034),(303,309,322,1106)):
+            values=[parts[owner]['start_ticks']]+[p['end_ticks'] for p in parts[owner:proof+1]]
+            for delta in (-1,0,1):
+                for mirror in (False,True):
+                    changed=list(values);changed[-1]=bound+delta
+                    if mirror:changed=[3000-v for v in changed]
+                    self.assertEqual(manual_xd_certificate_ready(self._natural_parts(changed),(0,end-owner,1,proof-owner)),delta<0)
+        self.assertEqual(head['events'],full['events'][:14])
+
+    def test_m2_suffix_earlier_revocations_and_retained_gap_do_not_revive_internal_first(self):
+        audit,_,_,_,parts,_=self._m2_suffix_source()
+        self.assertEqual((len(audit['revocations']),len(audit['ineligible_turns'])),(38,24))
+        for owner,first,canceled,kind in audit['revocations']:
+            up=parts[owner]['direction']=='up';r=parts[first]
+            earlier=[i for i in range(first+1,canceled+1,2) if
+                     (parts[i]['end_ticks']>r['start_ticks'] if up else parts[i]['end_ticks']<r['start_ticks'])]
+            self.assertEqual(earlier[0],canceled)
+            if kind=='gap':self.assertEqual(manual_gap_lifecycle(parts,owner,first,canceled)['state'],'revoked')
+        for owner,first in audit['ineligible_turns']:
+            up=parts[owner]['direction']=='up';left=manual_feature_nodes(parts,range(owner+1,first,2),up)[-1]
+            self.assertTrue(parts[first]['high_ticks']<=left[1] if up else parts[first]['low_ticks']>=left[0])
+        self.assertIn((190,200,1,203),audit['events'])
+        self.assertIn((201,227,2,241),audit['events'])
+        for observed in (220,222):self.assertEqual(manual_gap_lifecycle(parts,201,212,observed)['state'],'waiting')
+        self.assertTrue(manual_xd_certificate_ready(parts,(201,217,1,220)))
+        self.assertEqual(manual_gap_lifecycle(parts,201,212,227)['state'],'revoked')
+        self.assertGreater(parts[227]['end_ticks'],parts[218]['start_ticks'])
+        self.assertEqual(manual_gap_lifecycle(parts,303,306,322)['state'],'revoked')
+        for first in (308,312,314,316,318,320):
+            left=manual_feature_nodes(parts,range(304,first,2),True)[-1]
+            self.assertLessEqual(parts[first]['high_ticks'],left[1])
+
+    def test_m2_suffix_actual_clock_boundaries_keep_local_proof_and_published_batch(self):
+        audit,head,full,case,_,_=self._m2_suffix_source();tool=compiler();clocks={}
+        for contract in ('current','fixed'):
+            local=(head['current_local_counts'] if contract=='current' else tuple(u[-2] for u in head['units']))+audit['local_counts'][contract]
+            published=(head['current_counts'] if contract=='current' else tuple(u[-1] for u in head['units']))+audit['published_counts'][contract]
+            clocks[contract]=(local,published)
+            self.assertEqual(published,tuple(max(local[:i+1]) for i in range(len(local))))
+            self.assertEqual(len(local),36 if contract=='current' else 35)
+            self.assertEqual(published[23:26],(3940,)*3 if contract=='current' else (3956,)*3)
+            self.assertLess(local[24],local[23]);self.assertLess(local[25],local[23])
+        counts=sorted({5563,5564,5577,5586}|{n for pair in clocks.values() for clock in pair for at in clock for n in (at-1,at)})
+        for count in counts:
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+            self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+            for contract,bs in (('current',bis),('fixed',bis[:-1])):
+                p=tool.components(rows,bs,None);ready=self._m2_suffix_ready(p,full);local,pub=clocks[contract]
+                self.assertEqual(ready,[count>=at for at in local]+([False] if contract=='fixed' else []))
+                self.assertEqual(next((i for i,ok in enumerate(ready) if not ok),36),sum(at<=count for at in pub))
+                for key,clock in (('local_proofs',local),('publication_proofs',pub)):
+                    expected=head[key][contract]+audit[key][contract]
+                    for i,at in enumerate(clock):
+                        if at==count:
+                            proof=full['events'][i][3];v=p[proof]
+                            self.assertEqual((v['end_ticks'],v['end_dt'],contract=='current' and proof==len(p)-1),expected[i])
+        self.assertEqual(audit['publication_proofs']['current'][-1],(1107,'2026-07-24 13:05:00',True))
+
+    def test_m2_suffix_f1_f2_and_recursive_roles_use_full_wave_ranges(self):
+        audit,head,_,_,_,units=self._m2_suffix_source();tool=compiler()
+        self.assertEqual((units[14]['start_ticks'],units[14]['high_ticks']),(1079,1085))
+        specs=head['f1']+audit['f1']
+        for a,z,kind,entry,centers,cores,proof in specs:
+            first=centers[0];lo,hi=cores[0]
+            self.assertEqual((max(u['low_ticks'] for u in units[first:first+3]),min(u['high_ticks'] for u in units[first:first+3])),(lo,hi))
+            for start in range(a,first):self.assertGreater(max(u['low_ticks'] for u in units[start:start+3]),min(u['high_ticks'] for u in units[start:start+3]))
+            self.assertEqual(entry,units[a]['direction'] if first>a else None)
+            self.assertEqual((kind,proof),('consolidation',z+1))
+            self.assertTrue(all(u['low_ticks']>hi or u['high_ticks']<lo for u in units[first+3:proof]))
+            self.assertTrue(units[proof]['low_ticks']<=hi and units[proof]['high_ticks']>=lo)
+        f1=[tool.move_record(units,s) for s in specs]
+        for spec,spans in zip(audit['f2'],audit['f2_spans']):
+            a,z,_,_,centers,cores,_=spec
+            for start,(lo,hi),(begin,formed,last) in zip(centers,cores,spans):
+                self.assertEqual(start,begin)
+                self.assertEqual((max(u['low_ticks'] for u in f1[begin:formed+1]),min(u['high_ticks'] for u in f1[begin:formed+1])),(lo,hi))
+                self.assertTrue(all(u['low_ticks']<=hi and u['high_ticks']>=lo for u in f1[formed+1:last+1]))
+            tool.move_record(f1,spec)
+        self.assertGreater(max(u['low_ticks'] for u in f1[:3]),min(u['high_ticks'] for u in f1[:3]))
+        self.assertGreater(f1[5]['low_ticks'],1056)
+        self.assertTrue(f1[6]['low_ticks']<=1056 and f1[6]['high_ticks']>=1029)
+        for a,formed,last,lo,hi in audit['auto_centers']:
+            self.assertEqual((max(u['low_ticks'] for u in units[a:formed+1]),min(u['high_ticks'] for u in units[a:formed+1])),(lo,hi))
+            self.assertTrue(all(u['low_ticks']<=hi and u['high_ticks']>=lo for u in units[formed+1:last+1]))
+            self.assertTrue(units[last+1]['high_ticks']<lo or units[last+1]['low_ticks']>hi)
+        for previous,last,end in ((audit['auto_centers'][0],audit['auto_centers'][1],11),(audit['auto_centers'][2],audit['auto_centers'][3],27)):
+            tails=[next(i for i in range(z,f-1,-1) if units[i]['direction']=='up') for a,f,z,_,_ in (previous,last)]
+            self.assertTrue(tuple(range(tails[0]+1,last[0])))
+            self.assertEqual(tuple(range(tails[1]+1,end+1)),())
+
 
 if __name__ == '__main__':
     unittest.main()
