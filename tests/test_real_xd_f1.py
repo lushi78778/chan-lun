@@ -2302,5 +2302,215 @@ class TestY1RecursiveConsumers(unittest.TestCase):
             self.assertEqual(len(self._strict(given+[future],cutoff).results),0)
 
 
+# 给定seed16的14段衔接；111资格仅限此已声明祖先路径，旧全窗表保持。
+M3_M2_JOINED_ROLE_AUDIT = {'certificate_sha256': '7f592db0a28e4f6e120c28addd0e6d9ee661fdcb9b182ead07ed146e6a99efdc',
+ 'fixture': 'real_third_point_xd_margin0.json',
+ 'id': '512880-5m-20260201-20260724',
+ 'fixture_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+ 'head_certificate_sha256': '4692e046fbd8c5ae9293868dc8e8126b3e314e3e250cbb1015cd38698fb93d22',
+ 'seed': 16,
+ 'raw_window': (372, 2476),
+ 'events': ((16, 34, 1, 37),
+            (35, 37, 1, 51),
+            (38, 48, 1, 51),
+            (49, 55, 1, 58),
+            (56, 64, 2, 72),
+            (65, 67, 1, 70),
+            (68, 74, 1, 77),
+            (75, 77, 1, 80),
+            (78, 86, 1, 89),
+            (87, 89, 1, 92),
+            (90, 92, 1, 103),
+            (93, 103, 1, 106),
+            (104, 110, 1, 113),
+            (111, 113, 1, 116)),
+ 'units': (('down', '2026-02-10 10:10:00', '2026-03-06 09:35:00', 1200, 1113, 1113, 1200, 1, 37, 940, 940),
+           ('up', '2026-03-06 09:35:00', '2026-03-06 14:20:00', 1113, 1135, 1113, 1135, 1, 51, 1183, 1183),
+           ('down', '2026-03-06 14:20:00', '2026-03-13 09:55:00', 1135, 1112, 1105, 1135, 1, 51, 1183, 1183),
+           ('up', '2026-03-13 09:55:00', '2026-03-17 10:35:00', 1112, 1140, 1100, 1140, 1, 58, 1349, 1349),
+           ('down', '2026-03-17 10:35:00', '2026-03-23 14:55:00', 1140, 1031, 1031, 1140, 2, 72, 1648, 1648),
+           ('up', '2026-03-23 14:55:00', '2026-03-25 10:35:00', 1031, 1060, 1031, 1060, 1, 70, 1618, 1648),
+           ('down', '2026-03-25 10:35:00', '2026-03-30 10:00:00', 1060, 1025, 1025, 1060, 1, 77, 1745, 1745),
+           ('up', '2026-03-30 10:00:00', '2026-03-31 09:45:00', 1025, 1049, 1025, 1049, 1, 80, 1775, 1775),
+           ('down', '2026-03-31 09:45:00', '2026-04-07 13:30:00', 1049, 1010, 1010, 1049, 1, 89, 2003, 2003),
+           ('up', '2026-04-07 13:30:00', '2026-04-08 13:30:00', 1010, 1056, 1010, 1056, 1, 92, 2063, 2063),
+           ('down', '2026-04-08 13:30:00', '2026-04-09 14:55:00', 1056, 1029, 1029, 1056, 1, 103, 2221, 2221),
+           ('up', '2026-04-09 14:55:00', '2026-04-15 09:35:00', 1029, 1086, 1029, 1091, 1, 106, 2261, 2261),
+           ('down', '2026-04-15 09:35:00', '2026-04-17 10:20:00', 1086, 1070, 1070, 1086, 1, 113, 2365, 2365),
+           ('up', '2026-04-17 10:20:00', '2026-04-20 09:40:00', 1070, 1079, 1070, 1079, 1, 116, 2437, 2437)),
+ 'current_local_counts': (924, 1156, 1156, 1329, 1639, 1582, 1720, 1764, 1992, 2040, 2208, 2254, 2356, 2398),
+ 'current_counts': (924, 1156, 1156, 1329, 1639, 1639, 1720, 1764, 1992, 2040, 2208, 2254, 2356, 2398),
+ 'local_proofs': {'current': ((1135, '2026-03-06 14:20:00', True),
+                              (1125, '2026-03-13 13:15:00', True),
+                              (1125, '2026-03-13 13:15:00', True),
+                              (1104, '2026-03-19 09:50:00', True),
+                              (1035, '2026-03-27 11:10:00', True),
+                              (1048, '2026-03-26 10:30:00', True),
+                              (1049, '2026-03-31 09:45:00', True),
+                              (1027, '2026-03-31 14:55:00', True),
+                              (1056, '2026-04-08 13:30:00', True),
+                              (1031, '2026-04-09 13:25:00', True),
+                              (1086, '2026-04-15 09:35:00', True),
+                              (1072, '2026-04-15 14:55:00', True),
+                              (1079, '2026-04-20 09:40:00', True),
+                              (1072, '2026-04-20 14:40:00', True)),
+                  'fixed': ((1135, '2026-03-06 14:20:00', False),
+                            (1125, '2026-03-13 13:15:00', False),
+                            (1125, '2026-03-13 13:15:00', False),
+                            (1101, '2026-03-19 10:40:00', False),
+                            (1035, '2026-03-27 11:10:00', False),
+                            (1033, '2026-03-26 14:25:00', False),
+                            (1049, '2026-03-31 09:45:00', False),
+                            (1027, '2026-03-31 14:55:00', False),
+                            (1056, '2026-04-08 13:30:00', False),
+                            (1029, '2026-04-09 14:55:00', False),
+                            (1086, '2026-04-15 09:35:00', False),
+                            (1072, '2026-04-15 14:55:00', False),
+                            (1079, '2026-04-20 09:40:00', False),
+                            (1064, '2026-04-21 10:30:00', False))},
+ 'publication_proofs': {'current': ((1135, '2026-03-06 14:20:00', True),
+                                    (1125, '2026-03-13 13:15:00', True),
+                                    (1125, '2026-03-13 13:15:00', True),
+                                    (1104, '2026-03-19 09:50:00', True),
+                                    (1035, '2026-03-27 11:10:00', True),
+                                    (1033, '2026-03-26 14:25:00', False),
+                                    (1049, '2026-03-31 09:45:00', True),
+                                    (1027, '2026-03-31 14:55:00', True),
+                                    (1056, '2026-04-08 13:30:00', True),
+                                    (1031, '2026-04-09 13:25:00', True),
+                                    (1086, '2026-04-15 09:35:00', True),
+                                    (1072, '2026-04-15 14:55:00', True),
+                                    (1079, '2026-04-20 09:40:00', True),
+                                    (1072, '2026-04-20 14:40:00', True)),
+                        'fixed': ((1135, '2026-03-06 14:20:00', False),
+                                  (1125, '2026-03-13 13:15:00', False),
+                                  (1125, '2026-03-13 13:15:00', False),
+                                  (1101, '2026-03-19 10:40:00', False),
+                                  (1035, '2026-03-27 11:10:00', False),
+                                  (1033, '2026-03-26 14:25:00', False),
+                                  (1049, '2026-03-31 09:45:00', False),
+                                  (1027, '2026-03-31 14:55:00', False),
+                                  (1056, '2026-04-08 13:30:00', False),
+                                  (1029, '2026-04-09 14:55:00', False),
+                                  (1086, '2026-04-15 09:35:00', False),
+                                  (1072, '2026-04-15 14:55:00', False),
+                                  (1079, '2026-04-20 09:40:00', False),
+                                  (1064, '2026-04-21 10:30:00', False))},
+ 'reactions': ((39, 41, 2, 51), (94, 96, 1, 103)),
+ 'successors': ((42, 48, 1, 51), (97, 103, 1, 106)),
+ 'earlier_revoked': ((68, 71, 74, 'gap'),
+                     (78, 81, 82, 'direct'),
+                     (78, 83, 84, 'direct'),
+                     (78, 85, 86, 'gap'),
+                     (104, 107, 110, 'direct')),
+ 'f1': ((0, 2, 'consolidation', None, (0,), ((1113, 1135),), 3),
+        (3, 6, 'consolidation', 'up', (4,), ((1031, 1060),), 7),
+        (7, 9, 'consolidation', None, (7,), ((1025, 1049),), 10)),
+ 'tail': (10, 13, 'consolidation', 'down', (11,), ((1070, 1079),), None),
+ 'f1_first_counts': {'current': (1329, 1764, 2208), 'fixed': (1349, 1775, 2221)},
+ 'f1_evidence_counts': (4, 8, 11),
+ 'natural111_qualified_in_seed16_chain': True,
+ 'natural111_predecessor': (104, 110, 1, 113),
+ 'complete_f2': 0,
+ 'source_origin_bridge_proven': False}
+
+
+class TestM2JoinedSeed16(unittest.TestCase):
+    """修订近期祖先链接通111资格；不将声明单位冒充已合入的生产输出。"""
+
+    @staticmethod
+    def _data(contract):
+        audit=M3_M2_JOINED_ROLE_AUDIT
+        head=M3_CONDITIONAL_F1_ADMISSION_AUDIT['M2_recent16']
+        if audit['head_certificate_sha256']!=head['certificate_sha256']:
+            raise AssertionError('M2衔接须绑定同一近期头部证书')
+        case,units=gap_revision_input(audit)
+        if contract=='current':
+            for i,u in enumerate(units):
+                u['local_raw_count']=audit['current_local_counts'][i]
+                u['confirmed_raw_count']=audit['current_counts'][i]
+        return case,units,audit
+
+    def test_joined_fourteen_keeps_natural87_bridge_and_qualified111_ancestry(self):
+        _,units,audit=self._data('fixed')
+        head=M3_CONDITIONAL_F1_ADMISSION_AUDIT['M2_recent16']
+        self.assertEqual(audit['events'][:6],head['events'])
+        self.assertEqual(tuple(tuple(u[:9]) for u in audit['units'][:6]),head['units'])
+        self.assertEqual(audit['events'][9:],((87,89,1,92),(90,92,1,103),(93,103,1,106),
+                                             (104,110,1,113),(111,113,1,116)))
+        self.assertTrue(audit['natural111_qualified_in_seed16_chain'])
+        self.assertEqual(audit['natural111_predecessor'],audit['events'][12])
+        for a,b in zip(audit['events'],audit['events'][1:]):self.assertEqual(a[1]+1,b[0])
+        self.assertNotIn((93,97,1,102),audit['events'])
+        self.assertNotIn((108,110,1,113),audit['events'])
+        self.assertEqual((units[11]['start_ticks'],units[11]['end_ticks'],units[11]['high_ticks']),
+                         (1029,1086,1091))
+        self.assertEqual((units[12]['start_ticks'],units[12]['end_ticks']),(1086,1070))
+        self.assertEqual((audit['publication_proofs']['current'][13],audit['publication_proofs']['fixed'][13]),
+                         ((1072,'2026-04-20 14:40:00',True),(1064,'2026-04-21 10:30:00',False)))
+
+    def test_three_f1_freeze_actual_batches_while_fourth_tail_and_f2_remain_pending(self):
+        for contract in ('current','fixed'):
+            case,units,audit=self._data(contract);first={};types=[]
+            counts=sorted({2476}|{n for u in units for at in (u['local_raw_count'],u['confirmed_raw_count'])
+                                 for n in (at-1,at)})
+            for count in counts:
+                visible=[u for u in units if u['confirmed_raw_count']<=count]
+                moves=chan.same_level_decompose(m3_xd_parts(dict(units=units),count))
+                complete=[m for m in moves if m.complete]
+                expected=[s for s in audit['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+                self.assertEqual([m3_xd_shape(m) for m in complete],[m3_xd_expected(units,s) for s in expected])
+                for move in complete:
+                    if move.seg_start not in first:
+                        first[move.seg_start]=count
+                        types.append(m3_xd_type('M2joined16:'+contract+':'+audit['certificate_sha256'],
+                                                 move,visible,gap_revision_time(case,count)))
+                self.assertEqual(chan.confirm_level_up(types,gap_revision_time(case,count),'F2'),[])
+            self.assertEqual(tuple(first[s[0]] for s in audit['f1']),audit['f1_first_counts'][contract])
+            self.assertEqual(tuple(len(t.evidence_ids) for t in types),audit['f1_evidence_counts'])
+            self.assertEqual(m3_xd_shape(moves[-1]),m3_xd_expected(units,audit['tail']))
+            # 第二F1进入方向up与净下跌分别保留，组成低1025不取旧F1低1031。
+            self.assertEqual((types[1].kind,types[1].direction,round(types[1].low*1000)),
+                             ('consolidation','up',1025))
+            self.assertLess(types[1].end_price,types[1].start_price)
+            now=gap_revision_time(case,2476)
+            strict=chan.scan_strict_divergence(types,now,'F2')
+            self.assertEqual((strict.results,strict.completed_types),((),0))
+            self.assertEqual([reason for _,reason in strict.skipped],['not_two_separated_centers'])
+            points=chan.scan_first_points(types,m3_xd_rows(case),now,'F2')
+            self.assertEqual((points.points,points.exclusions,points.completed_types),([],(),0))
+            self.assertFalse(any(chan.analyze_point_chain(types,m3_xd_rows(case),now,'F2')))
+
+    def test_late_natural_bridge_delays_f1_without_rewriting_prior_completions(self):
+        case,units,audit=self._data('current')
+        arrivals=[gap_revision_time(case,u['confirmed_raw_count']) for u in units]
+        late=arrivals[10]+timedelta(days=1);delayed=list(arrivals);delayed[10]=late
+        for i in range(11,14):delayed[i]=max(arrivals[i],delayed[i-1])
+        frozen=[]
+        for observed in (late-timedelta(microseconds=1),late):
+            size=next((i for i,at in enumerate(delayed) if at>observed),14)
+            moves=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units[:size]),2476)) if m.complete]
+            self.assertEqual(len(moves),2 if observed<late else 3)
+            built=[]
+            for move in moves:
+                proof=next(s[-1] for s in audit['f1'] if s[0]==move.seg_start)
+                known=max(delayed[:proof+1]);width=sum(at<=known for at in delayed)
+                built.append(m3_xd_type('M2joined16:late-bridge',move,units[:width],known))
+            if frozen:self.assertEqual(built[:2],frozen)
+            frozen=built
+            if observed==late:
+                self.assertEqual(built[-1].confirmed_dt,late)
+                self.assertEqual(len(built[-1].evidence_ids),size)
+        before=chan.same_level_decompose(m3_xd_parts(dict(units=units[:13]),2476))[-1]
+        after=chan.same_level_decompose(m3_xd_parts(dict(units=units),2476))[-1]
+        self.assertEqual((before.kind,after.kind,after.complete),('incomplete','consolidation',False))
+        cutoff=arrivals[10];rows=m3_xd_rows(case)
+        for row in rows[audit['current_counts'][10]:]:
+            row.pop('open');row.update(high=float('nan'),low=-999,close=99999)
+        prior=frozen[:2]
+        future=frozen[-1]._replace(move_id='future',start_price=float('nan'),confirmed_dt=cutoff+timedelta(days=3))
+        self.assertFalse(any(chan.analyze_point_chain(prior+[future],rows,cutoff,'F2')))
+
+
 if __name__ == '__main__':
     unittest.main()

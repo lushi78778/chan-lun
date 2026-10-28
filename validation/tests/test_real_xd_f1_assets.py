@@ -534,6 +534,123 @@ def pending_gap_revisions():
 
 
 class TestRealXdF1Assets(unittest.TestCase):
+    def _m2_joined_source(self):
+        audit=embedded_table('test_real_xd_f1.py','M3_M2_JOINED_ROLE_AUDIT')
+        head=embedded_table('test_real_xd_f1.py','M3_CONDITIONAL_F1_ADMISSION_AUDIT')['M2_recent16']
+        self.assertEqual(audit['head_certificate_sha256'],head['certificate_sha256'])
+        path=ROOT/'tests/fixtures'/audit['fixture']
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),audit['fixture_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==audit['id'])
+        tool=compiler();_,_,bis=tool.foundation(case['raw_rows'][:2476],'106')
+        self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+        parts=tool.components(case['raw_rows'][:2476],bis[:-1],None)
+        units=tool.xd_records(parts,audit['events'])
+        names=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        self.assertEqual([tuple(u[k] for k in names) for u in units],[u[:9] for u in audit['units']])
+        return audit,case,parts,units
+
+    @staticmethod
+    def _m2_joined_given_ready(parts,audit):
+        """只核已声明的两组R/S/D和局部证书，不搜索全链自然分界。"""
+        ready=[manual_xd_certificate_ready(parts,e) for e in audit['events']]
+        for index,first,s,reaction in ((1,38,audit['successors'][0],audit['reactions'][0]),
+                                      (10,93,audit['successors'][1],audit['reactions'][1])):
+            good=manual_xd_certificate_ready(parts,reaction)
+            if good:
+                stop=reaction[3];r=parts[first];up=r['direction']=='up'
+                good=(all(parts[i]['end_ticks']<=r['end_ticks'] if up else parts[i]['end_ticks']>=r['end_ticks']
+                          for i in range(first+2,stop+1,2)) and
+                      all(parts[i]['end_ticks']>=r['start_ticks'] if up else parts[i]['end_ticks']<=r['start_ticks']
+                          for i in range(first+1,stop+1,2)))
+            ready[index]=good
+            ready[index+1]=ready[index+1] and good and manual_xd_certificate_ready(parts,s)
+        return ready
+
+    def test_m2_joined_seed16_reaction94_and_completed_successor97_bind_the_new_bridge(self):
+        """87处不能用93..97/proof102；相邻S94与完整D97共同支持93..103。"""
+        audit,case,parts,units=self._m2_joined_source()
+        seen=case['foundation']['bis_confirmed_raw_count']
+        bridge=dict(owner=90,first=93,old_boundary=audit['events'][10],reaction=audit['reactions'][1],
+                    successor=audit['successors'][1],extended=audit['events'][11])
+        parent=dict(event=audit['events'][9],published_count=seen[92])
+        for mirrored in (False,True):
+            supplied=parts if not mirrored else [dict(u,direction='down' if u['direction']=='up' else 'up',
+                 start_ticks=20000-u['start_ticks'],end_ticks=20000-u['end_ticks'],
+                 low_ticks=20000-u['high_ticks'],high_ticks=20000-u['low_ticks']) for u in parts]
+            left=manual_feature_nodes(supplied,range(91,93,2),mirrored)[-1]
+            first=supplied[93]
+            self.assertTrue(first['high_ticks']>left[1] if mirrored else first['low_ticks']<left[0])
+            self.assertLessEqual(max(left[0],first['low_ticks']),min(left[1],first['high_ticks']))
+            pending=manual_natural_reaction_state(supplied[:103],seen[:103],seen[102],90,93,parent,None)
+            self.assertEqual(pending['state'],'pending')
+            self.assertTrue(manual_xd_certificate_ready(supplied[:103],(93,97,1,102)))
+            self.assertFalse(manual_xd_certificate_ready(supplied[:103],audit['reactions'][1]))
+            self.assertIsNone(manual_natural_successor_certificate(supplied[:104],seen[:104],seen[103],bridge,parent))
+            result=manual_natural_successor_certificate(supplied[:107],seen[:107],seen[106],bridge,parent)
+            self.assertEqual((result['local_proof'],result['successor_proof'],result['published_count']),
+                             (106,106,seen[106]))
+            for first in (100,102):
+                left=manual_feature_nodes(supplied,range(98,first,2),not mirrored)[-1]
+                self.assertTrue(supplied[first]['low_ticks']>=left[0] if mirrored else
+                                supplied[first]['high_ticks']<=left[1])
+        tool=compiler()
+        for spec in audit['f1']+(audit['tail'],):tool.move_record(units,spec)
+        self.assertEqual([(min(u['low_ticks'] for u in units[s[0]:s[1]+1]),
+                           max(u['high_ticks'] for u in units[s[0]:s[1]+1])) for s in audit['f1']],
+                         [(1105,1200),(1025,1140),(1010,1056)])
+
+    def test_m2_joined_earlier_revocations_and_equal_first_start_preserve_qualified111_scope(self):
+        """更早gap/首反向身份先撤销；115等1079不撤销114，111资格只限已接通祖先。"""
+        audit,_,parts,_=self._m2_joined_source()
+        for owner,first,cancel,kind in audit['earlier_revoked']:
+            r=parts[first];up=r['direction']=='up'
+            observed=next(i for i in range(first+1,cancel+1,2) if
+                          (parts[i]['end_ticks']<r['start_ticks'] if up else parts[i]['end_ticks']>r['start_ticks']))
+            self.assertEqual(observed,cancel)
+            if kind=='gap':self.assertEqual(manual_gap_lifecycle(parts,owner,first,cancel)['state'],'revoked')
+        self.assertEqual(audit['events'][11:14],((93,103,1,106),(104,110,1,113),(111,113,1,116)))
+        self.assertTrue(all(manual_xd_certificate_ready(parts,e) for e in audit['events'][11:14]))
+        self.assertTrue(audit['natural111_qualified_in_seed16_chain'])
+        self.assertFalse(M3_M2_GIVEN_PROOFS_AUDIT['natural_start111_proven'])
+        self.assertEqual(M3_M2_GIVEN_PROOFS_AUDIT['parent_events'][1],(108,110,1,113))
+        self.assertNotIn(M3_M2_GIVEN_PROOFS_AUDIT['parent_events'][1],audit['events'])
+        values=[parts[0]['start_ticks']]+[u['end_ticks'] for u in parts[:117]]
+        self.assertEqual((parts[114]['start_ticks'],parts[115]['end_ticks']),(1079,1079))
+        for delta in (-1,0,1):
+            changed=list(values);changed[116]=1079+delta
+            for mirrored in (False,True):
+                variant=self._natural_parts([20000-v for v in changed] if mirrored else changed)
+                self.assertEqual(manual_xd_certificate_ready(variant,(111,113,1,116)),delta<=0)
+
+    def test_m2_joined_actual_local_and_serial_clocks_keep_proof_prices_and_old_head(self):
+        """两合同首达前一行/本行重算；65仍等父段，111活动1072不回填固定1064。"""
+        audit,case,_,_=self._m2_joined_source();tool=compiler()
+        head=embedded_table('test_real_xd_f1.py','M3_CONDITIONAL_F1_ADMISSION_AUDIT')['M2_recent16']
+        self.assertEqual(audit['events'][:6],head['events'])
+        self.assertEqual(audit['current_counts'][:6],head['current_counts'])
+        fixed_local=tuple(u[-2] for u in audit['units']);fixed=tuple(u[-1] for u in audit['units'])
+        self.assertEqual(fixed[:6],head['fixed_counts'])
+        counts=sorted({n for at in audit['current_local_counts']+audit['current_counts']+fixed_local+fixed for n in (at-1,at)}|{2476})
+        for count in counts:
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+            self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis)-1])
+            for contract,bs,local,published in (('current',bis,audit['current_local_counts'],audit['current_counts']),
+                                               ('fixed',bis[:-1],fixed_local,fixed)):
+                parts=tool.components(rows,bs,None);ready=self._m2_joined_given_ready(parts,audit)
+                self.assertEqual(ready,[count>=at for at in local])
+                size=next((i for i,ok in enumerate(ready) if not ok),14)
+                self.assertEqual(size,sum(at<=count for at in published))
+                for label,firsts in (('local',local),('publication',published)):
+                    for i,at in enumerate(firsts):
+                        if count==at:
+                            proof=audit['events'][i][3];p=parts[proof]
+                            self.assertEqual((p['end_ticks'],p['end_dt'],contract=='current' and proof==len(parts)-1),
+                                             audit[label+'_proofs'][contract][i])
+        self.assertEqual((fixed[12],fixed[13]),(2365,2437))
+        self.assertLess(fixed[13],2476)
+        self.assertEqual((audit['publication_proofs']['current'][13][0],
+                          audit['publication_proofs']['fixed'][13][0]),(1072,1064))
+
     def _y1_recursive_source(self):
         head,case,units,clock=self._y1_three_unit_roles()
         audit=embedded_table('test_real_xd_f1.py','M3_Y1_RECURSIVE_CONSUMERS_AUDIT')
