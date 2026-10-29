@@ -3578,5 +3578,323 @@ class TestEConditionalConsumers(unittest.TestCase):
             self.assertFalse(any(chan.analyze_point_chain(delayed+[future],rows,late,'auto-E-F1')))
 
 
+# G/X1实际合同的活动/固定时钟及给定链消费者；源起点资格与生产合入另验。
+M3_GX_CLOCK_CONSUMERS_AUDIT = {'G': {'certificate_sha256': 'd02982b1a7eaaac60a7d2faaf74421098206e2cdbe9e974256a3d6233c5bc3ac',
+       'auto': (0, 6, 'up', 'up', (0, 3), ((695, 842), (887, 1017)), None),
+       'base_sha256': '3b6ce0c2152277e61359829b606c353af0bb1595f23d2b6e4bda02a9b4ba2082',
+       'bounds': {'current': 267, 'fixed': 267},
+       'candidates': {},
+       'contracts': {'current': {'candidate_raw': (),
+                                 'f1_evidence': (7,),
+                                 'f1_first': (254,),
+                                 'local': (59, 88, 175, 175, 230, 230, 254),
+                                 'local_proofs': ((695, '2018-12-26', True),
+                                                  (845, '2019-02-14', True),
+                                                  (1017, '2019-06-24', True),
+                                                  (1017, '2019-06-24', True),
+                                                  (1024, '2019-09-09', True),
+                                                  (1024, '2019-09-09', True),
+                                                  (913, '2019-10-21', True)),
+                                 'publication_proofs': ((695, '2018-12-26', True),
+                                                        (845, '2019-02-14', True),
+                                                        (1017, '2019-06-24', True),
+                                                        (1017, '2019-06-24', True),
+                                                        (1024, '2019-09-09', True),
+                                                        (1024, '2019-09-09', True),
+                                                        (913, '2019-10-21', True)),
+                                 'published': (59, 88, 175, 175, 230, 230, 254)},
+                     'fixed': {'candidate_raw': (),
+                               'f1_evidence': (7,),
+                               'f1_first': (267,),
+                               'local': (65, 109, 179, 179, 239, 239, 267),
+                               'local_proofs': ((695, '2018-12-26', False),
+                                                (1185, '2019-03-07', False),
+                                                (1017, '2019-06-24', False),
+                                                (1017, '2019-06-24', False),
+                                                (1039, '2019-09-16', False),
+                                                (1039, '2019-09-16', False),
+                                                (913, '2019-10-21', False)),
+                               'publication_proofs': ((695, '2018-12-26', False),
+                                                      (1185, '2019-03-07', False),
+                                                      (1017, '2019-06-24', False),
+                                                      (1017, '2019-06-24', False),
+                                                      (1039, '2019-09-16', False),
+                                                      (1039, '2019-09-16', False),
+                                                      (913, '2019-10-21', False)),
+                               'published': (65, 109, 179, 179, 239, 239, 267)}},
+       'fixture_sha256': '3defd45833e0dd5339ffb43e6d3aad7cdf3617887961acedfee03df8204fec0f',
+       'impact_contracts': ((15, 'all_current', 267), (16, 'fixed_without_active', 267)),
+       'inherited_base': 0,
+       'production_merged': False,
+       'reasons': ('not_two_separated_centers',
+                   'not_two_separated_centers',
+                   'not_two_separated_centers',
+                   'not_two_separated_centers',
+                   'not_two_separated_centers',
+                   'no_comparable_center_tail',
+                   'no_comparable_center_tail'),
+       'seed': 0,
+       'source_origin_bridge_proven': False,
+       'source_rows': 267,
+       'spans': ((0, 2, 2), (3, 5, 6))},
+ 'X1': {'certificate_sha256': 'd02982b1a7eaaac60a7d2faaf74421098206e2cdbe9e974256a3d6233c5bc3ac',
+        'auto': (0, 13, 'up', 'up', (0, 8), ((1687, 1744), (2079, 2402)), None),
+        'base_sha256': '01833573244088a5ecadbf9e80354f25752b04b622fb29a17f4187a9eb2aabbf',
+        'bounds': {'current': 1403, 'fixed': 1495},
+        'candidates': {12: {'gap': 114, 'leave': (11,), 'leave_high': 2320, 'prior_high': 2678, 'reference': (7,)},
+                       14: {'gap': 41, 'leave': (13,), 'leave_high': 2242, 'prior_high': 2678, 'reference': (7,)}},
+        'contracts': {'current': {'candidate_raw': ((12, 1157), (14, 1393)),
+                                  'f1_evidence': (4, 7, 11, 14),
+                                  'f1_first': (431, 889, 1126, 1393),
+                                  'local': (155,
+                                            320,
+                                            410,
+                                            431,
+                                            651,
+                                            712,
+                                            889,
+                                            1126,
+                                            1013,
+                                            1082,
+                                            1126,
+                                            1157,
+                                            1275,
+                                            1393),
+                                  'local_proofs': ((1736, '2024-02-21 14:00:00', True),
+                                                   (1731, '2024-04-10 14:00:00', True),
+                                                   (1860, '2024-05-09 14:00:00', True),
+                                                   (1795, '2024-05-15 15:00:00', True),
+                                                   (1674, '2024-07-17 15:00:00', True),
+                                                   (1589, '2024-08-05 09:30:00', True),
+                                                   (1649, '2024-09-25 11:30:00', True),
+                                                   (2247, '2024-12-06 15:00:00', True),
+                                                   (2316, '2024-11-06 10:30:00', True),
+                                                   (2100, '2024-11-26 09:30:00', True),
+                                                   (2247, '2024-12-06 15:00:00', True),
+                                                   (2148, '2024-12-17 09:30:00', True),
+                                                   (2077, '2025-01-20 14:00:00', True),
+                                                   (2120, '2025-03-03 10:30:00', True)),
+                                  'publication_proofs': ((1736, '2024-02-21 14:00:00', True),
+                                                         (1731, '2024-04-10 14:00:00', True),
+                                                         (1860, '2024-05-09 14:00:00', True),
+                                                         (1795, '2024-05-15 15:00:00', True),
+                                                         (1674, '2024-07-17 15:00:00', True),
+                                                         (1589, '2024-08-05 09:30:00', True),
+                                                         (1649, '2024-09-25 11:30:00', True),
+                                                         (2247, '2024-12-06 15:00:00', True),
+                                                         (2316, '2024-11-06 10:30:00', False),
+                                                         (2079, '2024-11-27 10:30:00', False),
+                                                         (2247, '2024-12-06 15:00:00', True),
+                                                         (2148, '2024-12-17 09:30:00', True),
+                                                         (2077, '2025-01-20 14:00:00', True),
+                                                         (2120, '2025-03-03 10:30:00', True)),
+                                  'published': (155,
+                                                320,
+                                                410,
+                                                431,
+                                                651,
+                                                712,
+                                                889,
+                                                1126,
+                                                1126,
+                                                1126,
+                                                1126,
+                                                1157,
+                                                1275,
+                                                1393)},
+                      'fixed': {'candidate_raw': ((12, 1165), (14, 1403)),
+                                'f1_evidence': (4, 7, 11, 14),
+                                'f1_first': (443, 893, 1138, 1403),
+                                'local': (165,
+                                          340,
+                                          414,
+                                          443,
+                                          678,
+                                          725,
+                                          893,
+                                          1138,
+                                          1018,
+                                          1100,
+                                          1138,
+                                          1165,
+                                          1285,
+                                          1403),
+                                'local_proofs': ((1736, '2024-02-21 14:00:00', False),
+                                                 (1711, '2024-04-15 09:30:00', False),
+                                                 (1860, '2024-05-09 14:00:00', False),
+                                                 (1791, '2024-05-17 10:30:00', False),
+                                                 (1702, '2024-07-22 10:30:00', False),
+                                                 (1576, '2024-08-05 15:00:00', False),
+                                                 (1649, '2024-09-25 11:30:00', False),
+                                                 (2320, '2024-12-10 09:30:00', False),
+                                                 (2316, '2024-11-06 10:30:00', False),
+                                                 (2079, '2024-11-27 10:30:00', False),
+                                                 (2320, '2024-12-10 09:30:00', False),
+                                                 (2148, '2024-12-17 09:30:00', False),
+                                                 (2083, '2025-01-21 09:30:00', False),
+                                                 (2120, '2025-03-03 10:30:00', False)),
+                                'publication_proofs': ((1736, '2024-02-21 14:00:00', False),
+                                                       (1711, '2024-04-15 09:30:00', False),
+                                                       (1860, '2024-05-09 14:00:00', False),
+                                                       (1791, '2024-05-17 10:30:00', False),
+                                                       (1702, '2024-07-22 10:30:00', False),
+                                                       (1576, '2024-08-05 15:00:00', False),
+                                                       (1649, '2024-09-25 11:30:00', False),
+                                                       (2320, '2024-12-10 09:30:00', False),
+                                                       (2316, '2024-11-06 10:30:00', False),
+                                                       (2079, '2024-11-27 10:30:00', False),
+                                                       (2320, '2024-12-10 09:30:00', False),
+                                                       (2148, '2024-12-17 09:30:00', False),
+                                                       (2083, '2025-01-21 09:30:00', False),
+                                                       (2120, '2025-03-03 10:30:00', False)),
+                                'published': (165,
+                                              340,
+                                              414,
+                                              443,
+                                              678,
+                                              725,
+                                              893,
+                                              1138,
+                                              1138,
+                                              1138,
+                                              1138,
+                                              1165,
+                                              1285,
+                                              1403)}},
+        'fixture_sha256': '2c70070c2917c343cdfc182518996bb71bc8c0e6724c3482c22337fc9f337ad7',
+        'impact_contracts': ((57, 'all_current', 1403), (58, 'fixed_without_active', 1495)),
+        'inherited_base': 7,
+        'production_merged': False,
+        'reasons': ('not_two_separated_centers',
+                    'not_two_separated_centers',
+                    'not_two_separated_centers',
+                    'not_two_separated_centers',
+                    'not_two_separated_centers',
+                    'not_two_separated_centers',
+                    'not_two_separated_centers',
+                    'not_two_separated_centers',
+                    'not_two_separated_centers',
+                    'not_two_separated_centers',
+                    'no_compare_legs',
+                    'trend_open',
+                    'no_compare_legs',
+                    'trend_open'),
+        'seed': 1,
+        'source_origin_bridge_proven': False,
+        'source_rows': 1495,
+        'spans': ((0, 2, 7), (8, 10, 13))}}
+
+
+def gx_consumer_input(key,contract):
+    """复用既有G/X1组成，只绑定逐事件实际证明和本合同消费上限。"""
+    base=M3_GAP_REVISION_AUDIT[key];a=M3_GX_CLOCK_CONSUMERS_AUDIT[key]
+    digest=hashlib.sha256(json.dumps(base,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8')).hexdigest()
+    if digest!=a['base_sha256']:raise AssertionError('G/X1时钟须绑定同一既有修订组成')
+    case,units=gap_revision_input(base);clock=a['contracts'][contract]
+    for i,u in enumerate(units):u.update(local_raw_count=clock['local'][i],confirmed_raw_count=clock['published'][i])
+    raw=case['raw_rows'][:a['bounds'][contract]]
+    rows=m3_xd_rows(dict(raw_rows=[dict(r,dt=r['dt'][:10]) for r in raw])) if key=='G' else m3_xd_rows(dict(raw_rows=raw))
+    root='GX-clock:'+key+':'+contract+':'+a['certificate_sha256']
+    given=[chan.ConfirmedMove(root+':xd:'+str(i),'given-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),
+           u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,
+           gap_revision_time(case,u['confirmed_raw_count'])) for i,u in enumerate(units)]
+    return case,units,base,a,rows,given
+
+
+class TestGxClockConsumers(unittest.TestCase):
+    """给定G seed0、X1声明基底的实际活动/固定消费窗口，分开冻结完成项与候选。"""
+
+    @staticmethod
+    def _types(case,units,base,key,contract,arrivals=None):
+        arrivals=arrivals or [gap_revision_time(case,u['confirmed_raw_count']) for u in units];out=[]
+        for spec in base['f1']:
+            known=max(arrivals[:spec[-1]+1]);width=sum(at<=known for at in arrivals)
+            move=next(m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units[:width]),len(case['raw_rows'])))
+                      if m.complete and m.seg_start==spec[0])
+            out.append(m3_xd_type('GX-clock:'+key+':'+contract,move,units[:width],known))
+        return out
+
+    def test_actual_contract_windows_freeze_F1_batches_and_keep_F2_open(self):
+        for key in ('G','X1'):
+            for contract in ('current','fixed'):
+                case,units,base,a,rows,_=gx_consumer_input(key,contract);first={};types=[]
+                self.assertEqual(len(rows),a['bounds'][contract])
+                for count in range(1,len(rows)+1):
+                    visible=[u for u in units if u['confirmed_raw_count']<=count]
+                    done=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),count)) if m.complete]
+                    expected=[s for s in base['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+                    self.assertEqual([m3_xd_shape(m) for m in done],[m3_xd_expected(units,s) for s in expected])
+                    for m in done:
+                        if m.seg_start not in first:
+                            first[m.seg_start]=count;types.append(m3_xd_type('GX-clock:'+key+':'+contract,m,visible,rows[count-1]['available_dt']))
+                    self.assertEqual(chan.confirm_level_up(types,rows[count-1]['available_dt'],'F2'),[])
+                self.assertEqual(tuple(first[s[0]] for s in base['f1']),a['contracts'][contract]['f1_first'])
+                self.assertEqual(tuple(len(t.evidence_ids) for t in types),a['contracts'][contract]['f1_evidence'])
+                self.assertEqual(m3_xd_shape(chan.same_level_decompose(m3_xd_parts(dict(units=units),len(rows)))[-1]),m3_xd_expected(units,base['tail']))
+                records=[dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),high_ticks=round(t.high*1000)) for t in types]
+                self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],[m3_xd_expected(records,s) for s in base['f2']])
+                now=rows[-1]['available_dt'];self.assertFalse(chan.scan_first_points(types,rows,now,'F2').points)
+                self.assertFalse(any(chan.analyze_point_chain(types,rows,now,'F2')))
+                if key=='X1':
+                    self.assertEqual((types[2].kind,types[2].direction),('consolidation','down'))
+                    self.assertGreater(types[2].end_price,types[2].start_price)
+
+    def test_recursive_finite_prefixes_keep_G_missing_tail_and_X1_open_candidates(self):
+        def forbidden(a,b):raise AssertionError('候选或缺结构时不得评估力度')
+        for key in ('G','X1'):
+            for contract in ('current','fixed'):
+                _,units,_,a,rows,given=gx_consumer_input(key,contract)
+                for size in range(1,len(units)+1):
+                    now=given[size-1].confirmed_dt;scan=chan.scan_strict_divergence(given[:size],now,'auto-GX-F1',forbidden,'guard')
+                    self.assertEqual(scan.completed_types,0)
+                    if size in a['candidates']:
+                        c=a['candidates'][size];r,=scan.results
+                        self.assertEqual((r.status,r.reason,r.kind),('candidate','trend_open','sell1'))
+                        self.assertEqual(tuple(int(i.rsplit(':',1)[1]) for i in r.reference_ids),c['reference'])
+                        self.assertEqual(tuple(int(i.rsplit(':',1)[1]) for i in r.leave_ids),c['leave'])
+                        self.assertEqual(tuple(round(v*1000) for v in r.center_range),(2079,2402))
+                        self.assertEqual(dict(r.conditions),dict(trend=None,separated_centers=True,new_extreme=None,leave_third_point=None))
+                        self.assertEqual((r.force_method,r.force_reference,r.force_leave),(None,None,None))
+                    else:self.assertEqual((scan.results,tuple(v for _,v in scan.skipped)),((),(a['reasons'][size-1],)))
+                    first=chan.scan_first_points(given[:size],rows,now,'auto-GX-F1')
+                    self.assertEqual((first.points,first.exclusions,first.completed_types),([],(),0))
+                self.assertEqual([m3_xd_shape(m) for m in chan.level_up(given)],[m3_xd_expected(units,a['auto'])])
+                self.assertFalse(any(chan.analyze_point_chain(given,rows,rows[-1]['available_dt'],'auto-GX-F1')))
+
+    def test_X1_parent_four_unit_batch_keeps_local_proofs_and_delays_only_third_F1(self):
+        for contract in ('current','fixed'):
+            case,units,base,a,_,given=gx_consumer_input('X1',contract);clock=a['contracts'][contract]
+            self.assertEqual(clock['published'][7:11],(1126,)*4 if contract=='current' else (1138,)*4)
+            self.assertLess(clock['local'][8],clock['published'][8]);self.assertLess(clock['local'][9],clock['published'][9])
+            self.assertEqual([u['proof_bi'] for u in units[7:11]],[84,74,81,84])
+            arrivals=[u.confirmed_dt for u in given];late=arrivals[7]+timedelta(days=1);delayed=list(arrivals);delayed[7]=late
+            for i in range(8,len(delayed)):delayed[i]=max(arrivals[i],delayed[i-1])
+            base_types=self._types(case,units,base,'X1',contract);types=self._types(case,units,base,'X1',contract,delayed)
+            self.assertEqual(types[:2],base_types[:2])
+            self.assertEqual((types[2].confirmed_dt,len(types[2].evidence_ids)),(late,11))
+            self.assertEqual(len([t for t in types if t.confirmed_dt<late]),2)
+            self.assertEqual(delayed[7:11],[late]*4)
+            self.assertEqual(tuple(units[i]['local_raw_count'] for i in (8,9)),clock['local'][8:10])
+
+    def test_X1_candidate_disappearance_is_not_a_completed_result_rewrite(self):
+        for contract in ('current','fixed'):
+            _,units,_,a,rows,given=gx_consumer_input('X1',contract)
+            first,=chan.scan_strict_divergence(given,given[11].confirmed_dt,'auto-GX-F1').results
+            snapshot=first.to_dict()
+            middle=chan.scan_strict_divergence(given,given[12].confirmed_dt,'auto-GX-F1')
+            self.assertEqual((middle.results,tuple(v for _,v in middle.skipped)),((),('no_compare_legs',)))
+            last,=chan.scan_strict_divergence(given,given[13].confirmed_dt,'auto-GX-F1').results
+            self.assertEqual(first.divergence_id,last.divergence_id)
+            self.assertNotEqual(first.leave_ids,last.leave_ids)
+            self.assertEqual(first.to_dict(),snapshot)
+            late=given[13].confirmed_dt+timedelta(days=1);delayed=list(given);delayed[13]=given[13]._replace(confirmed_dt=late)
+            self.assertEqual(chan.scan_strict_divergence(delayed,late-timedelta(microseconds=1),'auto-GX-F1').results,())
+            after=chan.scan_strict_divergence(delayed,late,'auto-GX-F1');point,=after.results
+            self.assertEqual((point.status,point.confirmed_dt),('candidate',late))
+            future=given[-1]._replace(move_id=None,level=None,high=float('nan'),confirmed_dt=late+timedelta(days=10))
+            self.assertEqual(chan.scan_strict_divergence(delayed+[future],late,'auto-GX-F1'),after)
+            self.assertFalse(any(chan.analyze_point_chain(delayed+[future],rows,late,'auto-GX-F1')))
+
+
 if __name__ == '__main__':
     unittest.main()

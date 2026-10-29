@@ -3486,6 +3486,106 @@ class TestRealXdF1Assets(unittest.TestCase):
             self.assertEqual(bool(len(p)>34 and p[34]['end_ticks']<p[33]['start_ticks']),count>=299)
             for pens in (p,p[:-1]):self.assertTrue(all(manual_xd_certificate_ready(pens,e) for e in a['events']))
 
+    def _gx_clock_source(self,key):
+        base=embedded_table('test_real_xd_f1.py','M3_GAP_REVISION_AUDIT')[key]
+        a=embedded_table('test_real_xd_f1.py','M3_GX_CLOCK_CONSUMERS_AUDIT')[key]
+        digest=hashlib.sha256(json.dumps(base,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8')).hexdigest()
+        self.assertEqual(a['base_sha256'],digest)
+        path=ROOT/'tests/fixtures'/base['fixture'];self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),a['fixture_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==base['id']);tool=compiler()
+        _,_,bis=tool.foundation(case['raw_rows'],'106');self.assertEqual(tool.records(bis),case['foundation']['bis'])
+        parts=tool.components(case['raw_rows'],bis,10 if key=='G' else None);units=tool.xd_records(parts,base['events'])
+        fields=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        self.assertEqual([tuple(u[k] for k in fields) for u in units],[u[:9] for u in base['units']])
+        self.assertEqual((a['inherited_base'],a['seed']),(0,0) if key=='G' else (7,1))
+        return a,base,case,parts,units
+
+    def test_gx_actual_raw_windows_rebuild_local_and_parent_gated_publication_proofs(self):
+        tool=compiler();total=0;prefixes=0
+        for key in ('G','X1'):
+            a,base,case,_,_=self._gx_clock_source(key);seen={c:dict(local={},published={}) for c in ('current','fixed')}
+            for count in range(1,max(a['bounds'].values())+1):
+                prefixes+=1;rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+                self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis[:-1])])
+                for contract,pens in (('current',bis),('fixed',bis[:-1])):
+                    if count>a['bounds'][contract]:continue
+                    total+=1;clock=a['contracts'][contract];p=tool.components(rows,pens,10 if key=='G' else None)
+                    ready=[manual_xd_certificate_ready(p,e) for e in base['events']]
+                    self.assertEqual(ready,[at<=count for at in clock['local']])
+                    size=next((i for i,ok in enumerate(ready) if not ok),len(ready))
+                    self.assertEqual(size,sum(at<=count for at in clock['published']))
+                    for kind,indices in (('local',[i for i,ok in enumerate(ready) if ok]),('published',range(size))):
+                        for i in indices:
+                            if i in seen[contract][kind]:continue
+                            seen[contract][kind][i]=count;b=p[base['events'][i][3]]
+                            expected=clock['local_proofs' if kind=='local' else 'publication_proofs'][i]
+                            self.assertEqual((count,b['end_ticks'],b['end_dt'],contract=='current' and base['events'][i][3]==len(p)-1),(clock[kind][i],)+expected)
+            for contract,clock in a['contracts'].items():
+                for kind in ('local','published'):self.assertEqual(tuple(seen[contract][kind][i] for i in range(len(base['events']))),clock[kind])
+                self.assertEqual(clock['published'],tuple(max(clock['local'][:i+1]) for i in range(len(base['events']))))
+                self.assertEqual(clock['f1_first'],tuple(clock['published'][s[-1]] for s in base['f1']))
+                self.assertEqual(clock['f1_evidence'],tuple(sum(v<=at for v in clock['published']) for at in clock['f1_first']))
+            self.assertEqual(a['contracts']['fixed']['local'],tuple(u[-2] for u in base['units']))
+            self.assertEqual(a['contracts']['fixed']['published'],tuple(u[-1] for u in base['units']))
+        self.assertEqual((prefixes,total),(1762,3432))
+
+    def test_gx_recursive_integer_roles_do_not_borrow_preformation_tails_or_confirm_open_leaves(self):
+        tool=compiler()
+        for key in ('G','X1'):
+            a,base,_,_,units=self._gx_clock_source(key)
+            for spec in base['f1']+(base['tail'],):tool.move_record(units,spec)
+            tool.move_record(units,a['auto'])
+            for j,(start,formed,last) in enumerate(a['spans']):
+                lo,hi=a['auto'][5][j]
+                self.assertEqual((max(u['low_ticks'] for u in units[start:formed+1]),min(u['high_ticks'] for u in units[start:formed+1])),(lo,hi))
+                self.assertTrue(all(u['low_ticks']<=hi and u['high_ticks']>=lo for u in units[formed+1:last+1]))
+                if last+1<len(units):self.assertTrue(units[last+1]['low_ticks']>hi or units[last+1]['high_ticks']<lo)
+            self.assertIsNone(a['auto'][-1])
+            if key=='G':
+                self.assertEqual(units[1]['direction'],'down')
+                self.assertFalse(any(units[i]['direction']=='down' for i in range(a['spans'][0][1],a['spans'][0][2]+1)))
+                self.assertEqual(a['reasons'][5:],('no_comparable_center_tail',)*2)
+                self.assertFalse(a['candidates'])
+            else:
+                for size,c in a['candidates'].items():
+                    ends=[next(i for i in range(last,formed-1,-1) if units[i]['direction']=='down') for _,formed,last in ((0,2,7),(8,10,size-1))]
+                    self.assertEqual(ends,[6,10 if size==12 else 12])
+                    self.assertEqual((tuple(range(ends[0]+1,8)),tuple(range(ends[1]+1,size))),(c['reference'],c['leave']))
+                    self.assertEqual(min(u['low_ticks'] for u in units[8:ends[1]+1])-max(u['high_ticks'] for u in units[:ends[0]+1]),c['gap'])
+                    self.assertEqual((max(u['high_ticks'] for u in units[:ends[1]+1]),max(units[i]['high_ticks'] for i in c['leave'])),(c['prior_high'],c['leave_high']))
+                    self.assertLess(c['leave_high'],c['prior_high'])
+                self.assertEqual(a['reasons'][10:],('no_compare_legs','trend_open','no_compare_legs','trend_open'))
+                self.assertEqual(base['f1'][2][2:4],('consolidation','down'))
+                self.assertGreater(units[9]['end_ticks'],units[6]['start_ticks'])
+
+    def test_gx_inventory_caps_and_candidate_epochs_keep_actual_batches_distinct_from_finite_sizes(self):
+        for key in ('G','X1'):
+            a,base,case,_,_=self._gx_clock_source(key)
+            expected=((15,'all_current',267),(16,'fixed_without_active',267)) if key=='G' else ((57,'all_current',1403),(58,'fixed_without_active',1495))
+            self.assertEqual(a['impact_contracts'],expected)
+            self.assertEqual(a['source_rows'],len(case['raw_rows']))
+            self.assertFalse(a['production_merged']);self.assertFalse(a['source_origin_bridge_proven'])
+            for contract,clock in a['contracts'].items():
+                sizes={sum(at<=n for at in clock['published']) for n in range(1,a['bounds'][contract]+1)}
+                self.assertEqual(clock['candidate_raw'],tuple((size,clock['published'][size-1]) for size in a['candidates']))
+                if key=='G':self.assertEqual(sizes,{0,1,2,4,6,7})
+                else:
+                    self.assertEqual(sizes,set(range(15))-{8,9,10})
+                    self.assertEqual(clock['published'][7:11],(1126,)*4 if contract=='current' else (1138,)*4)
+                    self.assertEqual(clock['candidate_raw'],((12,1157),(14,1393)) if contract=='current' else ((12,1165),(14,1403)))
+                    self.assertEqual(clock['published'][12],1275 if contract=='current' else 1285)
+                    self.assertEqual(tuple(e[3] for e in base['events'][7:11]),(84,74,81,84))
+            if key=='X1':
+                self.assertEqual(a['bounds']['fixed']-a['bounds']['current'],92)
+                active=a['contracts']['current']
+                self.assertEqual((active['local_proofs'][9][0],active['publication_proofs'][9][0]),(2100,2079))
+                self.assertEqual((active['publication_proofs'][7][0],a['contracts']['fixed']['publication_proofs'][7][0]),(2247,2320))
+            else:
+                active=a['contracts']['current'];fixed=a['contracts']['fixed']
+                self.assertEqual((active['publication_proofs'][1][0],fixed['publication_proofs'][1][0]),(845,1185))
+                self.assertEqual((active['publication_proofs'][4][0],fixed['publication_proofs'][4][0]),(1024,1039))
+
+
 
 if __name__ == '__main__':
     unittest.main()
