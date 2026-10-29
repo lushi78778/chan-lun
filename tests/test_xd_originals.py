@@ -26,6 +26,17 @@ def records(xds):
     return [[x.start_index, x.end_index, x.mode, x.complete] for x in xds]
 
 
+# 首三笔交集退化为起价；同向合法端点后到时不能恢复已跳过的种子。
+SEED_TOUCH_WAIT_CASES = (
+    (100, 102, 99, 100, 88, 89, 79, 87, 79, 82, 65, 83, 67, 86, 85, 96, 89, 104, 93, 105, 96, 113, 103, 106, 102, 109, 103, 118, 112, 129, 114, 125, 116),
+    (100, 103, 84, 100, 86, 88, 81, 89, 81, 92, 89, 97, 81, 85, 78, 92, 90, 109, 103, 120, 119, 135, 118, 130, 110, 113, 104, 120, 104, 105, 99, 101, 91),
+    (100, 101, 94, 100, 89, 90, 77, 91, 84, 98, 92, 111, 106, 108, 93, 109, 90, 91, 77, 79, 60, 79, 74, 79, 63, 71, 54, 58, 57, 72, 65, 82, 80),
+    (100, 111, 98, 100, 84, 85, 71, 84, 65, 77, 71, 83, 74, 82, 81, 87, 82, 87, 76, 96, 80, 84, 83, 90, 85, 94, 79, 95, 94, 101, 93, 108, 106),
+    (100, 114, 98, 100, 92, 97, 82, 90, 80, 96, 85, 93, 81, 95, 93, 95, 84, 91, 84, 95, 79, 89, 79, 82, 76, 95, 89, 98, 82, 102, 82, 85, 74),
+    (100, 103, 96, 100, 90, 99, 81, 96, 95, 100, 80, 97, 95, 114, 102, 121, 103, 108, 98, 110, 100, 108, 106, 119, 107, 114, 108, 121, 109, 119, 115, 117, 99),
+)
+
+
 class TestOriginalXD(unittest.TestCase):
     def test_78_editorial_twelve_figures_use_author_rules(self):
         """课78 PDF611/612: 十二编者补图覆盖, 实用提前选向不入核心。
@@ -325,3 +336,31 @@ class TestOriginalXD(unittest.TestCase):
         self.assertEqual(len(second), 2)
         self.assertTrue(second[0].complete)
         self.assertFalse(second[1].complete)
+
+
+    def test_touching_seed_waits_without_retracting_a_later_completed_chain(self):
+        """课78顶高于底；首三笔触沿只给零净位移，不能从未来选回原起点。"""
+        for original in SEED_TOUCH_WAIT_CASES:
+            for values in (original,tuple(1000-v for v in original)):
+                bis=strokes(values);up=bis[0].direction=='up'
+                self.assertEqual(max(b.low for b in bis[:3]),min(b.high for b in bis[:3]))
+                self.assertEqual(bis[2].end_value,bis[0].start_value)
+                legal=next(i+1 for i in range(2,len(bis),2) if (bis[i].end_value>bis[0].start_value if up else bis[i].end_value<bis[0].start_value))
+                previous=[]
+                for count in range(3,len(bis)+1):
+                    result=find_xds(bis[:count])
+                    if count<legal:self.assertEqual(result,[])
+                    elif result:self.assertEqual(result[0].start_index,0)
+                    completed=[x.to_dict() for x in result if x.complete]
+                    self.assertEqual(completed[:len(previous)],previous)
+                    previous=completed
+                    for x in result:self.assertTrue(x.end_value>x.start_value if x.direction=='up' else x.end_value<x.start_value)
+
+    def test_nonoverlapping_initial_triple_still_searches_a_later_seed(self):
+        """无交集与有交集但待定不同；前者仍按既有规则略过起始残笔。"""
+        for values in ((100,110,90,95,80),tuple(1000-v for v in (100,110,90,95,80))):
+            bis=strokes(values)
+            self.assertGreater(max(b.low for b in bis[:3]),min(b.high for b in bis[:3]))
+            result=find_xds(bis)
+            self.assertEqual(len(result),1);self.assertEqual(result[0].start_index,1)
+            self.assertFalse(result[0].complete)

@@ -255,7 +255,9 @@ def find_xds(bis: List[BI]) -> List[XD]:
 
     输入是按顺序首尾衔接的交替笔; 仅消费给定前缀。不足三笔或
     首三笔无重叠不输出伪线段; 若窗口从趋势中间开始, 向后寻找最早
-    三笔重叠起点, 不保证覆盖前面的残笔。末段complete=False。
+    三笔重叠起点, 不保证覆盖前面的残笔。首三笔已重叠但尚无严格
+    同向末端时等待后续证据, 不跳过该种子后再从未来恢复。末段
+    complete=False。
     complete=True是当前工程规则在给定前缀上的完成状态; 特殊回退
     不替代其所需上下文证明, 也不证明输入笔在端点日已最终确认。
     evidence_dt是最后证据笔的端点,
@@ -295,14 +297,13 @@ def find_xds(bis: List[BI]) -> List[XD]:
         ending = _segment_end(bis, start)
         if ending is None:
             # 未完成段保留已达到的同向极值, 不用回落后的同向笔反转方向。
-            # 最少三笔且顶须高于底(课78); 不满足的起始残笔继续向后搜索。
+            # 最少三笔且顶须高于底(课78); 触沿净位移为零时等待, 不改换种子。
             eligible = [j for j in range(start+2, len(bis), 2)
                         if (bis[j].end_value > bis[start].start_value
                             if bis[start].direction == "up" else
                             bis[j].end_value < bis[start].start_value)]
             if not eligible:
-                start += 1
-                continue
+                break
             end = (max(eligible, key=lambda j: bis[j].end_value)
                    if bis[start].direction == "up" else
                    min(eligible, key=lambda j: bis[j].end_value))
