@@ -3416,6 +3416,76 @@ class TestRealXdF1Assets(unittest.TestCase):
             self.assertEqual(a['attempts']['R'][0],('sell3',22,23,25,1048,'before_center_known'))
         self.assertEqual(a['attempts']['N'][0],('sell3',32,33,0,1139,'before_center_known'))
 
+    def _e_consumers_source(self):
+        a=embedded_table('test_real_xd_f1.py','M3_E_CONSUMERS_AUDIT');old=M3_ADDITIONAL_CONSUMERS_AUDIT['E']
+        self.assertEqual((a['id'],a['fixture_sha256'],a['prior_event_receipt_sha256']),
+                         (old['id'],old['fixture_sha256'],old['receipt_sha256']))
+        self.assertEqual(a['events'],old['events'])
+        path=ROOT/'tests/fixtures'/a['fixture'];self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),a['fixture_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==a['id']);tool=compiler();_,_,bis=tool.foundation(case['raw_rows'],'106')
+        self.assertEqual(tool.records(bis),case['foundation_106']['bis'])
+        parts=tool.components(case['raw_rows'],bis,10);units=tool.xd_records(parts,a['events'])
+        fields=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        self.assertEqual([tuple(u[k] for k in fields) for u in units],[u[:9] for u in a['units']])
+        return a,old,case,parts,units
+
+    def test_e_given_events_and_consumer_proofs_use_every_actual_daily_prefix(self):
+        a,old,case,_,_=self._e_consumers_source();tool=compiler();clocks=dict(current=a['current_counts'],fixed=tuple(u[-1] for u in a['units']))
+        first={k:{} for k in clocks};evidence={k:{} for k in clocks};total=0
+        for count in range(1,301):
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+            self.assertEqual(tool.records(bis[:-1]),case['foundation_106']['bis'][:len(bis[:-1])])
+            for contract,pens in (('current',bis),('fixed',bis[:-1])):
+                total+=1;p=tool.components(rows,pens,10);ready=[manual_xd_certificate_ready(p,e) for e in a['events']]
+                self.assertEqual(ready,[at<=count for at in clocks[contract]])
+                size=next((i for i,ok in enumerate(ready) if not ok),8)
+                for j,spec in enumerate(a['f1']):
+                    if size>spec[-1] and j not in first[contract]:first[contract][j]=count;evidence[contract][j]=size
+                for i,at in enumerate(clocks[contract]):
+                    if count==at:
+                        proof=a['events'][i][3];b=p[proof]
+                        self.assertEqual((b['end_ticks'],b['end_dt'],contract=='current' and proof==len(p)-1),a['publication_proofs'][contract][i])
+        self.assertEqual(total,600)
+        for contract in clocks:
+            self.assertEqual(tuple(first[contract][i] for i in (0,1)),a['f1_first'][contract])
+            self.assertEqual(tuple(evidence[contract][i] for i in (0,1)),a['f1_evidence'][contract])
+        self.assertEqual(a['current_counts'],old['published_counts']['all_current'])
+
+    def test_e_same_cores_do_not_reuse_legacy_proof_or_mix_recursive_wave_roles(self):
+        a,_,case,_,units=self._e_consumers_source();tool=compiler();strict=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        for spec in a['f1']:tool.move_record(units,spec)
+        legacy=case['paths']['xd-106'];self.assertEqual(legacy['completed'][0]['confirmed_raw_count'],175)
+        self.assertEqual(a['f1_first']['fixed'][0],204)
+        self.assertEqual(tuple(legacy['units'][3][k] for k in ('mode','proof_bi','end_ticks')),a['legacy_mode_proof_end'])
+        self.assertEqual(tuple(units[3][k] for k in ('mode','proof_bi','end_ticks')),a['new_mode_proof_end'])
+        self.assertEqual([r['centers_ticks'] for r in legacy['completed']],[[[695,737]],[[887,1017]]])
+        for start,formed,last,lo,hi in a['auto_centers']:
+            self.assertEqual((max(u['low_ticks'] for u in units[start:formed+1]),min(u['high_ticks'] for u in units[start:formed+1])),(lo,hi))
+            self.assertTrue(all(u['low_ticks']<=hi and u['high_ticks']>=lo for u in units[formed+1:last+1]))
+        # 递归完整覆盖范围0..3/4..7与严格接口回抽尾2/6的窗口分别保留。
+        waves=[(min(u['low_ticks'] for u in group),max(u['high_ticks'] for u in group)) for group in (units[:4],units[4:])]
+        self.assertEqual(min(hi for lo,hi in waves)-max(lo for lo,hi in waves),a['auto_wave_overlap'])
+        centers=strict.validate_roles(dict(trend=dict(direction='up',status='ongoing'),roles=a['strict_roles']),units)
+        self.assertEqual(centers['B']['dd']-centers['A']['gg'],a['strict_gap_ticks'])
+        self.assertEqual((max(u['high_ticks'] for u in units[:7]),units[7]['high_ticks']),(a['strict_prior_high'],a['strict_c_high']))
+        self.assertLess(a['strict_c_high'],a['strict_prior_high'])
+        self.assertEqual((a['strict_roles']['b']['unit'],a['strict_roles']['c']['unit']),(3,7))
+        self.assertIsNone(a['strict_roles']['proof'])
+
+    def test_e_simultaneous_XD_proofs_skip_finite_candidate_only_sizes(self):
+        a,_,case,_,_=self._e_consumers_source();tool=compiler()
+        self.assertEqual(a['impact_contracts'],((9,'all_current',300),(10,'fixed_without_active',300)))
+        self.assertEqual(a['impact_snapshot_sha256'],'7414303cf5ed9e7dc1c62c565c4e69009baeb996da4de200b4b3a9e058f5972e')
+        for clock in (a['current_counts'],tuple(u[-1] for u in a['units'])):
+            sizes={sum(v<=n for v in clock) for n in range(1,301)}
+            self.assertEqual(sizes,{0,1,2,3,5,7,8})
+            self.assertEqual((clock[3],clock[5]),(clock[4],clock[6]))
+            self.assertNotIn(4,sizes);self.assertNotIn(6,sizes)
+        for count in (298,299,300):
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106');p=tool.components(rows,bis,10)
+            self.assertEqual(bool(len(p)>34 and p[34]['end_ticks']<p[33]['start_ticks']),count>=299)
+            for pens in (p,p[:-1]):self.assertTrue(all(manual_xd_certificate_ready(pens,e) for e in a['events']))
+
 
 if __name__ == '__main__':
     unittest.main()

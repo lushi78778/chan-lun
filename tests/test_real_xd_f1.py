@@ -3385,5 +3385,198 @@ class TestM2CausalThirdLifecycle(unittest.TestCase):
                 self.assertEqual(chan.find_third_points(delayed+[future],[context,future_context],late),[point])
 
 
+# E长日线窗给定seed0的双合同消费者；不复用旧首见时钟或源起点理论资格。
+M3_E_CONSUMERS_AUDIT = {'certificate_sha256': '88fec023f9df48631a9720f3a8f604c30dc90fc60bdfacc79eff02bc09470533',
+ 'auto': (0, 7, 'up', 'up', (0, 4), ((695, 737), (887, 1017)), None),
+ 'auto_centers': ((0, 2, 3, 695, 737), (4, 6, 7, 887, 1017)),
+ 'auto_leave': (7,),
+ 'auto_reasons': ('not_two_separated_centers',
+                  'not_two_separated_centers',
+                  'not_two_separated_centers',
+                  'not_two_separated_centers',
+                  'not_two_separated_centers',
+                  'not_two_separated_centers',
+                  'no_compare_legs',
+                  'trend_open'),
+ 'auto_reference': (3,),
+ 'auto_wave_overlap': 314,
+ 'complete_F2': 0,
+ 'current_counts': (57, 84, 113, 200, 200, 255, 255, 279),
+ 'events': ((0, 2, 1, 5),
+            (3, 5, 1, 8),
+            (6, 8, 1, 11),
+            (9, 11, 2, 23),
+            (12, 20, 1, 23),
+            (21, 23, 2, 29),
+            (24, 26, 1, 29),
+            (27, 29, 1, 32)),
+ 'f1': ((0, 2, 'consolidation', None, (0,), ((695, 737),), 3),
+        (3, 5, 'consolidation', None, (3,), ((887, 1017),), 6)),
+ 'f1_evidence': {'current': (5, 7), 'fixed': (5, 7)},
+ 'f1_first': {'current': (200, 255), 'fixed': (204, 264)},
+ 'f2': (0, 1, 'incomplete', None, (), (), None),
+ 'fixture': 'real_f1_originals.json',
+ 'fixture_sha256': '7c8408bf8beaf9f9c492460cb00353856c15dec56951a310de8522b1db9b5d29',
+ 'id': '512880-day-2018-08-24-2019-11-20',
+ 'impact_contracts': ((9, 'all_current', 300), (10, 'fixed_without_active', 300)),
+ 'impact_snapshot_sha256': '7414303cf5ed9e7dc1c62c565c4e69009baeb996da4de200b4b3a9e058f5972e',
+ 'legacy_first_raw': 175,
+ 'legacy_mode_proof_end': (1, 18, 1153),
+ 'new_mode_proof_end': (2, 23, 1185),
+ 'prior_event_receipt_sha256': 'd55126633a153c0c0b9948c2c33b5184d6393f848eb94c7516116e0476d5dc8d',
+ 'production_merged': False,
+ 'publication_proofs': {'current': ((842, '2018-11-19', True),
+                                    (695, '2018-12-26', True),
+                                    (845, '2019-02-14', True),
+                                    (1017, '2019-06-24', True),
+                                    (1017, '2019-06-24', True),
+                                    (1024, '2019-09-09', True),
+                                    (1024, '2019-09-09', True),
+                                    (913, '2019-10-21', True)),
+                        'fixed': ((842, '2018-11-19', False),
+                                  (695, '2018-12-26', False),
+                                  (1185, '2019-03-07', False),
+                                  (1017, '2019-06-24', False),
+                                  (1017, '2019-06-24', False),
+                                  (1039, '2019-09-16', False),
+                                  (1039, '2019-09-16', False),
+                                  (913, '2019-10-21', False))},
+ 'scope': 'E_given_seed0_full300_consumers_not_source_theory_proof',
+ 'seed': 0,
+ 'source_origin_bridge_proven': False,
+ 'strict_c_high': 1039,
+ 'strict_gap_ticks': 29,
+ 'strict_prior_high': 1185,
+ 'strict_roles': {'A': {'closed_by': 4,
+                        'core_basis': 'three_units',
+                        'dd': 613,
+                        'gg': 842,
+                        'zd': 695,
+                        'zg': 737,
+                        'zn': (0, 2)},
+                  'B': {'closed_by': None,
+                        'core_basis': 'three_units',
+                        'dd': 871,
+                        'gg': 1185,
+                        'zd': 887,
+                        'zg': 1017,
+                        'zn': (4, 6)},
+                  'C': None,
+                  'a': None,
+                  'b': {'unit': 3},
+                  'c': {'outcome': 'departed', 'unit': 7},
+                  'gap_ticks': 29,
+                  'merge': None,
+                  'proof': None},
+ 'tail': (6, 7, 'incomplete', None, (), (), None),
+ 'units': (('down', '2018-08-28', '2018-10-19', 737, 613, 613, 737, 1, 5, 63, 63),
+           ('up', '2018-10-19', '2018-11-19', 613, 842, 613, 842, 1, 8, 90, 90),
+           ('down', '2018-11-19', '2018-12-26', 842, 695, 695, 842, 1, 11, 134, 134),
+           ('up', '2018-12-26', '2019-03-07', 695, 1185, 695, 1185, 2, 23, 204, 204),
+           ('down', '2019-03-07', '2019-05-24', 1185, 887, 887, 1185, 1, 23, 204, 204),
+           ('up', '2019-05-24', '2019-06-24', 887, 1017, 887, 1017, 2, 29, 264, 264),
+           ('down', '2019-06-24', '2019-08-07', 1017, 871, 871, 1017, 1, 29, 264, 264),
+           ('up', '2019-08-07', '2019-09-16', 871, 1039, 871, 1039, 1, 32, 292, 292))}
+
+
+def e_consumer_input(contract):
+    """E日线午夜标签与15:05可用约定分开；不改原始fixture或旧XD声明。"""
+    a=M3_E_CONSUMERS_AUDIT;case,units=gap_revision_input(a)
+    if contract=='current':
+        for u,count in zip(units,a['current_counts']):u.update(local_raw_count=count,confirmed_raw_count=count)
+    rows=m3_xd_rows(dict(raw_rows=[dict(r,dt=r['dt'][:10]) for r in case['raw_rows']]))
+    root='E-given0:'+contract+':'+a['certificate_sha256']
+    given=[chan.ConfirmedMove(root+':xd:'+str(i),'given-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),
+           u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,
+           gap_revision_time(case,u['confirmed_raw_count'])) for i,u in enumerate(units)]
+    return case,units,a,rows,given
+
+
+class TestEConditionalConsumers(unittest.TestCase):
+    """原变化清单E两条合同：给定8段的同级F1与开放递归消费者。"""
+
+    @staticmethod
+    def _types(case,units,a,contract,arrivals=None):
+        arrivals=arrivals or [gap_revision_time(case,u['confirmed_raw_count']) for u in units];types=[]
+        for spec in a['f1']:
+            known=max(arrivals[:spec[-1]+1]);width=sum(at<=known for at in arrivals)
+            move=next(m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units[:width]),300))
+                      if m.complete and m.seg_start==spec[0])
+            types.append(m3_xd_type('E-given0:'+contract+':'+a['certificate_sha256'],move,units[:width],known))
+        return types
+
+    def test_daily_prefixes_freeze_two_F1_and_whole_arrival_batches(self):
+        for contract in ('current','fixed'):
+            case,units,a,rows,_=e_consumer_input(contract);first={};types=[]
+            self.assertEqual((rows[0]['closed_dt'].hour,rows[0]['available_dt'].hour,rows[0]['available_dt'].minute),(15,15,5))
+            for count in range(1,301):
+                visible=[u for u in units if u['confirmed_raw_count']<=count]
+                done=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),count)) if m.complete]
+                expected=[s for s in a['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+                self.assertEqual([m3_xd_shape(m) for m in done],[m3_xd_expected(units,s) for s in expected])
+                for m in done:
+                    if m.seg_start not in first:
+                        first[m.seg_start]=count;types.append(m3_xd_type('E-given0:'+contract+':'+a['certificate_sha256'],m,visible,rows[count-1]['available_dt']))
+                self.assertEqual(chan.confirm_level_up(types,rows[count-1]['available_dt'],'F2'),[])
+            self.assertEqual(tuple(first[s[0]] for s in a['f1']),a['f1_first'][contract])
+            self.assertEqual(tuple(len(t.evidence_ids) for t in types),a['f1_evidence'][contract])
+            self.assertEqual((round(types[0].low*1000),round(types[0].high*1000),len(types[0].evidence_ids)),(613,842,5))
+            self.assertEqual(m3_xd_shape(chan.same_level_decompose(m3_xd_parts(dict(units=units),300))[-1]),m3_xd_expected(units,a['tail']))
+            records=[dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),high_ticks=round(t.high*1000)) for t in types]
+            self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],[m3_xd_expected(records,a['f2'])])
+            now=rows[-1]['available_dt'];self.assertFalse(chan.scan_first_points(types,rows,now,'F2').points)
+            self.assertFalse(any(chan.analyze_point_chain(types,rows,now,'F2')))
+            self.assertEqual(case['paths']['xd-106']['completed'][0]['confirmed_raw_count'],a['legacy_first_raw'])
+            self.assertNotEqual(a['legacy_first_raw'],a['f1_first']['fixed'][0])
+
+    def test_open_recursive_candidate_has_explicit_b_c_and_never_evaluates_force(self):
+        def forbidden(a,b):raise AssertionError('开放候选不得评估力度')
+        for contract in ('current','fixed'):
+            _,units,a,rows,given=e_consumer_input(contract);candidate=None
+            sizes=list(range(1,9))+[sum(u['confirmed_raw_count']<=n for u in units) for n in range(1,301)]
+            for size in sizes:
+                if not size:continue
+                now=given[size-1].confirmed_dt;scan=chan.scan_strict_divergence(given[:size],now,'auto-E-F1',forbidden,'guard')
+                self.assertEqual(scan.completed_types,0)
+                if size<8:
+                    self.assertEqual((scan.results,tuple(r for _,r in scan.skipped)),((),(a['auto_reasons'][size-1],)))
+                else:
+                    r,=scan.results
+                    self.assertEqual((r.status,r.reason,r.kind),('candidate','trend_open','sell1'))
+                    self.assertEqual(tuple(int(k.rsplit(':',1)[1]) for k in r.reference_ids),a['auto_reference'])
+                    self.assertEqual(tuple(int(k.rsplit(':',1)[1]) for k in r.leave_ids),a['auto_leave'])
+                    self.assertEqual(tuple(round(v*1000) for v in r.center_range),(887,1017))
+                    self.assertEqual(dict(r.conditions),dict(trend=None,separated_centers=True,new_extreme=None,leave_third_point=None))
+                    self.assertEqual((r.force_method,r.force_reference,r.force_leave),(None,None,None))
+                    if candidate is not None:self.assertEqual(r,candidate)
+                    candidate=r
+                first=chan.scan_first_points(given[:size],rows,now,'auto-E-F1')
+                self.assertEqual((first.points,first.exclusions,first.completed_types),([],(),0))
+            self.assertEqual(m3_xd_shape(chan.level_up(given)[0]),m3_xd_expected(units,a['auto']))
+            self.assertEqual(candidate.confirmed_dt,given[7].confirmed_dt)
+            self.assertFalse(any(chan.analyze_point_chain(given,rows,rows[-1]['available_dt'],'auto-E-F1')))
+
+    def test_late_proof_batches_delay_F1_and_candidate_without_future_price_reads(self):
+        for contract in ('current','fixed'):
+            case,units,a,rows,given=e_consumer_input(contract);base=self._types(case,units,a,contract)
+            arrivals=[m.confirmed_dt for m in given]
+            for proof in (3,6):
+                delayed=list(arrivals);late=arrivals[proof]+timedelta(days=1);delayed[proof]=late
+                for i in range(proof+1,8):delayed[i]=max(arrivals[i],delayed[i-1])
+                types=self._types(case,units,a,contract,delayed);target=0 if proof==3 else 1
+                self.assertEqual(types[target].confirmed_dt,late)
+                self.assertEqual(len(types[target].evidence_ids),5 if proof==3 else 7)
+                self.assertEqual(len([t for t in types if t.confirmed_dt<late]),target)
+                if target:self.assertEqual(types[0],base[0])
+            late=given[7].confirmed_dt+timedelta(days=1);delayed=list(given);delayed[7]=given[7]._replace(confirmed_dt=late)
+            before=chan.scan_strict_divergence(delayed,late-timedelta(microseconds=1),'auto-E-F1')
+            self.assertEqual((before.results,tuple(r for _,r in before.skipped)),((),('no_compare_legs',)))
+            after=chan.scan_strict_divergence(delayed,late,'auto-E-F1');r,=after.results
+            self.assertEqual((r.status,r.confirmed_dt),('candidate',late))
+            future=given[-1]._replace(move_id=None,level=None,low=float('nan'),confirmed_dt=late+timedelta(days=10))
+            self.assertEqual(chan.scan_strict_divergence(delayed+[future],late,'auto-E-F1'),after)
+            self.assertFalse(any(chan.analyze_point_chain(delayed+[future],rows,late,'auto-E-F1')))
+
+
 if __name__ == '__main__':
     unittest.main()
