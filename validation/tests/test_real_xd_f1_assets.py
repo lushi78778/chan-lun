@@ -389,7 +389,8 @@ def manual_xd_certificate_ready(parts, event):
     return manual_feature_fractal(second[-3:],not up) and (canceled is None or canceled>=proof)
 
 
-def manual_natural_reaction_state(parts, seen, observed, owner, first, predecessor, reaction):
+def manual_natural_reaction_state(parts, seen, observed, owner, first, predecessor, reaction,
+                                  origin=None):
     """课71/78给定证书的独立时序参考；不搜索分界或调用包识别器。
 
     parts只含当前可用固定笔，seen逐笔记录实际可见计数；observed与
@@ -405,6 +406,11 @@ def manual_natural_reaction_state(parts, seen, observed, owner, first, predecess
     仅凭相同数值或索引把其他路径的条件证书移来使用。
     proposed_boundary=(起笔,假设分界后起笔)只绑定待证前驱；即使只含
     一笔也不能省略成未知前史，更不能携带已发布计数冒充完成线段。
+    origin为另行声明的起点前提，不能和前驱证书混用。anchor绑定
+    (owner,方向,起价)，available_count与seen使用同一时钟。显式
+    no_prior_history仅适用于输入首笔，声明可见后可代替不存在的前驱；
+    given_recent只给出选定边界，不证明前驱破坏。两者都不由缺少
+    前史数据推断，条件的真实性由输入方另证。此函数不生成XD链。
     """
     if len(parts)!=len(seen) or not parts or any(a>b for a,b in zip(seen,seen[1:])):
         raise ValueError('可见固定笔与到达计数须逐项对应且有序')
@@ -413,6 +419,34 @@ def manual_natural_reaction_state(parts, seen, observed, owner, first, predecess
     if parts[owner]['direction']==parts[first]['direction']:
         raise ValueError('首反向笔须与原段反向')
     qualification, identity, prior_count = 'unknown', None, None
+    origin_status, origin_identity = None, None
+    if origin is not None:
+        if (not isinstance(origin,dict) or
+                set(origin)!=set(('basis','anchor','available_count'))):
+            raise ValueError('起点前提须仅含basis/anchor/available_count')
+        if predecessor is not None:
+            raise ValueError('起点前提不能代替或混入前驱证书')
+        basis,anchor,count = origin['basis'],origin['anchor'],origin['available_count']
+        if basis not in ('unknown','no_prior_history','given_recent'):
+            raise ValueError('起点前提须区分未知、无前史和给定近期起点')
+        if (not isinstance(anchor,(list,tuple)) or len(anchor)!=3 or
+                isinstance(anchor[0],bool) or not isinstance(anchor[0],int) or
+                isinstance(anchor[2],bool) or
+                tuple(anchor)!=(owner,parts[owner]['direction'],parts[owner]['start_ticks'])):
+            raise ValueError('起点前提与owner方向及起价不一致')
+        if basis=='unknown':
+            if count is not None:
+                raise ValueError('未知前史不能携带已知计数')
+            origin_status = 'unknown'
+        else:
+            if isinstance(count,bool) or not isinstance(count,int) or count<0:
+                raise ValueError('起点前提到达计数须为非负整数')
+            origin_status = 'visible' if count<=observed else 'waiting'
+        if basis=='no_prior_history':
+            if owner!=0:
+                raise ValueError('无前史仅可声明输入首笔，不可抹去已给前史')
+            qualification,prior_count = origin_status,count
+        origin_identity = (basis,tuple(anchor),count)
     if predecessor is not None:
         if 'proposed_boundary' in predecessor:
             a,stop = predecessor['proposed_boundary']
@@ -461,8 +495,11 @@ def manual_natural_reaction_state(parts, seen, observed, owner, first, predecess
         local_count,local_proof,state = None,None,'pending'
     published = (max(prior_count,local_count) if qualification=='visible' and
                  local_count is not None else None)
-    return dict(qualification=qualification,state=state,local_proof=local_proof,
-                local_count=local_count,published_count=published,predecessor=identity)
+    result = dict(qualification=qualification,state=state,local_proof=local_proof,
+                  local_count=local_count,published_count=published,predecessor=identity)
+    if origin is not None:
+        result.update(origin=origin_identity,origin_status=origin_status)
+    return result
 
 
 def manual_natural_successor_certificate(parts, seen, observed, audit, predecessor):
@@ -1719,6 +1756,83 @@ class TestRealXdF1Assets(unittest.TestCase):
         late = manual_natural_reaction_state(parts,seen,116,3,6,
             dict(event=(0,2,1,5),published_count=110),(7,9,1,16))
         self.assertEqual((late['qualification'],late['published_count']),('visible',116))
+
+    def test_origin_premises_separate_known_absence_from_a_given_recent_boundary(self):
+        """同一局部证书下，仅给定起点不补前驱；无前史为另行声明的条件。"""
+        values = M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'][3:]
+        for mirrored in (False,True):
+            parts = self._natural_parts([3000-v for v in values] if mirrored else values)
+            anchor = (0,parts[0]['direction'],parts[0]['start_ticks'])
+            seen = list(range(103,117))
+            legacy = manual_natural_reaction_state(parts,seen,116,0,3,None,(4,6,1,13))
+            for basis in ('unknown','given_recent','no_prior_history'):
+                origin = dict(basis=basis,anchor=anchor,
+                              available_count=None if basis=='unknown' else 103)
+                r = manual_natural_reaction_state(parts,seen,116,0,3,None,(4,6,1,13),origin)
+                self.assertEqual((r['state'],r['local_proof'],r['local_count']),
+                                 ('confirmed_without_start_break',13,116))
+                self.assertEqual(r['qualification'],'visible' if basis=='no_prior_history' else 'unknown')
+                self.assertEqual(r['published_count'],116 if basis=='no_prior_history' else None)
+                self.assertEqual(r['origin_status'],'unknown' if basis=='unknown' else 'visible')
+                self.assertIsNone(r['predecessor'])
+            self.assertEqual((legacy['qualification'],legacy['published_count']),('unknown',None))
+
+    def test_origin_arrival_delays_publication_without_retiming_local_proof(self):
+        """起点声明晚到不回填历史，也不能让给定近期起点自动取得前驱资格。"""
+        parts = self._natural_parts(M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'][3:])
+        seen = list(range(103,117))
+        anchor = (0,parts[0]['direction'],parts[0]['start_ticks'])
+        for basis in ('no_prior_history','given_recent'):
+            for observed in (116,199,200):
+                origin = dict(basis=basis,anchor=anchor,available_count=200)
+                r = manual_natural_reaction_state(parts,seen,observed,0,3,None,(4,6,1,13),origin)
+                self.assertEqual((r['local_proof'],r['local_count']),(13,116))
+                self.assertEqual(r['origin_status'],'visible' if observed==200 else 'waiting')
+                self.assertEqual(r['published_count'],200 if basis=='no_prior_history' and observed==200 else None)
+
+    def test_origin_premises_reject_mismatched_anchors_and_fabricated_predecessors(self):
+        """声明不能换起点、抹去已给前史，或夹带完成/发布字段。"""
+        parts = self._natural_parts(M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'][3:])
+        seen = list(range(103,117))
+        anchor = (0,parts[0]['direction'],parts[0]['start_ticks'])
+        invalid = [dict(basis='unknown',anchor=anchor,available_count=103),
+                   dict(basis='no_prior_history',anchor=(False,anchor[1],anchor[2]),available_count=103),
+                   dict(basis='no_prior_history',anchor=(0,'up',anchor[2]),available_count=103),
+                   dict(basis='no_prior_history',anchor=(0,anchor[1],anchor[2]+1),available_count=103),
+                   dict(basis='no_prior_history',anchor=anchor,available_count=True),
+                   dict(basis='no_prior_history',anchor=anchor,available_count=-1),
+                   dict(basis='no_prior_history',anchor=anchor,available_count=103,published_count=103)]
+        for origin in invalid:
+            with self.subTest(origin=origin),self.assertRaises(ValueError):
+                manual_natural_reaction_state(parts,seen,116,0,3,None,(4,6,1,13),origin)
+        full = self._natural_parts(M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'])
+        origin = dict(basis='no_prior_history',anchor=(3,full[3]['direction'],full[3]['start_ticks']),available_count=103)
+        with self.assertRaisesRegex(ValueError,'无前史仅可'):
+            manual_natural_reaction_state(full,list(range(100,117)),116,3,6,None,(7,9,1,16),origin)
+        origin = dict(basis='given_recent',anchor=origin['anchor'],available_count=103)
+        with self.assertRaisesRegex(ValueError,'不能代替或混入'):
+            manual_natural_reaction_state(full,list(range(100,117)),116,3,6,
+                dict(event=(0,2,1,5),published_count=105),(7,9,1,16),origin)
+        mutable_anchor = list(anchor)
+        origin = dict(basis='no_prior_history',anchor=mutable_anchor,available_count=103)
+        r = manual_natural_reaction_state(parts,seen,116,0,3,None,(4,6,1,13),origin)
+        mutable_anchor[2] += 1
+        origin['available_count'] = 200
+        self.assertEqual(r['origin'],('no_prior_history',anchor,103))
+
+    def test_author_no_history_premise_is_explicit_and_does_not_generate_xd_labels(self):
+        """课78的无前史条件显式传入；状态发布时间不充作03/38分段证明。"""
+        cases = json.loads((ROOT/'tests/fixtures/xd_originals.json').read_text())
+        case = next(c for c in cases if c['id']=='78-reply-0-3-8-11')
+        self.assertEqual((case['source_role'],case['pdf_page']),('author_reply',616))
+        self.assertIn('前面无任何走势',case['assumptions'])
+        parts = self._natural_parts(case['values'])
+        origin = dict(basis='no_prior_history',anchor=(0,'down',8),available_count=1)
+        r = manual_natural_reaction_state(parts,list(range(1,12)),11,0,3,None,None,origin)
+        self.assertEqual((r['state'],r['local_proof'],r['published_count']),('first_start_broken',10,11))
+        self.assertIsNone(r['predecessor'])
+        unknown = manual_natural_reaction_state(parts,list(range(1,12)),11,0,3,None,None)
+        self.assertEqual((unknown['local_proof'],unknown['published_count']),(10,None))
 
     def test_natural_state_same_observation_start_break_cannot_be_revived(self):
         """同批完成和破首起价不构成未破；晚资格不能复活被否决条件。"""
