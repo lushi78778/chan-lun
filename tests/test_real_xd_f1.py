@@ -4663,5 +4663,51 @@ class TestM1FullSuffixConsumers(unittest.TestCase):
             self.assertEqual(chan.scan_first_points(given+[future],poisoned,now,'auto-M1-F1'),chan.scan_first_points(given,rows,now,'auto-M1-F1'))
 
 
+
+class TestConditionedOriginRawContracts(unittest.TestCase):
+    """已冻结给定后缀的显式起点接线；不借用旧整窗自然划分标签。"""
+
+    def _check_conditional_clock(self,case,units,rows,seed,contract,f1=()):
+        boundaries = {1,len(rows)}
+        for u in units:
+            for count in (u['confirmed_raw_count']-1,u['confirmed_raw_count'],u['confirmed_raw_count']+1):
+                if 1<=count<=len(rows):boundaries.add(count)
+        for count in sorted(boundaries):
+            _,_,bis = chan.chan_fx_bi(rows[:count],standard='106')
+            pens = bis if contract=='current' else bis[:-1]
+            given = pens[seed:]
+            if len(given)<3:
+                self.assertFalse([u for u in units if u['confirmed_raw_count']<=count])
+                continue
+            origin = dict(basis='given_recent',anchor=(0,given[0].direction,given[0].start_value),available_bi=0)
+            actual = [x for x in chan.find_xds(given,origin_premise=origin) if x.complete]
+            visible = [u for u in units if u['confirmed_raw_count']<=count]
+            self.assertEqual(len(actual),len(visible),(case['id'],contract,count))
+            publication_bi = 0
+            for x,u in zip(actual,visible):
+                self.assertEqual((x.direction,str(x.start_dt),str(x.end_dt),round(x.start_value*1000),round(x.end_value*1000),round(x.low*1000),round(x.high*1000),x.mode),
+                                 tuple(u[k] for k in ('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode')))
+                publication_bi = max(publication_bi,u['proof_bi'])
+                self.assertEqual((x.evidence_end_index,x.evidence_dt),(pens[publication_bi].end_index,pens[publication_bi].end_dt))
+            if f1:
+                expected = [m3_xd_expected(units,s) for s in f1 if units[s[-1]]['confirmed_raw_count']<=count]
+                self.assertEqual([m3_xd_shape(m) for m in chan.same_level_decompose(actual) if m.complete],expected)
+
+    def test_given_m1_s3_t_raw_proof_boundaries_match_independent_tables(self):
+        for contract in ('current','fixed'):
+            case,units,a,rows,_ = m1_full_suffix_input(contract)
+            self._check_conditional_clock(case,units,rows,a['seed'],contract,a['f1'])
+        for key,a in M3_EXPANDED_SUFFIX_AUDIT.items():
+            for contract in a['bounds']:
+                case,units,a,rows,_ = expanded_suffix_input(key,contract)
+                self._check_conditional_clock(case,units,rows,a['seed'],contract,a['f1'])
+
+    def test_given_m2_serial_publication_does_not_use_child_local_proof_early(self):
+        for contract,limit in (('current',4848),('fixed',5586)):
+            case,units,_ = m2_suffix_input(contract)
+            rows = m3_xd_rows(dict(raw_rows=case['raw_rows'][:limit]))
+            self._check_conditional_clock(case,units,rows,M3_M2_JOINED_ROLE_AUDIT['seed'],contract)
+
+
 if __name__ == '__main__':
     unittest.main()

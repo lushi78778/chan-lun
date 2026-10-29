@@ -364,3 +364,78 @@ class TestOriginalXD(unittest.TestCase):
             result=find_xds(bis)
             self.assertEqual(len(result),1);self.assertEqual(result[0].start_index,1)
             self.assertFalse(result[0].complete)
+
+    def test_conditioned_author_origin_uses_only_its_explicit_no_history_premise(self):
+        """课78原文条件与未知截断、给定近期边界分开；不由窗口长度推断。"""
+        with open(os.path.join(os.path.dirname(__file__),'fixtures','xd_originals.json')) as f:
+            case = next(c for c in json.load(f) if c['id']=='78-reply-0-3-8-11')
+        for values in (case['values'],[30-x for x in case['values']]):
+            bs = strokes(values)
+            anchor = (0,bs[0].direction,bs[0].start_value)
+            for basis in ('unknown','given_recent','no_prior_history'):
+                spec = dict(basis=basis,anchor=anchor,available_bi=None if basis=='unknown' else 0)
+                for n in (6,7,8,10,11):
+                    visible = [x for x in find_xds(bs[:n],origin_premise=spec) if x.complete]
+                    expected = case['observations'][str(n)] if basis=='no_prior_history' else []
+                    self.assertEqual([r[:3] for r in records(visible)],expected)
+                if basis=='no_prior_history':
+                    self.assertEqual([x.evidence_end_index for x in visible],[8,11])
+
+    def test_conditioned_late_origin_does_not_backdate_public_evidence(self):
+        """起点事实晚到时，最后所需证据随发布前提推迟；原分界保持。"""
+        values = [8,3,7,2,11,3,8,5,10,2,4.5,0,3,1,5,2,6,3,7,4,9,5,10]
+        for prices in (values,[30-x for x in values]):
+            bs = strokes(prices)
+            anchor = (0,bs[0].direction,bs[0].start_value)
+            late = dict(basis='no_prior_history',anchor=anchor,available_bi=20)
+            unknown = dict(basis='unknown',anchor=anchor,available_bi=None)
+            for n in range(1,21):
+                self.assertEqual([x.to_dict() for x in find_xds(bs[:n],origin_premise=late)],
+                                 [x.to_dict() for x in find_xds(bs[:n],origin_premise=unknown)])
+            complete = [x for x in find_xds(bs[:21],origin_premise=late) if x.complete]
+            self.assertEqual([(x.start_index,x.end_index) for x in complete[:2]],[(0,3),(3,8)])
+            self.assertEqual([x.evidence_end_index for x in complete[:2]],[21,21])
+            self.assertEqual([x.evidence_dt for x in complete[:2]],[bs[20].end_dt]*2)
+            self.assertLess(complete[1].end_dt,complete[1].evidence_dt)
+
+    def test_conditioned_given_recent_boundary_can_complete_an_ordinary_segment(self):
+        """声明近期边界只约束起点，普通原首笔选向仍可按实际证据确认。"""
+        bs = strokes([1,6,3,12,2,8,1,14,6,10,0])
+        spec = dict(basis='given_recent',anchor=(0,'up',1),available_bi=0)
+        self.assertFalse(any(x.complete for x in find_xds(bs[:5],origin_premise=spec)))
+        x = find_xds(bs[:6],origin_premise=spec)[0]
+        self.assertEqual((x.start_index,x.end_index,x.complete,x.evidence_end_index),(0,3,True,6))
+        future = dict(spec,available_bi=10)
+        self.assertFalse(any(x.complete for x in find_xds(bs[:6],origin_premise=future)))
+
+    def test_conditioned_origin_metadata_is_bound_and_not_shared_between_calls(self):
+        """输入声明不被改写，条件调用不污染默认或未知模式，仍返回同一XD类型。"""
+        from chan import XD
+        bs = strokes([8,3,7,2,11,3,8,5,10,2,4.5,0])
+        baseline = [x.to_dict() for x in find_xds(bs)]
+        spec = dict(basis='no_prior_history',anchor=[0,'down',8],available_bi=0)
+        before = json.loads(json.dumps(spec))
+        known = find_xds(bs,origin_premise=spec)
+        self.assertEqual(spec,before)
+        self.assertTrue(all(isinstance(x,XD) for x in known))
+        self.assertFalse(any(x.complete for x in find_xds(bs,origin_premise=dict(basis='unknown',anchor=(0,'down',8),available_bi=None))))
+        self.assertEqual([x.to_dict() for x in find_xds(bs)],baseline)
+        self.assertEqual([x.to_dict() for x in find_xds(bs,origin_premise=spec)],[x.to_dict() for x in known])
+        self.assertEqual(set(known[0].to_dict()),set(('direction','start','end','gg','dd','mode','complete','evidence_end_index','evidence_dt')))
+
+    def test_conditioned_origin_rejects_wrong_or_unavailable_identity(self):
+        """无前史不能抹去已有输入，未知声明不携带到达计数，布尔值不作索引价格。"""
+        bs = strokes([8,3,7,2,11,3,8,5,10,2,4.5,0])
+        bad = [1,{},dict(basis='other',anchor=(0,'down',8),available_bi=0),
+               dict(basis='unknown',anchor=(0,'down',8),available_bi=0),
+               dict(basis='no_prior_history',anchor=(False,'down',8),available_bi=0),
+               dict(basis='no_prior_history',anchor=(0,'down',True),available_bi=0),
+               dict(basis='no_prior_history',anchor=(0,'down',8),available_bi=True),
+               dict(basis='no_prior_history',anchor=(0,'down',8),available_bi=-1),
+               dict(basis='no_prior_history',anchor=(1,'up',3),available_bi=0),
+               dict(basis='given_recent',anchor=(0,'down',9),available_bi=0)]
+        for spec in bad:
+            with self.subTest(spec=spec),self.assertRaises(ValueError):
+                find_xds(bs,origin_premise=spec)
+        with self.assertRaises(TypeError):
+            find_xds(None,origin_premise={})

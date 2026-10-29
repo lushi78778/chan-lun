@@ -7,7 +7,7 @@
 | 项目 | 约定 |
 |---|---|
 | 发行名 / 导入名 | `chan-lun-core` / `chan` |
-| 当前源码版本 | `1.1.2`；发行可用性以 PyPI / GitHub Release 为准，安装环境核对 `chan.__version__` 与实际导入路径 |
+| 当前源码版本 | `1.2.0`；发行可用性以 PyPI / GitHub Release 为准，安装环境核对 `chan.__version__` 与实际导入路径 |
 | 运行兼容目标 | Python 3.6、numpy 1.14、pandas 0.23 及以上；验证范围见下文 |
 | 开发与构建 | Python 3.10+，使用本仓库 `requirements-dev.txt` |
 | 仓库 / 许可证 | [lushi78778/chan-lun](https://github.com/lushi78778/chan-lun) / [MIT](https://github.com/lushi78778/chan-lun/blob/main/LICENSE) |
@@ -15,6 +15,9 @@
 本库维护算法、公开契约、包测试及仓库验收资产。调用方负责行情获取、交易日历、
 复权、标的和周期管理、策略调度、组合风控与下单。跨级别和板块接口需要调用方
 提供多组已对齐的输入；理论级别由结构关系和输入声明确定，不按分钟周期自动映射。
+
+线段识别可显式声明起点前提，未传入时保持既有工程口径；参数和时间边界见
+[使用指南](https://github.com/lushi78778/chan-lun/blob/main/docs/usage.md)的“显式线段起点前提”。
 
 ## 阅读入口
 
@@ -34,11 +37,11 @@
 
 ## 安装
 
-安装示例固定发行版本 `1.1.2`；发行产物可用后执行，升级差异见版本记录。
+安装示例固定发行版本 `1.2.0`；发行产物可用后执行，升级差异见版本记录。
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==1.1.2'
+python -m pip install 'chan-lun-core==1.2.0'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 

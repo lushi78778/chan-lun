@@ -54,6 +54,31 @@
 | 因果谱系与诊断 | `lineage` `rounds` `causal_graph` | `track_center_lineage` `track_rounds` `causal_graph_dot` | 走势/单元序列 | 事件谱系 |
 | 理论辅助模块 | `gap` `kiss` `strength` `turn` `minor_turn` `zhongyin` `osc` `biaoli` `levels` `sector` `fxpower` `macd_guard` `ma_points` `nest` `decompose` `recurse` | `classify_gap` `find_kisses` `classify_bc_turn` `track_zhongyin` `oscillation_monitor` `decompose_levels` … | 各模块声明的最小输入 | 课理论工程化，阈值已声明 |
 
+### 2.1 线段起点前提（1.2.0）
+
+`find_xds(bis, origin_premise=None)` 的既有调用保持1.1.2默认行为。
+显式字典只接受下列三个字段，所有索引均针对本次传入的BI列表：
+
+| 字段 | 含义 |
+|---|---|
+| `basis` | `unknown`为前史未知；`no_prior_history`为调用方有依据声明没有前史；`given_recent`为选定近期起点 |
+| `anchor` | `(起笔下标, direction, start_value)`；下标为列表位置，不是BI的无包含K线索引，须与本输入选出的首个三笔重叠起点一致 |
+| `available_bi` | 前提已可知的非负整数BI观察下标；`unknown`必须为`None`。布尔值不作索引，价位沿用输入坐标，不加容差 |
+
+明确无前史仅适用于输入起笔0；截断窗口和选定近期起点都不提供这一
+事实。若要以给定近期起点开始，可先截取相应BI列表并绑定新列表中的
+起点。该声明绑定条件边界，不证明前驱已被破坏或自然全局起点成立。
+
+`unknown`不发布完成项；其他前提尚未到达时也等待。局部证明不因
+前提晚到而改写，实际发布须同时满足前驱、起点及当前结构证据。
+显式模式的`evidence_dt/evidence_end_index`仍是最后所需证据BI的端点，
+包含累计依赖，不是原始行情的实际到达时间。原始行情回放、前提
+真实性及同一输入版本由调用方保证，参见[使用指南](usage.md)。
+
+无效字段、起点不匹配或非法前提计数抛`ValueError`；原`bis`入参的
+`TypeError`/`ValueError`分类保持。组合与回放入口继续使用默认口径；
+调用方选择条件模式后须自行完成相应结构、级别与实际可用时间接线。
+
 ## 3. 时间字段契约
 
 | 字段 | 含义 | 序列化 |

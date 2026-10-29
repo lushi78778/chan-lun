@@ -130,6 +130,40 @@ for snapshot in replay_bars(bars, observations=[row["dt"] for row in bars[-20:]]
 包测试 `tests/fixtures/xd_originals.json` 用相对价位保留课67/71/81原图不等式，
 不声称恢复原图的真实行情。原图完整覆盖仍在正式计划登记。
 
+### 显式线段起点前提（1.2.0）
+
+不传`origin_premise`时，`find_xds(bis)`保持既有工程规则。需要区分
+未知前史、明确无前史与给定近期起点时，显式传入起点前提：
+
+```python
+# 调用模板：fixed_bis由调用方按当时可见行情生成，并从选定起点截取。
+# anchor中的0是本列表的位置；前提从观察到第一笔时已知。
+import chan
+
+if len(fixed_bis) >= 3:
+    origin = {
+        'basis': 'given_recent',
+        'anchor': (0, fixed_bis[0].direction, fixed_bis[0].start_value),
+        'available_bi': 0,
+    }
+    conditional_xds = chan.find_xds(fixed_bis, origin_premise=origin)
+```
+
+此段是需要调用方提供`fixed_bis`的模板。给定起点须符合首三笔重叠，
+接口不会把另一个起点偷偷改作声明的起点；不匹配时明确报错。若前提
+在更晚的BI观察点才可知，填入相应`available_bi`，完成项会等待该
+观察点。`unknown`表示尚无起点前史证明，`available_bi`须为`None`。
+
+`no_prior_history`要求有独立依据声明输入开始前没有走势，仅可绑定
+起笔0；缺少图外数据或选择近期极值不能当作这个事实。条件模式中
+前驱待证会保留其身份，不能降成未知前史后放行。局部证明可先发生，
+最后证据须包含前提和前驱的累计依赖，不能把早期局部证明当作实际
+确认时间。实际行情可用时间仍按逐原始前缀记录；BI端点不替代它。
+
+起点条件不同会改变后续XD、F1、递归与点位上下文，须按同一观察
+前缀重新验收。默认调用的旧整窗标签不直接用于条件模式；既有
+组合、回放及冻结策略继续使用原有默认参数。
+
 ## 4. 按收盘与到达时间观察
 
 

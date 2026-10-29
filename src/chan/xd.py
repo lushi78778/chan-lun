@@ -25,6 +25,9 @@ XD.mode 标记线段结束方式: 1 = 第一种情况(无缺口), 2 = 第二种�
 延续。第二序列确认不要求回补原段最后特征缺口, 小转大未回补的
 情形仍按两种定义判断。课71最后作者示意须采用课81的5/7更正。
 
+1.2.0可显式声明起点前提，按前驱局部证明与累计发布分别推进；
+未传起点前提时保留既有工程口径。显式条件不证明自然全历史起点。
+
 输入为固定、交替且衔接的笔, 输出组成范围与证据末笔分开; 未知
 图外前段不推断。比较使用精确闭区间, 没有价差容差或量化阈值。
 PDF编者“顶/底组合”的标题只描述形状, 不代替完成条件。
@@ -52,8 +55,8 @@ class XD(object):
 
     属性:
         direction: 'up' / 'down'。
-        start_dt / start_value / start_index: 起点(时间/价格/笔索引)。
-        end_dt / end_value / end_index: 终点(时间/价格/笔索引)。
+        start_dt / start_value / start_index: 起点(时间/价格/无包含K线索引)。
+        end_dt / end_value / end_index: 终点(时间/价格/无包含K线索引)。
         mode: 1 = 第一种情况(特征序列分型直接确认),
               2 = 第二种情况(缺口, 由第二特征序列分型确认)。
               序列末尾未完成线段的 mode 恒为 1。
@@ -150,7 +153,203 @@ def _feature_append(out, elem, direction_up):
     return out[:-1] + [(low, high, ref)]
 
 
-def _candidate_end(bis, start, candidate, left):
+def _context(owner, predecessor=None, ancestor=None, qualification="unknown", origin=None, premise=None):
+    """Immutable finite lineage; None proof is never a confirmed predecessor.
+
+    Certificate version=(start,stop,local_proof,published_proof), stop exclusive.
+    Provisional predecessors bind their boundary even when proofs are unknown.
+    Unknown history differs from a supplied, waiting lineage hypothesis.
+    """
+    if qualification not in ("unknown", "waiting", "visible"):
+        raise ValueError("unknown/waiting/visible qualification required")
+    if ancestor is not None:
+        if premise is None:
+            premise = ancestor[5]
+        elif premise != ancestor[5]:
+            raise ValueError("ancestor belongs to a different origin premise")
+        if origin is None:
+            origin = ancestor[4]
+        elif origin != ancestor[4]:
+            raise ValueError("ancestor belongs to a different origin")
+    if predecessor is not None:
+        a, stop, local, published = predecessor
+        if a < 0 or stop <= a or stop != owner:
+            raise ValueError("predecessor identity does not meet owner")
+        if published is not None and (local is None or published < local):
+            raise ValueError("publication cannot precede local proof")
+        if local is not None and local < stop:
+            raise ValueError("local proof must follow the composed predecessor")
+        if qualification == "visible" and (local is None or published is None):
+            raise ValueError("provisional predecessor cannot be declared confirmed")
+    elif qualification != "unknown":
+        raise ValueError("known qualification requires a predecessor identity")
+    return owner, predecessor, ancestor, qualification, origin, premise
+
+
+def _origin_premise(spec):
+    """Explicit input assumption in BI-position time; not inferred from a window."""
+    if spec is None:
+        return None
+    if not isinstance(spec, dict) or set(spec) != set(("basis", "anchor", "available_bi")):
+        raise ValueError("origin premise requires basis/anchor/available_bi")
+    basis, anchor, count = spec["basis"], spec["anchor"], spec["available_bi"]
+    if basis not in ("unknown", "no_prior_history", "given_recent"):
+        raise ValueError("unknown/no_prior_history/given_recent basis required")
+    if not isinstance(anchor, (list, tuple)) or len(anchor) != 3:
+        raise ValueError("origin anchor must bind BI position, direction and price")
+    owner, direction, price = anchor
+    if isinstance(owner, bool) or not isinstance(owner, int) or owner < 0:
+        raise ValueError("nonnegative origin BI position required")
+    if direction not in ("up", "down") or not isinstance(price, Real) or isinstance(price, bool) or not math.isfinite(price):
+        raise ValueError("origin direction and finite price required")
+    if basis == "unknown":
+        if count is not None:
+            raise ValueError("unknown origin has no known arrival")
+    elif isinstance(count, bool) or not isinstance(count, int) or count < 0:
+        raise ValueError("nonnegative premise arrival BI required")
+    if basis == "no_prior_history" and owner != 0:
+        raise ValueError("no prior history applies only at the input beginning")
+    return basis, tuple(anchor), count
+
+
+def _root_no_history(context):
+    return (context is not None and context[1] is None and
+            context[5] is not None and context[5][0] == "no_prior_history")
+
+
+def _qualification(context, observed):
+    if context is None:
+        return "unknown", None
+    if _root_no_history(context):
+        at = context[5][2]
+        return ("visible" if at <= observed else "waiting"), at
+    if context[3] == "unknown":
+        return "unknown", None
+    predecessor = context[1]
+    publication = predecessor[3]
+    if predecessor[2] is None or publication is None or publication > observed:
+        return "waiting", publication
+    return "visible", publication
+
+
+def _local_identity(start, ending, context):
+    stop, local, _ = ending
+    prior = None if context is None else context[1]
+    premise = None if context is None else context[5]
+    if prior is not None:
+        publication = max(local, prior[3]) if prior[2] is not None and prior[3] is not None else None
+    elif premise is None:
+        publication = local
+    elif premise[0] == "unknown":
+        publication = None
+    else:
+        publication = max(local, premise[2])
+    return start, stop, local, publication
+
+
+def _following_context(start, stop, context):
+    """待证前驱始终保留身份和waiting，不退化为未知前史。"""
+    return _context(stop, (start, stop, None, None), context, "waiting", context[4])
+
+
+def _natural_reaction_state(bis, first_index, context, memo=None):
+    """Earliest boundary/S-completion race, then qualification publication gate.
+
+    固定笔下标是本判定的观察坐标，原始行情实际到达须另外映射。
+    较晚破坏不撤回较早已证明的自然反应；同一观察下先破首起点。
+    """
+    if memo is None:
+        memo = {"segment": {}, "natural": {}}
+    key = (len(bis), first_index, context)
+    if key in memo['natural']:
+        return memo['natural'][key]
+    first = bis[first_index]
+    up = first.direction == "up"
+    ready = first_index + 3
+    valid_owner = first_index >= context[0]+3
+    triple = bis[first_index:first_index+3]
+    overlap = (len(triple) == 3 and max(b.low for b in triple) <= min(b.high for b in triple))
+    events = []
+    for i in range(first_index+1, len(bis)):
+        bi = bis[i]
+        if valid_owner and bi.direction != first.direction and (
+                bi.end_value < first.start_value if up else bi.end_value > first.start_value):
+            events.append((i, 0, "first_start_broken", None))
+        elif valid_owner and bi.direction == first.direction and i >= first_index+2 and overlap and (
+                bi.end_value > first.end_value if up else bi.end_value < first.end_value):
+            events.append((i, 1, "first_end_selected", None))
+    reaction = bis[first_index+1:ready+1]
+    reaction_origin = (valid_owner and len(reaction) == 3 and
+        max(b.low for b in reaction) <= min(b.high for b in reaction) and
+        (reaction[-1].end_value < reaction[0].start_value if up else
+         reaction[-1].end_value > reaction[0].start_value))
+    if reaction_origin:
+        # R is a provisional lineage hypothesis, not a completed one-BI XD.
+        r_context = _following_context(context[0], first_index, context)
+        s_context = _context(first_index+1, (first_index, first_index+1, None, None),
+                             r_context, "waiting", context[4])
+        # Examine prefixes in order so later boundary events cannot erase S.
+        for n in range(ready+1, len(bis)+1):
+            ending = _segment_end(bis[:n], first_index+1, context=s_context, memo=memo)
+            if ending is not None:
+                identity = _local_identity(first_index+1, ending, s_context)
+                events.append((ending[1], 2, "confirmed_without_start_break", identity))
+                break
+    if events:
+        evidence, _, state, reaction_identity = min(events, key=lambda e: (e[0], e[1]))
+    else:
+        evidence, state, reaction_identity = None, "pending", None
+    qualification, prior = _qualification(context, len(bis)-1)
+    publication = (max(evidence, prior) if qualification == "visible" and evidence is not None else None)
+    if qualification == "unknown":
+        kind = "context_unproved"
+    elif qualification == "waiting":
+        kind = "qualification_waiting"
+    elif state == "confirmed_without_start_break":
+        kind = "reaction_confirmed_without_start_break"
+    elif state == "pending":
+        kind = "reaction_pending" if reaction_origin else "reaction_origin_unproved"
+    else:
+        kind = state
+    result = dict(kind=kind, state=state, qualification=qualification, evidence=evidence,
+                  local_proof=evidence, published_proof=publication,
+                  predecessor=None if context is None else context[1],
+                  reaction_identity=reaction_identity, origin=context[4])
+    memo['natural'][key] = result
+    return result
+
+
+def _gap_waiting_at(bis, candidate, left, evidence):
+    """课67/78/81: 截止证据笔, 原有缺口转折是否仍待第二序列。
+
+    只处理转折处原本有正缺口且第一特征分型已经成立的候选。
+    后续回补不追溯改变其分类; 第二序列证明与新极值同笔到达时,
+    先认可已成立的第二分型。无缺口的课78特殊延续不受此门控。
+    """
+    first = bis[candidate]
+    up = first.direction == "down"
+    if not (left[1] < first.low if up else left[0] > first.high):
+        return False
+    right, second = [(first.low, first.high, first)], []
+    first_fractal = False
+    for i in range(candidate+1, evidence+1):
+        bi = bis[i]
+        if bi.direction == first.direction:
+            right = _feature_append(right, (bi.low, bi.high, bi), up)
+        else:
+            second = _feature_append(second, (bi.low, bi.high, bi), not up)
+        if len(right) >= 2:
+            first_fractal = (first_fractal or
+                             _has_fx([left]+right[:2], "top" if up else "bottom") is not None)
+        if first_fractal and _has_fx(second, "bottom" if up else "top") is not None:
+            return False
+        if bi.direction != first.direction and (
+                bi.end_value > first.start_value if up else bi.end_value < first.start_value):
+            return False
+    return first_fractal
+
+
+def _candidate_end(bis, start, candidate, left, context=None, memo=None):
     """课71/77/78假设局部转折, 返回(分界笔,证据末笔,结束方式)。
 
     bis为当前可见固定笔前缀; start是旧段起笔, candidate为第一
@@ -184,11 +383,34 @@ def _candidate_end(bis, start, candidate, left):
                 # 递归起点严格后移, 只使用当前i的可见前缀; 不把该
                 # 后继证据回填到早先的包含时刻。先检验再撤销假设,
                 # 才能保留端点并非实际极值的古怪线段。
-                following = _segment_end(bis[:i+1], candidate)
-                if following is not None:
-                    return candidate, i, 1
+                if context is None:
+                    following = _segment_end(bis[:i+1], candidate)
+                    if following is not None:
+                        return candidate, i, 1
+                else:
+                    state = _natural_reaction_state(bis[:i+1], candidate, context, memo)
+                    if state['kind'] == "first_start_broken" or (_root_no_history(context) and state['state'] == "first_start_broken"):
+                        return None
+                    if state['kind'] == "reaction_confirmed_without_start_break" or (_root_no_history(context) and state['state'] == "confirmed_without_start_break"):
+                        return candidate, state['evidence'], 1
+                    if _root_no_history(context):
+                        following_context = _following_context(start, candidate, context)
+                        following = _segment_end(bis[:i+1], candidate,
+                                                 context=following_context, memo=memo)
+                        if following is not None:
+                            return candidate, i, 1
             if bi.end_value > extreme if up else bi.end_value < extreme:
                 return None  # 第二序列未确认前先创新极值, 假设撤销。
+        if context is not None and not gap and bi.direction == first.direction and i >= candidate+2:
+            reverse_three = bis[candidate:candidate+3]
+            overlap = (len(reverse_three) == 3 and
+                       max(u.low for u in reverse_three) <= min(u.high for u in reverse_three))
+            first_pen_break = (first.end_value <= left[1] if up else
+                               first.end_value >= left[0])
+            selected = (bi.end_value < first.end_value if up else
+                        bi.end_value > first.end_value)
+            if first_pen_break and overlap and selected:
+                return candidate, i, 1
         if len(right) < 2:
             continue
         a, b = right[0], right[1]
@@ -205,37 +427,64 @@ def _candidate_end(bis, start, candidate, left):
             # 不能把该布尔门槛称为普遍理论充分条件。
             crossed_start = (bi.end_value < bis[start].start_value if up else
                              bi.end_value > bis[start].start_value)
-            if selected or crossed_start:
+            if selected or context is None and crossed_start:
                 return candidate, i, 1
+            if context is not None:
+                state = _natural_reaction_state(bis[:i+1], candidate, context, memo)
+                if state['kind'] == "reaction_confirmed_without_start_break" or (_root_no_history(context) and state['state'] == "confirmed_without_start_break"):
+                    return candidate, state['evidence'], 1
+                if crossed_start and _root_no_history(context):
+                    return candidate, i, 1
             pending_first_kind = True
         if turned and gap and _has_fx(second, "bottom" if up else "top") is not None:
             return candidate, i, 2
     return None
 
 
-def _segment_end(bis, start):
-    """按课71逐一检验假设转折, 选择最早证据确认的分界。
+def _segment_end(bis, start, context=None, memo=None):
+    """按课71逐一检验转折, 保留课81较高/低缺口候选的待定约束。
 
     课67附图第八种/课78: 段内部可有比终点更极端的价格, 不能只
     检查全局新高/新低。假设左右元素不包含合并; 右側首次包含以
     左元素到转折的方向处理。第二特征必须真实形成三元素分型。
+    较早更极端的缺口候选若在某次证据到达时仍待第二序列, 后来的
+    较低顶/较高底不能抢先完成; 不把所有无证据候选一律当作阻塞。
     """
+    if context is not None and context[0] != start:
+        raise ValueError("context owner differs from segment start")
+    if memo is None:
+        memo = {"segment": {}, "natural": {}}
+    segment_key = (len(bis), start, context)
+    if segment_key in memo['segment']:
+        return memo['segment'][segment_key]
     up = bis[start].direction == "up"
     counter = "down" if up else "up"
-    features, endings = [], []
+    features, endings, gaps, first_kind = [], [], [], []
     for i in range(start, len(bis)):
         bi = bis[i]
         if bi.direction != counter:
             continue
         if i >= start+3 and features and (bi.start_value > bis[start].start_value if up else
                                          bi.start_value < bis[start].start_value):
-            end = _candidate_end(bis, start, i, features[-1])
+            if context is not None:
+                if features[-1][1] < bi.low if up else features[-1][0] > bi.high:
+                    gaps.append((i, features[-1]))
+                else:
+                    left = features[-1]
+                    protrudes = bi.high > left[1] if up else bi.low < left[0]
+                    breaks = bi.end_value <= left[1] if up else bi.end_value >= left[0]
+                    reverse_three = bis[i:i+3]
+                    overlaps = (len(reverse_three) == 3 and
+                        max(b.low for b in reverse_three) <= min(b.high for b in reverse_three))
+                    if protrudes and breaks and overlaps:
+                        first_kind.append(i)
+            end = _candidate_end(bis, start, i, features[-1], context, memo)
             if end is not None:
                 endings.append(end)
             # 原相邻笔穿越起价的条件性工程回退。课67标准序列仍须
             # 保留更高旧顶; 课78特殊状态前提须另证, 不由本分支补足。
             raw = bis[i-2]
-            local = _candidate_end(bis, start, i, (raw.low, raw.high, raw))
+            local = _candidate_end(bis, start, i, (raw.low, raw.high, raw), context, memo)
             if local is not None:
                 evidence = bis[local[1]]
                 reverse = bis[i:local[1]+1]
@@ -247,10 +496,79 @@ def _segment_end(bis, start):
                 if crossed and overlap:
                     endings.append(local)
         features = _feature_append(features, (bi.low, bi.high, bi), up)
-    return min(endings, key=lambda r: (r[1], r[0])) if endings else None
+    if context is None:
+        result = min(endings, key=lambda r: (r[1], r[0])) if endings else None
+        memo['segment'][segment_key] = result
+        return result
+    waiting = {}
+    allowed = []
+    for ending in endings:
+        candidate, evidence, _ = ending
+        blocked = False
+        ancestor = context[2]
+        # A locally certified no-history root binds its immediate successor.
+        # A provisional parent with no local proof grants no such boundary.
+        # Late premise/publication still gates _local_identity and find_xds;
+        # it must not retime an already valid conditional local proof.
+        parent = context[1]
+        root_parent_local = (_root_no_history(ancestor) and parent is not None and
+                             parent[2] is not None and parent[2] <= evidence)
+        if (ancestor is not None and not root_parent_local and candidate > start+3
+                and (bis[candidate].start_value < bis[start].end_value if up else
+                     bis[candidate].start_value > bis[start].end_value)):
+            state = _natural_reaction_state(bis[:evidence+1], start, ancestor, memo)
+            # A pending immediate reaction is an active constraint. Its missing
+            # completion cannot authorize a lower local peak or higher trough.
+            if state['kind'] in ("reaction_pending", "reaction_origin_unproved",
+                                 "first_start_broken", "qualification_waiting"):
+                blocked = True
+            elif state['kind'] == "reaction_confirmed_without_start_break":
+                reaction = state['reaction_identity']
+                # S confirms that R can extend. An internal S candidate is not
+                # a natural R boundary; an actual successor after S may be.
+                d = [] if reaction is None else bis[reaction[1]:candidate]
+                first_d = d[:3]
+                shape = (len(d) >= 3 and d[0].direction == bis[start].direction and
+                    max(b.low for b in first_d) <= min(b.high for b in first_d) and
+                    (d[-1].end_value > d[0].start_value if up else
+                     d[-1].end_value < d[0].start_value))
+                # Necessary shape only; D completion and natural ownership
+                # remain separate certificates, not implied by this gate.
+                if not shape:
+                    blocked = True
+        for earlier in first_kind:
+            if earlier >= candidate:
+                break
+            stronger = (bis[earlier].start_value >= bis[candidate].start_value if up else
+                        bis[earlier].start_value <= bis[candidate].start_value)
+            if not stronger:
+                continue
+            state = _natural_reaction_state(bis[:evidence+1], earlier, context, memo)
+            if state['kind'] in ("reaction_pending", "qualification_waiting"):
+                # A known pending original first reversal cannot be replaced
+                # by a later lower raw-neighbour peak (or higher trough).
+                blocked = True
+                break
+        for earlier, left in gaps:
+            if earlier >= candidate:
+                break
+            if not (bis[earlier].start_value > bis[candidate].start_value if up else
+                    bis[earlier].start_value < bis[candidate].start_value):
+                continue
+            waiting_key = (earlier, evidence)
+            if waiting_key not in waiting:
+                waiting[waiting_key] = _gap_waiting_at(bis, earlier, left, evidence)
+            if waiting[waiting_key]:
+                blocked = True
+                break
+        if not blocked:
+            allowed.append(ending)
+    result = min(allowed, key=lambda r: (r[1], r[0])) if allowed else None
+    memo['segment'][segment_key] = result
+    return result
 
 
-def find_xds(bis: List[BI]) -> List[XD]:
+def find_xds(bis: List[BI], origin_premise=None) -> List[XD]:
     """课67/71/78/81线段: 至少三笔、前三笔闭区间重叠。
 
     输入是按顺序首尾衔接的交替笔; 仅消费给定前缀。不足三笔或
@@ -268,6 +586,18 @@ def find_xds(bis: List[BI]) -> List[XD]:
     但特殊逆时间传递仍有前段破坏已确认等上下文前提; 仅凭本接口
     的笔前缀和原相邻笔穿越起价分支, 不证明自然行情中该前提成立,
     也不构成独立全局分界标注。需要理论证明时须另行核验上下文。
+
+    origin_premise为1.2.0新增可选字典，None保持既有调用语义。
+    显式模式只接受basis/anchor/available_bi三个字段。basis为unknown、
+    no_prior_history或given_recent；anchor=(输入内起笔下标,方向,起价)，
+    须匹配本输入选出的首个三笔重叠起点。调用方可先截取给定起点后的
+    笔，不能把截断窗口推断为无前史。no_prior_history仅用于输入起笔0。
+    available_bi为该前提已可知的非负BI观察下标，unknown须为None；
+    知识未到时不发布完成项，给定近期起点也不补前驱破坏证明。
+    此模式保留局部证明与累计发布的区别，最后证据笔取前驱、起点前提
+    和本段证明中最后需要的BI；仍不等同原始行情的实际到达时间。
+    前驱待证时保留其身份，不降成未知前史。输入前提真实性、行情及
+    笔的实际可见性由调用方保证，完整自然起点和全局唯一性另行核验。
 
     完成段的gg/dd只含起点至终点的笔, 不把确认用的后续笔纳入。
     分界后从终点重新处理全部已读取笔, 不丢弃新段前部。构造器
@@ -288,13 +618,23 @@ def find_xds(bis: List[BI]) -> List[XD]:
                   bis[i-1].end_value != bi.start_value or
                   bis[i-1].end_index != bi.start_index):
             raise ValueError("笔须交替且时间、价格、索引首尾衔接")
-    out, start = [], 0
+    premise = _origin_premise(origin_premise)
+    out, start, context = [], 0, None
+    memo = {"segment": {}, "natural": {}}
     while start + 2 < len(bis):
         first = bis[start:start+3]
         if max(b.low for b in first) > min(b.high for b in first):
             start += 1
             continue
-        ending = _segment_end(bis, start)
+        if premise is not None and (context is None or context[0] != start):
+            if premise[1] != (start, bis[start].direction, bis[start].start_value):
+                raise ValueError("origin premise does not match selected boundary")
+            origin = (bis[start].start_index, bis[start].start_value, bis[start].direction)
+            context = _context(start, origin=origin, premise=premise)
+        ending = _segment_end(bis, start, context=context, memo=memo)
+        identity = None if ending is None or context is None else _local_identity(start, ending, context)
+        if identity is not None and (identity[3] is None or identity[3] >= len(bis)):
+            ending = None
         if ending is None:
             # 未完成段保留已达到的同向极值, 不用回落后的同向笔反转方向。
             # 最少三笔且顶须高于底(课78); 触沿净位移为零时等待, 不改换种子。
@@ -310,6 +650,9 @@ def find_xds(bis: List[BI]) -> List[XD]:
             stop, evidence, mode, complete = end+1, None, 1, False
         else:
             stop, evidence, mode = ending
+            # 条件模式的最后证据包含前驱与起点前提，局部证明保留在identity。
+            if identity is not None:
+                evidence = identity[3]
             complete = True
         units = bis[start:stop]
         a, b = units[0], units[-1]
@@ -320,6 +663,8 @@ def find_xds(bis: List[BI]) -> List[XD]:
                       None if evidence is None else bis[evidence].end_dt))
         if ending is None:
             break
+        if context is not None:
+            context = _context(stop, identity, context, "visible", context[4])
         start = stop  # 完整重放分界后已消耗的笔, 不直接跳到证据末尾。
     return out
 
