@@ -3586,6 +3586,66 @@ class TestRealXdF1Assets(unittest.TestCase):
                 self.assertEqual((active['publication_proofs'][4][0],fixed['publication_proofs'][4][0]),(1024,1039))
 
 
+    def _g1_consumers_source(self):
+        a=embedded_table('test_real_xd_f1.py','M3_G1_CONSUMERS_AUDIT');old=M3_ADDITIONAL_CONSUMERS_AUDIT['G1']
+        digest=hashlib.sha256(json.dumps(old,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8')).hexdigest()
+        self.assertEqual(a['base_sha256'],digest)
+        self.assertEqual((a['events'],a['fixture_sha256'],a['prior_receipt_sha256']),(old['events'],old['fixture_sha256'],old['receipt_sha256']))
+        path=ROOT/'tests/fixtures'/a['fixture'];self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),a['fixture_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==a['id']);packet=ROOT/'validation'/case['source']['packet']
+        self.assertEqual(hashlib.sha256(packet.read_bytes()).hexdigest(),a['packet_sha256']);self.assertEqual(json.loads(packet.read_text())['rows'],case['raw_rows'])
+        rows=case['raw_rows'][:a['limit']];tool=compiler();_,_,bis=tool.foundation(rows,'106');parts=tool.components(rows,bis,None);units=tool.xd_records(parts,a['events'])
+        fields=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        self.assertEqual([tuple(u[k] for k in fields) for u in units],[u[:9] for u in a['units']])
+        self.assertEqual(tuple(u[-1] for u in a['units']),old['published_counts'])
+        return a,old,case,parts,units
+
+    def test_g1_consumer_integer_roles_keep_two_same_level_cores_but_only_one_recursive_core(self):
+        a,_,_,_,units=self._g1_consumers_source();tool=compiler()
+        for spec in a['f1']+(a['tail'],a['auto']):tool.move_record(units,spec)
+        for spec in a['f1']:
+            start,end,kind,entry,triples,cores,proof=spec;lo,hi=cores[0]
+            self.assertEqual((kind,entry,triples,proof),('consolidation',None,(start,),end+1))
+            self.assertEqual((max(u['low_ticks'] for u in units[start:end+1]),min(u['high_ticks'] for u in units[start:end+1])),(lo,hi))
+            self.assertTrue(units[proof]['low_ticks']<=hi and units[proof]['high_ticks']>=lo)
+        self.assertEqual(a['auto_spans'],((0,2,6),))
+        self.assertTrue(all(u['low_ticks']<=1066 and u['high_ticks']>=1027 for u in units[3:7]))
+        self.assertGreater(units[7]['low_ticks'],1066)
+        self.assertEqual(a['auto'][4:6],((0,),((1027,1066),)))
+        self.assertIsNone(a['auto'][-1]);self.assertEqual(a['f2'],((0,1,'incomplete',None,(),(),None),))
+        self.assertEqual(a['f1_first'],(924,1540));self.assertEqual(a['f1_evidence'],(4,7))
+
+    def test_g1_new_F1_proof_boundaries_rebuild_raw_rows_without_merging_shared_BI126(self):
+        a,_,case,_,_=self._g1_consumers_source();tool=compiler();observations=0
+        counts=sorted({125,126,a['limit']}|{n for u in a['units'] for n in (u[-1]-1,u[-1])})
+        for count in counts:
+            observations+=1;rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+            self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis[:-1])])
+            p=tool.components(rows,bis,None);ready=[manual_xd_certificate_ready(p,e) for e in a['events']]
+            size=next((i for i,ok in enumerate(ready) if not ok),8)
+            self.assertEqual(size,sum(u[-1]<=count for u in a['units']))
+            self.assertEqual(tuple(i for i,spec in enumerate(a['f1']) if size>spec[-1]),tuple(i for i,at in enumerate(a['f1_first']) if at<=count))
+            for i,u in enumerate(a['units']):
+                if count==u[-1]:
+                    b=p[a['events'][i][3]]
+                    self.assertEqual((b['end_ticks'],b['end_dt'],a['events'][i][3]==len(p)-1),a['publication_proofs'][i])
+        self.assertEqual(observations,17)
+        self.assertEqual((a['publication_proofs'][5][0],a['publication_proofs'][6][0]),(1155,1141))
+        self.assertNotEqual(a['publication_proofs'][5][1],a['publication_proofs'][6][1])
+        self.assertEqual(a['units'][5][-1],1535);self.assertEqual(a['units'][6][-1],1540)
+
+    def test_g1_registered_window_does_not_inherit_early_first_point_or_full_source_tail(self):
+        a,old,case,parts,units=self._g1_consumers_source()
+        self.assertEqual((a['contract'],a['impact_contract']),('all_current',(0,'all_current',1623)))
+        self.assertEqual((a['source_rows'],len(case['raw_rows'])-a['limit']),(1638,15))
+        self.assertEqual((len(parts),len(parts[:-1])),(133,132))
+        self.assertEqual(a['seed'],35);self.assertEqual((a['events'][0][0],units[0]['start_ticks']),(35,910))
+        self.assertEqual(a['actual_observations'],((125,0,0),(126,0,0),(1623,8,2)))
+        self.assertLess(case['first_point']['first_dt'],units[0]['start_dt'])
+        self.assertLess(case['first_point']['first_raw_count'],old['local_counts'][0])
+        self.assertEqual((old['actual_prefixes'],case['formation']['resolution']['first_raw_count']),((125,126,1623),1623))
+        for flag in ('source_origin_bridge_proven','seed0_seed1_resolved','production_merged'):self.assertFalse(a[flag])
+
 
 if __name__ == '__main__':
     unittest.main()

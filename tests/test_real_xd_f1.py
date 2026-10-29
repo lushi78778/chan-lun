@@ -3896,5 +3896,142 @@ class TestGxClockConsumers(unittest.TestCase):
             self.assertFalse(any(chan.analyze_point_chain(delayed+[future],rows,late,'auto-GX-F1')))
 
 
+# G1给定BI35后共同后缀的实际活动窗消费者；不继承原链点位与源起点资格。
+M3_G1_CONSUMERS_AUDIT = {'certificate_sha256': '8a26b8b4a8c4bed25d72e2b593881d41e6efb6ac49a614cbf5732a0e79b5d8c8',
+ 'actual_observations': ((125, 0, 0), (126, 0, 0), (1623, 8, 2)),
+ 'auto': (0, 7, 'consolidation', None, (0,), ((1027, 1066),), None),
+ 'auto_spans': ((0, 2, 6),),
+ 'base_sha256': 'e5676d07d13f1170922f18866c63c3f9b68e560281626778fe53703893fd241e',
+ 'contract': 'all_current',
+ 'events': ((35, 49, 2, 63),
+            (50, 60, 1, 63),
+            (61, 63, 1, 66),
+            (64, 76, 1, 79),
+            (77, 89, 1, 94),
+            (90, 100, 2, 126),
+            (101, 123, 1, 126),
+            (124, 126, 1, 129)),
+ 'f1': ((0, 2, 'consolidation', None, (0,), ((1027, 1066),), 3),
+        (3, 5, 'consolidation', None, (3,), ((1022, 1066),), 6)),
+ 'f1_evidence': (4, 7),
+ 'f1_first': (924, 1540),
+ 'f2': ((0, 1, 'incomplete', None, (), (), None),),
+ 'fixture': 'real_causal_formation.json',
+ 'fixture_sha256': '6e72f6931e6cbe957ee40d184c51ab0bf9a666aefd6f9c521333343b7e3dbf5b',
+ 'id': '588000-30m-20220801-20230501',
+ 'impact_contract': (0, 'all_current', 1623),
+ 'limit': 1623,
+ 'packet_sha256': '35e7a15319477a7628edf2ac1a8869969a60534ed632db8535b2d3fb1978a009',
+ 'prior_receipt_sha256': '675b97d6eb3b08263428c4c5b91fa31f41f7f7893a62a37d8a92475dff9adbe7',
+ 'production_merged': False,
+ 'publication_proofs': ((1056, '2022-12-01 15:00:00', True),
+                        (1056, '2022-12-01 15:00:00', True),
+                        (1044, '2022-12-07 10:00:00', True),
+                        (1011, '2022-12-29 11:30:00', True),
+                        (1048, '2023-02-09 10:00:00', True),
+                        (1155, '2023-04-13 11:00:00', True),
+                        (1141, '2023-04-13 15:00:00', True),
+                        (1206, '2023-04-20 11:00:00', True)),
+ 'seed': 35,
+ 'seed0_seed1_resolved': False,
+ 'source_origin_bridge_proven': False,
+ 'source_rows': 1638,
+ 'tail': (6, 7, 'incomplete', None, (), (), None),
+ 'units': (('up', '2022-10-12 10:30:00', '2022-11-04 15:00:00', 910, 1126, 910, 1126, 2, 63, 748, 748),
+           ('down', '2022-11-04 15:00:00', '2022-11-28 10:00:00', 1126, 1027, 1027, 1126, 1, 63, 748, 748),
+           ('up', '2022-11-28 10:00:00', '2022-12-02 10:30:00', 1027, 1066, 1027, 1066, 1, 66, 777, 777),
+           ('down', '2022-12-02 10:30:00', '2022-12-23 14:30:00', 1066, 954, 954, 1066, 1, 79, 924, 924),
+           ('up', '2022-12-23 14:30:00', '2023-01-30 10:00:00', 954, 1093, 954, 1093, 1, 94, 1137, 1137),
+           ('down', '2023-01-30 10:00:00', '2023-02-20 10:00:00', 1093, 1022, 1022, 1093, 2, 126, 1535, 1535),
+           ('up', '2023-02-20 10:00:00', '2023-04-10 10:30:00', 1022, 1216, 1022, 1216, 1, 126, 1540, 1540),
+           ('down', '2023-04-10 10:30:00', '2023-04-14 10:30:00', 1216, 1139, 1139, 1216, 1, 129, 1580, 1580)),
+ 'visible_sizes': (0, 2, 3, 4, 5, 6, 7, 8)}
+
+
+def g1_consumer_input():
+    """只消费G1登记的1623行活动窗，给定BI35起段；不继承旧点位。"""
+    a=M3_G1_CONSUMERS_AUDIT;case,units=gap_revision_input(a)
+    rows=m3_xd_rows(dict(raw_rows=case['raw_rows'][:a['limit']]))
+    root='G1-given35:'+a['certificate_sha256']
+    given=[chan.ConfirmedMove(root+':xd:'+str(i),'given-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),
+           u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,
+           rows[u['confirmed_raw_count']-1]['available_dt']) for i,u in enumerate(units)]
+    return case,units,a,rows,given
+
+
+class TestG1BoundedConsumers(unittest.TestCase):
+    """G1共同后缀的同级两项F1与单核心自动递归分开，实际合同仅all_current。"""
+
+    @staticmethod
+    def _types(units,a,arrivals):
+        out=[]
+        for spec in a['f1']:
+            known=max(arrivals[:spec[-1]+1]);width=sum(at<=known for at in arrivals)
+            move=next(m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units[:width]),a['limit']))
+                      if m.complete and m.seg_start==spec[0])
+            out.append(m3_xd_type('G1-given35:'+a['certificate_sha256'],move,units[:width],known))
+        return out
+
+    def test_actual_prefixes_freeze_two_F1_at_separate_proofs_and_keep_F2_incomplete(self):
+        _,units,a,rows,_=g1_consumer_input();first={};types=[];prior=[]
+        self.assertEqual(len(rows),1623)
+        for count in range(1,len(rows)+1):
+            visible=[u for u in units if u['confirmed_raw_count']<=count]
+            done=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),count)) if m.complete]
+            expected=[s for s in a['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+            shapes=[m3_xd_shape(m) for m in done]
+            self.assertEqual(shapes,[m3_xd_expected(units,s) for s in expected]);self.assertEqual(shapes[:len(prior)],prior);prior=shapes
+            for m in done:
+                if m.seg_start not in first:
+                    first[m.seg_start]=count;types.append(m3_xd_type('G1-given35:'+a['certificate_sha256'],m,visible,rows[count-1]['available_dt']))
+            self.assertEqual(chan.confirm_level_up(types,rows[count-1]['available_dt'],'F2'),[])
+        self.assertEqual(tuple(first[s[0]] for s in a['f1']),a['f1_first'])
+        self.assertEqual(tuple(len(t.evidence_ids) for t in types),a['f1_evidence'])
+        self.assertEqual(tuple((round(t.low*1000),round(t.high*1000)) for t in types),((910,1126),(954,1093)))
+        self.assertEqual(tuple(t.unit_ids for t in types),tuple(tuple('G1-given35:'+a['certificate_sha256']+':xd:'+str(i) for i in range(s[0],s[1]+1)) for s in a['f1']))
+        records=[dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),high_ticks=round(t.high*1000)) for t in types]
+        self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],[m3_xd_expected(records,s) for s in a['f2']])
+        self.assertEqual(m3_xd_shape(chan.same_level_decompose(m3_xd_parts(dict(units=units),len(rows)))[-1]),m3_xd_expected(units,a['tail']))
+        self.assertFalse(chan.scan_first_points(types,rows,rows[-1]['available_dt'],'F2').points)
+        self.assertFalse(any(chan.analyze_point_chain(types,rows,rows[-1]['available_dt'],'F2')))
+
+    def test_recursive_single_center_never_becomes_a_strict_or_auxiliary_first_point(self):
+        def forbidden(a,b):raise AssertionError('单中枢开放走势不得评估严格力度')
+        case,units,a,rows,given=g1_consumer_input()
+        for size in range(1,len(given)+1):
+            now=given[size-1].confirmed_dt;scan=chan.scan_strict_divergence(given[:size],now,'auto-G1-F1',forbidden,'guard')
+            self.assertEqual((scan.completed_types,scan.results,tuple(r for _,r in scan.skipped)),(0,(),('not_two_separated_centers',)))
+            auxiliary=chan.scan_first_points(given[:size],rows,now,'auto-G1-F1')
+            self.assertEqual((auxiliary.points,auxiliary.exclusions,auxiliary.completed_types),([],(),0))
+        self.assertEqual([m3_xd_shape(m) for m in chan.level_up(given)],[m3_xd_expected(units,a['auto'])])
+        self.assertFalse(any(chan.analyze_point_chain(given,rows,rows[-1]['available_dt'],'auto-G1-F1')))
+        historical=case['first_point']
+        self.assertLess(historical['first_raw_count'],units[0]['confirmed_raw_count'])
+        self.assertLess(date(historical['first_dt']),given[0].start_dt)
+        self.assertEqual(historical['side'],'sell1')
+        self.assertFalse(a['source_origin_bridge_proven']);self.assertFalse(a['seed0_seed1_resolved'])
+
+    def test_shared_BI126_keeps_distinct_arrivals_and_late_proofs_delay_only_their_F1(self):
+        _,units,a,rows,given=g1_consumer_input();arrivals=[g.confirmed_dt for g in given];base=self._types(units,a,arrivals)
+        self.assertEqual((units[5]['proof_bi'],units[6]['proof_bi']),(126,126))
+        self.assertEqual((units[5]['mode'],units[6]['mode']),(2,1))
+        self.assertLess(arrivals[5],arrivals[6]);self.assertEqual(tuple(units[i]['confirmed_raw_count'] for i in (5,6)),(1535,1540))
+        before=[m for m in chan.same_level_decompose(given[:6]) if m.complete]
+        self.assertEqual(len(before),1)
+        for proof in (3,6):
+            late=arrivals[proof]+timedelta(days=1);delayed=list(arrivals);delayed[proof]=late
+            for i in range(proof+1,len(delayed)):delayed[i]=max(delayed[i-1],arrivals[i])
+            after=self._types(units,a,delayed);target=0 if proof==3 else 1
+            self.assertEqual((after[target].confirmed_dt,len(after[target].evidence_ids)),(late,a['f1_evidence'][target]))
+            if target:self.assertEqual(after[0],base[0])
+        late_tail=arrivals[7]+timedelta(days=1);delayed=list(arrivals);delayed[7]=late_tail
+        self.assertEqual(self._types(units,a,delayed),base)
+        now=rows[-1]['available_dt'];future=given[-1]._replace(move_id=None,level=None,low=float('nan'),confirmed_dt=now+timedelta(days=10))
+        self.assertEqual(chan.scan_strict_divergence(given+[future],now,'auto-G1-F1'),chan.scan_strict_divergence(given,now,'auto-G1-F1'))
+        poisoned=[dict(r) for r in rows]+[dict(dt=now+timedelta(days=10),closed_dt=now+timedelta(days=10),available_dt=now+timedelta(days=11),high=float('nan'))]
+        self.assertEqual(chan.scan_first_points(given+[future],poisoned,now,'auto-G1-F1'),chan.scan_first_points(given,rows,now,'auto-G1-F1'))
+        self.assertFalse(any(chan.analyze_point_chain(given+[future],poisoned,now,'auto-G1-F1')))
+
+
 if __name__ == '__main__':
     unittest.main()
