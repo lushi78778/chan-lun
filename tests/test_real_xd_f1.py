@@ -4229,5 +4229,439 @@ class TestExpandedSuffixConsumers(unittest.TestCase):
                 self.assertFalse(any(chan.analyze_point_chain(given+[future],poisoned,now,'auto-expanded-F1')))
 
 
+# M1给seed38的实际双合同完整后缀；264与266的不同起点证书分别保留。
+M3_M1_FULL_SUFFIX_AUDIT = {'certificate_sha256': '203d72ee106711ff44e535492735200f5914bbe6f3f23e447a4d899fa41f7562',
+ 'auto': ((0, 5, 'consolidation', 'up', (1,), ((902, 944),), 8),
+          (6, 27, 'up', 'up', (6, 15), ((753, 821), (985, 1118)), None)),
+ 'auto_spans': (((1, 3, 5),), ((6, 8, 14), (15, 17, 27))),
+ 'base_sha256': '23dc9fcf57833c2f36a51814ef97ca2576ec377a3bd33673113402eabb24d1f0',
+ 'bounds': {'current': 3942, 'fixed': 3978},
+ 'candidates': {19: {'gap': 48, 'leave': (18,), 'leave_high': 1136, 'prior_high': 1202, 'reference': (14,)},
+                21: {'gap': 48, 'leave': (20,), 'leave_high': 1117, 'prior_high': 1202, 'reference': (14,)},
+                23: {'gap': 48, 'leave': (22,), 'leave_high': 1099, 'prior_high': 1202, 'reference': (14,)},
+                25: {'gap': 48, 'leave': (24,), 'leave_high': 1048, 'prior_high': 1202, 'reference': (14,)},
+                27: {'gap': 48, 'leave': (26,), 'leave_high': 1100, 'prior_high': 1202, 'reference': (14,)}},
+ 'clocks': {'current': {'auto_evidence': 9,
+                        'auto_first': 2226,
+                        'candidate_raw': ((19, 3360), (21, 3544), (23, 3665), (25, 3815), (27, 3908)),
+                        'f1_evidence': (5, 9, 12, 16, 18, 21, 25, 27),
+                        'f1_first': (1236, 2226, 2593, 3188, 3317, 3544, 3815, 3908),
+                        'local': (637,
+                                  930,
+                                  1011,
+                                  1123,
+                                  1236,
+                                  1754,
+                                  1895,
+                                  2144,
+                                  2226,
+                                  2349,
+                                  2464,
+                                  2593,
+                                  2721,
+                                  3068,
+                                  3188,
+                                  3188,
+                                  3317,
+                                  3317,
+                                  3360,
+                                  3461,
+                                  3544,
+                                  3665,
+                                  3665,
+                                  3815,
+                                  3815,
+                                  3831,
+                                  3908,
+                                  3936),
+                        'publication_proofs': ((963, '2023-08-14 13:30:00', True),
+                                               (930, '2023-09-28 10:00:00', True),
+                                               (906, '2023-10-19 10:00:00', True),
+                                               (936, '2023-11-06 13:30:00', True),
+                                               (907, '2023-11-23 10:00:00', True),
+                                               (806, '2024-02-21 14:00:00', True),
+                                               (845, '2024-03-14 11:00:00', True),
+                                               (774, '2024-04-25 09:30:00', True),
+                                               (793, '2024-05-13 10:00:00', True),
+                                               (781, '2024-05-30 14:30:00', True),
+                                               (783, '2024-06-19 13:30:00', True),
+                                               (745, '2024-07-09 15:00:00', True),
+                                               (733, '2024-07-30 10:00:00', True),
+                                               (698, '2024-09-24 14:00:00', True),
+                                               (1094, '2024-10-21 09:30:00', True),
+                                               (1094, '2024-10-21 09:30:00', True),
+                                               (1129, '2024-11-08 11:00:00', True),
+                                               (1129, '2024-11-08 11:00:00', True),
+                                               (1062, '2024-11-15 10:00:00', True),
+                                               (1075, '2024-12-02 11:00:00', True),
+                                               (1042, '2024-12-13 13:30:00', True),
+                                               (997, '2025-01-03 09:30:00', True),
+                                               (997, '2025-01-03 09:30:00', True),
+                                               (1012, '2025-01-27 14:00:00', True),
+                                               (1012, '2025-01-27 14:00:00', True),
+                                               (1069, '2025-02-06 11:30:00', True),
+                                               (1062, '2025-02-19 09:30:00', True),
+                                               (1171, '2025-02-24 10:00:00', True)),
+                        'published': (637,
+                                      930,
+                                      1011,
+                                      1123,
+                                      1236,
+                                      1754,
+                                      1895,
+                                      2144,
+                                      2226,
+                                      2349,
+                                      2464,
+                                      2593,
+                                      2721,
+                                      3068,
+                                      3188,
+                                      3188,
+                                      3317,
+                                      3317,
+                                      3360,
+                                      3461,
+                                      3544,
+                                      3665,
+                                      3665,
+                                      3815,
+                                      3815,
+                                      3831,
+                                      3908,
+                                      3936)},
+            'fixed': {'auto_evidence': 9,
+                      'auto_first': 2235,
+                      'candidate_raw': ((19, 3391), (21, 3572), (23, 3692), (25, 3822), (27, 3913)),
+                      'f1_evidence': (5, 9, 12, 16, 18, 21, 25, 27),
+                      'f1_first': (1244, 2235, 2609, 3198, 3323, 3572, 3822, 3913),
+                      'local': (642,
+                                943,
+                                1017,
+                                1143,
+                                1244,
+                                1757,
+                                1919,
+                                2153,
+                                2235,
+                                2360,
+                                2472,
+                                2609,
+                                2739,
+                                3081,
+                                3198,
+                                3198,
+                                3323,
+                                3323,
+                                3391,
+                                3467,
+                                3572,
+                                3692,
+                                3692,
+                                3822,
+                                3822,
+                                3849,
+                                3913,
+                                3942),
+                      'publication_proofs': ((963, '2023-08-14 13:30:00', False),
+                                             (934, '2023-09-28 14:30:00', False),
+                                             (906, '2023-10-19 10:00:00', False),
+                                             (950, '2023-11-08 11:30:00', False),
+                                             (907, '2023-11-23 10:00:00', False),
+                                             (806, '2024-02-21 14:00:00', False),
+                                             (833, '2024-03-15 14:00:00', False),
+                                             (775, '2024-04-25 11:30:00', False),
+                                             (793, '2024-05-13 10:00:00', False),
+                                             (786, '2024-05-31 10:30:00', False),
+                                             (783, '2024-06-19 13:30:00', False),
+                                             (758, '2024-07-11 10:30:00', False),
+                                             (733, '2024-07-30 10:00:00', False),
+                                             (718, '2024-09-25 10:30:00', False),
+                                             (1118, '2024-10-21 13:30:00', False),
+                                             (1118, '2024-10-21 13:30:00', False),
+                                             (1129, '2024-11-08 11:00:00', False),
+                                             (1129, '2024-11-08 11:00:00', False),
+                                             (1010, '2024-11-19 14:00:00', False),
+                                             (1075, '2024-12-02 11:00:00', False),
+                                             (1016, '2024-12-17 13:30:00', False),
+                                             (981, '2025-01-06 15:00:00', False),
+                                             (981, '2025-01-06 15:00:00', False),
+                                             (1008, '2025-01-27 15:00:00', False),
+                                             (1008, '2025-01-27 15:00:00', False),
+                                             (1093, '2025-02-07 13:30:00', False),
+                                             (1062, '2025-02-19 09:30:00', False),
+                                             (1171, '2025-02-24 10:00:00', False)),
+                      'published': (642,
+                                    943,
+                                    1017,
+                                    1143,
+                                    1244,
+                                    1757,
+                                    1919,
+                                    2153,
+                                    2235,
+                                    2360,
+                                    2472,
+                                    2609,
+                                    2739,
+                                    3081,
+                                    3198,
+                                    3198,
+                                    3323,
+                                    3323,
+                                    3391,
+                                    3467,
+                                    3572,
+                                    3692,
+                                    3692,
+                                    3822,
+                                    3822,
+                                    3849,
+                                    3913,
+                                    3942)}},
+ 'events': ((38, 40, 1, 43),
+            (41, 67, 1, 72),
+            (68, 76, 1, 79),
+            (77, 83, 1, 86),
+            (84, 90, 1, 93),
+            (91, 119, 1, 124),
+            (120, 136, 1, 139),
+            (137, 151, 1, 154),
+            (152, 158, 1, 161),
+            (159, 167, 1, 170),
+            (168, 178, 1, 181),
+            (179, 191, 1, 194),
+            (192, 200, 1, 203),
+            (201, 223, 1, 226),
+            (224, 228, 2, 234),
+            (229, 231, 1, 234),
+            (232, 234, 2, 246),
+            (235, 243, 1, 246),
+            (244, 248, 1, 251),
+            (249, 253, 1, 256),
+            (254, 260, 1, 263),
+            (261, 263, 2, 273),
+            (264, 270, 1, 273),
+            (271, 273, 2, 285),
+            (274, 278, 1, 285),
+            (279, 285, 1, 288),
+            (286, 292, 1, 295),
+            (293, 295, 1, 298)),
+ 'excluded': {38: (),
+              41: (50, 56),
+              68: (71,),
+              77: (),
+              84: (89,),
+              91: (110,),
+              120: (123, 127),
+              137: (144,),
+              152: (),
+              159: (166,),
+              168: (),
+              179: (),
+              192: (197,),
+              201: (206, 208, 210, 212),
+              224: (),
+              229: (),
+              232: (),
+              235: (238, 240),
+              244: (),
+              249: (),
+              254: (259,),
+              261: (),
+              264: (269,),
+              271: (),
+              274: (),
+              279: (282, 284),
+              286: (),
+              293: ()},
+ 'f1': ((0, 3, 'consolidation', 'up', (1,), ((902, 944),), 4),
+        (4, 7, 'consolidation', 'up', (5,), ((753, 867),), 8),
+        (8, 10, 'consolidation', None, (8,), ((753, 804),), 11),
+        (11, 13, 'consolidation', None, (11,), ((715, 792),), 14),
+        (14, 16, 'consolidation', None, (14,), ((915, 1118),), 17),
+        (17, 19, 'consolidation', None, (17,), ((991, 1118),), 20),
+        (20, 22, 'consolidation', None, (20,), ((1016, 1099),), 23),
+        (23, 25, 'consolidation', None, (23,), ((1001, 1048),), 26)),
+ 'f2': ((0, 7, 'up', 'up', (1, 5), ((753, 804), (991, 1099)), None),),
+ 'f2_spans': (((1, 3, 4), (5, 7, 7)),),
+ 'fixture': 'real_third_point_xd_margin0.json',
+ 'fixture_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+ 'id': '588000-30m-20230501-20250228',
+ 'impact_contracts': ((4, 'all_current', 3942), (5, 'fixed_without_active', 3978)),
+ 'natural_event_index': 24,
+ 'natural_reaction': (280, 282, 1, 285),
+ 'production_merged': False,
+ 'rejected': {38: {},
+              41: {44: 45, 46: 47, 48: 51, 52: 53, 54: 67, 58: 59, 60: 61, 62: 63, 64: 65, 66: 67},
+              68: {73: 74, 75: 76},
+              77: {80: 81, 82: 83},
+              84: {87: 90},
+              91: {94: 95,
+                   96: 97,
+                   98: 99,
+                   100: 101,
+                   102: 103,
+                   104: 105,
+                   106: 107,
+                   108: 111,
+                   112: 113,
+                   114: 115,
+                   116: 117,
+                   118: 119},
+              120: {125: 128, 129: 130, 131: 132, 133: 134, 135: 136},
+              137: {140: 141, 142: 145, 146: 147, 148: 149, 150: 151},
+              152: {155: 156, 157: 158},
+              159: {162: 163, 164: 167},
+              168: {171: 172, 173: 174, 175: 176, 177: 178},
+              179: {182: 183, 184: 185, 186: 187, 188: 189, 190: 191},
+              192: {195: 198, 199: 200},
+              201: {204: 213, 214: 215, 216: 217, 218: 219, 220: 221, 222: 223},
+              224: {227: 228},
+              229: {},
+              232: {},
+              235: {242: 243},
+              244: {247: 248},
+              249: {252: 253},
+              254: {257: 260},
+              261: {},
+              264: {267: 270},
+              271: {},
+              274: {},
+              279: {},
+              286: {289: 290, 291: 292},
+              293: {}},
+ 'seed': 38,
+ 'source_origin_bridge_proven': False,
+ 'tail': (26, 27, 'incomplete', None, (), (), None),
+ 'units': (('up', '2023-07-28 10:00:00', '2023-08-07 09:30:00', 991, 1022, 991, 1022, 1, 43),
+           ('down', '2023-08-07 09:30:00', '2023-09-22 10:00:00', 1022, 902, 902, 1022, 1, 72),
+           ('up', '2023-09-22 10:00:00', '2023-10-12 15:00:00', 902, 944, 902, 944, 1, 79),
+           ('down', '2023-10-12 15:00:00', '2023-10-26 14:00:00', 944, 879, 879, 944, 1, 86),
+           ('up', '2023-10-26 14:00:00', '2023-11-15 10:00:00', 879, 956, 879, 956, 1, 93),
+           ('down', '2023-11-15 10:00:00', '2024-02-05 11:00:00', 956, 666, 666, 956, 1, 124),
+           ('up', '2024-02-05 11:00:00', '2024-03-12 10:00:00', 666, 867, 666, 867, 1, 139),
+           ('down', '2024-03-12 10:00:00', '2024-04-22 10:00:00', 867, 753, 753, 867, 1, 154),
+           ('up', '2024-04-22 10:00:00', '2024-05-06 10:30:00', 753, 821, 753, 821, 1, 161),
+           ('down', '2024-05-06 10:30:00', '2024-05-27 11:30:00', 821, 753, 753, 821, 1, 170),
+           ('up', '2024-05-27 11:30:00', '2024-06-13 14:00:00', 753, 804, 753, 804, 1, 181),
+           ('down', '2024-06-13 14:00:00', '2024-07-05 11:30:00', 804, 715, 715, 804, 1, 194),
+           ('up', '2024-07-05 11:30:00', '2024-07-22 11:30:00', 715, 792, 715, 792, 1, 203),
+           ('down', '2024-07-22 11:30:00', '2024-09-18 13:30:00', 792, 671, 671, 792, 1, 226),
+           ('up', '2024-09-18 13:30:00', '2024-10-09 14:00:00', 671, 1202, 671, 1202, 2, 234),
+           ('down', '2024-10-09 14:00:00', '2024-10-16 10:00:00', 1202, 915, 915, 1202, 1, 234),
+           ('up', '2024-10-16 10:00:00', '2024-10-21 13:30:00', 915, 1118, 915, 1118, 2, 246),
+           ('down', '2024-10-21 13:30:00', '2024-11-04 09:30:00', 1118, 985, 985, 1118, 1, 246),
+           ('up', '2024-11-04 09:30:00', '2024-11-12 10:00:00', 985, 1136, 985, 1136, 1, 251),
+           ('down', '2024-11-12 10:00:00', '2024-11-25 14:30:00', 1136, 991, 991, 1136, 1, 256),
+           ('up', '2024-11-25 14:30:00', '2024-12-10 09:30:00', 991, 1117, 991, 1117, 1, 263),
+           ('down', '2024-12-10 09:30:00', '2024-12-17 13:30:00', 1117, 1016, 1016, 1117, 2, 273),
+           ('up', '2024-12-17 13:30:00', '2024-12-27 11:30:00', 1016, 1099, 1016, 1099, 1, 273),
+           ('down', '2024-12-27 11:30:00', '2025-01-06 15:00:00', 1099, 981, 981, 1099, 2, 285),
+           ('up', '2025-01-06 15:00:00', '2025-01-16 10:00:00', 981, 1048, 981, 1048, 1, 285),
+           ('down', '2025-01-16 10:00:00', '2025-01-27 15:00:00', 1048, 1008, 1001, 1048, 1, 288),
+           ('up', '2025-01-27 15:00:00', '2025-02-13 10:00:00', 1008, 1100, 1008, 1100, 1, 295),
+           ('down', '2025-02-13 10:00:00', '2025-02-19 09:30:00', 1100, 1062, 1062, 1100, 1, 298))}
+
+
+def m1_full_suffix_input(contract):
+    """M1给定38长链仅消费本合同上限；不拼接266局部起点。"""
+    a=M3_M1_FULL_SUFFIX_AUDIT;clock=a['clocks'][contract]
+    spec=dict(a,units=[tuple(u)+(clock['local'][i],clock['published'][i]) for i,u in enumerate(a['units'])])
+    case,units=gap_revision_input(spec);rows=m3_xd_rows(dict(raw_rows=case['raw_rows'][:a['bounds'][contract]]))
+    root='M1-given38:'+contract+':'+a['certificate_sha256']
+    given=[chan.ConfirmedMove(root+':xd:'+str(i),'given-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),
+           u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,
+           rows[u['confirmed_raw_count']-1]['available_dt']) for i,u in enumerate(units)]
+    return case,units,a,rows,given
+
+
+class TestM1FullSuffixConsumers(unittest.TestCase):
+    """M1给seed38完整后缀的双时钟、同级F1及自动递归，保留自然源前提。"""
+
+    @staticmethod
+    def _types(units,a,arrivals,contract):
+        out=[]
+        for spec in a['f1']:
+            known=max(arrivals[:spec[-1]+1]);width=sum(at<=known for at in arrivals)
+            move=next(m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units[:width]),max(a['bounds'].values()))) if m.complete and m.seg_start==spec[0])
+            out.append(m3_xd_type('M1-given38:'+contract+':'+a['certificate_sha256'],move,units[:width],known))
+        return out
+
+    def test_all_actual_prefixes_freeze_eight_F1_batches_and_preserve_entry_direction(self):
+        total=0
+        for contract in ('current','fixed'):
+            _,units,a,rows,_=m1_full_suffix_input(contract);first={};types=[];previous=[]
+            for count in range(1,len(rows)+1):
+                total+=1;visible=[u for u in units if u['confirmed_raw_count']<=count]
+                done=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),count)) if m.complete]
+                shapes=[m3_xd_shape(m) for m in done];expected=[s for s in a['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+                self.assertEqual(shapes,[m3_xd_expected(units,s) for s in expected]);self.assertEqual(shapes[:len(previous)],previous);previous=shapes
+                for m in done:
+                    if m.seg_start not in first:
+                        first[m.seg_start]=count;types.append(m3_xd_type('M1-given38:'+contract+':'+a['certificate_sha256'],m,visible,rows[count-1]['available_dt']))
+                self.assertEqual(chan.confirm_level_up(types,rows[count-1]['available_dt'],'F2'),[])
+            clock=a['clocks'][contract];self.assertEqual(tuple(first[s[0]] for s in a['f1']),clock['f1_first'])
+            self.assertEqual(tuple(len(t.evidence_ids) for t in types),clock['f1_evidence'])
+            self.assertEqual(tuple(len(t.evidence_ids) for t in types),(5,9,12,16,18,21,25,27))
+            for t in types[:2]:self.assertEqual(t.direction,'up');self.assertLess(t.end_price,t.start_price)
+            records=[dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),high_ticks=round(t.high*1000)) for t in types]
+            self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],[m3_xd_expected(records,s) for s in a['f2']])
+            self.assertEqual(m3_xd_shape(chan.same_level_decompose(m3_xd_parts(dict(units=units),len(rows)))[-1]),m3_xd_expected(units,a['tail']))
+            self.assertFalse(chan.scan_strict_divergence(types,rows[-1]['available_dt'],'F2').results)
+            self.assertFalse(any(chan.analyze_point_chain(types,rows,rows[-1]['available_dt'],'F2')))
+        self.assertEqual(total,7920)
+
+    def test_recursive_closed_consolidation_and_five_open_candidate_roles_remain_separate(self):
+        def forbidden(a,b):raise AssertionError('开放候选不评估力度')
+        for contract in ('current','fixed'):
+            _,units,a,rows,given=m1_full_suffix_input(contract);snapshot=None;identity=None
+            for size in range(1,29):
+                now=given[size-1].confirmed_dt;scan=chan.scan_strict_divergence(given[:size],now,'auto-M1-F1',forbidden,'guard')
+                self.assertEqual(scan.completed_types,int(size>8));skipped=('not_trend',) if size>8 else ()
+                if size in a['candidates']:
+                    point,=scan.results;c=a['candidates'][size]
+                    self.assertEqual((point.status,point.reason),('candidate','trend_open'))
+                    self.assertEqual((tuple(int(i.rsplit(':',1)[1]) for i in point.reference_ids),tuple(int(i.rsplit(':',1)[1]) for i in point.leave_ids)),(c['reference'],c['leave']))
+                    self.assertEqual(dict(point.conditions),dict(trend=None,separated_centers=True,new_extreme=None,leave_third_point=None))
+                    self.assertEqual((point.force_method,point.force_reference,point.force_leave),(None,None,None))
+                    if identity is None:identity=point.divergence_id
+                    else:self.assertEqual(point.divergence_id,identity)
+                else:
+                    self.assertFalse(scan.results);skipped+=('no_compare_legs' if size>=18 else 'not_two_separated_centers',)
+                self.assertEqual(tuple(r for _,r in scan.skipped),skipped)
+                types=chan.confirm_level_up(given[:size],now,'auto-M1-F1')
+                if types:
+                    if snapshot is None:snapshot=types[0]
+                    self.assertEqual(types,[snapshot]);self.assertEqual((snapshot.kind,len(snapshot.evidence_ids)),('consolidation',9))
+                    self.assertEqual(snapshot.direction,'up');self.assertLess(snapshot.end_price,snapshot.start_price)
+                first=chan.scan_first_points(given[:size],rows,now,'auto-M1-F1')
+                self.assertEqual((first.points,tuple(r for _,r in first.exclusions)),([],('not_trend',) if size>8 else ()))
+            self.assertEqual([m3_xd_shape(m) for m in chan.level_up(given)],[m3_xd_expected(units,s) for s in a['auto']])
+            self.assertFalse(any(chan.analyze_point_chain(given,rows,rows[-1]['available_dt'],'auto-M1-F1')))
+
+    def test_actual_batches_and_late_proofs_do_not_backfill_candidates_or_completed_snapshots(self):
+        for contract in ('current','fixed'):
+            _,units,a,rows,given=m1_full_suffix_input(contract);arrivals=[g.confirmed_dt for g in given];base=self._types(units,a,arrivals,contract)
+            sizes={sum(at<=n for at in a['clocks'][contract]['published']) for n in range(1,len(rows)+1)}
+            self.assertEqual(set(range(29))-sizes,{15,17,22,24})
+            for proof,target in ((14,3),(23,6)):
+                delayed=list(arrivals);late=arrivals[proof]+timedelta(days=1);delayed[proof]=late
+                for i in range(proof+1,len(delayed)):delayed[i]=max(delayed[i-1],arrivals[i])
+                after=self._types(units,a,delayed,contract)
+                self.assertEqual(after[:target],base[:target]);self.assertEqual((after[target].confirmed_dt,len(after[target].evidence_ids)),(late,a['clocks'][contract]['f1_evidence'][target]))
+            now=rows[-1]['available_dt'];tail=list(given);tail[-1]=given[-1]._replace(confirmed_dt=now+timedelta(days=1))
+            final=chan.scan_strict_divergence(given,now,'auto-M1-F1');self.assertFalse(final.results)
+            candidate,=chan.scan_strict_divergence(tail,now,'auto-M1-F1').results
+            self.assertEqual((candidate.status,candidate.reason),('candidate','trend_open'))
+            self.assertEqual(candidate.leave_ids,(given[26].move_id,))
+            after_tail=chan.scan_strict_divergence(tail,tail[-1].confirmed_dt,'auto-M1-F1');self.assertFalse(after_tail.results)
+            delayed_arrivals=list(arrivals);delayed_arrivals[-1]=tail[-1].confirmed_dt;self.assertEqual(self._types(units,a,delayed_arrivals,contract),base)
+            future=given[-1]._replace(move_id=None,level=None,high=float('nan'),confirmed_dt=now+timedelta(days=10))
+            self.assertEqual(chan.scan_strict_divergence(given+[future],now,'auto-M1-F1'),final)
+            poisoned=rows+[dict(dt=now+timedelta(days=10),closed_dt=now+timedelta(days=10),available_dt=now+timedelta(days=11),high=float('nan'))]
+            self.assertEqual(chan.scan_first_points(given+[future],poisoned,now,'auto-M1-F1'),chan.scan_first_points(given,rows,now,'auto-M1-F1'))
+
+
 if __name__ == '__main__':
     unittest.main()
