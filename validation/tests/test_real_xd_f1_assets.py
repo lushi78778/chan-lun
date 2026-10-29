@@ -3646,6 +3646,94 @@ class TestRealXdF1Assets(unittest.TestCase):
         self.assertEqual((old['actual_prefixes'],case['formation']['resolution']['first_raw_count']),((125,126,1623),1623))
         for flag in ('source_origin_bridge_proven','seed0_seed1_resolved','production_merged'):self.assertFalse(a[flag])
 
+    def _expanded_suffix_source(self,key):
+        a=embedded_table('test_real_xd_f1.py','M3_EXPANDED_SUFFIX_AUDIT')[key]
+        base=(embedded_table('test_real_xd_f1.py','M3_CONDITIONAL_F1_ADMISSION_AUDIT')['S3_recent10'] if key=='S3' else M3_EXPANDED_FIRST_AUDIT['T_day'])
+        digest=hashlib.sha256(json.dumps(base,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8')).hexdigest();self.assertEqual(a['base_sha256'],digest)
+        self.assertEqual(a['events'][:6] if key=='S3' else a['events'],base['events'] if key=='S3' else (base['parent'],base['target']))
+        path=ROOT/'tests/fixtures'/a['fixture'];self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),a['fixture_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==a['id']);tool=compiler();rows=case['raw_rows'][:max(a['bounds'].values())]
+        _,_,bis=tool.foundation(rows,'106');self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis[:-1])]);p=tool.components(rows,bis,None);units=tool.xd_records(p,a['events'])
+        fields=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        self.assertEqual([tuple(u[k] for k in fields) for u in units],list(a['units']))
+        return a,case,p,units
+
+    @staticmethod
+    def _expanded_suffix_ready(parts,a,key):
+        ready=[manual_xd_certificate_ready(parts,e) for e in a['events']]
+        if key=='S3':
+            ready[3]=(len(parts)>42 and ready[2] and manual_xd_certificate_ready(parts,a['natural_reaction']) and
+                      max(parts[i]['end_ticks'] for i in range(37,43,2))<=parts[36]['start_ticks'] and
+                      max(u['low_ticks'] for u in parts[36:39])<=min(u['high_ticks'] for u in parts[36:39]))
+        elif len(parts)>59:
+            ready[1]=(ready[0] and manual_xd_certificate_ready(parts,a['natural_reaction']) and
+                      max(parts[i]['end_ticks'] for i in range(41,60,2))<=parts[40]['start_ticks'])
+        return ready
+
+    def test_expanded_S3_T_all_actual_raw_clocks_bind_natural_reactions_and_first_proof_prices(self):
+        total=0;prefixes=0;tool=compiler()
+        for key in ('S3','T'):
+            a,case,_,_=self._expanded_suffix_source(key);seen={c:{} for c in a['bounds']}
+            for count in range(1,max(a['bounds'].values())+1):
+                prefixes+=1;rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+                self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis[:-1])])
+                for contract in a['bounds']:
+                    if count>a['bounds'][contract]:continue
+                    total+=1;p=tool.components(rows,bis if contract=='current' else bis[:-1],None);ready=self._expanded_suffix_ready(p,a,key);clock=a['clocks'][contract]
+                    self.assertEqual(ready,[at<=count for at in clock['local']])
+                    size=next((i for i,ok in enumerate(ready) if not ok),len(ready));self.assertEqual(size,sum(at<=count for at in clock['published']))
+                    for i in range(size):
+                        if i in seen[contract]:continue
+                        seen[contract][i]=count;b=p[a['events'][i][3]]
+                        self.assertEqual((b['end_ticks'],b['end_dt'],contract=='current' and a['events'][i][3]==len(p)-1),clock['publication_proofs'][i])
+            for contract,c in a['clocks'].items():
+                self.assertEqual(tuple(seen[contract][i] for i in range(len(a['units']))),c['published'])
+                self.assertEqual(c['f1_first'],tuple(c['published'][s[-1]] for s in a['f1']))
+                self.assertEqual(c['f1_evidence'],tuple(sum(at<=n for at in c['published']) for n in c['f1_first']))
+        self.assertEqual((prefixes,total),(2029,3378))
+
+    def test_expanded_S3_parent_second_sequence_does_not_complete_child_first_sequence(self):
+        a,_,parts,_=self._expanded_suffix_source('S3')
+        parent=manual_gap_lifecycle(parts,105,150,164);child=manual_gap_lifecycle(parts,150,161,164)
+        self.assertEqual((parent['state'],parent['original_gap_ticks'],parent['second_fractal_proof_bi']),('confirmed',328,163))
+        self.assertEqual((child['state'],child['original_gap_ticks'],child['first_fractal_proof_bi'],child['second_fractal_proof_bi']),('waiting',319,163,None))
+        for mode in (1,2):self.assertFalse(manual_xd_certificate_ready(parts,(150,160,mode,163)))
+        self.assertEqual(a['events'][-1],(105,149,2,163))
+        for owner,turns in a['rejected'].items():
+            for turn,cancel in turns.items():
+                first=parts[turn];up=first['direction']=='up'
+                broken=next(i for i in range(turn+1,len(parts),2) if (parts[i]['end_ticks']<first['start_ticks'] if up else parts[i]['end_ticks']>first['start_ticks']))
+                self.assertEqual(broken,cancel)
+                owner_up=parts[owner]['direction']=='up';left=manual_feature_nodes(parts,range(owner+1,turn,2),owner_up)[-1]
+                gap=first['low_ticks']-left[1] if owner_up else left[0]-first['high_ticks']
+                if gap>0:
+                    lifecycle=manual_gap_lifecycle(parts,owner,turn,164)
+                    self.assertEqual((lifecycle['state'],lifecycle['strict_revocation_bi']),('revoked',cancel))
+                else:
+                    self.assertTrue(all(parts[i]['end_ticks']<=first['end_ticks'] if up else parts[i]['end_ticks']>=first['end_ticks'] for i in range(turn+2,cancel+1,2)))
+        self.assertEqual(manual_gap_lifecycle(parts,154,161,164)['state'],'waiting')
+        self.assertFalse(manual_xd_certificate_ready(parts,a['events'][3]))
+        self.assertTrue(manual_xd_certificate_ready(parts,a['natural_reaction']))
+
+    def test_expanded_given_suffix_integer_F1_auto_roles_and_T_actual_cap_remain_distinct(self):
+        tool=compiler()
+        for key in ('S3','T'):
+            a,case,parts,units=self._expanded_suffix_source(key)
+            for spec in a['f1']+(a['tail'],)+a['auto']:tool.move_record(units,spec)
+            for spec,spans in zip(a['auto'],a['auto_spans']):
+                for j,(start,formed,last) in enumerate(spans):
+                    lo,hi=spec[5][j];self.assertEqual((max(u['low_ticks'] for u in units[start:formed+1]),min(u['high_ticks'] for u in units[start:formed+1])),(lo,hi))
+                    self.assertTrue(all(u['low_ticks']<=hi and u['high_ticks']>=lo for u in units[formed+1:last+1]))
+            self.assertFalse(a['source_origin_bridge_proven']);self.assertFalse(a['production_merged'])
+            if key=='S3':self.assertEqual((a['bounds'],a['impact_contracts']),({'current':1349,'fixed':1350},((6,'all_current',1349),(7,'fixed_without_active',1350))))
+            else:
+                self.assertEqual((a['bounds'],a['impact_contracts']),({'current':679},((8,'all_current',679),)))
+                self.assertEqual(len(case['raw_rows'])-679,47);self.assertEqual((len(parts),len(parts[67:])),(69,2))
+                self.assertTrue(manual_xd_certificate_ready(parts,a['natural_reaction']))
+                self.assertFalse(manual_xd_certificate_ready(parts,a['events'][1]))
+                self.assertTrue(manual_xd_certificate_ready(parts,(31,39,1,64)))
+                self.assertEqual(manual_gap_lifecycle(parts,40,57,68)['state'],'revoked')
+
 
 if __name__ == '__main__':
     unittest.main()

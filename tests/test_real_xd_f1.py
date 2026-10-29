@@ -4033,5 +4033,201 @@ class TestG1BoundedConsumers(unittest.TestCase):
         self.assertFalse(any(chan.analyze_point_chain(given+[future],poisoned,now,'auto-G1-F1')))
 
 
+# S3/T实际窗口中的给定种子完整后缀；自然反应、第二序列和下游递归分别验收。
+M3_EXPANDED_SUFFIX_AUDIT = {'S3': {'certificate_sha256': '16ed57fbacc688fdc552b82ad16ee41b820fe3ea3db5de8eaffe9ecbae2d0161',
+        'auto': ((0, 4, 'consolidation', None, (0,), ((3579, 3745),), 5),
+                 (5, 11, 'consolidation', None, (5,), ((4488, 4642),), None)),
+        'auto_spans': (((0, 2, 3),), ((5, 7, 9),)),
+        'base_sha256': '6f5937fccba040a44929a2a6fcc8b78e12b078272b02cefc9eb41229ef76d2de',
+        'bounds': {'current': 1349, 'fixed': 1350},
+        'clocks': {'current': {'auto_evidence': 6,
+                               'auto_first': 701,
+                               'f1_evidence': (4, 10),
+                               'f1_first': (329, 826),
+                               'local': (141, 232, 246, 329, 348, 701, 726, 745, 771, 826, 900, 1344),
+                               'publication_proofs': ((3730, '2021-07-30 00:00:00', True),
+                                                      (3550, '2021-12-15 00:00:00', True),
+                                                      (3643, '2022-01-05 00:00:00', True),
+                                                      (3845, '2022-05-16 00:00:00', True),
+                                                      (3942, '2022-06-13 00:00:00', True),
+                                                      (4488, '2023-11-23 00:00:00', True),
+                                                      (4687, '2023-12-28 00:00:00', True),
+                                                      (4602, '2024-01-25 00:00:00', True),
+                                                      (4921, '2024-03-11 00:00:00', True),
+                                                      (5274, '2024-06-03 00:00:00', True),
+                                                      (5626, '2024-09-18 00:00:00', True),
+                                                      (8614, '2026-07-22 00:00:00', True)),
+                               'published': (141, 232, 246, 329, 348, 701, 726, 745, 771, 826, 900, 1344)},
+                   'fixed': {'auto_evidence': 6,
+                             'auto_first': 705,
+                             'f1_evidence': (4, 10),
+                             'f1_first': (334, 830),
+                             'local': (149, 239, 256, 334, 355, 705, 730, 751, 776, 830, 911, 1349),
+                             'publication_proofs': ((3730, '2021-07-30 00:00:00', False),
+                                                    (3550, '2021-12-15 00:00:00', False),
+                                                    (3658, '2022-01-13 00:00:00', False),
+                                                    (3834, '2022-05-18 00:00:00', False),
+                                                    (3942, '2022-06-13 00:00:00', False),
+                                                    (4488, '2023-11-23 00:00:00', False),
+                                                    (4687, '2023-12-28 00:00:00', False),
+                                                    (4602, '2024-01-25 00:00:00', False),
+                                                    (4921, '2024-03-11 00:00:00', False),
+                                                    (5274, '2024-06-03 00:00:00', False),
+                                                    (5771, '2024-09-26 00:00:00', False),
+                                                    (8614, '2026-07-22 00:00:00', False)),
+                             'published': (149, 239, 256, 334, 355, 705, 730, 751, 776, 830, 911, 1349)}},
+        'events': ((10, 12, 1, 15),
+                   (13, 23, 1, 26),
+                   (24, 26, 1, 29),
+                   (27, 35, 1, 42),
+                   (36, 42, 1, 45),
+                   (43, 81, 1, 84),
+                   (82, 84, 1, 87),
+                   (85, 87, 1, 90),
+                   (88, 90, 1, 93),
+                   (91, 97, 1, 100),
+                   (98, 104, 1, 111),
+                   (105, 149, 2, 163)),
+        'f1': ((0, 2, 'consolidation', None, (0,), ((3579, 3745),), 3),
+               (3, 8, 'up', 'up', (3, 6), ((3792, 4077), (4602, 4642)), 9)),
+        'f2': ((0, 1, 'incomplete', None, (), (), None),),
+        'fixture': 'real_strict_trend.json',
+        'fixture_sha256': 'ac9101f3cb99de1a9e8612a6366aa87be4e4627664ccf1b4884ffe60fc39ffde',
+        'id': '518880-day-20210101-20260731',
+        'impact_contracts': ((6, 'all_current', 1349), (7, 'fixed_without_active', 1350)),
+        'natural_reaction': (37, 39, 1, 42),
+        'parent_gap': (105, 150, 328, 163),
+        'pending_gap': (150, 161, 319, 163, None),
+        'pending_reaction': (154, 161, 745, 163, None),
+        'prior_certificate_sha256': 'b1a50900e1ffcbc03c5e2cc20d83da300da04d1c5c81824783e4fe35b9a72520',
+        'production_merged': False,
+        'rejected': {91: {94: 95, 96: 97},
+                     98: {101: 102, 103: 104},
+                     105: {112: 113, 114: 119, 120: 123, 124: 125, 126: 139, 140: 147, 148: 149}},
+        'seed': 10,
+        'source_origin_bridge_proven': False,
+        'tail': (9, 11, 'consolidation', None, (9,), ((5231, 5586),), None),
+        'units': (('down', '2021-05-26 00:00:00', '2021-06-30 00:00:00', 3865, 3579, 3579, 3865, 1, 15),
+                  ('up', '2021-06-30 00:00:00', '2021-11-18 00:00:00', 3579, 3745, 3541, 3745, 1, 26),
+                  ('down', '2021-11-18 00:00:00', '2021-12-15 00:00:00', 3745, 3550, 3550, 3745, 1, 29),
+                  ('up', '2021-12-15 00:00:00', '2022-03-09 00:00:00', 3550, 4077, 3550, 4077, 1, 42),
+                  ('down', '2022-03-09 00:00:00', '2022-05-18 00:00:00', 4077, 3834, 3792, 4077, 1, 45),
+                  ('up', '2022-05-18 00:00:00', '2023-10-31 00:00:00', 3834, 4642, 3615, 4642, 1, 84),
+                  ('down', '2023-10-31 00:00:00', '2023-11-23 00:00:00', 4642, 4488, 4488, 4642, 1, 87),
+                  ('up', '2023-11-23 00:00:00', '2023-12-28 00:00:00', 4488, 4687, 4488, 4687, 1, 90),
+                  ('down', '2023-12-28 00:00:00', '2024-01-25 00:00:00', 4687, 4602, 4602, 4687, 1, 93),
+                  ('up', '2024-01-25 00:00:00', '2024-05-20 00:00:00', 4602, 5586, 4602, 5586, 1, 100),
+                  ('down', '2024-05-20 00:00:00', '2024-06-27 00:00:00', 5586, 5231, 5231, 5586, 1, 111),
+                  ('up', '2024-06-27 00:00:00', '2026-01-29 00:00:00', 5231, 11977, 5231, 11977, 2, 163))},
+ 'T': {'certificate_sha256': '510e5f8792e4f7bd984523e64f6331dca9d3c0774d38b2ad180562a6cb517e7e',
+       'auto': ((0, 1, 'incomplete', None, (), (), None),),
+       'auto_spans': ((),),
+       'base_sha256': '1ed1e29c9eb26032aedeaea9dee7ac4e8b9b3f092e5308082ddbd18cbf4c4f3d',
+       'bounds': {'current': 679},
+       'clocks': {'current': {'auto_evidence': None,
+                              'auto_first': None,
+                              'f1_evidence': (),
+                              'f1_first': (),
+                              'local': (370, 586),
+                              'publication_proofs': ((1088, '2022-07-13 00:00:00', True),
+                                                     (1113, '2023-06-05 00:00:00', True)),
+                              'published': (370, 586)}},
+       'events': ((22, 30, 2, 38), (31, 39, 1, 59)),
+       'f1': (),
+       'f2': (),
+       'fixture': 'real_third_point_margin0.json',
+       'fixture_sha256': '64c4f4b80eca2f31f262b86c26523ddc9c13d59195ca33a5c5aa5904460c0217',
+       'id': '588000-day-20210101-20231231',
+       'impact_contracts': ((8, 'all_current', 679),),
+       'incomplete_start': 67,
+       'natural_reaction': (41, 53, 2, 59),
+       'pending_owner': 40,
+       'production_merged': False,
+       'rejected': {57: 62, 61: 62, 63: 64, 65: 66},
+       'seed': 22,
+       'source_origin_bridge_proven': False,
+       'source_rows': 726,
+       'tail': (0, 1, 'incomplete', None, (), (), None),
+       'units': (('down', '2021-11-24 00:00:00', '2022-04-27 00:00:00', 1545, 890, 890, 1545, 2, 38),
+                 ('up', '2022-04-27 00:00:00', '2022-08-11 00:00:00', 890, 1230, 890, 1230, 1, 59))}}
+
+
+def expanded_suffix_input(key,contract):
+    """仅适配已独立冻结的S3/T给定后缀；实际窗口和日线到达约定显式保留。"""
+    a=M3_EXPANDED_SUFFIX_AUDIT[key];clock=a['clocks'][contract]
+    spec=dict(a,units=[tuple(u)+(clock['local'][i],clock['published'][i]) for i,u in enumerate(a['units'])])
+    case,units=gap_revision_input(spec);raw=case['raw_rows'][:a['bounds'][contract]]
+    rows=m3_xd_rows(dict(raw_rows=[dict(r,dt=r['dt'][:10]) for r in raw]))
+    root='expanded:'+key+':'+contract+':'+a['certificate_sha256']
+    given=[chan.ConfirmedMove(root+':xd:'+str(i),'given-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),
+           u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,
+           rows[u['confirmed_raw_count']-1]['available_dt']) for i,u in enumerate(units)]
+    return case,units,a,rows,given
+
+
+class TestExpandedSuffixConsumers(unittest.TestCase):
+    """S3给seed10、T日线给seed22；完整给定后缀不等于源起点自然桥接。"""
+
+    def test_actual_windows_freeze_same_level_F1_and_leave_F2_unfinished(self):
+        total=0
+        for key,audit in M3_EXPANDED_SUFFIX_AUDIT.items():
+            for contract in audit['bounds']:
+                _,units,a,rows,_=expanded_suffix_input(key,contract);first={};types=[];previous=[]
+                for count in range(1,len(rows)+1):
+                    total+=1;visible=[u for u in units if u['confirmed_raw_count']<=count]
+                    done=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),count)) if m.complete]
+                    shapes=[m3_xd_shape(m) for m in done];expected=[s for s in a['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+                    self.assertEqual(shapes,[m3_xd_expected(units,s) for s in expected]);self.assertEqual(shapes[:len(previous)],previous);previous=shapes
+                    for m in done:
+                        if m.seg_start not in first:
+                            first[m.seg_start]=count;types.append(m3_xd_type(key+':'+contract,m,visible,rows[count-1]['available_dt']))
+                    self.assertEqual(chan.confirm_level_up(types,rows[count-1]['available_dt'],'F2'),[])
+                c=a['clocks'][contract];self.assertEqual(tuple(first[s[0]] for s in a['f1']),c['f1_first'])
+                self.assertEqual(tuple(len(t.evidence_ids) for t in types),c['f1_evidence'])
+                self.assertEqual(m3_xd_shape(chan.same_level_decompose(m3_xd_parts(dict(units=units),len(rows)))[-1]),m3_xd_expected(units,a['tail']))
+                records=[dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),high_ticks=round(t.high*1000)) for t in types]
+                self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],[m3_xd_expected(records,s) for s in a['f2']])
+                self.assertFalse(any(chan.analyze_point_chain(types,rows,rows[-1]['available_dt'],'F2')))
+        self.assertEqual(total,3378)
+
+    def test_auto_consolidation_and_open_tail_are_not_strict_trend_or_point_rejections(self):
+        def forbidden(a,b):raise AssertionError('盘整或开放尾不评估严格趋势力度')
+        for key,audit in M3_EXPANDED_SUFFIX_AUDIT.items():
+            for contract in audit['bounds']:
+                _,units,a,rows,given=expanded_suffix_input(key,contract);snapshot=None
+                for size in range(1,len(given)+1):
+                    now=given[size-1].confirmed_dt;expected=int(key=='S3' and size>5)
+                    scan=chan.scan_strict_divergence(given[:size],now,'auto-expanded-F1',forbidden,'guard')
+                    self.assertEqual((scan.completed_types,scan.results),(expected,()))
+                    self.assertEqual(tuple(r for _,r in scan.skipped),('not_trend','not_two_separated_centers') if expected else ('not_two_separated_centers',))
+                    types=chan.confirm_level_up(given[:size],now,'auto-expanded-F1')
+                    if types:
+                        if snapshot is None:snapshot=types[0]
+                        self.assertEqual(types[0],snapshot);self.assertEqual((snapshot.kind,len(snapshot.evidence_ids)),('consolidation',6))
+                    first=chan.scan_first_points(given[:size],rows,now,'auto-expanded-F1')
+                    self.assertEqual((first.points,tuple(r for _,r in first.exclusions),first.completed_types),([],('not_trend',) if expected else (),expected))
+                self.assertEqual([m3_xd_shape(m) for m in chan.level_up(given)],[m3_xd_expected(units,s) for s in a['auto']])
+                self.assertFalse(any(chan.analyze_point_chain(given,rows,rows[-1]['available_dt'],'auto-expanded-F1')))
+                self.assertFalse(a['source_origin_bridge_proven']);self.assertFalse(a['production_merged'])
+
+    def test_late_auto_proof_is_frozen_separately_and_future_identity_prices_are_unread(self):
+        for key,audit in M3_EXPANDED_SUFFIX_AUDIT.items():
+            for contract in audit['bounds']:
+                _,_,_,rows,given=expanded_suffix_input(key,contract);now=rows[-1]['available_dt']
+                if key=='S3':
+                    late=given[5].confirmed_dt+timedelta(days=1);delayed=list(given);delayed[5]=given[5]._replace(confirmed_dt=late)
+                    self.assertEqual(chan.confirm_level_up(delayed,late-timedelta(microseconds=1),'auto-expanded-F1'),[])
+                    after,=chan.confirm_level_up(delayed,late,'auto-expanded-F1')
+                    self.assertEqual((after.confirmed_dt,len(after.evidence_ids)),(late,6))
+                    base,=chan.confirm_level_up(given,now,'auto-expanded-F1')
+                    late_tail=list(given);late_tail[-1]=given[-1]._replace(confirmed_dt=now+timedelta(days=1))
+                    self.assertEqual(chan.confirm_level_up(late_tail,now,'auto-expanded-F1'),[base])
+                future=given[-1]._replace(move_id=None,level=None,high=float('nan'),confirmed_dt=now+timedelta(days=10))
+                self.assertEqual(chan.scan_strict_divergence(given+[future],now,'auto-expanded-F1'),chan.scan_strict_divergence(given,now,'auto-expanded-F1'))
+                poisoned=rows+[dict(dt=now+timedelta(days=10),closed_dt=now+timedelta(days=10),available_dt=now+timedelta(days=11),high=float('nan'))]
+                self.assertEqual(chan.scan_first_points(given+[future],poisoned,now,'auto-expanded-F1'),chan.scan_first_points(given,rows,now,'auto-expanded-F1'))
+                self.assertFalse(any(chan.analyze_point_chain(given+[future],poisoned,now,'auto-expanded-F1')))
+
+
 if __name__ == '__main__':
     unittest.main()
