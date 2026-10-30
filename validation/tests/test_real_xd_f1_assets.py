@@ -1757,6 +1757,99 @@ class TestRealXdF1Assets(unittest.TestCase):
             dict(event=(0,2,1,5),published_count=110),(7,9,1,16))
         self.assertEqual((late['qualification'],late['published_count']),('visible',116))
 
+    def _m2_source_consumers(self,contract):
+        tail,head,full,case,parts,_=self._m2_suffix_source();tool=compiler()
+        source=embedded_table('test_real_xd_f1.py','M3_M2_SOURCE_BRIDGE_AUDIT')
+        a=embedded_table('test_real_xd_f1.py','M3_M2_SOURCE_CONSUMERS_AUDIT')
+        self.assertEqual((a['source_reference_sha256'],a['source_sha256']),(source['reference_sha256'],head['fixture_sha256']))
+        record={k:v for k,v in a.items() if k!='reference_sha256'}
+        blob=json.dumps(record,sort_keys=True,ensure_ascii=False,indent=2)+'\n'
+        self.assertEqual(hashlib.sha256(blob.encode()).hexdigest(),a['reference_sha256'])
+        events=source['events']+full['events'];clocks=(source['head_counts'][contract]+
+                (head['current_counts'] if contract=='current' else tuple(u[-1] for u in head['units']))+
+                tail['published_counts'][contract])
+        limit=a['limits'][contract];size=sum(n<=limit for n in clocks)
+        units=tool.xd_records(parts,events[:size])
+        for u,count in zip(units,clocks):u['confirmed_raw_count']=count
+        return a,source,full,case,units,events,clocks
+
+    def test_m2_source0_centers_recompute_new_P_and_preserve_local_b_c_failure(self):
+        a,_,_,_,units,_,_=self._m2_source_consumers('fixed');strict=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        for name,spec in a['roles'].items():
+            got=strict.validate_zhongshu(name,spec,units)
+            self.assertEqual(tuple(got[k] for k in ('zd','zg','dd','gg','closed_by')),tuple(spec[k] for k in ('zd','zg','dd','gg','closed_by')))
+        roles=a['roles'];self.assertEqual(roles['P']['zn'],(0,2))
+        self.assertEqual((roles['A']['gg']-roles['P']['dd'],roles['A']['dd']-roles['B']['gg'],roles['B']['gg']-roles['C']['dd']),(27,9,52))
+        given=dict(trend=dict(direction='down',status='no_departure'),roles=dict(
+            a=dict(unit=2),A=roles['A'],b=dict(unit=6),B=roles['B'],c=dict(unit=14,outcome='fail'),C=roles['C'],
+            proof=None,gap_ticks=9,merge=dict(pair=['B','C'],branch='above',determined=True)))
+        checked=strict.validate_roles(given,units)
+        self.assertEqual((checked['A']['zn'],checked['B']['zn']),([3,5],[7,9,11,13]))
+        forced=copy.deepcopy(given);forced['trend']['status']='completed';forced['roles']['proof']=dict(unit=22)
+        with self.assertRaisesRegex(ValueError,'c_fail状态须为no_departure'):strict.validate_roles(forced,units)
+        self.assertEqual((units[14]['low_ticks']-roles['B']['zg'],units[16]['low_ticks']-roles['B']['zg']),(21,1))
+        self.assertFalse(a['automatic_origin_proven'])
+
+    def test_m2_source0_raw_boundaries_rebuild_cumulative_visibility_and_point_clocks(self):
+        tool=compiler();time_tool=compiler(ROOT/'validation/tools/gen_real_third_point.py');total=0
+        for contract in ('current','fixed'):
+            a,source,full,case,units,events,clocks=self._m2_source_consumers(contract)
+            limit=a['limits'][contract];counts=sorted({1,limit}|{n for u in units for n in (u['confirmed_raw_count']-1,u['confirmed_raw_count']) if n>0})
+            first={};known_first={}
+            for count in counts:
+                rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106');pens=bis if contract=='current' else bis[:-1]
+                self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:max(0,len(bis)-1)])
+                parts=tool.components(rows,pens,None)
+                ready=[manual_xd_certificate_ready(parts,e) for e in source['events']]+self._m2_suffix_ready(parts,full)
+                size=next((i for i,ok in enumerate(ready) if not ok),len(ready))
+                self.assertEqual(size,sum(n<=count for n in clocks),(contract,count));total+=1
+                visible=tool.xd_records(parts,events[:size])
+                for name,spec in a['contexts'].items():
+                    start,formed,zd,zg,parent=spec
+                    if formed>=size:continue
+                    known=a['known_raw'][contract][name];self.assertIsNotNone(known);known_first.setdefault(name,count)
+                    triple=visible[start:formed+1]
+                    self.assertEqual((max(u['low_ticks'] for u in triple),min(u['high_ticks'] for u in triple)),(zd,zg))
+                    known_dt=time_tool.arrival_dt(case['raw_rows'][known-1]['dt'],'5m')
+                    active,_,_=self._m2_causal_attempts(visible,spec,known_dt)
+                    successes=[r for r in active if r[-1]=='established']
+                    at=a['point_raw'][contract].get(name)
+                    self.assertEqual(bool(successes),at is not None and at<=count,(contract,count,name))
+                    if successes:
+                        side,leave,pull,margin,price,_=successes[0]
+                        self.assertEqual((side,leave,pull,price,margin),a['points'][name]);first.setdefault(name,count)
+            self.assertEqual(first,{n:v for n,v in a['point_raw'][contract].items() if v is not None})
+            self.assertEqual(known_first,{n:v for n,v in a['known_raw'][contract].items() if v is not None})
+        self.assertEqual(total,122)
+
+    def test_m2_source0_original_limits_keep_pending_P_and_N_separate_from_old_full_window(self):
+        time_tool=compiler(ROOT/'validation/tools/gen_real_third_point.py')
+        for contract in ('current','fixed'):
+            a,_,_,case,units,_,_=self._m2_source_consumers(contract)
+            totals=dict(fail=0,before_center_known=0,established=0);pending=[]
+            for name,spec in a['contexts'].items():
+                known=a['known_raw'][contract][name]
+                if known is None:
+                    self.assertEqual((contract,name),('current','N'));self.assertGreaterEqual(spec[1],len(units));continue
+                known_dt=time_tool.arrival_dt(case['raw_rows'][known-1]['dt'],'5m')
+                active,suppressed,wait=self._m2_causal_attempts(units,spec,known_dt)
+                self.assertEqual(active,[r for r in a['attempts'][name] if r[2]<len(units)])
+                for row in active:totals[row[-1]]+=1
+                if wait:pending.append((name,)+wait)
+                # 所有后续满足几何的尝试都不重发已成立中枢事件。
+                if suppressed:self.assertTrue(any(r[-1]=='established' for r in active))
+            self.assertEqual(totals,a['totals'][contract]);self.assertEqual(pending,[a['pending'][contract]])
+            self.assertEqual((len(units),a['terminal_counts'][contract]),(33,4) if contract=='current' else (37,5))
+        a,_,_,_,units,_,_=self._m2_source_consumers('fixed')
+        self.assertEqual(a['points']['P'],('sell3',32,33,1177,6))
+        self.assertEqual(a['known_raw']['fixed']['N'],a['point_raw']['fixed']['P'])
+        self.assertEqual(a['contexts']['N'][0],a['parent_N_pull']+1)
+        old=embedded_table('test_real_xd_f1.py','M3_M2_THIRD_LIFECYCLE_AUDIT')
+        self.assertGreater(old['point_raw']['current']['N'],a['limits']['current'])
+        legacy=time_tool.enumerate_attempts(units,a['roles']['B'])
+        self.assertNotIn(13,[r['leave'] for r in legacy]);self.assertIn(13,a['roles']['B']['zn'])
+        self.assertEqual(a['points']['B'][1:3],(13,14))
+
     def test_m2_source0_head_certificates_distinguish_nonprotruding_and_revoked_turns(self):
         """课67/71：0侧3/5/7/9未突出旧侧，11侧gap14先撤销；原首终价严格选向。"""
         a=embedded_table('test_real_xd_f1.py','M3_M2_SOURCE_BRIDGE_AUDIT')
