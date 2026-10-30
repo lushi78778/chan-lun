@@ -1757,6 +1757,76 @@ class TestRealXdF1Assets(unittest.TestCase):
             dict(event=(0,2,1,5),published_count=110),(7,9,1,16))
         self.assertEqual((late['qualification'],late['published_count']),('visible',116))
 
+    def test_m2_source0_head_certificates_distinguish_nonprotruding_and_revoked_turns(self):
+        """课67/71：0侧3/5/7/9未突出旧侧，11侧gap14先撤销；原首终价严格选向。"""
+        a=embedded_table('test_real_xd_f1.py','M3_M2_SOURCE_BRIDGE_AUDIT')
+        old=embedded_table('test_real_xd_f1.py','M3_M2_JOINED_ROLE_AUDIT');tool=compiler()
+        payload=(ROOT/'tests/fixtures'/old['fixture']).read_bytes()
+        self.assertEqual(hashlib.sha256(payload).hexdigest(),old['fixture_sha256'])
+        case=next(c for c in json.loads(payload)['cases'] if c['id']==old['id']);rows=case['raw_rows'][:560]
+        _,_,bis=tool.foundation(rows,'106');original=tool.components(rows,bis[:-1],None)
+        for mirrored in (False,True):
+            parts=original if not mirrored else [dict(u,direction='up' if u['direction']=='down' else 'down',
+                start_ticks=3000-u['start_ticks'],end_ticks=3000-u['end_ticks'],
+                low_ticks=3000-u['high_ticks'],high_ticks=3000-u['low_ticks']) for u in original]
+            for event in a['events']:self.assertTrue(manual_xd_certificate_ready(parts,event))
+            for first in a['nonprotruding0']:
+                left=manual_feature_nodes(parts,range(1,first,2),mirrored)[-1]
+                self.assertTrue(parts[first]['high_ticks']<=left[1] if mirrored else parts[first]['low_ticks']>=left[0])
+            owner,first,gap,cancel=a['revoked_gap'];state=manual_gap_lifecycle(parts,owner,first,18)
+            self.assertEqual((state['original_gap_ticks'],state['state'],state['strict_revocation_bi']),(gap,'revoked',cancel))
+            self.assertTrue(parts[13]['end_ticks']<parts[11]['end_ticks'] if mirrored else parts[13]['end_ticks']>parts[11]['end_ticks'])
+            self.assertTrue(parts[13]['end_ticks']>parts[0]['start_ticks'] if mirrored else parts[13]['end_ticks']<parts[0]['start_ticks'])
+        compiled=tool.xd_records(original,a['events']);names=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi')
+        self.assertEqual([tuple(u[k] for k in names) for u in compiled],[u[:9] for u in a['units']])
+        self.assertFalse(a['automatic_origin_proven']);self.assertFalse(a['global_unique_origin_proven'])
+
+    def test_m2_source_head_current_fixed_raw_clocks_keep_BI18_versions_separate(self):
+        """活动首证398/1186不能移给固定笔；固定首证546/1171不能回填活动历史。"""
+        a=embedded_table('test_real_xd_f1.py','M3_M2_SOURCE_BRIDGE_AUDIT')
+        old=embedded_table('test_real_xd_f1.py','M3_M2_JOINED_ROLE_AUDIT');tool=compiler()
+        case=next(c for c in json.loads((ROOT/'tests/fixtures'/old['fixture']).read_text())['cases'] if c['id']==old['id'])
+        first={k:[None,None] for k in a['limits']};proof18={}
+        for count in range(1,561):
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+            for contract in first:
+                parts=tool.components(rows,bis if contract=='current' else bis[:-1],None)
+                for i,event in enumerate(a['events']):
+                    if first[contract][i] is None and manual_xd_certificate_ready(parts,event):
+                        first[contract][i]=count
+                        if i==1:proof18[contract]=(count,parts[18]['end_ticks'],parts[18]['end_dt'])
+                if count==398:self.assertEqual(manual_xd_certificate_ready(parts,a['events'][1]),contract=='current')
+        self.assertEqual({k:tuple(v) for k,v in first.items()},a['head_counts'])
+        self.assertEqual(proof18,a['proof18_first'])
+
+    def test_m2_source_whole_F1_waves_and_F2_are_new_conditional_identities(self):
+        """整数重算：两核心工程down仍波动重叠27格；F2前部包络与进入方向改变。"""
+        a=embedded_table('test_real_xd_f1.py','M3_M2_SOURCE_BRIDGE_AUDIT');head=embedded_table('test_real_xd_f1.py','M3_M2_JOINED_ROLE_AUDIT');tail=embedded_table('test_real_xd_f1.py','M3_M2_SUFFIX_ROLE_AUDIT');tool=compiler()
+        names=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi','local_raw_count','confirmed_raw_count')
+        def shifted(spec):
+            x,z,kind,direction,triples,centers,proof=spec
+            return (x+2,z+2,kind,direction,tuple(i+2 for i in triples),centers,None if proof is None else proof+2)
+        specs=a['first_f1']+tuple(shifted(x) for x in head['f1'][2:]+tail['f1'])
+        for contract in a['limits']:
+            units=[dict(zip(names,row)) for row in a['units']+head['units']+tail['units']]
+            for u,count in zip(units[:2],a['head_counts'][contract]):u['confirmed_raw_count']=count
+            if contract=='current':
+                for u,count in zip(units[2:16],head['current_counts']):u['confirmed_raw_count']=count
+            for u,count in zip(units[16:],tail['published_counts'][contract]):u['confirmed_raw_count']=count
+            moves=[tool.move_record(units,s) for s in specs]
+            for s,count,width in zip(a['first_f1'],a['first_f1_counts'][contract],a['first_f1_evidence']):
+                self.assertEqual(max(u['confirmed_raw_count'] for u in units[:s[-1]+1]),count)
+                self.assertEqual(sum(u['confirmed_raw_count']<=count for u in units),width)
+            first=a['first_f1'][0]
+            relation=tool.wave_relation(units,first,dict(centers_ticks=first[5],waves_ticks=[list(x) for x in a['first_f1_waves']],core_direction='down',relation='expand',strict_trend_proven=False,scope='engineering_three_unit_groups'))
+            self.assertFalse(relation['strict_trend_proven'])
+            waves=relation['waves_ticks'];self.assertEqual(min(x[1] for x in waves)-max(x[0] for x in waves),a['wave_overlap_ticks'])
+            f2=tool.move_record(moves,a['f2'])
+            self.assertEqual((f2['kind'],f2['direction'],f2['high_ticks'],f2['low_ticks']),('consolidation','down',1207,1010))
+            known=max(units[s[-1]]['confirmed_raw_count'] for s in specs[:a['f2'][-1]+1])
+            self.assertEqual(known,a['f2_first'][contract])
+            self.assertNotEqual(a['first_f1_counts'][contract][0],head['f1_first_counts'][contract][0])
+
     def test_g1_source_heads_keep_earlier_revocations_and_natural_reaction_separate(self):
         """课67/71/78：给源BI1，4/6先撤销；R19先破首起，不能借后来S20翻案。"""
         a=embedded_table('test_real_xd_f1.py','M3_G1_SOURCE_BRIDGE_AUDIT')
