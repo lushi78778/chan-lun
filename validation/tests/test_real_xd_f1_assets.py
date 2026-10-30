@@ -4163,5 +4163,93 @@ class TestRealXdF1Assets(unittest.TestCase):
         self.assertFalse(a['source_origin_bridge_proven']);self.assertFalse(a['production_merged'])
 
 
+    def _m1_source_bridge(self):
+        old,case,parts,_=self._m1_full_suffix_source();tool=compiler()
+        a=embedded_table('test_real_xd_f1.py','M3_M1_SOURCE_BRIDGE_AUDIT')
+        self.assertEqual((a['source_sha256'],a['suffix_certificate_sha256']),(old['fixture_sha256'],old['certificate_sha256']))
+        record={k:v for k,v in a.items() if k!='reference_sha256'}
+        blob=json.dumps(record,sort_keys=True,ensure_ascii=False,indent=2)+'\n'
+        self.assertEqual(hashlib.sha256(blob.encode()).hexdigest(),a['reference_sha256'])
+        units=tool.xd_records(parts,a['events']+old['events'])
+        self.assertEqual(units[:5],list(a['units']))
+        return a,old,case,parts,units
+
+    def test_m1_source_BI1_empty_initial_overlap_and_revoked_turn_certificates(self):
+        a,_,_,original,_=self._m1_source_bridge()
+        for mirror in (False,True):
+            parts=original if not mirror else [dict(p,direction='up' if p['direction']=='down' else 'down',
+                start_ticks=3000-p['start_ticks'],end_ticks=3000-p['end_ticks'],
+                low_ticks=3000-p['high_ticks'],high_ticks=3000-p['low_ticks']) for p in original]
+            self.assertEqual(max(p['low_ticks'] for p in parts[:3])-min(p['high_ticks'] for p in parts[:3]),7)
+            self.assertEqual((max(p['low_ticks'] for p in parts[1:4]),min(p['high_ticks'] for p in parts[1:4])),
+                             (3000-1083,3000-1061) if mirror else a['first_overlap'])
+            for event in a['events']:self.assertTrue(manual_xd_certificate_ready(parts,event))
+            for owner,turn,gap,cancel in a['rejected']:
+                up=parts[owner]['direction']=='up';first=parts[turn];left=manual_feature_nodes(parts,range(owner+1,turn,2),up)[-1]
+                self.assertEqual(first['low_ticks']-left[1] if up else left[0]-first['high_ticks'],gap)
+                if gap>0:
+                    life=manual_gap_lifecycle(parts,owner,turn,40)
+                    self.assertEqual((life['state'],life['strict_revocation_bi']),('revoked',cancel))
+                else:
+                    broken=next(i for i in range(turn+1,41,2) if (parts[i]['end_ticks']>first['start_ticks'] if up else parts[i]['end_ticks']<first['start_ticks']))
+                    self.assertEqual(broken,cancel)
+                    self.assertTrue(all(parts[i]['end_ticks']>=first['end_ticks'] if up else parts[i]['end_ticks']<=first['end_ticks'] for i in range(turn+2,cancel,2)))
+            for owner,turn in a['excluded']:
+                up=parts[owner]['direction']=='up';left=manual_feature_nodes(parts,range(owner+1,turn,2),up)[-1]
+                self.assertFalse(parts[turn]['high_ticks']>left[1] if up else parts[turn]['low_ticks']<left[0])
+            self.assertEqual(parts[7]['end_ticks'],parts[9]['end_ticks'])  # 等终不选向，12已先破原首起。
+            self.assertFalse(manual_xd_certificate_ready(parts,(4,6,1,9)))
+        self.assertEqual(a['anchor'],(1,'down',1107));self.assertEqual(a['available_bi'],1)
+        self.assertFalse(a['automatic_origin_proven']);self.assertFalse(a['global_unique_origin_proven'])
+
+    def test_m1_source_head_first_raw_clocks_keep_current_and_fixed_proof_versions(self):
+        a,_,case,_,_=self._m1_source_bridge();tool=compiler();first={c:[None]*5 for c in a['limits']};proofs={c:[] for c in first}
+        for count in range(1,651):
+            rows=case['raw_rows'][:count];_,_,bs=tool.foundation(rows,'106')
+            self.assertEqual(tool.records(bs[:-1]),case['foundation']['bis'][:len(bs[:-1])])
+            for contract in first:
+                p=tool.components(rows,bs if contract=='current' else bs[:-1],None)
+                ready=[manual_xd_certificate_ready(p,e) for e in a['events']];size=next((i for i,ok in enumerate(ready) if not ok),5)
+                for i in range(size):
+                    if first[contract][i] is not None:continue
+                    first[contract][i]=count;b=p[a['events'][i][3]]
+                    proofs[contract].append((count,b['end_ticks'],b['end_dt'],a['events'][i][3]==len(p)-1))
+        self.assertEqual({c:tuple(v) for c,v in first.items()},a['head_counts'])
+        self.assertEqual({c:tuple(v) for c,v in proofs.items()},a['head_proof_first'])
+        self.assertEqual((proofs['current'][0][1],proofs['fixed'][0][1]),(1081,1092))
+        self.assertEqual((proofs['current'][4][1],proofs['fixed'][4][1]),(1021,1022))
+        self.assertNotEqual(proofs['current'][4][2],proofs['fixed'][4][2])
+
+    def test_m1_source_whole_F1_F2_arithmetic_and_raw_boundaries_exclude_successor_high(self):
+        a,old,case,_,units=self._m1_source_bridge();tool=compiler()
+        types=[tool.move_record(units,s) for s in a['f1']];f2=[tool.move_record(types,s) for s in a['f2']]
+        self.assertEqual((f2[0]['kind'],f2[0]['direction'],f2[0]['low_ticks'],f2[0]['high_ticks'],f2[0]['complete']),('consolidation',None,666,1113,True))
+        self.assertEqual(types[6]['high_ticks'],1202);self.assertEqual((f2[1]['centers_ticks'],f2[1]['complete']),([[991,1117]],False))
+        self.assertEqual((types[1]['direction'],types[3]['direction']),('up',None))
+        self.assertLess(types[1]['end_ticks'],types[1]['start_ticks'])
+        self.assertGreater(max(u['low_ticks'] for u in units[3:6]),min(u['high_ticks'] for u in units[3:6]))
+        total=0
+        for contract in a['limits']:
+            clock=a['head_counts'][contract]+old['clocks'][contract]['published'];limit=a['limits'][contract]
+            self.assertEqual(a['f1_first'][contract],tuple(clock[s[-1]] for s in a['f1']))
+            self.assertEqual(a['f1_evidence'][contract],tuple(sum(n<=at for n in clock) for at in a['f1_first'][contract]))
+            self.assertEqual(a['f2_first'][contract],a['f1_first'][contract][6])
+            counts=sorted({1,limit}|{n for at in clock for n in (at-1,at) if n>0 and n<=limit})
+            for count in counts:
+                rows=case['raw_rows'][:count];_,_,bs=tool.foundation(rows,'106')
+                p=tool.components(rows,bs if contract=='current' else bs[:-1],None)
+                ready=[manual_xd_certificate_ready(p,e) for e in a['events']]+self._m1_full_suffix_ready(p,old)
+                size=next((i for i,ok in enumerate(ready) if not ok),len(ready));total+=1
+                self.assertEqual(size,sum(n<=count for n in clock),(contract,count))
+                visible=tool.xd_records(p,(a['events']+old['events'])[:size])
+                for i,s in enumerate(a['f1']):
+                    if s[-1]>=size:continue
+                    self.assertEqual(tool.move_record(visible,s),types[i])
+                self.assertEqual(a['f2_first'][contract]<=count,sum(n<=count for n in a['f1_first'][contract])>=7)
+        self.assertEqual(total,120)
+        self.assertIsNone(old['f2'][0][-1]);self.assertEqual(len(old['f1']),8)
+
+
+
 if __name__ == '__main__':
     unittest.main()

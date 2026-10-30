@@ -5190,5 +5190,230 @@ class TestM2SourceConsumers(unittest.TestCase):
                 self.assertEqual(chan.find_third_points(delayed+[future],[context,future_context],late),[point])
 
 
+# M1源BI1近期顶的前部桥接；原BI38给定后缀及旧角色表保持。
+M3_M1_SOURCE_BRIDGE_AUDIT = {'anchor': (1, 'down', 1107),
+ 'automatic_origin_proven': False,
+ 'available_bi': 1,
+ 'events': ((1, 3, 1, 6), (4, 12, 1, 23), (13, 23, 1, 28), (24, 28, 1, 31), (29, 37, 1, 40)),
+ 'excluded': ((4, 9), (13, 16), (13, 18), (13, 20), (24, 27)),
+ 'f1': ((0, 2, 'consolidation', None, (0,), ((1048, 1107),), 3),
+        (3, 6, 'consolidation', 'up', (4,), ((991, 1022),), 9),
+        (7, 9, 'consolidation', None, (7,), ((902, 944),), 10),
+        (10, 12, 'consolidation', None, (10,), ((753, 867),), 13),
+        (13, 15, 'consolidation', None, (13,), ((753, 804),), 16),
+        (16, 18, 'consolidation', None, (16,), ((715, 792),), 19),
+        (19, 21, 'consolidation', None, (19,), ((915, 1118),), 22),
+        (22, 24, 'consolidation', None, (22,), ((991, 1118),), 25),
+        (25, 27, 'consolidation', None, (25,), ((1016, 1099),), 28),
+        (28, 30, 'consolidation', None, (28,), ((1001, 1048),), 31)),
+ 'f1_evidence': {'current': (4, 10, 11, 14, 17, 21, 23, 26, 30, 32),
+                 'fixed': (4, 10, 11, 14, 17, 21, 23, 26, 30, 32)},
+ 'f1_first': {'current': (434, 1236, 1754, 2226, 2593, 3188, 3317, 3544, 3815, 3908),
+              'fixed': (441, 1244, 1757, 2235, 2609, 3198, 3323, 3572, 3822, 3913)},
+ 'f2': ((0, 5, 'consolidation', None, (1,), ((902, 956),), 6),
+        (6, 9, 'consolidation', None, (6,), ((991, 1117),), None)),
+ 'f2_envelope': (666, 1113),
+ 'f2_evidence': 7,
+ 'f2_first': {'current': 3317, 'fixed': 3323},
+ 'first_overlap': (1061, 1083),
+ 'global_unique_origin_proven': False,
+ 'head_counts': {'current': (97, 337, 376, 434, 579), 'fixed': (116, 342, 390, 441, 599)},
+ 'head_proof_first': {'current': ((97, 1081, '2023-05-18 13:30:00', True),
+                                  (337, 1041, '2023-06-28 10:30:00', True),
+                                  (376, 1067, '2023-07-04 13:30:00', True),
+                                  (434, 1028, '2023-07-13 09:30:00', True),
+                                  (579, 1021, '2023-08-04 10:00:00', True)),
+                      'fixed': ((116, 1092, '2023-05-19 14:30:00', True),
+                                (342, 1041, '2023-06-28 10:30:00', True),
+                                (390, 1067, '2023-07-04 13:30:00', True),
+                                (441, 1028, '2023-07-13 09:30:00', True),
+                                (599, 1022, '2023-08-07 09:30:00', True))},
+ 'head_reference_sha256': 'cb4f9ab615a53ee3dc771a43d403e23a3a37652861ea7d3185e0b226b2b28289',
+ 'initial_empty_overlap_ticks': 7,
+ 'limits': {'current': 3942, 'fixed': 3978},
+ 'proof_high_excluded': 1202,
+ 'reference_sha256': '4fa3621c81a27cc74b5153f7fbb64d0b10d21ffc9ca66f0073632b2401559e11',
+ 'rejected': ((4, 7, -26, 12),
+              (4, 11, 1, 12),
+              (13, 22, 25, 23),
+              (29, 32, -12, 33),
+              (29, 34, 5, 35),
+              (29, 36, 5, 37)),
+ 'schema': 'M1-source-BI1-whole-F1-F2-v01',
+ 'source_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+ 'suffix_certificate_sha256': '203d72ee106711ff44e535492735200f5914bbe6f3f23e447a4d899fa41f7562',
+ 'tail': (31, 32, 'incomplete', None, (), (), None),
+ 'units': ({'direction': 'down',
+            'end_dt': '2023-05-15 11:30:00',
+            'end_index': 40,
+            'end_ticks': 1048,
+            'evidence_dt': '2023-05-19 14:30:00',
+            'evidence_end_index': 63,
+            'high_ticks': 1107,
+            'low_ticks': 1048,
+            'mode': 1,
+            'proof_bi': 6,
+            'start_dt': '2023-05-09 10:00:00',
+            'start_index': 13,
+            'start_ticks': 1107},
+           {'direction': 'up',
+            'end_dt': '2023-06-01 14:00:00',
+            'end_index': 112,
+            'end_ticks': 1113,
+            'evidence_dt': '2023-06-28 10:30:00',
+            'evidence_end_index': 197,
+            'high_ticks': 1113,
+            'low_ticks': 1048,
+            'mode': 1,
+            'proof_bi': 23,
+            'start_dt': '2023-05-15 11:30:00',
+            'start_index': 40,
+            'start_ticks': 1048},
+           {'direction': 'down',
+            'end_dt': '2023-06-28 10:30:00',
+            'end_index': 197,
+            'end_ticks': 1041,
+            'evidence_dt': '2023-07-04 13:30:00',
+            'evidence_end_index': 215,
+            'high_ticks': 1113,
+            'low_ticks': 1041,
+            'mode': 1,
+            'proof_bi': 28,
+            'start_dt': '2023-06-01 14:00:00',
+            'start_index': 112,
+            'start_ticks': 1113},
+           {'direction': 'up',
+            'end_dt': '2023-07-04 13:30:00',
+            'end_index': 215,
+            'end_ticks': 1067,
+            'evidence_dt': '2023-07-13 09:30:00',
+            'evidence_end_index': 246,
+            'high_ticks': 1067,
+            'low_ticks': 1041,
+            'mode': 1,
+            'proof_bi': 31,
+            'start_dt': '2023-06-28 10:30:00',
+            'start_index': 197,
+            'start_ticks': 1041},
+           {'direction': 'down',
+            'end_dt': '2023-07-28 10:00:00',
+            'end_index': 296,
+            'end_ticks': 991,
+            'evidence_dt': '2023-08-07 09:30:00',
+            'evidence_end_index': 322,
+            'high_ticks': 1067,
+            'low_ticks': 991,
+            'mode': 1,
+            'proof_bi': 40,
+            'start_dt': '2023-07-04 13:30:00',
+            'start_index': 215,
+            'start_ticks': 1067})}
+
+
+def m1_source_bridge_input(contract):
+    """保留输入首残笔，不由截断窗口声明无前史；最早交集锚定BI1。"""
+    case,suffix,old,rows,_=m1_full_suffix_input(contract);a=M3_M1_SOURCE_BRIDGE_AUDIT
+    if (a['suffix_certificate_sha256']!=old['certificate_sha256'] or
+            a['source_sha256']!=old['fixture_sha256']):
+        raise AssertionError('M1源桥接须绑定同一BI38后缀与行情')
+    # units为全源固定装配；实际证明版本由head_proof_first及逐raw的BI核对。
+    heads=[dict(u,local_raw_count=n,confirmed_raw_count=n) for u,n in zip(a['units'],a['head_counts'][contract])]
+    return case,heads+suffix,a,rows
+
+
+class TestM1SourceBridge(unittest.TestCase):
+    """课67/71/78及35/38：显式BI1源锚点接通BI38，按原窗口重验F1/F2。"""
+
+    def test_original_raw_contracts_join_five_heads_and_rebuild_whole_F1_F2(self):
+        inputs={c:m1_source_bridge_input(c) for c in ('current','fixed')};rows=inputs['fixed'][3]
+        first={c:[] for c in inputs};f1_first={c:{} for c in inputs};types={c:[] for c in inputs}
+        previous={c:[] for c in inputs};prior_f1={c:[] for c in inputs};frozen_f2={};cache={};total=0
+        for count in range(1,len(rows)+1):
+            _,_,bs=chan.chan_fx_bi(rows[:count],standard='106')
+            for contract,(_,units,a,observed) in inputs.items():
+                if count>len(observed):continue
+                total+=1;bis=bs if contract=='current' else bs[:-1]
+                key=tuple((b.direction,b.start_index,b.end_index,b.start_dt,b.end_dt,b.start_value,b.end_value) for b in bis)
+                if contract not in cache or cache[contract][0]!=key:
+                    xs=[x for x in chan.find_xds(bis,origin_premise=dict(basis='given_recent',anchor=(1,'down',1.107),available_bi=1)) if x.complete]
+                    cache[contract]=(key,xs)
+                else:xs=cache[contract][1]
+                visible=[u for u in units if u['confirmed_raw_count']<=count]
+                self.assertEqual(len(xs),len(visible),(contract,count));shapes=[];pub=1
+                for x,u in zip(xs,visible):
+                    shape=(x.direction,str(x.start_dt),str(x.end_dt),round(x.start_value*1000),round(x.end_value*1000),round(x.low*1000),round(x.high*1000),x.mode)
+                    self.assertEqual(shape,tuple(u[k] for k in ('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode')))
+                    pub=max(pub,u['proof_bi']);self.assertEqual((x.evidence_end_index,x.evidence_dt),(bis[pub].end_index,bis[pub].end_dt));shapes.append(shape)
+                self.assertEqual(shapes[:len(previous[contract])],previous[contract]);previous[contract]=shapes
+                first[contract].extend([count]*(len(xs)-len(first[contract])))
+                moves=[m for m in chan.same_level_decompose(xs) if m.complete]
+                f1=[m3_xd_shape(m) for m in moves];expected=[s for s in a['f1'] if units[s[-1]]['confirmed_raw_count']<=count]
+                self.assertEqual(f1,[m3_xd_expected(units,s) for s in expected]);self.assertEqual(f1[:len(prior_f1[contract])],prior_f1[contract]);prior_f1[contract]=f1
+                for m in moves:
+                    if m.seg_start not in f1_first[contract]:
+                        f1_first[contract][m.seg_start]=count
+                        types[contract].append(m3_xd_type('M1-source1:'+contract,m,visible,rows[count-1]['available_dt']))
+                f2=chan.confirm_level_up(types[contract],rows[count-1]['available_dt'],'F2')
+                self.assertEqual(len(f2),int(count>=a['f2_first'][contract]))
+                if f2:
+                    if contract not in frozen_f2:frozen_f2[contract]=f2[0]
+                    self.assertEqual(f2[0],frozen_f2[contract])
+                    self.assertEqual((f2[0].kind,f2[0].direction,round(f2[0].low*1000),round(f2[0].high*1000),len(f2[0].evidence_ids)),('consolidation',None,666,1113,7))
+                    self.assertEqual(f2[0].confirmed_dt,rows[a['f2_first'][contract]-1]['available_dt'])
+                if count==len(observed):self.assertEqual(m3_xd_shape(chan.same_level_decompose(xs)[-1]),m3_xd_expected(units,a['tail']))
+        self.assertEqual(total,7920)
+        for contract,(_,units,a,_) in inputs.items():
+            self.assertEqual(first[contract],[u['confirmed_raw_count'] for u in units])
+            self.assertEqual(tuple(f1_first[contract][s[0]] for s in a['f1']),a['f1_first'][contract])
+            self.assertEqual(tuple(len(t.evidence_ids) for t in types[contract]),a['f1_evidence'][contract])
+            records=[dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),high_ticks=round(t.high*1000)) for t in types[contract]]
+            self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types[contract])],[m3_xd_expected(records,s) for s in a['f2']])
+
+    def test_empty_initial_triple_anchor_and_late_premise_keep_active_proofs_separate(self):
+        for contract in ('current','fixed'):
+            _,units,a,rows=m1_source_bridge_input(contract);late=a['head_counts'][contract][-1]
+            for count in sorted({1,96,97,115,116,336,337,342,376,390,434,441,578,579,598,599,637,642,930,943,len(rows)}):
+                _,_,bs=chan.chan_fx_bi(rows[:count],standard='106');bis=bs if contract=='current' else bs[:-1]
+                actual=[x for x in chan.find_xds(bis,origin_premise=dict(basis='given_recent',anchor=(1,'down',1.107),available_bi=40)) if x.complete]
+                expected=[u for u in units if max(late,u['confirmed_raw_count'])<=count]
+                self.assertEqual(len(actual),len(expected),(contract,count));pub=40
+                for x,u in zip(actual,expected):
+                    pub=max(pub,u['proof_bi']);self.assertEqual((x.evidence_end_index,x.evidence_dt),(bis[pub].end_index,bis[pub].end_dt))
+                if count==late:
+                    self.assertEqual(len(actual),5)
+                    self.assertEqual((round(bis[40].end_value*1000),str(bis[40].end_dt)),a['head_proof_first'][contract][-1][1:3])
+            self.assertEqual(round((max(b.low for b in bis[:3])-min(b.high for b in bis[:3]))*1000),7)
+            self.assertEqual(tuple(round(v*1000) for v in (max(b.low for b in bis[1:4]),min(b.high for b in bis[1:4]))),(1061,1083))
+            with self.assertRaisesRegex(ValueError,'selected boundary'):
+                chan.find_xds(bis,origin_premise=dict(basis='given_recent',anchor=(0,'up',1.09),available_bi=0))
+            with self.assertRaisesRegex(ValueError,'input beginning'):
+                chan.find_xds(bis,origin_premise=dict(basis='no_prior_history',anchor=(1,'down',1.107),available_bi=1))
+            self.assertFalse(any(x.complete for x in chan.find_xds(bis,origin_premise=dict(basis='unknown',anchor=(1,'down',1.107),available_bi=None))))
+        self.assertFalse(a['automatic_origin_proven']);self.assertFalse(a['global_unique_origin_proven'])
+
+    def test_new_F2_excludes_successor_extreme_and_does_not_supply_strict_points(self):
+        def forbidden(a,b):raise AssertionError('盘整F2不得评估严格力度')
+        for contract in ('current','fixed'):
+            _,units,a,rows=m1_source_bridge_input(contract);types=[]
+            for s,at in zip(a['f1'],a['f1_first'][contract]):
+                visible=[u for u in units if u['confirmed_raw_count']<=at]
+                move=next(m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),at)) if m.complete and m.seg_start==s[0])
+                types.append(m3_xd_type('M1-source1:'+contract,move,visible,rows[at-1]['available_dt']))
+            self.assertEqual((types[1].direction,types[3].direction),('up',None))
+            self.assertLess(types[1].end_price,types[1].start_price)
+            self.assertEqual(round(types[6].high*1000),a['proof_high_excluded'])
+            for count in (a['f2_first'][contract]-1,a['f2_first'][contract],len(rows)):
+                now=rows[count-1]['available_dt'];f2=chan.confirm_level_up(types,now,'F2')
+                self.assertEqual(len(f2),int(count>=a['f2_first'][contract]))
+                if f2:
+                    self.assertEqual(round(f2[0].high*1000),1113)
+                    self.assertEqual(chan.confirm_level_up(f2,now,'F3'),[])
+                self.assertEqual(chan.scan_strict_divergence(types,now,'F2',forbidden,'guard').results,())
+                self.assertFalse(chan.scan_first_points(types,rows[:count],now,'F2').points)
+                self.assertFalse(any(chan.analyze_point_chain(types,rows[:count],now,'F2')))
+            _,_,old,_,_=m1_full_suffix_input(contract)
+            self.assertEqual(len(old['f1']),8);self.assertIsNone(old['f2'][0][-1])
+
+
 if __name__ == '__main__':
     unittest.main()
