@@ -13,6 +13,27 @@
 保留，历史行情验收、标注、扫描、图册与样本工具现位于 `validation/tools/`；
 `tools/verify_installed.py` 仍属工程层。冻结收据内的旧路径和摘要不回写。
 
+## 1.2.0：公开发行与旧环境流水线核验（2026-10-30）
+
+北京时间08:33核对：main CI 40890362315及tag CI 40890400781均成功，
+GitHub Release非草稿、官方PyPI双分发文件已可下载。legacy作业使用
+Python3.6.15/numpy1.14.6/pandas0.23.4，包含wheel隔离导入及解包
+sdist包测试；现代包/覆盖率、资产和发布门禁均随标签工作流通过。
+[标签CI](https://github.com/lushi78778/chan-lun/actions/runs/40890400781)、
+[Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.0)及
+[官方PyPI](https://pypi.org/project/chan-lun-core/1.2.0/)分别核验，
+平台聚宽实跑仍另计。
+
+公开wheel摘要
+`151c52ea49ede3c176132e8b809577af8c84e3847089cb49363bbf81c20f1558`，
+sdist摘要`aa25c0215f80a8f93000de6c3c93be6486ec8e5fda04ef4071e9c7efc053c852`。
+两文件官方SHA256与wheel CRC通过，GitHub清单绑定v1.2.0和源码
+`c378f58f279a8724636c8268b9204e01a07ccdfc`，清单摘要与官方文件一致。
+wheel内41模块及sdist内143份受管理文件与该Git提交逐字节相同，
+validation排除。官方wheel临时安装后两现代环境隔离导入通过，
+严格元数据、实际Markdown渲染及发行清单verify通过。下节本地候选
+摘要保留，两组构建结果分别登记，不用本地候选代替公开发行文件。
+
 ## 1.2.0：显式起点的兼容接口与候选验收（2026-10-29）
 
 `find_xds`新增可选origin_premise；默认路径保持1.1.2，显式模式绑定
