@@ -4251,5 +4251,103 @@ class TestRealXdF1Assets(unittest.TestCase):
 
 
 
+    def _m1_source_consumer_source(self):
+        source,old,case,parts,units=self._m1_source_bridge()
+        a=embedded_table('test_real_xd_f1.py','M3_M1_SOURCE_CONSUMERS_AUDIT')
+        self.assertEqual((a['source_reference_sha256'],a['source_sha256']),(source['reference_sha256'],source['source_sha256']))
+        record={k:v for k,v in a.items() if k!='reference_sha256'}
+        blob=json.dumps(record,sort_keys=True,ensure_ascii=False,indent=2)+'\n'
+        self.assertEqual(hashlib.sha256(blob.encode()).hexdigest(),a['reference_sha256'])
+        return a,source,old,case,parts,units
+
+    def test_m1_source_auto_spans_and_opposite_return_boundaries_do_not_prove_strict_trend(self):
+        a,_,_,_,_,units=self._m1_source_consumer_source();tool=compiler();strict=compiler(ROOT/'validation/tools/gen_real_strict_trend.py')
+        for spec,groups in zip(a['auto'],a['auto_spans']):
+            tool.move_record(units,spec)
+            for (first,formed,last),core in zip(groups,spec[5]):
+                self.assertEqual((max(u['low_ticks'] for u in units[first:formed+1]),min(u['high_ticks'] for u in units[first:formed+1])),core)
+                self.assertTrue(all(u['low_ticks']<=core[1] and u['high_ticks']>=core[0] for u in units[formed+1:last+1]))
+        for name,spec in a['roles'].items():strict.validate_zhongshu(name,spec,units)
+        self.assertGreater(max(u['low_ticks'] for u in units[5:8]),min(u['high_ticks'] for u in units[5:8]))
+        self.assertEqual(a['roles']['B']['gg']-a['roles']['A']['dd'],31)
+        self.assertGreater(units[19]['end_ticks'],units[0]['start_ticks'])
+        # 比较边界取形成后最后反向回试，不用最后同向段替代。
+        tail=lambda span:next((i for i in range(span[2],span[1]-1,-1) if units[i]['direction']=='up'),None)
+        for size,reference,leave,gap,new_extreme,third in a['candidates']:
+            previous,last=((0,2,4),(6,8,min(size-1,10))) if size<=13 else ((6,8,10),(11,13,size-1))
+            pe,ce=tail(previous),tail(last)
+            self.assertEqual((tuple(range(pe+1,last[0])),tuple(range(ce+1,size))),(reference,leave))
+            self.assertEqual(min(u['low_ticks'] for u in units[previous[0]:pe+1])-max(u['high_ticks'] for u in units[last[0]:ce+1]),gap)
+            made=min(units[i]['low_ticks'] for i in leave)<min(u['low_ticks'] for u in units[:ce+1])
+            self.assertEqual(True if made else None,new_extreme)
+            self.assertEqual(True if any(units[i]['direction']=='up' for i in leave) else None,third)
+        self.assertEqual((tail((6,8,10)),tail((11,13,19))),(9,19))
+        self.assertEqual((a['completed_reference'],a['completed_leave']),((10,),()))
+        self.assertEqual(tuple(range(19+1,20)),())  # 完成类型没有最后离开腿，不能调用力度。
+        self.assertEqual(tuple(c[0] for c in a['candidates']),(11,12,13,15,17,19))
+
+    def test_m1_source_consumer_raw_boundaries_independently_rebuild_visibility_and_first_points(self):
+        a,source,old,case,_,units=self._m1_source_consumer_source();tool=compiler();time_tool=compiler(ROOT/'validation/tools/gen_real_third_point.py');total=0
+        for contract,limit in a['limits'].items():
+            clock=source['head_counts'][contract]+old['clocks'][contract]['published']
+            counts=sorted({1,limit}|{n for at in clock for n in (at-1,at) if 0<n<=limit});sizes=set();first={};candidates={}
+            for count in counts:
+                rows=case['raw_rows'][:count];_,_,bs=tool.foundation(rows,'106');pens=bs if contract=='current' else bs[:-1]
+                self.assertEqual(tool.records(bs[:-1]),case['foundation']['bis'][:len(bs[:-1])])
+                parts=tool.components(rows,pens,None)
+                ready=[manual_xd_certificate_ready(parts,e) for e in source['events']]+self._m1_full_suffix_ready(parts,old)
+                size=next((i for i,ok in enumerate(ready) if not ok),len(ready));sizes.add(size);total+=1
+                self.assertEqual(size,sum(at<=count for at in clock));visible=tool.xd_records(parts,(source['events']+old['events'])[:size])
+                if size in [c[0] for c in a['candidates']]:candidates.setdefault(size,count)
+                for name,spec in a['contexts'].items():
+                    start,formed,zd,zg,_=spec
+                    if formed>=size:continue
+                    triple=visible[start:formed+1]
+                    self.assertEqual((max(u['low_ticks'] for u in triple),min(u['high_ticks'] for u in triple)),(zd,zg))
+                    self.assertEqual(a['known_raw'][contract][name],clock[formed])
+                    known=time_tool.arrival_dt(case['raw_rows'][clock[formed]-1]['dt'],'30m')
+                    active,_,_=self._m2_causal_attempts(visible,spec,known);success=[r for r in active if r[-1]=='established']
+                    at=a['point_raw'][contract].get(name)
+                    self.assertEqual(bool(success),at is not None and at<=count)
+                    if success:
+                        kind,leave,pull,margin,price,_=success[0]
+                        self.assertEqual((kind,leave,pull,price,margin),a['points'][name]);first.setdefault(name,count)
+                self.assertEqual(size>=23,count>=a['auto_first'][contract])
+                if size>=23:self.assertEqual(tool.move_record(visible,a['auto'][0]),tool.move_record(units,a['auto'][0]))
+            self.assertEqual(first,a['point_raw'][contract]);self.assertEqual(candidates,{c[0]:clock[c[0]-1] for c in a['candidates']})
+            self.assertEqual(set(range(34))-sizes,set(a['missing_actual_sizes']))
+        self.assertEqual(total,120)
+
+    def test_m1_source_third_attempts_keep_old_Q_geometry_distinct_from_actual_newborn(self):
+        a,source,old,case,_,units=self._m1_source_consumer_source();time_tool=compiler(ROOT/'validation/tools/gen_real_third_point.py')
+        events=source['events']+old['events'];old_events=case['foundation']['xd_events']
+        for old_i,new_i in ((0,0),(2,2),(4,4),(32,28),(34,30),(36,32)):
+            self.assertEqual(tuple(old_events[old_i]),events[new_i])
+        self.assertEqual((tuple(old_events[33]),events[29]),((274,278,1,288),(274,278,1,285)))
+        for contract in a['limits']:
+            totals=dict(fail=0,before_center_known=0,established=0)
+            for name,spec in a['contexts'].items():
+                known=time_tool.arrival_dt(case['raw_rows'][a['known_raw'][contract][name]-1]['dt'],'30m')
+                active,suppressed,pending=self._m2_causal_attempts(units,spec,known)
+                self.assertEqual(active,list(a['attempts'][name]));self.assertIsNone(pending)
+                for row in active:totals[row[-1]]+=1
+                if suppressed:self.assertTrue(any(row[-1]=='established' for row in active))
+            self.assertEqual(totals,a['attempt_totals'])
+            q_known=time_tool.arrival_dt(case['raw_rows'][a['known_raw'][contract]['Q']-1]['dt'],'30m')
+            self.assertGreater(q_known,units[31]['start_dt'])
+            self.assertEqual(a['attempts']['Q'],(('buy3',31,32,14,1062,'before_center_known'),))
+            self.assertLess(a['point_raw'][contract]['A'],a['known_raw'][contract]['Q'])
+        self.assertEqual(a['newborn_after_A'],(30,32,14));self.assertEqual(a['points']['A'][2]+1,30)
+        self.assertEqual(max(u['low_ticks'] for u in units[30:33])-min(u['high_ticks'] for u in units[30:33]),14)
+        self.assertNotEqual(a['contexts']['Q'][0],30)
+        # 最终Zn的10仍可作为因果B的离开；不倒套未来成员排除。
+        self.assertIn(10,a['roles']['B']['zn']);self.assertEqual(a['points']['B'][1:3],(10,11))
+        self.assertNotIn(10,[r['leave'] for r in time_tool.enumerate_attempts(units,a['roles']['B'])])
+        self.assertEqual(max(u['high_ticks'] for u in units[11:14]),867)
+        self.assertEqual(max(u['high_ticks'] for u in units[11:20]),1202)
+        self.assertFalse(a['legacy_Q_is_newborn_proven']);self.assertFalse(a['automatic_origin_proven'])
+
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -5415,5 +5415,292 @@ class TestM1SourceBridge(unittest.TestCase):
             self.assertEqual(len(old['f1']),8);self.assertIsNone(old['f2'][0][-1])
 
 
+# 源BI1的自动递归和显式中枢条件消费；Q仅作旧几何上下文，不冒充A后新生。
+M3_M1_SOURCE_CONSUMERS_AUDIT = {'attempt_totals': {'before_center_known': 4, 'established': 3, 'fail': 11},
+ 'attempts': {'A': (('sell3', 4, 5, 26, 1022, 'before_center_known'),
+                    ('buy3', 19, 20, -192, 915, 'fail'),
+                    ('sell3', 20, 21, -70, 1118, 'fail'),
+                    ('buy3', 21, 22, -122, 985, 'fail'),
+                    ('sell3', 22, 23, -88, 1136, 'fail'),
+                    ('buy3', 23, 24, -116, 991, 'fail'),
+                    ('sell3', 24, 25, -69, 1117, 'fail'),
+                    ('buy3', 25, 26, -91, 1016, 'fail'),
+                    ('sell3', 26, 27, -51, 1099, 'fail'),
+                    ('sell3', 28, 29, 0, 1048, 'established')),
+              'B': (('buy3', 9, 10, -278, 666, 'before_center_known'),
+                    ('sell3', 10, 11, 35, 867, 'established')),
+              'C': (('sell3', 16, 17, -39, 792, 'fail'),
+                    ('sell3', 18, 19, -449, 1202, 'fail'),
+                    ('buy3', 19, 20, 94, 915, 'established')),
+              'D': (('buy3', 23, 24, -127, 991, 'before_center_known'), ('sell3', 28, 29, -63, 1048, 'fail')),
+              'Q': (('buy3', 31, 32, 14, 1062, 'before_center_known'),)},
+ 'auto': ((0, 19, 'down', 'down', (0, 6, 11), ((1048, 1107), (902, 944), (753, 821)), 22),
+          (20, 32, 'consolidation', None, (20,), ((985, 1118),), None)),
+ 'auto_envelope': (666, 1202),
+ 'auto_evidence': 23,
+ 'auto_first': {'current': 3317, 'fixed': 3323},
+ 'auto_net_direction': 'up',
+ 'auto_spans': (((0, 2, 4), (6, 8, 10), (11, 13, 19)), ((20, 22, 32),)),
+ 'automatic_origin_proven': False,
+ 'candidates': ((11, (4, 5), (10,), 19, True, None),
+                (12, (4, 5), (10, 11), 19, True, True),
+                (13, (4, 5), (10, 11, 12), 19, True, True),
+                (15, (10,), (14,), 12, None, None),
+                (17, (10,), (16,), 12, None, None),
+                (19, (10,), (18,), 12, None, None)),
+ 'completed_leave': (),
+ 'completed_reference': (10,),
+ 'contexts': {'A': (0, 2, 1048, 1107, None),
+              'B': (6, 8, 902, 944, None),
+              'C': (11, 13, 753, 821, None),
+              'D': (20, 22, 985, 1118, None),
+              'Q': (28, 30, 1001, 1048, None)},
+ 'first_exclusion': 'no_directional_compare_legs',
+ 'initial_wave_overlap_ticks': 31,
+ 'known_raw': {'current': {'A': 376, 'B': 1123, 'C': 2226, 'D': 3317, 'Q': 3831},
+               'fixed': {'A': 390, 'B': 1143, 'C': 2235, 'D': 3323, 'Q': 3849}},
+ 'legacy_Q_is_newborn_proven': False,
+ 'limits': {'current': 3942, 'fixed': 3978},
+ 'missing_actual_sizes': (20, 22, 27, 29),
+ 'newborn_after_A': (30, 32, 14),
+ 'point_order': ('B', 'C', 'A'),
+ 'point_raw': {'current': {'A': 3815, 'B': 1895, 'C': 3188}, 'fixed': {'A': 3822, 'B': 1919, 'C': 3198}},
+ 'points': {'A': ('sell3', 28, 29, 1048, 0), 'B': ('sell3', 10, 11, 867, 35), 'C': ('buy3', 19, 20, 915, 94)},
+ 'reference_sha256': 'c64ff7a8e7fd373d06a617210964d1a8a345f944e7ea2785d00a5e621c8d3844',
+ 'roles': {'A': {'closed_by': 6,
+                 'core_basis': 'three_units',
+                 'dd': 991,
+                 'frozen_by_departure': False,
+                 'gg': 1113,
+                 'zd': 1048,
+                 'zg': 1107,
+                 'zn': (0, 2, 4)},
+           'B': {'closed_by': 12,
+                 'core_basis': 'three_units',
+                 'dd': 666,
+                 'frozen_by_departure': False,
+                 'gg': 1022,
+                 'zd': 902,
+                 'zg': 944,
+                 'zn': (6, 8, 10)},
+           'C': {'closed_by': 21,
+                 'core_basis': 'three_units',
+                 'dd': 666,
+                 'frozen_by_departure': False,
+                 'gg': 1202,
+                 'zd': 753,
+                 'zg': 821,
+                 'zn': (11, 13, 15, 17, 19)},
+           'D': {'closed_by': None,
+                 'core_basis': 'three_units',
+                 'dd': 915,
+                 'frozen_by_departure': False,
+                 'gg': 1202,
+                 'zd': 985,
+                 'zg': 1118,
+                 'zn': (20, 22, 24, 26, 28, 30, 32)},
+           'Q': {'closed_by': 32,
+                 'core_basis': 'three_units',
+                 'dd': 981,
+                 'frozen_by_departure': False,
+                 'gg': 1099,
+                 'zd': 1001,
+                 'zg': 1048,
+                 'zn': (28, 30)}},
+ 'schema': 'M1-source-BI1-XD-consumers-v02',
+ 'scope': 'given_recent_source_BI1_and_explicit_centers_not_automatic_theory_levels',
+ 'source_reference_sha256': '4fa3621c81a27cc74b5153f7fbb64d0b10d21ffc9ca66f0073632b2401559e11',
+ 'source_sha256': '5f5f549a8775cec25dcedf2de920e0ff585d5293d2bf660df99ec4a3ec23cb01',
+ 'strict_reasons': ((),
+                    ('not_two_separated_centers',),
+                    ('not_two_separated_centers',),
+                    ('not_two_separated_centers',),
+                    ('not_two_separated_centers',),
+                    ('not_two_separated_centers',),
+                    ('not_two_separated_centers',),
+                    ('not_two_separated_centers',),
+                    ('not_two_separated_centers',),
+                    ('no_comparable_center_tail',),
+                    ('no_compare_legs',),
+                    (),
+                    (),
+                    (),
+                    ('no_compare_legs',),
+                    (),
+                    ('no_compare_legs',),
+                    (),
+                    ('no_compare_legs',),
+                    (),
+                    ('no_compare_legs',),
+                    ('center_waves_overlap',),
+                    ('center_waves_overlap',),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers'),
+                    ('no_compare_legs', 'not_two_separated_centers')),
+ 'terminal_counts': {'current': 3, 'fixed': 3}}
+
+
+def m1_source_consumers_input(contract):
+    """保留实际确认时刻与给定中枢身份；条件三类不自动归入一类组合链。"""
+    case,units,source,rows=m1_source_bridge_input(contract);a=M3_M1_SOURCE_CONSUMERS_AUDIT
+    if (a['source_reference_sha256']!=source['reference_sha256'] or a['source_sha256']!=source['source_sha256']):
+        raise AssertionError('M1消费者须绑定同一显式源BI1证书')
+    root='M1-source1-consumers:'+contract+':'+a['reference_sha256']
+    moves=[chan.ConfirmedMove(root+':xd:'+str(i),'source1-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),
+           u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,
+           rows[u['confirmed_raw_count']-1]['available_dt']) for i,u in enumerate(units)]
+    contexts=[chan.ThirdPointContext(root+':context:'+name,'source1-center','source1-XD',
+              chan.ConfirmedCenter(root+':center:'+name,'source1-center',spec[2]/1000.,spec[3]/1000.,
+              rows[a['known_raw'][contract][name]-1]['available_dt'])) for name,spec in a['contexts'].items()]
+    return case,units,a,rows,moves,contexts
+
+
+class TestM1SourceConsumers(unittest.TestCase):
+    """课20/29/35/37/101：源BI1条件递归、显式中枢与首次回试的独立角色。"""
+
+    def _assert_strict(self,moves,now,a):
+        def forbidden(x,y):raise AssertionError('开放候选或缺比较腿不评估力度')
+        size=len(moves);scan=chan.scan_strict_divergence(moves,now,'auto-source1-F1',forbidden,'guard')
+        c=next((c for c in a['candidates'] if c[0]==size),None)
+        self.assertEqual(len(scan.results),int(c is not None))
+        self.assertEqual(tuple(r for _,r in scan.skipped),a['strict_reasons'][size])
+        self.assertEqual(scan.completed_types,int(size>=23))
+        if c:
+            _,reference,leave,gap,new_extreme,third=c;point,=scan.results
+            self.assertEqual((point.kind,point.status,point.reason),('buy1','candidate','trend_open'))
+            self.assertEqual(point.reference_ids,tuple(moves[i].move_id for i in reference))
+            self.assertEqual(point.leave_ids,tuple(moves[i].move_id for i in leave))
+            self.assertEqual(dict(point.conditions),dict(trend=None,separated_centers=True,new_extreme=new_extreme,leave_third_point=third))
+            self.assertEqual((point.force_method,point.force_reference,point.force_leave),(None,None,None))
+            self.assertEqual(point.confirmed_dt,moves[-1].confirmed_dt)
+        return scan
+
+    def test_given_prefixes_keep_six_open_candidates_separate_from_completed_engineering_down(self):
+        for contract in ('current','fixed'):
+            _,units,a,rows,moves,_=m1_source_consumers_input(contract);saved=None;identity=None
+            # Widths are given-input prefixes; raw same-batch impossibilities are checked separately.
+            for size in range(34):
+                now=moves[size-1].confirmed_dt if size else rows[0]['available_dt'];visible=moves[:size]
+                scan=self._assert_strict(visible,now,a)
+                if scan.results:
+                    if identity is None:identity=scan.results[0].divergence_id
+                    self.assertEqual(scan.results[0].divergence_id,identity)
+                types=chan.confirm_level_up(visible,now,'auto-source1-F1')
+                self.assertEqual(len(types),int(size>=23))
+                if types:
+                    if saved is None:saved=types[0]
+                    self.assertEqual(types,[saved])
+                    self.assertEqual((saved.kind,saved.direction,round(saved.start_price*1000),round(saved.end_price*1000),len(saved.evidence_ids)),('down','down',1107,1202,23))
+                    self.assertEqual(saved.to_confirmed_move().direction,'up')
+                first=chan.scan_first_points(visible,rows,now,'auto-source1-F1')
+                self.assertEqual(first.points,[])
+                self.assertEqual(tuple(r for _,r in first.exclusions),(a['first_exclusion'],) if size>=23 else ())
+                self.assertFalse(any(chan.analyze_point_chain(visible,rows,now,'auto-source1-F1')))
+            self.assertEqual([m3_xd_shape(m) for m in chan.level_up(moves)],[m3_xd_expected(units,s) for s in a['auto']])
+            self.assertEqual(saved.confirmed_dt,rows[a['auto_first'][contract]-1]['available_dt'])
+            self.assertEqual(a['auto_first'][contract],M3_M1_SOURCE_BRIDGE_AUDIT['f2_first'][contract])
+            self.assertNotEqual((round(saved.low*1000),round(saved.high*1000)),M3_M1_SOURCE_BRIDGE_AUDIT['f2_envelope'])
+            for name,spec in a['roles'].items():
+                actual=chan.find_zs(m3_xd_parts(dict(units=units),len(rows))[spec['zn'][0]:spec['zn'][-1]+1])[0]
+                self.assertEqual(tuple(round(v*1000) for v in (actual.zd,actual.zg,actual.dd,actual.gg)),tuple(spec[k] for k in ('zd','zg','dd','gg')))
+
+    def test_raw_boundaries_bind_actual_XDs_causal_centers_and_three_first_points(self):
+        total=0
+        for contract in ('current','fixed'):
+            _,units,a,rows,given,contexts=m1_source_consumers_input(contract);first={};previous={};saved=None;sizes=set()
+            counts=sorted({1,len(rows)}|{n for u in units for n in (u['confirmed_raw_count']-1,u['confirmed_raw_count']) if 0<n<=len(rows)})
+            for count in counts:
+                _,_,bs=chan.chan_fx_bi(rows[:count],standard='106');bis=bs if contract=='current' else bs[:-1]
+                xs=[x for x in chan.find_xds(bis,origin_premise=dict(basis='given_recent',anchor=(1,'down',1.107),available_bi=1)) if x.complete]
+                expected=[u for u in units if u['confirmed_raw_count']<=count];self.assertEqual(len(xs),len(expected));visible=[];sizes.add(len(xs))
+                for i,(x,u) in enumerate(zip(xs,expected)):
+                    self.assertEqual(tuple(round(v*1000) for v in (x.start_value,x.end_value,x.low,x.high)),tuple(u[k] for k in ('start_ticks','end_ticks','low_ticks','high_ticks')))
+                    visible.append(given[i]._replace(direction=x.direction,start_dt=x.start_dt,end_dt=x.end_dt,
+                                   start_price=x.start_value,end_price=x.end_value,low=x.low,high=x.high))
+                now=rows[count-1]['available_dt'];self._assert_strict(visible,now,a)
+                types=chan.confirm_level_up(visible,now,'auto-source1-F1')
+                self.assertEqual(len(types),int(count>=a['auto_first'][contract]))
+                if types:
+                    if saved is None:saved=types[0]
+                    self.assertEqual(types,[saved])
+                active=[]
+                for context in contexts:
+                    name=context.context_id.rsplit(':',1)[1];start,formed,zd,zg,_=a['contexts'][name]
+                    if formed>=len(xs):continue
+                    center=chan.find_zs(xs[start:formed+1])[0]
+                    self.assertEqual((round(center.zd*1000),round(center.zg*1000)),(zd,zg));active.append(context)
+                points=chan.find_third_points(visible,active,now)
+                names=[n for n in a['point_order'] if a['point_raw'][contract][n]<=count]
+                self.assertEqual(len(points),len(names))
+                for point,name in zip(points,names):
+                    kind,leave,pull,price,margin=a['points'][name]
+                    self.assertEqual((point.kind,point.leave_move_id,point.pull_move_id,round(point.price*1000)),(kind,given[leave].move_id,given[pull].move_id,price))
+                    self.assertEqual((point.dt,point.confirmed_dt),(given[pull].end_dt,rows[a['point_raw'][contract][name]-1]['available_dt']))
+                    if name in previous:self.assertEqual(point,previous[name])
+                    previous[name]=point;first.setdefault(name,count)
+                total+=1
+            self.assertEqual(first,a['point_raw'][contract]);self.assertEqual(set(range(34))-sizes,set(a['missing_actual_sizes']))
+        self.assertEqual(total,120)
+
+    def test_old_Q_geometry_cannot_backfill_confirmation_or_replace_A_newborn(self):
+        for contract in ('current','fixed'):
+            _,units,a,rows,moves,contexts=m1_source_consumers_input(contract);now=rows[-1]['available_dt'];named={c.context_id.rsplit(':',1)[1]:c for c in contexts}
+            self.assertEqual(len(chan.find_third_points(moves,contexts,now)),3)
+            self.assertEqual(units[32]['low_ticks']-a['roles']['Q']['zg'],14)
+            self.assertEqual(chan.find_third_points(moves,[named['Q']],now),[])
+            self.assertGreater(named['Q'].center.confirmed_dt,moves[31].start_dt)
+            for delta in (-1,0,1):
+                changed=named['Q']._replace(center=named['Q'].center._replace(confirmed_dt=moves[31].start_dt+timedelta(microseconds=delta)))
+                points=chan.find_third_points(moves,[changed],now)
+                self.assertEqual(len(points),int(delta<=0))
+                if points:self.assertEqual((points[0].kind,points[0].leave_move_id,points[0].pull_move_id),('buy3',moves[31].move_id,moves[32].move_id))
+            start,end,gap=a['newborn_after_A'];self.assertEqual(start,a['points']['A'][2]+1)
+            self.assertEqual(max(u['low_ticks'] for u in units[start:end+1])-min(u['high_ticks'] for u in units[start:end+1]),gap)
+            self.assertEqual(chan.find_zs(m3_xd_parts(dict(units=units),len(rows))[start:end+1]),[])
+            self.assertNotEqual(a['contexts']['Q'][0],start)
+            self.assertFalse(a['legacy_Q_is_newborn_proven']);self.assertFalse(a['automatic_origin_proven'])
+
+    def test_touch_A_late_returns_and_future_payloads_preserve_confirmed_identities(self):
+        for contract in ('current','fixed'):
+            _,_,a,rows,moves,contexts=m1_source_consumers_input(contract);now=rows[-1]['available_dt'];named={c.context_id.rsplit(':',1)[1]:c for c in contexts}
+            for delta in (-1,0,1):
+                changed=list(moves[:30]);edge=(1048+delta)/1000.;changed[29]=changed[29]._replace(end_price=edge,high=edge)
+                for mirror in (False,True):
+                    supplied=changed;context=named['A']
+                    if mirror:
+                        flip=lambda v:(3000-round(v*1000))/1000.
+                        supplied=[m._replace(direction='down' if m.direction=='up' else 'up',start_price=flip(m.start_price),end_price=flip(m.end_price),low=flip(m.high),high=flip(m.low)) for m in changed]
+                        context=context._replace(center=context.center._replace(zd=flip(context.center.zg),zg=flip(context.center.zd)))
+                    points=chan.find_third_points(supplied,[context],now);self.assertEqual(len(points),int(delta<=0))
+                    if points:self.assertEqual(points[0].kind,'buy3' if mirror else 'sell3')
+            base=chan.confirm_level_up(moves,now,'auto-source1-F1');late=moves[22].confirmed_dt+timedelta(days=1);delayed=list(moves)
+            for i in range(22,len(moves)):delayed[i]=moves[i]._replace(confirmed_dt=max(late,moves[i].confirmed_dt))
+            self.assertEqual(chan.confirm_level_up(delayed,late-timedelta(microseconds=1),'auto-source1-F1'),[])
+            after,=chan.confirm_level_up(delayed,late,'auto-source1-F1')
+            self.assertEqual(after,base[0]._replace(confirmed_dt=late))
+            for name,(kind,leave,pull,price,margin) in a['points'].items():
+                delayed=list(moves);late=moves[pull].confirmed_dt+timedelta(days=1);delayed[pull]=moves[pull]._replace(confirmed_dt=late)
+                for i in range(pull+1,len(moves)):delayed[i]=moves[i]._replace(confirmed_dt=max(moves[i].confirmed_dt,delayed[i-1].confirmed_dt))
+                context=named[name]
+                self.assertEqual(chan.find_third_points(delayed,[context],late-timedelta(microseconds=1)),[])
+                point,=chan.find_third_points(delayed,[context],late)
+                self.assertEqual((point.leave_move_id,point.pull_move_id,point.confirmed_dt),(moves[leave].move_id,moves[pull].move_id,late))
+                future=moves[-1]._replace(move_id=None,level=None,low=float('nan'),confirmed_dt=late+timedelta(days=10))
+                future_context=context._replace(context_id=None,center=context.center._replace(center_id=None,zd=float('nan'),confirmed_dt=late+timedelta(days=10)))
+                self.assertEqual(chan.find_third_points(delayed+[future],[context,future_context],late),[point])
+            future=moves[-1]._replace(move_id=None,level=None,high=float('nan'),confirmed_dt=now+timedelta(days=10))
+            self.assertEqual(chan.scan_strict_divergence(moves+[future],now,'auto-source1-F1'),chan.scan_strict_divergence(moves,now,'auto-source1-F1'))
+            poisoned=rows+[dict(dt=now+timedelta(days=10),closed_dt=now+timedelta(days=10),available_dt=now+timedelta(days=11),high=float('nan'))]
+            self.assertEqual(chan.scan_first_points(moves+[future],poisoned,now,'auto-source1-F1'),chan.scan_first_points(moves,rows,now,'auto-source1-F1'))
+
+
 if __name__ == '__main__':
     unittest.main()
