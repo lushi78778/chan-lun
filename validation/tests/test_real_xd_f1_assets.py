@@ -4349,5 +4349,84 @@ class TestRealXdF1Assets(unittest.TestCase):
 
 
 
+    def _s3_source_bridge(self):
+        old,case,parts,_=self._expanded_suffix_source('S3');tool=compiler()
+        a=embedded_table('test_real_xd_f1.py','M3_S3_SOURCE_BRIDGE_AUDIT')
+        self.assertEqual((a['source_sha256'],a['suffix_certificate_sha256']),(old['fixture_sha256'],old['certificate_sha256']))
+        record={k:v for k,v in a.items() if k!='reference_sha256'}
+        blob=json.dumps(record,sort_keys=True,ensure_ascii=False,indent=2)+'\n'
+        self.assertEqual(hashlib.sha256(blob.encode()).hexdigest(),a['reference_sha256'])
+        units=tool.xd_records(parts,a['head_events']+old['events'])
+        self.assertEqual(units[:2],list(a['head_units']))
+        return a,old,case,parts,units
+
+    def test_s3_source_head_124_tick_gap_waits_for_second_fractal_and_rejects_internal_turns(self):
+        a,_,_,original,_=self._s3_source_bridge()
+        for mirror in (False,True):
+            parts=original if not mirror else [dict(p,direction='up' if p['direction']=='down' else 'down',
+                start_ticks=10000-p['start_ticks'],end_ticks=10000-p['end_ticks'],low_ticks=10000-p['high_ticks'],high_ticks=10000-p['low_ticks']) for p in original]
+            for event in a['head_events']:self.assertTrue(manual_xd_certificate_ready(parts,event))
+            for stop,state,proof in ((5,'waiting',None),(11,'waiting',None),(12,'confirmed',12)):
+                life=manual_gap_lifecycle(parts,0,3,stop)
+                self.assertEqual((life['original_gap_ticks'],life['state'],life['second_fractal_proof_bi']),(124,state,proof))
+            self.assertTrue(parts[5]['end_ticks']<parts[3]['end_ticks'] if mirror else parts[5]['end_ticks']>parts[3]['end_ticks'])
+            # 原首终已选向仍不能省掉正缺口的第二种证明。
+            self.assertFalse(manual_xd_certificate_ready(parts,(0,2,1,5)))
+            for owner,turn,gap,cancel in a['rejected']:
+                up=parts[owner]['direction']=='up';left=manual_feature_nodes(parts,range(owner+1,turn,2),up)[-1];first=parts[turn]
+                self.assertEqual(first['low_ticks']-left[1] if up else left[0]-first['high_ticks'],gap)
+                broken=next(i for i in range(turn+1,13,2) if (parts[i]['end_ticks']>first['start_ticks'] if up else parts[i]['end_ticks']<first['start_ticks']))
+                self.assertEqual(broken,cancel)
+        self.assertFalse(a['automatic_origin_proven']);self.assertFalse(a['global_unique_origin_proven'])
+
+    def test_s3_source_full_raw_clocks_keep_same_batch_head_and_proof_versions(self):
+        a,old,case,_,_=self._s3_source_bridge();tool=compiler();first={c:[] for c in a['limits']};proofs={};total=0;sizes={c:set() for c in first}
+        for count in range(1,1351):
+            rows=case['raw_rows'][:count];_,_,bs=tool.foundation(rows,'106')
+            self.assertEqual(tool.records(bs[:-1]),case['foundation']['bis'][:len(bs[:-1])])
+            for contract,limit in a['limits'].items():
+                if count>limit:continue
+                total+=1;p=tool.components(rows,bs if contract=='current' else bs[:-1],None)
+                ready=[manual_xd_certificate_ready(p,e) for e in a['head_events']]+self._expanded_suffix_ready(p,old,'S3')
+                size=next((i for i,ok in enumerate(ready) if not ok),len(ready));sizes[contract].add(size)
+                clock=a['head_counts'][contract]+old['clocks'][contract]['published']
+                self.assertEqual(size,sum(n<=count for n in clock))
+                if count==a['head_counts'][contract][0]:
+                    self.assertEqual(size,2);b=p[12];proofs[contract]=(count,b['end_ticks'],b['end_dt'])
+                first[contract].extend([count]*(size-len(first[contract])))
+        self.assertEqual(total,2699)
+        for contract in first:
+            self.assertEqual(tuple(first[contract]),a['head_counts'][contract]+old['clocks'][contract]['published'])
+            self.assertEqual(proofs[contract],a['head_proof_first'][contract][0])
+            self.assertEqual(set(range(15))-sizes[contract],{1})
+        self.assertEqual((proofs['current'][1],proofs['fixed'][1]),(3604,3579))
+        self.assertNotEqual(proofs['current'][2],proofs['fixed'][2])
+
+    def test_s3_source_integer_F1_F2_auto_and_candidate_roles_do_not_reuse_given10_labels(self):
+        a,old,_,_,units=self._s3_source_bridge();tool=compiler();types=[tool.move_record(units,s) for s in a['f1']]
+        for s in (a['tail'],a['auto']):tool.move_record(units,s)
+        f2=tool.move_record(types,a['f2']);self.assertEqual((f2['kind'],f2['complete'],f2['centers_ticks']),('consolidation',False,[[3615,3939]]))
+        self.assertEqual(a['tail'][3],'down');self.assertEqual(len(types),3)
+        self.assertGreater(max(u['low_ticks'] for u in units[10:13]),min(u['high_ticks'] for u in units[10:13]))
+        for group,core in zip(a['auto_spans'],a['auto'][5]):
+            first,formed,last=group
+            self.assertEqual((max(u['low_ticks'] for u in units[first:formed+1]),min(u['high_ticks'] for u in units[first:formed+1])),core)
+            self.assertTrue(all(u['low_ticks']<=core[1] and u['high_ticks']>=core[0] for u in units[formed+1:last+1]))
+        self.assertEqual((units[6]['direction'],units[10]['direction']),('down','down'))
+        for size,reference,leave,gap,made,third in a['candidates']:
+            self.assertEqual((reference,leave),((7,),tuple(range(11,size))))
+            self.assertEqual(min(u['low_ticks'] for u in units[8:11])-max(u['high_ticks'] for u in units[:7]),gap)
+            self.assertEqual(True if max(units[i]['high_ticks'] for i in leave)>max(u['high_ticks'] for u in units[:11]) else None,made)
+            self.assertEqual(True if any(units[i]['direction']=='down' for i in leave) else None,third)
+        for contract in a['limits']:
+            clock=a['head_counts'][contract]+old['clocks'][contract]['published']
+            self.assertEqual(a['f1_first'][contract],tuple(clock[s[-1]] for s in a['f1']))
+            self.assertEqual(a['f1_evidence'][contract],tuple(sum(n<=at for n in clock) for at in a['f1_first'][contract]))
+            self.assertNotEqual(a['f1_first'][contract],old['clocks'][contract]['f1_first'])
+            self.assertGreater(old['clocks'][contract]['published'][3],a['f1_first'][contract][0])
+        self.assertIsNone(a['auto'][-1]);self.assertIsNotNone(old['auto'][0][-1])
+
+
+
 if __name__ == '__main__':
     unittest.main()
