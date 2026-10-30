@@ -4709,5 +4709,127 @@ class TestConditionedOriginRawContracts(unittest.TestCase):
             self._check_conditional_clock(case,units,rows,M3_M2_JOINED_ROLE_AUDIT['seed'],contract)
 
 
+# G1源窗口的两项显式起点假设；接通前部后重新核F1，不替换旧BI35表。
+M3_G1_SOURCE_BRIDGE_AUDIT = {
+    'head_reference_sha256': 'd4b124587f01a5938c6ffc5be1fe4af0b61b33d95a29137047dcde35395c6b55',
+    'f1_reference_sha256': '785f52e6d7d5e8e4a5247096b28009c9ad913bf44aa640cad343eb448efd9fb0',
+    'basis': 'given_recent', 'contract': 'all_current', 'limit': 1623,
+    'automatic_origin_proven': False, 'global_unique_origin_proven': False,
+    'heads': {
+        0: {'anchor': ('down',1159), 'events': ((0,34,2,52),),
+            'units': (('down','2022-08-02 10:30:00','2022-10-12 10:30:00',1159,910,910,1230,2,52,606,606),),
+            'f1': ((0,2,'consolidation',None,(0,),((1027,1126),),3),
+                   (3,5,'consolidation',None,(3,),((1027,1066),),6)),
+            'f1_first': (777,1535), 'f1_evidence': (4,7),
+            'tail': (6,8,'incomplete',None,(),(),None)},
+        1: {'anchor': ('up',1141), 'events': ((1,7,1,10),(8,34,2,52)),
+            'units': (('up','2022-08-03 10:00:00','2022-08-11 15:00:00',1141,1230,1141,1230,1,10,138,138),
+                      ('down','2022-08-11 15:00:00','2022-10-12 10:30:00',1230,910,910,1230,2,52,606,606)),
+            'f1': ((0,3,'consolidation','up',(1,),((1027,1126),),4),
+                   (4,6,'consolidation',None,(4,),((1027,1066),),7)),
+            'f1_first': (777,1535), 'f1_evidence': (5,8),
+            'tail': (7,9,'incomplete',None,(),(),None)},
+    },
+    'f2': (0,1,'incomplete',None,(),(),None),
+    'root1_first_candidates': ((4,13,5),(6,-14,7),(8,-44,None)),
+    'root8_candidates': ((11,11,12),(13,40,14),(15,-14,16),(17,-10,18),
+                         (19,-46,24),(21,-28,22),(23,-12,24),(25,6,26),
+                         (27,6,28),(29,-12,30),(31,-12,34),(33,-16,34),(35,13,None)),
+    'active_proof52': (606,1076,'2022-11-10 10:00:00',1058,'2022-11-14 10:00:00'),
+}
+
+
+def g1_source_bridge_input(seed):
+    """源起点为显式条件；前部声明与既有共同后缀共享原始输入。"""
+    old=M3_G1_CONSUMERS_AUDIT;case,suffix=gap_revision_input(old)
+    a=M3_G1_SOURCE_BRIDGE_AUDIT['heads'][seed]
+    names=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks',
+           'mode','proof_bi','local_raw_count','confirmed_raw_count')
+    units=[dict(zip(names,row)) for row in a['units']]+suffix
+    rows=m3_xd_rows(dict(raw_rows=case['raw_rows'][:old['limit']]))
+    return case,units,a,rows
+
+
+class TestG1SourceBridge(unittest.TestCase):
+    """课67/71/78：显式源起点至BI35接线及全窗F1；不自动裁定0/1归属。"""
+
+    def test_raw_prefixes_join_both_declared_heads_and_rebuild_whole_chain_F1(self):
+        inputs={seed:g1_source_bridge_input(seed) for seed in (0,1)}
+        rows=inputs[0][3];first={seed:[] for seed in inputs};first_f1={seed:{} for seed in inputs}
+        previous={seed:[] for seed in inputs};previous_f1={seed:[] for seed in inputs}
+        for count in range(1,len(rows)+1):
+            _,_,bis=chan.chan_fx_bi(rows[:count],standard='106')
+            for seed,(_,units,a,_) in inputs.items():
+                origin=dict(basis='given_recent',anchor=(0,a['anchor'][0],a['anchor'][1]/1000.),available_bi=0)
+                actual=[x for x in chan.find_xds(bis[seed:],origin_premise=origin) if x.complete]
+                visible=[u for u in units if u['confirmed_raw_count']<=count]
+                self.assertEqual(len(actual),len(visible),(seed,count))
+                shapes=[]
+                for x,u in zip(actual,visible):
+                    shape=(x.direction,str(x.start_dt),str(x.end_dt),round(x.start_value*1000),round(x.end_value*1000),round(x.low*1000),round(x.high*1000),x.mode)
+                    self.assertEqual(shape,tuple(u[k] for k in ('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode')))
+                    proof=bis[u['proof_bi']]
+                    self.assertEqual((x.evidence_end_index,x.evidence_dt),(proof.end_index,proof.end_dt))
+                    shapes.append(shape)
+                self.assertEqual(shapes[:len(previous[seed])],previous[seed]);previous[seed]=shapes
+                first[seed].extend([count]*(len(actual)-len(first[seed])))
+                moves=[m for m in chan.same_level_decompose(actual) if m.complete]
+                specs=[spec for spec in a['f1'] if units[spec[-1]]['confirmed_raw_count']<=count]
+                f1=[m3_xd_shape(m) for m in moves]
+                self.assertEqual(f1,[m3_xd_expected(units,spec) for spec in specs])
+                self.assertEqual(f1[:len(previous_f1[seed])],previous_f1[seed]);previous_f1[seed]=f1
+                for m in moves:first_f1[seed].setdefault(m.seg_start,count)
+                if count==len(rows):self.assertEqual(m3_xd_shape(chan.same_level_decompose(actual)[-1]),m3_xd_expected(units,a['tail']))
+        for seed,(_,units,a,_) in inputs.items():
+            self.assertEqual(first[seed],[u['confirmed_raw_count'] for u in units])
+            self.assertEqual(tuple(first_f1[seed][s[0]] for s in a['f1']),a['f1_first'])
+        self.assertFalse(M3_G1_SOURCE_BRIDGE_AUDIT['automatic_origin_proven'])
+        self.assertFalse(M3_G1_SOURCE_BRIDGE_AUDIT['global_unique_origin_proven'])
+
+    def test_late_root_premise_waits_for_BI52_and_preserves_active_proof_snapshot(self):
+        _,units,a,rows=g1_source_bridge_input(1);snapshots=[]
+        for count in (137,138,139,605,606,607,777,1623):
+            _,_,bis=chan.chan_fx_bi(rows[:count],standard='106')
+            origin=dict(basis='given_recent',anchor=(0,'up',1.141),available_bi=51)
+            done=[x for x in chan.find_xds(bis[1:],origin_premise=origin) if x.complete]
+            visible=[u for u in units if max(606,u['confirmed_raw_count'])<=count]
+            self.assertEqual(len(done),len(visible))
+            for x,u in zip(done,visible):
+                proof=bis[max(52,u['proof_bi'])]
+                self.assertEqual((x.evidence_end_index,x.evidence_dt),(proof.end_index,proof.end_dt))
+            if count==606:
+                self.assertEqual(len(done),2);snapshots=[x.to_dict() for x in done]
+                self.assertEqual(done[0].evidence_dt,date('2022-11-10 10:00:00'))
+            if count==1623:
+                self.assertEqual(done[0].evidence_dt,date('2022-11-14 10:00:00'))
+        self.assertEqual(snapshots[0]['evidence_dt'],'2022-11-10 10:00:00')
+        self.assertEqual(units[0]['confirmed_raw_count'],138)
+        self.assertLess(units[0]['proof_bi'],52)
+
+    def test_whole_chain_F1_is_not_the_given35_role_and_does_not_create_F2_points(self):
+        def forbidden(a,b):raise AssertionError('不足三个完整F1不得评估F2严格力度')
+        for seed in (0,1):
+            _,units,a,rows=g1_source_bridge_input(seed);types=[]
+            root='G1-source-given'+str(seed)+':'+M3_G1_SOURCE_BRIDGE_AUDIT['head_reference_sha256']
+            for spec,count in zip(a['f1'],a['f1_first']):
+                visible=[u for u in units if u['confirmed_raw_count']<=count]
+                move=next(m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),count)) if m.complete and m.seg_start==spec[0])
+                types.append(m3_xd_type(root,move,visible,rows[count-1]['available_dt']))
+            self.assertEqual(tuple(len(t.evidence_ids) for t in types),a['f1_evidence'])
+            self.assertEqual(tuple((round(x*1000),round(y*1000)) for x,y in types[0].centers),((1027,1126),))
+            self.assertNotEqual(a['f1_first'],M3_G1_CONSUMERS_AUDIT['f1_first'])
+            if seed==1:
+                self.assertEqual(types[0].direction,'up')
+                self.assertEqual(types[0].to_confirmed_move().direction,'down')
+            for count in (126,776,777,778,1534,1535,1536,1623):
+                now=rows[count-1]['available_dt']
+                self.assertEqual(chan.confirm_level_up(types,now,'F2'),[])
+                self.assertEqual(chan.scan_strict_divergence(types,now,'F2',forbidden,'guard').results,())
+                self.assertFalse(chan.scan_first_points(types,rows[:count],now,'F2').points)
+                self.assertFalse(any(chan.analyze_point_chain(types,rows[:count],now,'F2')))
+            records=[dict(start_dt=str(t.start_dt),end_dt=str(t.end_dt),low_ticks=round(t.low*1000),high_ticks=round(t.high*1000)) for t in types]
+            self.assertEqual([m3_xd_shape(m) for m in chan.level_up(types)],[m3_xd_expected(records,M3_G1_SOURCE_BRIDGE_AUDIT['f2'])])
+
+
 if __name__ == '__main__':
     unittest.main()

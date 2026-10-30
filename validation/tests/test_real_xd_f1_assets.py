@@ -1757,6 +1757,83 @@ class TestRealXdF1Assets(unittest.TestCase):
             dict(event=(0,2,1,5),published_count=110),(7,9,1,16))
         self.assertEqual((late['qualification'],late['published_count']),('visible',116))
 
+    def test_g1_source_heads_keep_earlier_revocations_and_natural_reaction_separate(self):
+        """课67/71/78：给源BI1，4/6先撤销；R19先破首起，不能借后来S20翻案。"""
+        a=embedded_table('test_real_xd_f1.py','M3_G1_SOURCE_BRIDGE_AUDIT')
+        old=M3_ADDITIONAL_CONSUMERS_AUDIT['G1'];tool=compiler()
+        payload=(ROOT/'tests/fixtures'/old['fixture']).read_bytes()
+        self.assertEqual(hashlib.sha256(payload).hexdigest(),old['fixture_sha256'])
+        case=next(c for c in json.loads(payload)['cases'] if c['id']==old['id'])
+        rows=case['raw_rows'][:old['limit']];_,_,bis=tool.foundation(rows,'106');source=tool.components(rows,bis,None)
+        for mirrored in (False,True):
+            parts=copy.deepcopy(source)
+            if mirrored:
+                for p in parts:
+                    p.update(start_ticks=3000-p['start_ticks'],end_ticks=3000-p['end_ticks'],
+                             low_ticks=3000-p['high_ticks'],high_ticks=3000-p['low_ticks'],
+                             direction='up' if p['direction']=='down' else 'down')
+            for seed,h in a['heads'].items():
+                for event in h['events']:self.assertTrue(manual_xd_certificate_ready(parts,event))
+            for owner,key in ((1,'root1_first_candidates'),(8,'root8_candidates')):
+                up=parts[owner]['direction']=='up'
+                for turn,gap,cancel in a[key]:
+                    left=manual_feature_nodes(parts,range(owner+1,turn,2),up)[-1]
+                    actual=parts[turn]['low_ticks']-left[1] if up else left[0]-parts[turn]['high_ticks']
+                    self.assertEqual(actual,gap)
+                    if cancel is not None:
+                        self.assertTrue(parts[cancel]['end_ticks']>parts[turn]['start_ticks'] if up else parts[cancel]['end_ticks']<parts[turn]['start_ticks'])
+                    if gap>0:
+                        state=manual_gap_lifecycle(parts,owner,turn,52)
+                        self.assertEqual(state['state'],'confirmed' if turn==35 else 'revoked')
+                        if turn==35:self.assertEqual((state['first_fractal_proof_bi'],state['second_fractal_proof_bi']),(37,52))
+                        else:self.assertEqual(state['strict_revocation_bi'],cancel)
+            self.assertTrue(manual_xd_certificate_ready(parts,(20,34,2,52)))
+            for width in (23,24,25,53):
+                state=manual_natural_reaction_state(parts[:width],list(range(1,width+1)),width,8,19,
+                    dict(event=(1,7,1,10),published_count=11),(20,34,2,52))
+                self.assertEqual(state['state'],'pending' if width<25 else 'first_start_broken')
+                self.assertEqual(state['local_proof'],None if width<25 else 24)
+        self.assertFalse(a['automatic_origin_proven']);self.assertFalse(a['global_unique_origin_proven'])
+
+    def test_g1_source_head_actual_arrivals_do_not_use_final_BI52_price(self):
+        """独立整数前缀：先有BI10/raw138，BI52/raw606只到1076，末价1058不可回填。"""
+        a=embedded_table('test_real_xd_f1.py','M3_G1_SOURCE_BRIDGE_AUDIT');old=M3_ADDITIONAL_CONSUMERS_AUDIT['G1'];tool=compiler()
+        case=next(c for c in json.loads((ROOT/'tests/fixtures'/old['fixture']).read_text())['cases'] if c['id']==old['id'])
+        rows=case['raw_rows'][:old['limit']];first={seed:[None]*len(h['events']) for seed,h in a['heads'].items()};proof52={}
+        for count in range(1,len(rows)+1):
+            _,_,bis=tool.foundation(rows[:count],'106');parts=tool.components(rows[:count],bis,None)
+            for seed,h in a['heads'].items():
+                for j,event in enumerate(h['events']):
+                    if manual_xd_certificate_ready(parts,event) and first[seed][j] is None:first[seed][j]=count
+            if count in (606,len(rows)):proof52[count]=(parts[52]['end_ticks'],parts[52]['end_dt'])
+        self.assertEqual(first,{0:[606],1:[138,606]})
+        count,price,dt,final_price,final_dt=a['active_proof52']
+        self.assertEqual(proof52[count],(price,dt));self.assertEqual(proof52[len(rows)],(final_price,final_dt))
+        self.assertNotEqual(proof52[count],proof52[len(rows)])
+
+    def test_g1_whole_chain_F1_has_new_groups_and_actual_external_proof(self):
+        """仅验给定三段组与外部证明算术；前部接通后不继承BI35后缀的F1角色。"""
+        a=embedded_table('test_real_xd_f1.py','M3_G1_SOURCE_BRIDGE_AUDIT');old=embedded_table('test_real_xd_f1.py','M3_G1_CONSUMERS_AUDIT');tool=compiler()
+        names=('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode','proof_bi','local_raw_count','confirmed_raw_count')
+        suffix=[dict(zip(names,row)) for row in old['units']]
+        for seed,h in a['heads'].items():
+            units=[dict(zip(names,row)) for row in h['units']]+suffix
+            for spec,count,width in zip(h['f1'],h['f1_first'],h['f1_evidence']):
+                record=tool.move_record(units,spec)
+                self.assertTrue(record['complete'])
+                self.assertEqual(max(u['confirmed_raw_count'] for u in units[:spec[-1]+1]),count)
+                self.assertEqual(sum(u['confirmed_raw_count']<=count for u in units),width)
+                self.assertEqual(sum(u['confirmed_raw_count']<count for u in units),width-1)
+            self.assertEqual(h['f1'][0][5],((1027,1126),))
+            self.assertNotEqual(h['f1'][0][5],old['f1'][0][5])
+            if seed==1:
+                lo=max(u['low_ticks'] for u in units[:3]);hi=min(u['high_ticks'] for u in units[:3])
+                self.assertGreater(lo,hi)
+                self.assertEqual(h['f1'][0][4],(1,))
+            self.assertEqual(h['f1_first'],(777,1535))
+            self.assertNotEqual(h['f1_first'],old['f1_first'])
+            self.assertFalse(tool.move_record(units,h['tail'])['complete'])
+
     def test_origin_premises_separate_known_absence_from_a_given_recent_boundary(self):
         """同一局部证书下，仅给定起点不补前驱；无前史为另行声明的条件。"""
         values = M3_M2_GIVEN_PROOFS_AUDIT['recent_seed87_ticks'][3:]
