@@ -667,6 +667,111 @@ class TestPointPacketAdmissionAssets(unittest.TestCase):
         path = ROOT / 'validation/chan-real-159915-60m-20190301-20190901-input.json'
         return path, json.loads(path.read_text())
 
+    @staticmethod
+    def xd_inputs():
+        """读取既有独立声明，不导入包测试或调用算法生成预期。"""
+        names = ('M3_DIRECT_SOURCE_BINDING_AUDIT', 'M3_E_CONSUMERS_AUDIT',
+                 'M3_GAP_REVISION_AUDIT', 'M3_Y1_JOINED_ROLE_AUDIT')
+        tree = ast.parse((ROOT / 'tests/test_real_xd_f1.py').read_text())
+        tables = {n.targets[0].id: ast.literal_eval(n.value) for n in tree.body
+                  if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)
+                  and n.targets[0].id in names}
+        for key in ('E', 'G', 'X1', 'Y1'):
+            spec = tables[names[0]]['entries'][key]
+            labels = json.loads((ROOT / 'tests/fixtures' / spec['fixture']).read_text())
+            case = next(c for c in labels['cases'] if c['id'] == spec['id'])
+            path = ROOT / 'validation' / case['source']['packet']
+            packet = json.loads(path.read_text())
+            a, direction, ticks = spec['anchor']
+            premise = dict(basis='given_recent', anchor=[a, direction, ticks/1000.],
+                           available_bi=spec['available_bi'])
+            roles = (tables[names[1]] if key == 'E' else tables[names[3]] if key == 'Y1'
+                     else tables[names[2]][key])
+            yield key, path, packet, case, spec, roles, premise
+
+    def test_explicit_XD_packet_matches_four_frozen_complete_F1_source_certificates(self):
+        checker = self.checker()
+        for key, _, packet, case, audit, roles, premise in self.xd_inputs():
+            with self.subTest(source=key):
+                original = copy.deepcopy((packet, premise))
+                self.assertEqual(packet['rows'], case['raw_rows'])
+                result = checker.check_packet(packet, 'xd', '106', premise)
+                self.assertEqual((packet, premise), original)
+                self.assertEqual(result['xd_origin'], premise)
+                self.assertFalse(result['theoretical_acceptance'])
+                self.assertEqual(tuple(r['raw_count'] for r in result['f1']),
+                                 audit['contracts']['fixed']['F1_first'])
+                self.assertEqual(tuple(len(r['snapshot']['evidence_ids']) for r in result['f1']),
+                                 audit['contracts']['fixed']['F1_evidence'])
+                self.assertEqual(len(result['f1']), len(roles['f1']))
+                for r, s in zip(result['f1'], roles['f1']):
+                    a, z = s[:2]
+                    actual = r['snapshot']
+                    self.assertEqual(r['part_span'], [a, z])
+                    self.assertEqual((actual['kind'], actual['direction']), tuple(s[2:4]))
+                    self.assertEqual([[round(x*1000) for x in c] for c in actual['centers']],
+                                     [list(c) for c in s[5]])
+                    self.assertEqual(tuple(round(actual[k]*1000) for k in ('start_price', 'end_price')),
+                                     (roles['units'][a][3], roles['units'][z][4]))
+                # 原裸XD消费者的完成记录不迁移到完整F1输入。
+                for batch in result['batches']:
+                    self.assertEqual(batch['f2'], [])
+                    self.assertEqual(batch['auxiliary']['points'], [])
+                    self.assertEqual(batch['chain']['first_points'], [])
+
+    def test_explicit_XD_unknown_and_late_premises_do_not_become_early_evidence(self):
+        checker = self.checker()
+        _, _, packet, _, _, _, premise = next(self.xd_inputs())
+        regular = checker.check_packet(packet, 'xd', '106', premise)
+        late = checker.check_packet(packet, 'xd', '106', dict(premise, available_bi=32))
+        self.assertEqual(len(late['f1']), len(regular['f1']))
+        for a, b in zip(regular['f1'], late['f1']):
+            self.assertGreaterEqual(b['raw_count'], a['raw_count'])
+            for field in ('unit_ids', 'start_dt', 'end_dt', 'start_price', 'end_price', 'low', 'high', 'centers'):
+                self.assertEqual(b['snapshot'][field], a['snapshot'][field])
+        # 原冻结第32笔的固定到达才允许发布；不能用证明端点回填。
+        tool = compiler(ROOT / 'validation/tools/gen_real_f1_originals.py')
+        known = next(count for count in range(1, len(packet['rows'])+1)
+                     if len(tool.foundation(packet['rows'][:count], '106')[2][:-1]) > 32)
+        self.assertEqual(known, 292)
+        self.assertEqual([r['raw_count'] for r in late['f1']], [known, known])
+        unknown = dict(premise, basis='unknown', available_bi=None)
+        result = checker.check_packet(packet, 'xd', '106', unknown)
+        self.assertEqual((result['f1'], result['consumer_batches']), ([], 1))
+        with self.assertRaisesRegex(ValueError, '仅用于'):
+            checker.check_packet(packet, 'bi', '106', premise)
+        for bad in (dict(premise, anchor=[0, 'down', .738]),
+                    dict(premise, available_bi=True), dict(unknown, available_bi=0),
+                    dict(premise, extra='ignored')):
+            with self.assertRaises(ValueError):
+                checker.check_packet(packet, 'xd', '106', bad)
+
+    def test_explicit_XD_cli_records_premise_and_rejects_ambiguous_scope(self):
+        _, source, _, _, _, _, premise = next(self.xd_inputs())
+        script = ROOT / 'validation/tools/verify_points_history.py'
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / 'explicit origin.json'
+            command = [sys.executable, str(script), '--packet', str(source), '--parts', 'xd',
+                       '--xd-origin', json.dumps(premise), '--output', str(output)]
+            run = subprocess.run(command, cwd=temp, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                 universal_newlines=True)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            report = json.loads(output.read_text())
+            self.assertEqual(report['xd_origin'], premise)
+            self.assertEqual([r['raw_count'] for r in report['f1']], [204, 264])
+            base = [sys.executable, str(script), '--output', str(Path(temp)/'bad.json')]
+            scopes = (['--packet', str(source)], [str(Path(temp)/'missing-dataset'), '--parts', 'xd'])
+            for scope in scopes:
+                run = subprocess.run(base+scope+['--xd-origin', json.dumps(premise)], cwd=temp,
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                self.assertNotEqual(run.returncode, 0)
+                self.assertIn('仅用于单包xd', run.stderr)
+            for invalid in ('null', '[]', '{', '{"basis":"unknown"}'):
+                run = subprocess.run(base+['--packet', str(source), '--parts', 'xd', '--xd-origin', invalid],
+                                     cwd=temp, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                self.assertNotEqual(run.returncode, 0)
+            self.assertFalse((Path(temp)/'bad.json').exists())
+
     def test_M1_complete_type_candidate_can_disappear_and_finish_rejected(self):
         """原M1的F1-bi发现回归；整数复核不是新增独立理论正例。"""
         checker = self.checker()

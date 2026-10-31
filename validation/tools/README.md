@@ -35,13 +35,28 @@ MACD前缀比例一致性、未来价格扰动与候选修订账本。报告明�
 python validation/tools/verify_points_history.py --packet /原始包绝对路径.json --parts bi --standard 81 --output /新收据绝对路径.json
 ```
 
-`--standard`仅用于单包，缺省106；`--parts xd`仍采用默认旧起点路径，
-不提供自然起点证明。报告分列全部原始前缀与实际F1到达批/末观察的
+`--standard`仅用于单包，缺省106；`--parts xd`未传起点前提时仍采用
+默认旧路径，不提供自然起点证明。报告分列全部原始前缀与实际F1到达批/末观察的
 消费者检查，保留完整F1、F2、严格跳过/裁定、辅助排除及组合结果。
 这属于运行时发现与接线验收，不生成独立理论标签或实际分钟级别。
 两种模式均拒绝覆盖已有收据。单包输入摘要在计算前冻结，报告记录
 实际导入路径与算法摘要；缺字段、混标的、时间/包络冲突或变因子
 均失败。
+
+单包XD可用`--xd-origin`传入JSON对象，字段严格为`basis`、`anchor`、
+`available_bi`，沿用公开`find_xds`合同。起笔下标和前提到达下标均相对
+每次原始前缀的完整固定笔序列（不含活动末笔），不重编号或自动挑种子。
+例如已声明E原包的给定近期起点：
+
+```bash
+python validation/tools/verify_points_history.py --packet /E原始包绝对路径.json --parts xd --standard 106 --xd-origin '{"basis":"given_recent","anchor":[0,"down",0.737],"available_bi":0}' --output /新收据绝对路径.json
+```
+
+`given_recent`与`no_prior_history`的前提须由调用方证明；截窗不自动
+等于无前史。`unknown`的`available_bi`须为`null`，不能发布已完成XD。
+前提未到则等待，局部证明与累计发布时钟仍由原始前缀核验；报告
+`xd_origin`保留声明，不将其记为自动证明。该选项用于历史数据集模式
+或`--parts bi`时直接失败，非法对象/字段、错锚与冲突到达时间也失败。
 
 外部分钟原格先核时间桶、零量表示与数量单位，不能为凑标准根数删除
 09:30、把零量直接设为停牌或按尺度异常自动换算。CSV接收可显式声明
