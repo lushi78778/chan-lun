@@ -646,6 +646,143 @@ class TestE1CompleteTypes81Assets(unittest.TestCase):
         self.assertFalse(audit['theoretical_level_proven'])
 
 
+class TestPointPacketAdmissionAssets(unittest.TestCase):
+    """运行时单包验收与冻结独立表对账，不将运行结果称为独立标注。"""
+
+    @staticmethod
+    def checker():
+        prior = list(sys.path)
+        try:
+            spec = importlib.util.spec_from_file_location(
+                'point_packet_runtime_assets', ROOT / 'validation/tools/verify_points_history.py')
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
+        finally:
+            sys.path[:] = prior
+
+    @staticmethod
+    def packet():
+        path = ROOT / 'validation/chan-real-159915-60m-20190301-20190901-input.json'
+        return path, json.loads(path.read_text())
+
+    def test_packet_replays_the_independent_E1_complete_type_admission_table(self):
+        checker = self.checker()
+        _, packet = self.packet()
+        before = copy.deepcopy(packet)
+        audit = TestE1CompleteTypes81Assets.inputs()[0]
+        result = checker.check_packet(packet, standard='81')
+        self.assertEqual(packet, before)
+        self.assertEqual(result['raw_prefixes'], 630)
+        self.assertEqual(result['consumer_batches'], 12)
+        self.assertEqual(result['annotation'], 'runtime_discovery_not_independent_labels')
+        self.assertFalse(result['theoretical_acceptance'])
+        self.assertEqual(tuple(r['raw_count'] for r in result['f1']), audit['f1_counts'])
+        self.assertEqual([r['part_span'] for r in result['f1']],
+                         [list(s[:2]) for s in audit['f1_specs']])
+        for item, spec in zip(result['f1'], audit['f1_specs']):
+            self.assertEqual(len(item['snapshot']['unit_ids']), spec[1]-spec[0]+1)
+            self.assertEqual(len(item['snapshot']['evidence_ids']), spec[-1]+1)
+        first = next(b for b in result['batches'] if b['f2'])
+        self.assertEqual(first['raw_count'], audit['f2_known'])
+        move, = first['f2']
+        self.assertEqual((move['kind'], len(move['unit_ids']), len(move['evidence_ids'])), ('down', 8, 9))
+        self.assertEqual(move['confirmed_dt'], '2019-07-29 15:01:00')
+        final = result['batches'][-1]
+        self.assertEqual(final['strict']['results'], [])
+        self.assertEqual(final['strict']['skipped'][0][1], audit['skip'])
+        self.assertEqual(final['auxiliary']['exclusions'][0][1], audit['skip'])
+        self.assertEqual(final['chain']['formations'], [])
+        self.assertEqual(result['checks']['future_poison_checks'], 12)
+        self.assertEqual(result['checks']['before_arrival_checks'], 12)
+
+    def test_packet_rejects_mixed_scope_bad_prices_factors_and_time_without_mutation(self):
+        checker = self.checker()
+        _, original = self.packet()
+        changes = [
+            lambda p: p.__setitem__('rows', []),
+            lambda p: p['rows'].__setitem__(1, copy.deepcopy(p['rows'][0])),
+            lambda p: p['rows'].__setitem__(0, dict(p['rows'][0], dt='2019-03-02 09:30:00')),
+            lambda p: p['rows'][0].__setitem__('ts_code', 'other'),
+            lambda p: p['rows'][0].__setitem__('adj_factor', None),
+            lambda p: p['rows'][1].__setitem__('adj_factor', 2),
+            lambda p: p['rows'][0].__setitem__('open', float('nan')),
+            lambda p: p['rows'][0].__setitem__('low', p['rows'][0]['high']+1),
+            lambda p: p['rows'][0].__setitem__('vol', -1),
+            lambda p: p.__setitem__('timezone', 'UTC'),
+            lambda p: p.__setitem__('adjustment', 'pre'),
+            lambda p: p['sampling_rule'].__setitem__('codes', ['a', 'b']),
+            lambda p: p['sampling_rule'].__setitem__('periods', ['1d']),
+            lambda p: p['sampling_rule'].__setitem__('window', ['2019-03-01', '2019-03-01']),
+        ]
+        for i, mutate in enumerate(changes):
+            with self.subTest(change=i):
+                broken = copy.deepcopy(original)
+                mutate(broken)
+                before = json.dumps(broken, sort_keys=True)
+                with self.assertRaises(ValueError):
+                    checker.check_packet(broken)
+                self.assertEqual(json.dumps(broken, sort_keys=True), before)
+
+    def test_positive_constant_factor_zero_volume_daily_clock_and_xd_scope_are_explicit(self):
+        checker = self.checker()
+        _, packet = self.packet()
+        packet['rows'] = packet['rows'][:3]
+        for row in packet['rows']:
+            row['adj_factor'] = 1.455
+        packet['rows'][0]['vol'] = 0
+        original = copy.deepcopy(packet)
+        bars, metadata = checker._packet_bars(packet)
+        self.assertEqual(metadata['factor'], 1.455)
+        self.assertEqual(bars[0]['volume'], 0)
+        self.assertEqual(bars[0]['close'], packet['rows'][0]['close'])
+        self.assertEqual(str(bars[0]['available_dt']), '2019-03-01 09:31:00')
+        result = checker.check_packet(packet, parts='xd', standard='81')
+        self.assertEqual(result['xd_origin'], 'legacy_default')
+        self.assertEqual(result['raw_prefixes'], 3)
+        self.assertEqual(result['consumer_batches'], 1)
+        self.assertFalse(result['theoretical_acceptance'])
+        self.assertEqual(packet, original)
+        daily = json.loads((ROOT / 'validation/chan-real-512880-day-20170901-20180401-input.json').read_text())
+        daily['rows'] = daily['rows'][:3]
+        bars, _ = checker._packet_bars(daily)
+        self.assertEqual(str(bars[0]['available_dt']), '2017-09-01 15:05:00')
+
+    def test_packet_cli_works_from_other_cwd_and_refuses_both_receipt_overwrite_paths(self):
+        checker = self.checker()
+        original, packet = self.packet()
+        untouched = original.read_bytes()
+        script = ROOT / 'validation/tools/verify_points_history.py'
+        with tempfile.TemporaryDirectory() as temp:
+            packet['dataset'] = str(Path(temp) / 'not-a-readable-dataset')
+            source = Path(temp) / 'original packet.json'
+            source.write_text(json.dumps(packet))
+            frozen = source.read_bytes()
+            output = Path(temp) / 'new receipt.json'
+            cmd = [sys.executable, str(script), '--packet', str(source), '--standard', '81', '--output', str(output)]
+            run = subprocess.run(cmd, cwd=temp, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            raw = output.read_bytes()
+            report = json.loads(raw)
+            self.assertEqual(report['packet'], str(source.resolve()))
+            self.assertEqual(report['packet_sha256'], checker.digest(source))
+            self.assertEqual(len(report['source_sha256']), 41)
+            self.assertTrue(Path(report['chan_path']).is_absolute())
+            for command in (cmd, [sys.executable, str(script), str(Path(temp)/'missing-dataset'), '--output', str(output)]):
+                run = subprocess.run(command, cwd=temp, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                self.assertNotEqual(run.returncode, 0)
+                self.assertIn('拒绝覆盖', run.stderr)
+                self.assertEqual(output.read_bytes(), raw)
+            base = [sys.executable, str(script), str(Path(temp)/'missing-dataset')]
+            for flags in (['--packet', str(source)], ['--standard', '81']):
+                run = subprocess.run(base+flags+['--output', str(Path(temp)/'bad.json')], cwd=temp,
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                self.assertNotEqual(run.returncode, 0)
+                self.assertFalse((Path(temp)/'bad.json').exists())
+            self.assertEqual(source.read_bytes(), frozen)
+        self.assertEqual(original.read_bytes(), untouched)
+
+
 class TestRealRoundsDiscovery(unittest.TestCase):
     """发现工具复用冻结结构；改变笔标准须同时改变实际前缀确认。"""
 
