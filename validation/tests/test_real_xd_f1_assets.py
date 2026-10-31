@@ -4649,5 +4649,71 @@ class TestRealXdF1Assets(unittest.TestCase):
         self.assertEqual((a['limit'],a['source_rows']-a['limit'],a['contract']),(1623,15,'all_current'));self.assertFalse(a['platform_verified'])
 
 
+    def _direct_source_binding_assets(self):
+        a=embedded_table('test_real_xd_f1.py','M3_DIRECT_SOURCE_BINDING_AUDIT');record={k:v for k,v in a.items() if k!='reference_sha256'}
+        blob=json.dumps(record,sort_keys=True,ensure_ascii=False,indent=2)+'\n';self.assertEqual(hashlib.sha256(blob.encode()).hexdigest(),a['reference_sha256']);sources={};tool=compiler()
+        for key,spec in a['entries'].items():
+            if key=='E':
+                old=embedded_table('test_real_xd_f1.py','M3_E_CONSUMERS_AUDIT');f1=old['f1'];events=old['events'];refs=dict(roles=old['certificate_sha256'])
+            elif key in ('G','X1'):
+                base=embedded_table('test_real_xd_f1.py','M3_GAP_REVISION_AUDIT')[key];old=embedded_table('test_real_xd_f1.py','M3_GX_CLOCK_CONSUMERS_AUDIT')[key];f1=base['f1'];events=base['events'];refs=dict(clock=old['certificate_sha256'],base=old['base_sha256'])
+            else:
+                base=embedded_table('test_real_xd_f1.py','M3_Y1_JOINED_ROLE_AUDIT');clock=embedded_table('test_real_xd_f1.py','M3_Y1_CURRENT_CLOCK_AUDIT');old=embedded_table('test_real_xd_f1.py','M3_Y1_RECURSIVE_CONSUMERS_AUDIT');f1=base['f1'];events=base['events'];refs=dict(roles=base['certificate_sha256'],clock=clock['certificate_sha256'],auto=old['certificate_sha256'])
+            self.assertEqual((refs,events),(spec['references'],spec['events']));path=ROOT/'tests/fixtures'/spec['fixture'];self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),spec['source_sha256'])
+            case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==spec['id']);rows=case['raw_rows'][:max(c['limit'] for c in spec['contracts'].values())];_,_,bis=tool.foundation(rows,'106');parts=tool.components(rows,bis,10 if key in ('E','G') else None);units=tool.xd_records(parts,events)
+            sources[key]=(spec,case,parts,units,f1,old)
+        return a,sources
+
+    def test_direct_source_bindings_use_frozen_original_windows_and_distinct_anchors(self):
+        a,sources=self._direct_source_binding_assets();tool=compiler()
+        self.assertEqual((a['source_contracts'],a['source_prefixes'],a['contract_observations'],a['consumer_boundaries']),(8,4855,9618,232))
+        for key,(spec,_,parts,units,f1,_) in sources.items():
+            owner,direction,tick=spec['anchor'];self.assertEqual((parts[owner]['direction'],parts[owner]['start_ticks']),(direction,tick));self.assertEqual(spec['available_bi'],owner)
+            for move in f1:tool.move_record(units,move)
+            self.assertEqual(len(f1),spec['F1_spec_count']);self.assertFalse(spec['automatic_origin_proven'])
+            for clock in spec['contracts'].values():
+                self.assertEqual(clock['F1_first'],tuple(clock['published'][s[-1]] for s in f1))
+                self.assertEqual(clock['F1_evidence'],tuple(sum(n<=at for n in clock['published']) for at in clock['F1_first']))
+        self.assertEqual({k:v[0]['anchor'] for k,v in sources.items()},{'E':(0,'down',737),'G':(0,'up',613),'X1':(1,'down',1744),'Y1':(1,'up',9702)})
+        self.assertEqual(sources['X1'][0]['contracts']['fixed']['limit']-sources['X1'][0]['contracts']['current']['limit'],92)
+        self.assertEqual(a['independent_market_sources_added'],0);self.assertFalse(a['automatic_origin_proven'])
+
+    def test_direct_source_integer_prefixes_rebuild_all_9618_publication_clock_observations(self):
+        a,sources=self._direct_source_binding_assets();tool=compiler();prefixes=0;observations=0
+        for key,(spec,case,_,_,_,_) in sources.items():
+            first={c:[] for c in spec['contracts']};sizes={c:set() for c in first}
+            foundation=case['foundation_106'] if key=='E' else case['foundation']
+            for count in range(1,max(c['limit'] for c in spec['contracts'].values())+1):
+                prefixes+=1;rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106')
+                self.assertEqual(tool.records(bis[:-1]),foundation['bis'][:len(bis[:-1])])
+                for contract,clock in spec['contracts'].items():
+                    if count>clock['limit']:continue
+                    observations+=1;pens=bis if contract=='current' else bis[:-1];parts=tool.components(rows,pens,10 if key in ('E','G') else None)
+                    ready=self._y1_current_given_ready(parts,spec['events']) if key=='Y1' else [manual_xd_certificate_ready(parts,e) for e in spec['events']]
+                    size=next((i for i,ok in enumerate(ready) if not ok),len(ready));sizes[contract].add(size);self.assertEqual(size,sum(at<=count for at in clock['published']))
+                    first[contract].extend([count]*(size-len(first[contract])))
+            for contract,clock in spec['contracts'].items():
+                self.assertEqual(tuple(first[contract]),clock['published']);self.assertEqual(set(range(len(spec['events'])+1))-sizes[contract],set(clock['missing_actual_widths']))
+        self.assertEqual((prefixes,observations),(a['source_prefixes'],a['contract_observations']))
+
+    def test_direct_source_same_batch_evidence_and_Y1_completed_roles_stay_separate(self):
+        a,sources=self._direct_source_binding_assets();total=0;tool=compiler()
+        for key,(spec,_,_,units,f1,old) in sources.items():
+            for contract,clock in spec['contracts'].items():
+                counts=tuple(sorted({1,clock['limit']}|{n for at in clock['published'] for n in (at-1,at) if 0<n<=clock['limit']}));self.assertEqual(counts,clock['boundaries']);total+=len(counts)
+                if key=='E':self.assertEqual(clock['missing_actual_widths'],(4,6))
+                if key=='X1':
+                    self.assertEqual(clock['published'][7:11],(1126,)*4 if contract=='current' else (1138,)*4)
+                    self.assertEqual(tuple(e[3] for e in spec['events'][7:11]),(84,74,81,84));self.assertEqual(clock['F1_evidence'][2],11)
+                if key=='Y1':
+                    for move,known,evidence in zip(old['completed'],clock['automatic_completed_raw'],old['arrivals'][contract]['evidence_sizes']):
+                        tool.move_record(units,move);self.assertEqual(known,clock['published'][move[-1]])
+                        self.assertEqual(evidence,sum(at<=known for at in clock['published']))
+                    self.assertEqual(tuple(s[1]-s[0]+1 for s in old['completed']),(31,7));self.assertEqual(old['arrivals'][contract]['evidence_sizes'],(34,39))
+                else:self.assertEqual(clock['automatic_completed_raw'],())
+                self.assertEqual(len(clock['F1_first']),len(f1))
+        self.assertEqual(total,a['consumer_boundaries'])
+
+
 if __name__ == '__main__':
     unittest.main()
