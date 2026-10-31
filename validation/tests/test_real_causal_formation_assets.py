@@ -538,6 +538,114 @@ class TestE1Formation81Assets(unittest.TestCase):
         self.assertEqual(len(case['raw_rows'])-len(rows), 50)
 
 
+class TestE1CompleteTypes81Assets(unittest.TestCase):
+    """从整数切分和原始前缀独立核证完整F1/F2，不继承辅助点位标签。"""
+
+    @staticmethod
+    def inputs():
+        tree = ast.parse((ROOT / 'tests/test_real_causal_formation.py').read_text())
+        audit = next(ast.literal_eval(n.value) for n in tree.body
+                     if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name)
+                     and t.id == 'E1_81_F1_GATE_AUDIT' for t in n.targets))
+        source, case, units = TestE1Formation81Assets.inputs()
+        tool = compiler(ROOT / 'validation/tools/gen_real_f1_originals.py')
+        records = [tool.move_record(units, spec) for spec in audit['f1_specs']]
+        return audit, source, case, units, records, tool
+
+    def test_f1_integer_cuts_first_intersections_and_successors_cover_the_source(self):
+        audit, source, _, units, records, _ = self.inputs()
+        covered = []
+        for spec, record, count in zip(audit['f1_specs'], records, audit['f1_counts']):
+            a, z, _, _, triples, cores, proof = spec
+            covered.extend(range(a, z+1))
+            self.assertGreaterEqual(z-a+1, 3)
+            self.assertEqual(proof, z+1)
+            self.assertEqual(source['counts'][proof], count)
+            for j in range(a, triples[0]):
+                self.assertGreater(max(u['low_ticks'] for u in units[j:j+3]),
+                                   min(u['high_ticks'] for u in units[j:j+3]))
+            for j, core in zip(triples, cores):
+                self.assertEqual((max(u['low_ticks'] for u in units[j:j+3]),
+                                  min(u['high_ticks'] for u in units[j:j+3])), core)
+            if len(cores) > 1:
+                self.assertEqual(record['kind'], 'down')
+                self.assertLess(cores[1][1], cores[0][0])
+                self.assertTrue(all(u['high_ticks'] < cores[0][0]
+                                    for u in units[triples[1]:z+1]))
+            self.assertLessEqual(units[proof]['low_ticks'], cores[-1][1])
+            self.assertGreaterEqual(units[proof]['high_ticks'], cores[-1][0])
+        self.assertEqual(covered, list(range(37)))
+        self.assertEqual(len(units), 38)
+        self.assertEqual(audit['f1_tail'][:2], (37, 37))
+        # 最后一项先有三段空交集8格，不能机械地按每三笔分一项。
+        self.assertEqual(max(u['low_ticks'] for u in units[33:36])-
+                         min(u['high_ticks'] for u in units[33:36]), 8)
+        for left, right in zip(records, records[1:]):
+            self.assertEqual((left['end_dt'], left['end_ticks']),
+                             (right['start_dt'], right['start_ticks']))
+
+    def test_all_630_raw_prefixes_confirm_f1_and_f2_only_at_successor_proof(self):
+        audit, _, case, _, records, tool = self.inputs()
+        first, first_f2 = {}, None
+        for count in range(1, len(case['raw_rows'])+1):
+            rows = case['raw_rows'][:count]
+            bis = tool.foundation(rows, '81')[2][:-1]
+            units = tool.components(rows, bis, dt_slice=None)
+            visible = []
+            for i, spec in enumerate(audit['f1_specs']):
+                if len(units) > spec[-1]:
+                    record = tool.move_record(units, spec)
+                    self.assertEqual(record, records[i])
+                    visible.append(record)
+                    first.setdefault(i, count)
+            self.assertEqual(len(visible), sum(n <= count for n in audit['f1_counts']))
+            if len(visible) > audit['f2'][-1]:
+                higher = tool.move_record(visible, audit['f2'])
+                first_f2 = count if first_f2 is None else first_f2
+                self.assertEqual((higher['seg_start'], higher['seg_end'], higher['kind']), (0, 7, 'down'))
+                self.assertEqual((higher['low_ticks'], higher['high_ticks']), audit['f2_composition_range'])
+                self.assertEqual((higher['start_ticks'], higher['end_ticks']), audit['f2_body_endpoints'])
+        self.assertEqual(tuple(first[i] for i in range(11)), audit['f1_counts'])
+        self.assertEqual(first_f2, audit['f2_known'])
+        self.assertEqual(max(audit['f1_counts'][:8]), 464)
+        self.assertEqual(audit['f1_counts'][8], 510)
+        body, proof = records[7], records[8]
+        core = audit['f2'][5][-1]
+        self.assertEqual(body['low_ticks']-core[1], 2)
+        self.assertEqual(core[1]-proof['low_ticks'], 3)
+        tail = tool.move_record(records, audit['f2_tail'])
+        self.assertFalse(tail['complete'])
+        self.assertEqual(tail['centers_ticks'], [[1460, 1505]])
+        delayed_index, known, evidence_count = audit['delayed_proof']
+        clocks = list(audit['f1_counts'])
+        clocks[delayed_index] = known
+        self.assertEqual(sum(t < known for t in clocks), 8)
+        self.assertEqual(sum(t <= known for t in clocks), evidence_count)
+
+    def test_missing_B_reverse_tail_is_a_skip_not_a_force_or_macd_verdict(self):
+        audit, source, _, units, records, _ = self.inputs()
+        self.assertEqual(audit['f2_spans'], ((0, 2, 3), (4, 6, 6)))
+        # A在成形后的2/3中有净向上回试2；B只到成形6，净向下而非反向尾段。
+        self.assertLess(records[2]['start_ticks'], records[2]['end_ticks'])
+        self.assertGreater(records[6]['start_ticks'], records[6]['end_ticks'])
+        self.assertEqual(audit['f2_spans'][1][1:], (6, 6))
+        self.assertEqual(audit['skip'], 'no_comparable_center_tail')
+        for span, expected in zip(audit['f2_spans'], audit['f2_composition_waves']):
+            a, _, z = span
+            self.assertEqual((min(r['low_ticks'] for r in records[a:z+1]),
+                              max(r['high_ticks'] for r in records[a:z+1])), expected)
+        self.assertEqual(audit['f2_composition_waves'][1][1]-
+                         audit['f2_composition_waves'][0][0], 127)
+        self.assertEqual(source['b_c_proof'], (11, 15, 16))
+        containing = [next((r['seg_start'], r['seg_end']) for r in records
+                           if r['seg_start'] <= i <= r['seg_end'])
+                      for i in source['b_c_proof'][:2]]
+        self.assertEqual(containing, [(9, 14), (15, 17)])
+        self.assertEqual(units[15]['end_ticks'], 1378)
+        self.assertNotEqual(audit['f2_body_endpoints'][-1], units[15]['end_ticks'])
+        self.assertFalse(audit['theoretical_level_proven'])
+
+
 class TestRealRoundsDiscovery(unittest.TestCase):
     """发现工具复用冻结结构；改变笔标准须同时改变实际前缀确认。"""
 

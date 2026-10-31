@@ -21,6 +21,8 @@ G1(588000 30m)、顶部失败H1(518880日线)、底部完成E1(159915 60m),
 原81两窗只验证R2辅助前提下的结构、确认和失败映射；其MACD零轴比值
 均>0.005。E1另补81笔级条件完成分支，零轴<0.005，但c仍是完整F1内部
 锚点；输入不提供严格一类或完整次级证明，不把笔包装为ConfirmedMove。
+E1全窗另验11项完整F1-bi及一个工程F2；缺可比较中枢尾段仍跳过一类，
+完整类型、后继证明与理论级别分别核验，不沿用旧辅助点位标签。
 """
 from datetime import datetime, timedelta
 import json
@@ -882,6 +884,176 @@ class TestE1Formation81(unittest.TestCase):
         self.assertNotEqual(end, self.expected[15]['end_ticks'])
         self.assertFalse(E1_81_CAUSAL_AUDIT['automatic_first_point_proven'])
         self.assertFalse(E1_81_CAUSAL_AUDIT['complete_lower_level_proven'])
+
+
+# 先声明F1-bi的交集、切点和后继，不把原辅助c15保留为完整类型端点。
+E1_81_F1_GATE_AUDIT = {
+    'source': 'E1_81_CAUSAL_AUDIT',
+    'f1_specs': (
+        (0, 2, 'consolidation', None, (0,), ((1580, 1648),), 3),
+        (3, 5, 'consolidation', None, (3,), ((1583, 1655),), 6),
+        (6, 8, 'consolidation', None, (6,), ((1583, 1625),), 9),
+        (9, 14, 'down', 'down', (9, 12), ((1568, 1655), (1402, 1441)), 15),
+        (15, 17, 'consolidation', None, (15,), ((1378, 1441),), 18),
+        (18, 20, 'consolidation', None, (18,), ((1383, 1432),), 21),
+        (21, 23, 'consolidation', None, (21,), ((1469, 1491),), 24),
+        (24, 26, 'consolidation', None, (24,), ((1469, 1476),), 27),
+        (27, 29, 'consolidation', None, (27,), ((1460, 1476),), 30),
+        (30, 32, 'consolidation', None, (30,), ((1498, 1511),), 33),
+        (33, 36, 'consolidation', 'down', (34,), ((1529, 1572),), 37),
+    ),
+    'f1_counts': (59, 93, 166, 295, 363, 414, 440, 464, 510, 553, 628),
+    'f1_tail': (37, 37, 'incomplete', None, (), (), None),
+    'f2': (0, 7, 'down', 'down', (0, 4), ((1556, 1713), (1426, 1445)), 8),
+    'f2_known': 510,
+    'f2_composition_range': (1356, 1714),
+    'f2_body_endpoints': (1473, 1476),
+    'f2_spans': ((0, 2, 3), (4, 6, 6)),
+    'f2_composition_waves': ((1391, 1714), (1356, 1518)),
+    'f2_tail': (8, 10, 'consolidation', None, (8,), ((1460, 1505),), None),
+    'skip': 'no_comparable_center_tail',
+    'delayed_proof': (8, 553, 10),
+    'theoretical_level_proven': False,
+}
+
+
+def e1_81_f1_records(case):
+    """从已声明的BI范围装配完整F1几何，不运行同级切分或补全尾部。"""
+    units = e1_81_units(case)
+    out = []
+    for spec, known in zip(E1_81_F1_GATE_AUDIT['f1_specs'], E1_81_F1_GATE_AUDIT['f1_counts']):
+        a, z, kind, direction, _, centers, proof = spec
+        out.append(dict(seg_start=a, seg_end=z, kind=kind, direction=direction,
+                        start_dt=units[a]['start_dt'], end_dt=units[z]['end_dt'],
+                        start_ticks=units[a]['start_ticks'], end_ticks=units[z]['end_ticks'],
+                        low_ticks=min(u['low_ticks'] for u in units[a:z+1]),
+                        high_ticks=max(u['high_ticks'] for u in units[a:z+1]),
+                        centers_ticks=centers, proof_unit=proof, confirmed_raw_count=known))
+    return out
+
+
+class TestE1CompleteTypes81(unittest.TestCase):
+    """先验完整F1-bi及其证明，再接F2/一类；不提供自然理论级别证明。"""
+
+    def setUp(self):
+        self.case = next(c for c in load_labels()['cases'] if c['window_key'] == 'E1')
+        self.rows = self.case['raw_rows']
+        self.bars = raw_bars(self.case)
+        for bar in self.bars:
+            bar.update(closed_dt=bar['dt'], available_dt=bar['dt']+timedelta(minutes=1))
+        self.records = e1_81_f1_records(self.case)
+
+    def clock(self, count):
+        return self.bars[count-1]['available_dt']
+
+    def inputs(self, count):
+        fixed = chan.chan_fx_bi(self.bars[:count], standard='81')[2][:-1]
+        moves = [m for m in chan.same_level_decompose(fixed) if m.complete]
+        expected = [r for r in self.records if r['confirmed_raw_count'] <= count]
+        self.assertEqual(len(moves), len(expected))
+        out = []
+        for move, record in zip(moves, expected):
+            a, z, proof = record['seg_start'], record['seg_end'], record['proof_unit']
+            self.assertEqual((move.seg_start, move.seg_end, move.kind, move.direction),
+                             (a, z, record['kind'], record['direction']))
+            self.assertEqual((round(move.low*1000), round(move.high*1000)),
+                             (record['low_ticks'], record['high_ticks']))
+            self.assertEqual(tuple((round(lo*1000), round(hi*1000)) for lo, hi in move.centers),
+                             record['centers_ticks'])
+            self.assertLess(proof, len(fixed))
+            self.assertEqual(E1_81_CAUSAL_AUDIT['counts'][proof], record['confirmed_raw_count'])
+            out.append(chan.ConfirmedMoveType(
+                'E1-81-F1:'+str(a), 'F1', move.kind, move.direction,
+                move.start_dt, move.end_dt, fixed[a].start_value, fixed[z].end_value,
+                move.low, move.high, self.clock(record['confirmed_raw_count']),
+                tuple('E1-81-bi:'+str(i) for i in range(a, z+1)),
+                tuple('E1-81-bi:'+str(i) for i in range(proof+1)), tuple(move.centers)))
+        return out
+
+    def test_all_raw_prefixes_build_eleven_complete_f1_and_one_f2_at_successor(self):
+        """F2八项组成在464齐，须等第九项证明510；后续证据不回写首次版本。"""
+        f1_seen, first = {}, None
+        for count in range(1, len(self.rows)+1):
+            types = self.inputs(count)
+            for i in range(len(types)):
+                f1_seen.setdefault(i, count)
+            higher = chan.confirm_level_up(types, self.clock(count), 'F2')
+            self.assertEqual(len(higher), int(count >= E1_81_F1_GATE_AUDIT['f2_known']))
+            if higher:
+                first = count if first is None else first
+                move, = higher
+                self.assertEqual((move.kind, move.direction, move.confirmed_dt),
+                                 ('down', 'down', self.clock(510)))
+                self.assertEqual(move.unit_ids, tuple(t.move_id for t in types[:8]))
+                self.assertEqual(move.evidence_ids, tuple(t.move_id for t in types[:9]))
+                self.assertEqual((round(move.low*1000), round(move.high*1000)), (1356, 1714))
+                self.assertEqual((round(move.start_price*1000), round(move.end_price*1000)), (1473, 1476))
+                self.assertEqual(tuple((round(a*1000), round(z*1000)) for a, z in move.centers),
+                                 E1_81_F1_GATE_AUDIT['f2'][5])
+                self.assertEqual(chan.confirm_level_up(higher, self.clock(count), 'F3'), [])
+        self.assertEqual(tuple(f1_seen[i] for i in range(11)), E1_81_F1_GATE_AUDIT['f1_counts'])
+        self.assertEqual(first, 510)
+        final = chan.level_up(self.inputs(630))
+        self.assertEqual((final[-1].seg_start, final[-1].seg_end, final[-1].kind,
+                          final[-1].complete), (8, 10, 'consolidation', False))
+        self.assertEqual(self.inputs(630)[-1].direction, 'down')
+        self.assertEqual(self.inputs(630)[-1].to_confirmed_move().direction, 'up')
+
+    def test_first_and_strict_skip_missing_B_tail_without_calling_force(self):
+        """工程down已完成，但B成形单元净向下，无成形后的反向比较尾段。"""
+        def no_force(*args):
+            self.fail('结构准入不足不得执行力度方法')
+        for count in (311, 363, 432, 440, 464, 509, 510, 553, 614, 628, 630):
+            types, now = self.inputs(count), self.clock(count)
+            auxiliary = chan.scan_first_points(types, self.bars, now, 'F2')
+            strict = chan.scan_strict_divergence(types, now, 'F2',
+                                               force_fn=no_force, force_method='guard-only')
+            self.assertEqual((auxiliary.points, strict.results), ([], ()))
+            self.assertEqual((auxiliary.completed_types, strict.completed_types),
+                             (int(count >= 510), int(count >= 510)))
+            if count >= 510:
+                self.assertEqual(tuple(x[1] for x in auxiliary.exclusions), (E1_81_F1_GATE_AUDIT['skip'],))
+                self.assertEqual(strict.skipped[0][1], E1_81_F1_GATE_AUDIT['skip'])
+            chain = chan.analyze_point_chain(types, self.bars, now, 'F2')
+            self.assertEqual((chain.first_points, chain.contexts, chain.second_points,
+                              chain.third_points, chain.formations, chain.unresolved_move_ids),
+                             ([], [], [], [], [], ()))
+        self.assertEqual(chan.scan_first_points(self.inputs(630), self.bars, self.clock(630),
+                                               'F2', zero_axis_ratio=1).points, [])
+
+    def test_late_successor_and_same_batch_preserve_composition_but_change_evidence(self):
+        """F1[8]迟至553，与F1[9]同批到达；不制造中间九项证据快照。"""
+        types = self.inputs(630)
+        delayed = list(types)
+        delayed[8] = delayed[8]._replace(confirmed_dt=self.clock(553))
+        before = self.clock(553)-timedelta(microseconds=1)
+        self.assertEqual(chan.confirm_level_up(delayed, before, 'F2'), [])
+        actual, = chan.confirm_level_up(delayed, self.clock(553), 'F2')
+        original, = chan.confirm_level_up(types, self.clock(630), 'F2')
+        self.assertEqual(actual.unit_ids, original.unit_ids)
+        self.assertEqual(actual.evidence_ids, tuple(t.move_id for t in delayed[:10]))
+        self.assertEqual(actual.confirmed_dt, self.clock(553))
+        self.assertEqual(actual._replace(confirmed_dt=original.confirmed_dt,
+                                         evidence_ids=original.evidence_ids), original)
+        self.assertEqual(chan.scan_first_points(delayed, self.bars, self.clock(553), 'F2').points, [])
+
+    def test_future_poison_and_arrival_gate_do_not_create_automatic_points(self):
+        """完整类型与行情按实际可用前缀；未来坏身份/价格不影响当前准入。"""
+        types = self.inputs(630)
+        self.assertEqual(chan.confirm_level_up(types, self.clock(510)-timedelta(microseconds=1), 'F2'), [])
+        future = types[-1]._replace(move_id=None, level=None, low=float('nan'), high=-999,
+                                   confirmed_dt=self.clock(630)+timedelta(days=1))
+        for count in (363, 509, 510, 553, 628):
+            now = self.clock(count)
+            baseline = chan.analyze_point_chain(types, self.bars, now, 'F2')
+            poison = [dict(b) for b in self.bars]
+            for bar in poison[count:]:
+                bar.pop('open')
+                bar.update(high=float('nan'), low=-999, close=99999)
+            self.assertEqual(chan.analyze_point_chain(types+[future], poison, now, 'F2'), baseline)
+            self.assertEqual(chan.scan_strict_divergence(types+[future], now, 'F2'),
+                             chan.scan_strict_divergence(types, now, 'F2'))
+        self.assertFalse(E1_81_F1_GATE_AUDIT['theoretical_level_proven'])
 
 
 if __name__ == '__main__':
