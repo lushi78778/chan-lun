@@ -2,6 +2,7 @@
 """因果底顶冻结标注与轮次发现工具的独立算术、确认和来源契约。"""
 import ast
 import copy
+from datetime import datetime, timedelta
 from fractions import Fraction
 import importlib.util
 import json
@@ -665,6 +666,111 @@ class TestPointPacketAdmissionAssets(unittest.TestCase):
     def packet():
         path = ROOT / 'validation/chan-real-159915-60m-20190301-20190901-input.json'
         return path, json.loads(path.read_text())
+
+    def test_M1_complete_type_candidate_can_disappear_and_finish_rejected(self):
+        """原M1的F1-bi发现回归；整数复核不是新增独立理论正例。"""
+        checker = self.checker()
+        labels = json.loads((ROOT / 'tests/fixtures/real_third_point_xd_margin0.json').read_text())
+        case = next(c for c in labels['cases'] if c['window_key'] == 'M1')
+        packet = json.loads((ROOT / 'validation' / case['source']['packet']).read_text())
+        self.assertEqual(packet['rows'], case['raw_rows'])
+        tool = compiler(ROOT / 'validation/tools/gen_real_f1_originals.py')
+        _, _, bis = tool.foundation(packet['rows'], '106')
+        self.assertEqual(tool.records(bis), case['foundation']['bis'])
+        units = tool.components(packet['rows'], bis[:-1], dt_slice=None)
+        # F1[37..59]：原冻结BI表上指定组成/三段交集/后继，不搜索切分。
+        specs = (
+            (132, 134, 'consolidation', None, (132,), ((848, 862),), 135),
+            (135, 137, 'consolidation', None, (135,), ((851, 863),), 138),
+            (138, 140, 'consolidation', None, (138,), ((851, 864),), 141),
+            (141, 143, 'consolidation', None, (141,), ((788, 809),), 144),
+            (144, 147, 'consolidation', 'up', (145,), ((772, 787),), 148),
+            (148, 150, 'consolidation', None, (148,), ((768, 783),), 151),
+            (151, 153, 'consolidation', None, (151,), ((759, 770),), 154),
+            (154, 159, 'up', 'up', (154, 157), ((766, 775), (801, 816)), 160),
+            (160, 162, 'consolidation', None, (160,), ((796, 805),), 163),
+            (163, 165, 'consolidation', None, (163,), ((778, 796),), 166),
+            (166, 168, 'consolidation', None, (166,), ((778, 780),), 169),
+            (169, 171, 'consolidation', None, (169,), ((775, 780),), 172),
+            (172, 174, 'consolidation', None, (172,), ((782, 787),), 175),
+            (175, 177, 'consolidation', None, (175,), ((791, 798),), 178),
+            (178, 180, 'consolidation', None, (178,), ((791, 801),), 181),
+            (181, 183, 'consolidation', None, (181,), ((783, 801),), 184),
+            (184, 187, 'consolidation', 'up', (185,), ((747, 767),), 188),
+            (188, 190, 'consolidation', None, (188,), ((732, 741),), 191),
+            (191, 193, 'consolidation', None, (191,), ((721, 736),), 194),
+            (194, 196, 'consolidation', None, (194,), ((743, 754),), 197),
+            (197, 199, 'consolidation', None, (197,), ((751, 754),), 200),
+            (200, 202, 'consolidation', None, (200,), ((751, 758),), 203),
+            (203, 205, 'consolidation', None, (203,), ((738, 758),), 206),
+        )
+        records = [tool.move_record(units, spec) for spec in specs]
+        counts = [case['foundation']['bis_confirmed_raw_count'][s[-1]] for s in specs]
+        # 三段开头两处交集为空1/13格，须保留进入笔而从后一笔成枢。
+        for a, gap in ((144, 1), (184, 13)):
+            self.assertEqual(max(u['low_ticks'] for u in units[a:a+3])-
+                             min(u['high_ticks'] for u in units[a:a+3]), gap)
+        def core(a, z):
+            group = records[a-37:z-36]
+            return (max(r['low_ticks'] for r in group), min(r['high_ticks'] for r in group))
+        def wave(a, z):
+            group = records[a-37:z-36]
+            return (min(r['low_ticks'] for r in group), max(r['high_ticks'] for r in group))
+        self.assertEqual((core(37, 39), core(41, 43), core(54, 56)),
+                         ((843, 863), (768, 793), (725, 741)))
+        self.assertEqual((wave(37, 39), wave(41, 45)), ((829, 867), (753, 821)))
+        self.assertEqual(829-821, 8)  # raw2319的两个波动区间仍分离。
+        self.assertEqual((wave(41, 51), wave(54, 56)), ((753, 821), (715, 758)))
+        self.assertEqual(758-753, 5)  # 最终比较用反向尾端51，已重叠5格。
+        result = checker.check_packet(packet, standard='106')
+        self.assertEqual((result['raw_prefixes'], len(result['f1'])), (3978, 87))
+        for actual, record, spec, count in zip(result['f1'][37:60], records, specs, counts):
+            s = actual['snapshot']
+            self.assertEqual((actual['raw_count'], actual['part_span']), (count, list(spec[:2])))
+            self.assertEqual((s['kind'], s['direction']), tuple(spec[2:4]))
+            self.assertEqual((s['start_dt'], s['end_dt']), (record['start_dt'], record['end_dt']))
+            self.assertEqual(tuple(round(s[k]*1000) for k in ('start_price', 'end_price', 'low', 'high')),
+                             tuple(record[k] for k in ('start_ticks', 'end_ticks', 'low_ticks', 'high_ticks')))
+            self.assertEqual([[round(x*1000) for x in pair] for pair in s['centers']], record['centers_ticks'])
+        batches = {b['raw_count']: b for b in result['batches']}
+        identity = '["F2","F1:2024-03-01 13:30:00","strict1"]'
+        def selected(count):
+            return [r for r in batches[count]['strict']['results'] if r['divergence_id'] == identity]
+        for count in (2319, 2375, 2437, 2490, 2551, 2578, 2609):
+            r, = selected(count)
+            self.assertEqual((r['status'], r['reason']), ('candidate', 'trend_open'))
+        for count in (2272, 2349, 2415, 2472, 2640, 2685, 2739):
+            self.assertEqual(selected(count), [])  # 开放项可撤销，不做已成立点位。
+        final, = selected(2785)
+        self.assertEqual((final['status'], final['reason'], final['center_range']),
+                         ('rejected', 'center_waves_overlap', None))
+        self.assertEqual(final['conditions'], [['trend', True], ['separated_centers', False]])
+        self.assertEqual((selected(2319)[0]['confirmed_dt'], final['confirmed_dt'], final['dt']),
+                         ('2024-05-27 13:31:00', '2024-08-08 11:01:00', '2024-07-26 14:00:00'))
+        for count in batches:
+            if count >= 2785:
+                self.assertEqual(selected(count), [final])
+            self.assertEqual(batches[count]['auxiliary']['points'], [])
+            self.assertEqual(batches[count]['chain']['first_points'], [])
+        # 结构已否决时，即使调用方注入力度，也不能执行或改成成立。
+        typed = []
+        for r in result['f1'][:60]:
+            s = r['snapshot']
+            typed.append(checker.chan.ConfirmedMoveType(
+                s['move_id'], s['level'], s['kind'], s['direction'],
+                datetime.strptime(s['start_dt'], '%Y-%m-%d %H:%M:%S'),
+                datetime.strptime(s['end_dt'], '%Y-%m-%d %H:%M:%S'),
+                s['start_price'], s['end_price'], s['low'], s['high'],
+                datetime.strptime(s['confirmed_dt'], '%Y-%m-%d %H:%M:%S'),
+                tuple(s['unit_ids']), tuple(s['evidence_ids']), tuple(map(tuple, s['centers']))))
+        def forbidden_force(reference, leave):
+            self.fail('中枢波动已重叠，不得执行力度')
+        now = typed[-1].confirmed_dt
+        scan = checker.chan.scan_strict_divergence(typed, now, 'F2', forbidden_force, 'guard')
+        r, = [r for r in scan.results if r.divergence_id == identity]
+        self.assertEqual((r.status, r.reason), ('rejected', 'center_waves_overlap'))
+        before = checker.chan.scan_strict_divergence(typed, now-timedelta(microseconds=1), 'F2')
+        self.assertFalse(any(r.divergence_id == identity for r in before.results))
 
     def test_packet_replays_the_independent_E1_complete_type_admission_table(self):
         checker = self.checker()
