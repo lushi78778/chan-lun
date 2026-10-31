@@ -421,6 +421,123 @@ class TestRealCausalFormation81Assets(unittest.TestCase):
                         tool.compile_case(broken, packet, path)
 
 
+class TestE1Formation81Assets(unittest.TestCase):
+    """新81整数审计表只读取既有报价/坐标；旧两份fixture及标签保持。"""
+
+    @staticmethod
+    def inputs():
+        tree = ast.parse((ROOT / 'tests/test_real_causal_formation.py').read_text())
+        audit = next(ast.literal_eval(n.value) for n in tree.body
+                     if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name)
+                     and t.id == 'E1_81_CAUSAL_AUDIT' for t in n.targets))
+        case = next(c for c in json.loads(FIXTURE.read_text())['cases']
+                    if c['window_key'] == audit['case'])
+        expected = []
+        for a, z in audit['spans']:
+            u, v = case['units'][a], case['units'][z]
+            expected.append(dict(direction=u['direction'], start_index=u['start_index'],
+                                 end_index=v['end_index'], start_ticks=u['start_ticks'],
+                                 end_ticks=v['end_ticks'], start_dt=u['start_dt'], end_dt=v['end_dt']))
+        for direction, a, z, start, end, first, last in audit['tail']:
+            expected.append(dict(direction=direction, start_index=a, end_index=z,
+                                 start_ticks=start, end_ticks=end, start_dt=first, end_dt=last))
+        for unit in expected:
+            unit.update(low_ticks=min(unit['start_ticks'], unit['end_ticks']),
+                        high_ticks=max(unit['start_ticks'], unit['end_ticks']))
+        return audit, case, expected
+
+    def test_e1_81_raw_coordinates_gaps_and_all_630_confirmation_prefixes(self):
+        audit, case, expected = self.inputs()
+        tool = compiler()
+        self.assertEqual(tool.digest(FIXTURE), audit['source_sha256'])
+        self.assertEqual(len(case['raw_rows']), audit['raw_rows'])
+        groups, _, _ = tool.foundation(case['raw_rows'], '81')
+        for unit in expected:
+            self.assertGreaterEqual(unit['end_index']-unit['start_index'], 4)
+            for endpoint, which in [('start', 'lo' if unit['direction'] == 'up' else 'hi'),
+                                    ('end', 'hi' if unit['direction'] == 'up' else 'lo')]:
+                group = groups[unit[endpoint+'_index']]
+                self.assertEqual(group[which], unit[endpoint+'_ticks'])
+                self.assertEqual(case['raw_rows'][group['elements'][-1]]['dt'], unit[endpoint+'_dt'])
+        for a, z in audit['spans']:
+            if a != z:
+                self.assertTrue(any(u['end_index']-u['start_index'] < 4
+                                    for u in case['units'][a:z+1]))
+        first = {}
+        for count in range(1, len(case['raw_rows'])+1):
+            rows = case['raw_rows'][:count]
+            fixed = tool.foundation(rows, '81')[2][:-1]
+            units = tool.components(rows, fixed, dt_slice=None)
+            self.assertEqual(units, expected[:len(units)])
+            self.assertEqual(len(units), sum(n <= count for n in audit['counts']))
+            for i in range(len(units)):
+                first.setdefault(i, count)
+        self.assertEqual(tuple(first[i] for i in range(38)), audit['counts'])
+
+    def test_e1_81_integer_roles_and_rational_macd_do_not_prove_complete_first(self):
+        audit, case, units = self.inputs()
+        rows = case['raw_rows']
+        for name in ('A', 'B'):
+            zn, core, envelope = audit[name]
+            self.assertEqual((max(units[i]['low_ticks'] for i in zn[:2]),
+                              min(units[i]['high_ticks'] for i in zn[:2])), core)
+            self.assertEqual((min(u['low_ticks'] for u in units[zn[0]:zn[-1]+1]),
+                              max(u['high_ticks'] for u in units[zn[0]:zn[-1]+1])), envelope)
+        self.assertEqual(audit['A'][2][0]-audit['B'][2][1], 1)
+        self.assertEqual(min(u['low_ticks'] for u in units[:15])-units[15]['low_ticks'], 13)
+        # 从原始十进制报价用有理EMA独立复算，不调用扫描器的MACD helper。
+        prices = [Fraction(str(r['close'])) for r in rows]
+        short = long = prices[0]
+        signal = Fraction(0)
+        dif, dea, hist = [], [], []
+        for price in prices:
+            short = (2*price+11*short)/13
+            long = (2*price+25*long)/27
+            delta = short-long
+            signal = (2*delta+8*signal)/10
+            dif.append(delta)
+            dea.append(signal)
+            hist.append(2*(delta-signal))
+        areas = []
+        for a, z in audit['macd_spans'][:2]:
+            areas.append(float(sum((max(-v, Fraction(0)) for v in hist[a+1:z+1]), Fraction(0))))
+        for actual, expected in zip(areas, audit['areas']):
+            self.assertAlmostEqual(actual, expected, delta=abs(expected)*1e-12)
+        a, z = audit['macd_spans'][2]
+        zero = float(min(max(abs(dif[i]), abs(dea[i]))/prices[i] for i in range(a, z+1)))
+        self.assertAlmostEqual(zero, audit['zero_axis'], delta=1e-14)
+        self.assertTrue(0 < areas[1] < areas[0])
+        self.assertLess(zero, 0.005)
+        a, z, core, proof, count, end = audit['f1']
+        self.assertEqual((max(u['low_ticks'] for u in units[a:z+1]),
+                          min(u['high_ticks'] for u in units[a:z+1])), core)
+        self.assertEqual((units[z]['end_ticks'], audit['counts'][proof]), (end, count))
+        self.assertFalse(audit['automatic_first_point_proven'])
+        self.assertFalse(audit['complete_lower_level_proven'])
+
+    def test_e1_81_discovery_whole_membership_and_formed_snapshot_stay_distinct(self):
+        audit, case, units = self.inputs()
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        result = tool.scan({'rows': case['raw_rows']}, granularity='60m', standard='81')
+        item, = result['rounds']
+        self.assertEqual((item['first_raw_count'], item['formation']['resolution']['first_raw_count']), (311, 614))
+        self.assertEqual(tuple(item['formation']['center']['zn']), audit['whole'][0])
+        for name in ('formed', 'whole'):
+            zn, core, envelope, _ = audit[name]
+            center = dict(zn=list(zn), zd=core[0], zg=core[1])
+            actual = tool.enumerate_attempts(units, center)
+            self.assertEqual(tuple((x['leave'], x['pull'], x['margin_ticks']) for x in actual),
+                             audit[name+'_attempts'])
+            self.assertEqual(min(u['low_ticks'] for u in units[zn[0]:zn[-1]+1]), envelope[0])
+            self.assertEqual(max(u['high_ticks'] for u in units[zn[0]:zn[-1]+1]), envelope[1])
+        rows = [r for r in case['raw_rows'] if r['dt'][:10] >= '2019-03-15']
+        sub = tool.scan({'rows': rows}, granularity='60m', standard='81')['rounds'][0]
+        self.assertEqual((sub['first_raw_count'], sub['formation']['resolution']['first_raw_count']), (261, 564))
+        self.assertEqual(sub['first_dt'], item['first_dt'])
+        self.assertEqual(sub['formation']['resolution']['first_dt'], item['formation']['resolution']['first_dt'])
+        self.assertEqual(len(case['raw_rows'])-len(rows), 50)
+
+
 class TestRealRoundsDiscovery(unittest.TestCase):
     """发现工具复用冻结结构；改变笔标准须同时改变实际前缀确认。"""
 

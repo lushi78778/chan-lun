@@ -18,8 +18,9 @@ buy3先出现=完成、顶×sell3先出现=完成、顶×buy3先出现=失败; �
 G1(588000 30m)、顶部失败H1(518880日线)、底部完成E1(159915 60m),
 历史笔级条件下底/顶×完成/失败四格闭合，旧锚点均在未完成F1内部。
 
-新增81两窗只验证R2辅助前提下的结构、确认和失败映射；其MACD零轴比值
-均>0.005，不等同当前自动接口通过，也不提供完整F1或严格一类点证明。
+原81两窗只验证R2辅助前提下的结构、确认和失败映射；其MACD零轴比值
+均>0.005。E1另补81笔级条件完成分支，零轴<0.005，但c仍是完整F1内部
+锚点；输入不提供严格一类或完整次级证明，不把笔包装为ConfirmedMove。
 """
 from datetime import datetime, timedelta
 import json
@@ -736,6 +737,151 @@ class TestRealCausalFormation(unittest.TestCase):
                                  len(case['raw_rows']), case['id'])
             self.assertLessEqual(resolution['first_raw_count'],
                                  len(case['raw_rows']), case['id'])
+
+
+# 81间隔重切既有E1报价；spans只复用旧独立表的端点坐标，不继承其角色。
+# 17/21/26等旧笔只有三格间隔，不能将106确认时刻挪作81确认。
+E1_81_CAUSAL_AUDIT = {
+    'case': 'E1', 'raw_rows': 630,
+    'source_sha256': '6e72f6931e6cbe957ee40d184c51ab0bf9a666aefd6f9c521333343b7e3dbf5b',
+    'spans': ((0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5),
+              (6, 6), (7, 7), (8, 8), (9, 9), (10, 10), (11, 11),
+              (12, 12), (13, 13), (14, 14), (15, 15), (16, 16),
+              (17, 19), (20, 20), (21, 23), (24, 24), (25, 25),
+              (26, 28), (29, 29), (30, 30), (31, 31), (32, 32),
+              (33, 33), (34, 34), (35, 37), (38, 38), (39, 39),
+              (40, 40), (41, 43), (44, 48)),
+    'tail': (('down', 332, 343, 1572, 1529, '2019-08-20 09:30:00', '2019-08-26 10:30:00'),
+             ('up', 343, 347, 1529, 1586, '2019-08-26 10:30:00', '2019-08-27 11:30:00'),
+             ('down', 347, 351, 1586, 1555, '2019-08-27 11:30:00', '2019-08-28 11:30:00')),
+    'counts': (32, 40, 51, 59, 70, 81, 93, 110, 138, 166, 184, 245,
+               263, 270, 283, 295, 311, 342, 363, 377, 390, 414,
+               427, 432, 440, 449, 458, 464, 481, 495, 510, 521,
+               528, 553, 596, 614, 619, 628),
+    'A': ((0, 2, 4, 6, 8, 10), (1580, 1648), (1473, 1714)),
+    'B': ((12, 14), (1402, 1441), (1391, 1472)),
+    'b_c_proof': (11, 15, 16),
+    'macd_spans': ((164, 233), (268, 285), (233, 268)),
+    'areas': (0.3529640717199559, 0.040199284525317076),
+    'zero_axis': 0.00045331264887526167,
+    'formed': ((16, 18), (1378, 1432), (1356, 1445), 363),
+    'whole': ((16, 18, 20, 22), (1378, 1432), (1356, 1518), 427),
+    'formed_attempts': ((20, 21, -6), (22, 23, 37)),
+    'whole_attempts': ((34, 35, 97),),
+    'f1': (15, 17, (1378, 1441), 18, 363, 1356),
+    'automatic_first_point_proven': False,
+    'complete_lower_level_proven': False,
+}
+
+
+def e1_81_units(case):
+    """81审计端点由旧坐标重切及三条原始尾端声明组成，不调用识别器。"""
+    out = []
+    for a, z in E1_81_CAUSAL_AUDIT['spans']:
+        first, last = case['units'][a], case['units'][z]
+        out.append(dict(direction=first['direction'],
+                        start_index=first['start_index'], end_index=last['end_index'],
+                        start_ticks=first['start_ticks'], end_ticks=last['end_ticks'],
+                        start_dt=first['start_dt'], end_dt=last['end_dt']))
+    for direction, a, z, start, end, start_dt, end_dt in E1_81_CAUSAL_AUDIT['tail']:
+        out.append(dict(direction=direction, start_index=a, end_index=z,
+                        start_ticks=start, end_ticks=end, start_dt=start_dt, end_dt=end_dt))
+    for unit, count in zip(out, E1_81_CAUSAL_AUDIT['counts']):
+        unit.update(low_ticks=min(unit['start_ticks'], unit['end_ticks']),
+                    high_ticks=max(unit['start_ticks'], unit['end_ticks']),
+                    confirmed_raw_count=count,
+                    confirmed_dt=arrival(count, case['raw_rows'], '60m'))
+    return out
+
+
+class TestE1Formation81(unittest.TestCase):
+    """81笔级R2辅助条件回归；不把笔包装为已完成次级走势或自动一类。"""
+
+    def setUp(self):
+        self.case = next(c for c in load_labels()['cases'] if c['window_key'] == 'E1')
+        self.rows = self.case['raw_rows']
+        self.bars = raw_bars(self.case)
+        self.expected = e1_81_units(self.case)
+
+    def actual(self, count):
+        fixed = chan.chan_fx_bi(self.bars[:count], standard='81')[2][:-1]
+        records = [bi_unit_record(bi, E1_81_CAUSAL_AUDIT['counts'][i],
+                                  self.rows, '60m') for i, bi in enumerate(fixed)]
+        self.assertEqual(records, self.expected[:len(records)])
+        return fixed
+
+    def test_all_630_raw_prefixes_recut_81_units_and_first_confirmation(self):
+        """三格短笔重切、38项固定笔首确认及已完成前缀均独立声明。"""
+        seen = {}
+        for count in range(1, len(self.rows) + 1):
+            fixed = self.actual(count)
+            self.assertEqual(len(fixed), sum(n <= count for n in E1_81_CAUSAL_AUDIT['counts']))
+            for i in range(len(fixed)):
+                seen.setdefault(i, count)
+        self.assertEqual(tuple(seen[i] for i in range(38)), E1_81_CAUSAL_AUDIT['counts'])
+        self.assertEqual(self.case['first_point']['first_raw_count'], 305)
+        self.assertEqual(E1_81_CAUSAL_AUDIT['counts'][16], 311)
+
+    def test_formed_snapshot_and_whole_declaration_have_distinct_first_attempts(self):
+        """同核心不同成员声明；不把全窗Zn筛选回填成形成快照的首次回试。"""
+        ticks = unit_ticks(self.actual(630))
+        for name in ('formed', 'whole'):
+            zn, core, envelope, known = E1_81_CAUSAL_AUDIT[name]
+            n = sum(v <= known for v in E1_81_CAUSAL_AUDIT['counts'])
+            center = run_causal_zn(ticks[:n], 16)
+            self.assertEqual((tuple(center['zn']), (center['zd'], center['zg']),
+                              (center['dd'], center['gg'])), (zn, core, envelope))
+            attempts = enumerate_attempts(ticks, center)
+            self.assertEqual(tuple((a['leave'], a['pull'], a['margin_ticks']) for a in attempts),
+                             E1_81_CAUSAL_AUDIT[name + '_attempts'])
+        zss = chan.find_zs(self.actual(363)[16:19])
+        self.assertEqual([(round(z.zd*1000), round(z.zg*1000)) for z in zss], [(1378, 1432)])
+        self.assertEqual(self.expected[23]['end_ticks'], 1469)
+        self.assertEqual(self.expected[35]['end_ticks'], 1529)
+        # 几何失败20/21的离开还早于形成确认；不能称为已准入的条件点。
+        self.assertLess(self.expected[20]['start_dt'], arrival(363, self.rows, '60m'))
+        self.assertGreater(self.expected[22]['start_dt'], arrival(363, self.rows, '60m'))
+        self.assertLess(self.expected[22]['start_dt'], arrival(427, self.rows, '60m'))
+
+    def test_declared_auxiliary_events_keep_confirmation_and_future_boundaries(self):
+        """只验证外部事件条件；空一类仍waiting，未借裸笔自动声明精确走势。"""
+        clock = lambda n: datetime.strptime(arrival(n, self.rows, '60m'), '%Y-%m-%d %H:%M:%S')
+        first = chan.FormationEvent('buy1', clock(311), 'declared-R2')
+        for center_id, count in [('formed-E1-81', 432), ('whole-E1-81', 614)]:
+            event = chan.FormationEvent('buy3', clock(count), 'declared-R2', center_id)
+            for now, phase in [(clock(311)-timedelta(microseconds=1), 'waiting'),
+                               (clock(count)-timedelta(microseconds=1), 'constructing'),
+                               (clock(count), 'completed'), (clock(630), 'completed')]:
+                state = chan.formation_state(first, center_id, [event], now)
+                self.assertEqual(state.phase, phase)
+                self.assertEqual(state.end_dt, event.confirmed_dt if phase == 'completed' else None)
+            self.assertEqual(chan.formation_state(None, center_id, [event], clock(630)).phase, 'waiting')
+        for count in (310, 311, 362, 363, 431, 432, 613, 614):
+            at = self.bars[count-1]['dt']
+            baseline = chan.analyze_at(self.bars, at, bi_standard='81').to_dict()
+            poisoned = [dict(b) for b in self.bars]
+            for bar in poisoned[count:]:
+                bar.pop('open')
+                bar.update(high=float('nan'), low=-999, close=99999)
+            self.assertEqual(chan.analyze_at(poisoned, at, bi_standard='81').to_dict(), baseline)
+
+    def test_auxiliary_buy_anchor_is_inside_later_complete_f1(self):
+        """c15不是完整F1端点；新81完成端1356与旧106的1406分开。"""
+        a, z, core, proof, known, end = E1_81_CAUSAL_AUDIT['f1']
+        for count in (311, known-1, known, 630):
+            fixed = self.actual(count)
+            moves = chan.same_level_decompose(fixed)
+            target, = [m for m in moves if m.seg_start <= 15 <= m.seg_end]
+            self.assertEqual(target.seg_start, a)
+            self.assertEqual(target.complete, count >= known)
+            if count >= known:
+                self.assertEqual((target.seg_end, target.kind, target.direction), (z, 'consolidation', None))
+                self.assertEqual(tuple((round(lo*1000), round(hi*1000)) for lo, hi in target.centers), (core,))
+                self.assertEqual(round(fixed[z].end_value*1000), end)
+                self.assertEqual(E1_81_CAUSAL_AUDIT['counts'][proof], known)
+        self.assertNotEqual(end, self.expected[15]['end_ticks'])
+        self.assertFalse(E1_81_CAUSAL_AUDIT['automatic_first_point_proven'])
+        self.assertFalse(E1_81_CAUSAL_AUDIT['complete_lower_level_proven'])
 
 
 if __name__ == '__main__':
