@@ -4582,5 +4582,72 @@ class TestRealXdF1Assets(unittest.TestCase):
         self.assertEqual((a['known_raw'],a['geometric_point_raw']),(236,586));self.assertFalse(a['platform_verified'])
 
 
+    def _g1_source_consumers_source(self):
+        old,_,case,parts,_=self._g1_consumers_source()
+        source=embedded_table('test_real_xd_f1.py','M3_G1_SOURCE_BRIDGE_AUDIT');a=embedded_table('test_real_xd_f1.py','M3_G1_SOURCE_CONSUMERS_AUDIT')
+        self.assertEqual((a['source_sha256'],a['head_reference_sha256'],a['f1_reference_sha256'],a['suffix_reference_sha256']),(old['fixture_sha256'],source['head_reference_sha256'],source['f1_reference_sha256'],old['certificate_sha256']))
+        record={k:v for k,v in a.items() if k!='reference_sha256'};blob=json.dumps(record,sort_keys=True,ensure_ascii=False,indent=2)+'\n'
+        self.assertEqual(hashlib.sha256(blob.encode()).hexdigest(),a['reference_sha256'])
+        tool=compiler();units={seed:tool.xd_records(parts,h['events']+old['events']) for seed,h in source['heads'].items()}
+        return a,source,old,case,parts,units
+
+    def test_g1_source_roles_and_lineage_keep_new_core_and_given35_centers_distinct(self):
+        a,source,old,_,_,paths=self._g1_source_consumers_source();strict=compiler(ROOT/'validation/tools/gen_real_strict_trend.py');tool=compiler()
+        for seed,units in paths.items():
+            record=a['paths'][seed];tool.move_record(units,record['auto'])
+            for name,role in record['roles'].items():strict.validate_zhongshu(name,role,units)
+            start,formed,last=record['auto_span'];self.assertEqual((max(u['low_ticks'] for u in units[start:formed+1]),min(u['high_ticks'] for u in units[start:formed+1])),a['new_source_core'])
+            self.assertTrue(all(u['low_ticks']<=1126 and u['high_ticks']>=1027 for u in units[formed+1:last+1]))
+            for end,version,dd,gg in record['versions']:
+                z=[u for u in units[start:end+1] if u['direction']==units[start]['direction']]
+                self.assertEqual((min(u['low_ticks'] for u in z),max(u['high_ticks'] for u in z)),(dd,gg));self.assertEqual(version,end-formed)
+            for first,gap in record['empty_triples']:self.assertEqual(max(u['low_ticks'] for u in units[first:first+3])-min(u['high_ticks'] for u in units[first:first+3]),gap)
+            self.assertLess(units[-1]['end_ticks'],units[0]['start_ticks']);self.assertEqual(record['auto'][3],'up' if seed else None)
+            self.assertEqual((units[-1]['low_ticks']-a['new_source_core'][1],units[-1]['low_ticks']-a['old_given35_core'][1]),(13,73))
+            self.assertEqual((record['known_raw']['P'],record['old_first_center_known_raw']),(1137,777))
+            self.assertEqual(source['heads'][seed]['f1_first'],(777,1535));self.assertNotEqual(source['heads'][seed]['f1_first'],old['f1_first'])
+        for flag in ('legacy_point_identity_inherited','automatic_origin_proven','global_unique_origin_proven'):self.assertFalse(a[flag])
+
+    def test_g1_source_consumer_boundaries_rebuild_integer_certificates_and_actual_arrivals(self):
+        a,source,old,case,_,_=self._g1_source_consumers_source();tool=compiler();time_tool=compiler(ROOT/'validation/tools/gen_real_third_point.py');total=0
+        for seed,record in a['paths'].items():
+            head=source['heads'][seed];clock=tuple(u[-1] for u in head['units'])+tuple(u[-1] for u in old['units']);first={};sizes=set()
+            counts=tuple(sorted({1,a['limit']}|{n for at in clock for n in (at-1,at) if 0<n<=a['limit']}));self.assertEqual(counts,record['boundaries'])
+            for count in counts:
+                rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106');self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis[:-1])])
+                parts=tool.components(rows,bis,None);events=head['events']+old['events'];ready=[manual_xd_certificate_ready(parts,e) for e in events]
+                size=next((i for i,ok in enumerate(ready) if not ok),len(ready));sizes.add(size);total+=1;self.assertEqual(size,sum(at<=count for at in clock))
+                units=tool.xd_records(parts,events[:size])
+                for name,spec in record['contexts'].items():
+                    start,formed,zd,zg,_=spec
+                    if formed>=size:continue
+                    triple=units[start:formed+1];self.assertEqual((max(u['low_ticks'] for u in triple),min(u['high_ticks'] for u in triple)),(zd,zg));self.assertEqual(record['known_raw'][name],clock[formed])
+                    known=time_tool.arrival_dt(case['raw_rows'][clock[formed]-1]['dt'],'30m');active,_,_=self._m2_causal_attempts(units,spec,known);success=[r for r in active if r[-1]=='established'];at=record['point_raw'].get(name)
+                    self.assertEqual(bool(success),at is not None and at<=count)
+                    if success:
+                        kind,leave,pull,margin,price,_=success[0];self.assertEqual((kind,leave,pull,price,margin),record['points'][name]);first.setdefault(name,count)
+            self.assertEqual(first,record['point_raw']);self.assertEqual(tuple(sorted(sizes)),record['actual_widths']);self.assertEqual(set(range(len(clock)+1))-sizes,set(record['missing_actual_sizes']))
+        self.assertEqual(total,38)
+
+    def test_g1_source_attempts_share_endpoint_without_reusing_late_R_or_old_identity(self):
+        a,source,old,case,_,paths=self._g1_source_consumers_source();time_tool=compiler(ROOT/'validation/tools/gen_real_third_point.py')
+        for seed,units in paths.items():
+            record=a['paths'][seed];totals=dict(fail=0,before_center_known=0,established=0)
+            for name,spec in record['contexts'].items():
+                known=time_tool.arrival_dt(case['raw_rows'][record['known_raw'][name]-1]['dt'],'30m');active,suppressed,pending=self._m2_causal_attempts(units,spec,known)
+                self.assertEqual(active,list(record['attempts'][name]));self.assertEqual(suppressed,[]);self.assertIsNone(pending)
+                for row in active:totals[row[-1]]+=1
+            self.assertEqual(totals,record['attempt_totals']);self.assertEqual(record['points']['A'][1:4],record['points']['P'][1:4])
+            known=time_tool.arrival_dt(case['raw_rows'][record['known_raw']['A']-1]['dt'],'30m')
+            for size,pending in ((5,('sell3',4+seed)),(6,None),(7,('sell3',6+seed)),(8,('buy3',7+seed)),(9,None)):
+                self.assertEqual(self._m2_causal_attempts(units[:size+seed],record['contexts']['A'],known)[2],pending)
+            leave=7+seed;self.assertGreater(time_tool.arrival_dt(case['raw_rows'][1534]['dt'],'30m'),units[leave]['start_dt'])
+            late=time_tool.arrival_dt(case['raw_rows'][1534]['dt'],'30m')
+            for spec in record['contexts'].values():self.assertFalse(any(row[-1]=='established' for row in self._m2_causal_attempts(units,spec,late)[0]))
+            clock=tuple(u[-1] for u in source['heads'][seed]['units'])+tuple(u[-1] for u in old['units'])
+            self.assertEqual(sum(at<=1535 for at in clock),7+seed)
+        self.assertEqual((a['limit'],a['source_rows']-a['limit'],a['contract']),(1623,15,'all_current'));self.assertFalse(a['platform_verified'])
+
+
 if __name__ == '__main__':
     unittest.main()
