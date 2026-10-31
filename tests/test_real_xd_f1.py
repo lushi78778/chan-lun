@@ -7362,5 +7362,118 @@ class TestDirectDeclaredSourceBindings(unittest.TestCase):
         self.assertFalse(M3_DIRECT_SOURCE_BINDING_AUDIT['automatic_origin_proven'])
 
 
+# 原变化合同30/31：同一157行窗口，活动证明已到与固定证明未到分别保留。
+M3_C_SHORT_SOURCE_AUDIT = {'BI12_first': (152, 929, '2022-12-01'),
+ 'active_last': (933, '2022-12-06'),
+ 'anchor': (0, 'up', 831),
+ 'automatic_completed_types': 0,
+ 'automatic_origin_proven': False,
+ 'available_bi': 0,
+ 'completed_F2': 0,
+ 'consumer_completed_F1': 0,
+ 'current_widths': (0, 2),
+ 'events': ((0, 2, 2, 12), (3, 9, 1, 12)),
+ 'first_feature': 5,
+ 'fixed_widths': (0,),
+ 'fixture': 'real_f1_originals.json',
+ 'id': '512880-day-2022-04-20-2022-12-09',
+ 'impact_contracts': ((30, 'all_current', 157), (31, 'fixed_without_active', 157)),
+ 'independent_market_sources_added': 0,
+ 'limit': 157,
+ 'positive_gap': 12,
+ 'proof_first': {'current': (152, 929, '2022-12-01')},
+ 'published': {'current': (152, 152), 'fixed': ()},
+ 'reference_sha256': '1f9cda183b53a49bb375c4893d09f42b81797b1aa7bd7f3ffc7f75e94cca8a8d',
+ 'schema': 'C-short157-source0-current-fixed-v01',
+ 'scope': 'explicit_recent_BI0_not_global_origin_proof',
+ 'second_feature': 12,
+ 'source_sha256': '7c8408bf8beaf9f9c492460cb00353856c15dec56951a310de8522b1db9b5d29',
+ 'units': ({'direction': 'up',
+            'end_dt': '2022-06-15',
+            'end_index': 24,
+            'end_ticks': 1052,
+            'evidence_dt': '2022-12-06',
+            'evidence_end_index': 99,
+            'high_ticks': 1052,
+            'low_ticks': 831,
+            'mode': 2,
+            'proof_bi': 12,
+            'start_dt': '2022-04-28',
+            'start_index': 5,
+            'start_ticks': 831},
+           {'direction': 'down',
+            'end_dt': '2022-10-31',
+            'end_index': 82,
+            'end_ticks': 797,
+            'evidence_dt': '2022-12-06',
+            'evidence_end_index': 99,
+            'high_ticks': 1052,
+            'low_ticks': 797,
+            'mode': 1,
+            'proof_bi': 12,
+            'start_dt': '2022-06-15',
+            'start_index': 24,
+            'start_ticks': 1052})}
+
+
+def c_short_source_input():
+    a=M3_C_SHORT_SOURCE_AUDIT;path=os.path.join(os.path.dirname(__file__),'fixtures',a['fixture'])
+    with open(path,'rb') as stream:blob=stream.read()
+    if hashlib.sha256(blob).hexdigest()!=a['source_sha256']:raise AssertionError('C短窗须绑定同一原始fixture')
+    case=next(c for c in json.loads(blob.decode('utf-8'))['cases'] if c['id']==a['id'])
+    rows=m3_xd_rows(case);self_units=[dict(u,confirmed_raw_count=n) for u,n in zip(a['units'],a['published']['current'])]
+    return case,a,rows,self_units
+
+
+class TestCShortSource(unittest.TestCase):
+    """课67/71/78：正缺口12的实际活动确认与固定合同空输出，不能互换证据。"""
+
+    def test_all157_raw_prefixes_keep_current_two_same_batch_and_fixed_empty_consumers(self):
+        _,a,rows,units=c_short_source_input();first={c:[] for c in ('current','fixed')};widths={c:set() for c in first};previous=[];observations=0
+        def forbidden(x,y):raise AssertionError('不足三项输入不评估严格力度')
+        for count in range(1,len(rows)+1):
+            _,_,bs=chan.chan_fx_bi(rows[:count],standard='106')
+            for contract,pens in (('current',bs),('fixed',bs[:-1])):
+                observations+=1;xs=[x for x in chan.find_xds(pens,origin_premise=dict(basis='given_recent',anchor=(0,'up',.831),available_bi=0)) if x.complete]
+                expected=units if contract=='current' and count>=a['published']['current'][0] else [];self.assertEqual(len(xs),len(expected));widths[contract].add(len(xs));first[contract].extend([count]*(len(xs)-len(first[contract])));moves=[];shapes=[]
+                for i,(x,u) in enumerate(zip(xs,expected)):
+                    shape=(x.direction,x.start_dt,x.end_dt,round(x.start_value*1000),round(x.end_value*1000),round(x.low*1000),round(x.high*1000),x.mode)
+                    self.assertEqual(shape,(u['direction'],date(u['start_dt']),date(u['end_dt']))+tuple(u[k] for k in ('start_ticks','end_ticks','low_ticks','high_ticks','mode')));shapes.append(shape)
+                    self.assertEqual((x.evidence_end_index,x.evidence_dt),(pens[12].end_index,pens[12].end_dt))
+                    moves.append(chan.ConfirmedMove('C-source:'+str(i),'source-XD',x.direction,x.start_dt,x.end_dt,x.start_value,x.end_value,x.low,x.high,rows[151]['available_dt']))
+                if contract=='current':self.assertEqual(shapes[:len(previous)],previous);previous=shapes
+                self.assertEqual([m for m in chan.same_level_decompose(xs) if m.complete],[])
+                now=rows[count-1]['available_dt'];self.assertEqual(chan.confirm_level_up(moves,now,'source-F1'),[])
+                lineage=chan.track_center_lineage(moves,now,'source-F1');self.assertEqual((lineage.centers,lineage.events),((),()))
+                scan=chan.scan_strict_divergence(moves,now,'source-F1',forbidden,'guard');self.assertEqual((scan.completed_types,scan.results),(0,()))
+                self.assertEqual(tuple(r for _,r in scan.skipped),('not_two_separated_centers',) if moves else ())
+                self.assertEqual(chan.scan_first_points(moves,rows,now,'source-F1').points,[]);self.assertFalse(any(chan.analyze_point_chain(moves,rows,now,'source-F1')))
+        self.assertEqual(first,{k:list(v) for k,v in a['published'].items()});self.assertEqual((widths['current'],widths['fixed']),({0,2},{0}));self.assertEqual(observations,314)
+
+    def test_active_proof_arrival_unknown_future_and_legacy_single_XD_are_not_interchanged(self):
+        case,a,rows,units=c_short_source_input()
+        for count in (151,152,157):
+            _,_,bs=chan.chan_fx_bi(rows[:count],standard='106');expected=(a['proof_first']['current'][1:] if count==152 else a['active_last'])
+            if count>=152:
+                self.assertEqual((round(bs[12].end_value*1000),str(bs[12].end_dt)[:10]),expected)
+                self.assertEqual(len(bs[:-1]),12);self.assertEqual(len(bs),13)
+            for pens in (bs,bs[:-1]):
+                for premise in (dict(basis='unknown',anchor=(0,'up',.831),available_bi=None),dict(basis='given_recent',anchor=(0,'up',.831),available_bi=20)):
+                    self.assertEqual([x for x in chan.find_xds(pens,origin_premise=premise) if x.complete],[])
+        legacy,=case['paths']['xd-106']['units'];self.assertEqual((legacy['end_ticks'],legacy['mode'],legacy['proof_bi']),(945,1,9))
+        self.assertEqual([(u['end_ticks'],u['mode'],u['proof_bi']) for u in units],[(1052,2,12),(797,1,12)])
+        moves=[chan.ConfirmedMove('C-short:'+str(i),'source-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,rows[151]['available_dt']) for i,u in enumerate(units)]
+        now=rows[-1]['available_dt'];future=moves[-1]._replace(move_id=None,level=None,high=float('nan'),confirmed_dt=now+timedelta(days=1))
+        self.assertEqual(chan.track_center_lineage(moves+[future],now,'source-F1'),chan.track_center_lineage(moves,now,'source-F1'))
+        poison=rows+[dict(dt=now+timedelta(days=1),closed_dt=now+timedelta(days=1),available_dt=now+timedelta(days=2),high=float('nan'))]
+        self.assertEqual(chan.scan_first_points(moves+[future],poison,now,'source-F1'),chan.scan_first_points(moves,rows,now,'source-F1'))
+        for before in (rows[151]['closed_dt'],rows[151]['available_dt']-timedelta(microseconds=1)):
+            self.assertEqual(chan.confirm_level_up(moves,before,'source-F1'),[])
+            self.assertEqual(chan.scan_strict_divergence(moves,before,'source-F1').skipped,())
+        visible=chan.scan_strict_divergence(moves,rows[151]['available_dt'],'source-F1')
+        self.assertEqual(tuple(reason for _,reason in visible.skipped),('not_two_separated_centers',))
+        self.assertFalse(a['automatic_origin_proven'])
+
+
 if __name__ == '__main__':
     unittest.main()

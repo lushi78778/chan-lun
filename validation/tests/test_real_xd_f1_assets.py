@@ -4715,5 +4715,32 @@ class TestRealXdF1Assets(unittest.TestCase):
         self.assertEqual(total,a['consumer_boundaries'])
 
 
+    def _c_short_source_asset(self):
+        a=embedded_table('test_real_xd_f1.py','M3_C_SHORT_SOURCE_AUDIT');blob=json.dumps({k:v for k,v in a.items() if k!='reference_sha256'},sort_keys=True,ensure_ascii=False,indent=2)+'\n'
+        self.assertEqual(hashlib.sha256(blob.encode()).hexdigest(),a['reference_sha256']);path=ROOT/'tests/fixtures'/a['fixture'];self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),a['source_sha256'])
+        case=next(c for c in json.loads(path.read_text())['cases'] if c['id']==a['id']);tool=compiler();_,_,bis=tool.foundation(case['raw_rows'],'106');parts=tool.components(case['raw_rows'],bis,10)
+        self.assertEqual(tool.xd_records(parts,a['events']),list(a['units']));return a,case,parts
+
+    def test_c_short_gap12_waits_for_second_feature_and_keeps_old_single_label(self):
+        a,case,parts=self._c_short_source_asset()
+        for mirror in (False,True):
+            p=parts if not mirror else [dict(u,direction='down' if u['direction']=='up' else 'up',start_ticks=2000-u['start_ticks'],end_ticks=2000-u['end_ticks'],low_ticks=2000-u['high_ticks'],high_ticks=2000-u['low_ticks']) for u in parts]
+            self.assertEqual((manual_gap_lifecycle(p,0,3,11)['state'],manual_gap_lifecycle(p,0,3,12)['state']),('waiting','confirmed'))
+            life=manual_gap_lifecycle(p,0,3,12);self.assertEqual((life['original_gap_ticks'],life['first_fractal_proof_bi'],life['second_fractal_proof_bi']),(12,5,12))
+            for event in a['events']:self.assertTrue(manual_xd_certificate_ready(p,event));self.assertFalse(manual_xd_certificate_ready(p[:-1],event))
+        legacy,=case['paths']['xd-106']['units'];self.assertEqual((legacy['end_ticks'],legacy['mode'],legacy['proof_bi']),(945,1,9));self.assertEqual(a['impact_contracts'],((30,'all_current',157),(31,'fixed_without_active',157)))
+
+    def test_c_short_integer_raw_prefixes_keep_active929_proof_and_fixed_empty(self):
+        a,case,_=self._c_short_source_asset();tool=compiler();first={c:[] for c in ('current','fixed')};observations=0;proof=None
+        for count in range(1,158):
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106');self.assertEqual(tool.records(bis[:-1]),case['foundation_106']['bis'][:len(bis[:-1])])
+            for contract,pens in (('current',bis),('fixed',bis[:-1])):
+                observations+=1;p=tool.components(rows,pens,10);ready=[manual_xd_certificate_ready(p,e) for e in a['events']];size=next((i for i,ok in enumerate(ready) if not ok),len(ready))
+                self.assertEqual(size,2 if contract=='current' and count>=152 else 0);first[contract].extend([count]*(size-len(first[contract])))
+                if contract=='current' and count==152:proof=(count,p[12]['end_ticks'],p[12]['end_dt'])
+        self.assertEqual(proof,a['proof_first']['current']);self.assertEqual(first,{k:list(v) for k,v in a['published'].items()});self.assertEqual(observations,314)
+        self.assertNotEqual(proof[1:],a['active_last']);self.assertEqual((len(bis),len(bis[:-1])),(13,12))
+
+
 if __name__ == '__main__':
     unittest.main()
