@@ -6229,5 +6229,214 @@ class TestS3SourceConsumers(unittest.TestCase):
             self.assertEqual(chan.find_third_points(moves,contexts,now),base)
 
 
+# T原679行活动合同的显式源BI0；两组父子同批确认，旧BI22后缀不改。
+M3_T_SOURCE_BRIDGE_AUDIT = {'anchor': (0, 'down', 1557),
+ 'attempts': (('sell3', 4, 5, 155, 1230, 'before_center_known'),),
+ 'auto': (0, 5, 'consolidation', None, (0,), ((1385, 1557),), None),
+ 'auto_spans': ((0, 2, 4),),
+ 'auto_versions': ((2, 0, 1248, 1687), (3, 1, 1248, 1687), (4, 2, 890, 1687)),
+ 'automatic_completed_types': 0,
+ 'automatic_origin_proven': False,
+ 'available_bi': 0,
+ 'boundaries': (1, 165, 166, 235, 236, 369, 370, 585, 586, 679),
+ 'complete_F2': 0,
+ 'conditional_points': 0,
+ 'context': (0, 2, 1385, 1557, None),
+ 'contract': 'current',
+ 'f1': ((0, 2, 'consolidation', None, (0,), ((1385, 1557),), 3),),
+ 'f1_evidence': (4,),
+ 'f1_first': (236,),
+ 'geometric_point_raw': 586,
+ 'global_unique_origin_proven': False,
+ 'head_counts': (166, 166, 236, 236),
+ 'head_events': ((0, 2, 2, 16), (3, 13, 1, 16), (14, 16, 2, 24), (17, 21, 1, 24)),
+ 'head_proof_first': ((166, 1437, '2021-09-03 00:00:00'),
+                      (166, 1437, '2021-09-03 00:00:00'),
+                      (236, 1417, '2021-12-21 00:00:00'),
+                      (236, 1417, '2021-12-21 00:00:00')),
+ 'head_units': ({'direction': 'down',
+                 'end_dt': '2021-03-16 00:00:00',
+                 'end_index': 31,
+                 'end_ticks': 1248,
+                 'evidence_dt': '2021-09-22 00:00:00',
+                 'evidence_end_index': 140,
+                 'high_ticks': 1557,
+                 'low_ticks': 1248,
+                 'mode': 2,
+                 'proof_bi': 16,
+                 'start_dt': '2021-01-26 00:00:00',
+                 'start_index': 9,
+                 'start_ticks': 1557},
+                {'direction': 'up',
+                 'end_dt': '2021-07-27 00:00:00',
+                 'end_index': 108,
+                 'end_ticks': 1687,
+                 'evidence_dt': '2021-09-22 00:00:00',
+                 'evidence_end_index': 140,
+                 'high_ticks': 1687,
+                 'low_ticks': 1248,
+                 'mode': 1,
+                 'proof_bi': 16,
+                 'start_dt': '2021-03-16 00:00:00',
+                 'start_index': 31,
+                 'start_ticks': 1248},
+                {'direction': 'down',
+                 'end_dt': '2021-09-22 00:00:00',
+                 'end_index': 140,
+                 'end_ticks': 1385,
+                 'evidence_dt': '2022-01-12 00:00:00',
+                 'evidence_end_index': 194,
+                 'high_ticks': 1687,
+                 'low_ticks': 1385,
+                 'mode': 2,
+                 'proof_bi': 24,
+                 'start_dt': '2021-07-27 00:00:00',
+                 'start_index': 108,
+                 'start_ticks': 1687},
+                {'direction': 'up',
+                 'end_dt': '2021-11-24 00:00:00',
+                 'end_index': 171,
+                 'end_ticks': 1545,
+                 'evidence_dt': '2022-01-12 00:00:00',
+                 'evidence_end_index': 194,
+                 'high_ticks': 1545,
+                 'low_ticks': 1385,
+                 'mode': 1,
+                 'proof_bi': 24,
+                 'start_dt': '2021-09-22 00:00:00',
+                 'start_index': 140,
+                 'start_ticks': 1385}),
+ 'known_raw': 236,
+ 'limit': 679,
+ 'missing_actual_sizes': (1, 3),
+ 'platform_verified': False,
+ 'point': ('sell3', 4, 5, 1230, 155),
+ 'point_raw': None,
+ 'positive_gaps': ((0, 3, 62, 16), (14, 17, 119, 24)),
+ 'reference_sha256': '1f1492c6302717fc98b3b944c3b16be303a303acd54f56d8c93323153753da3c',
+ 'rejected': ((3, 6, -69, 7), (3, 8, 78, 9), (3, 10, 62, 11), (3, 12, -107, 13), (17, 20, -5, 21)),
+ 'schema': 'T-source0-original679-F1-auto-conditional-third-v01',
+ 'scope': 'given_recent_BI0_not_automatic_natural_origin',
+ 'source_rows': 726,
+ 'source_sha256': '64c4f4b80eca2f31f262b86c26523ddc9c13d59195ca33a5c5aa5904460c0217',
+ 'suffix_certificate_sha256': '510e5f8792e4f7bd984523e64f6331dca9d3c0774d38b2ad180562a6cb517e7e',
+ 'tail': (3, 5, 'incomplete', None, (), (), None)}
+
+
+def t_source_bridge_input():
+    """不使用原料末47行或另造fixed合同；日线可用时刻沿用既有测试约定。"""
+    case,suffix,old,rows,_=expanded_suffix_input('T','current');a=M3_T_SOURCE_BRIDGE_AUDIT
+    if (a['source_sha256'],a['suffix_certificate_sha256'])!=(old['fixture_sha256'],old['certificate_sha256']):
+        raise AssertionError('T源链须绑定同一原679行合同与给定BI22后缀')
+    units=[dict(u,local_raw_count=n,confirmed_raw_count=n) for u,n in zip(a['head_units'],a['head_counts'])]+suffix
+    root='T-source0:'+a['reference_sha256']
+    moves=[chan.ConfirmedMove(root+':xd:'+str(i),'source0-XD',u['direction'],date(u['start_dt']),date(u['end_dt']),
+           u['start_ticks']/1000.,u['end_ticks']/1000.,u['low_ticks']/1000.,u['high_ticks']/1000.,rows[u['confirmed_raw_count']-1]['available_dt']) for i,u in enumerate(units)]
+    center=chan.ConfirmedCenter(root+':center','source0-center',a['context'][2]/1000.,a['context'][3]/1000.,rows[a['known_raw']-1]['available_dt'])
+    context=chan.ThirdPointContext(root+':context','source0-center','source0-XD',center)
+    return case,units,a,rows,moves,context
+
+
+class TestTSourceBridge(unittest.TestCase):
+    """课20/35/67/71/78：原活动窗口的源桥接、确认批次与开放消费者。"""
+
+    def test_original679_raw_prefixes_join_four_heads_and_complete_one_F1_without_F2(self):
+        _,units,a,rows,_,_=t_source_bridge_input();first=[];seen=[];previous=[];previous_f1=[];sizes=set();saved=None
+        for count in range(1,len(rows)+1):
+            _,_,bis=chan.chan_fx_bi(rows[:count],standard='106')
+            xs=[x for x in chan.find_xds(bis,origin_premise=dict(basis='given_recent',anchor=(0,'down',1.557),available_bi=0)) if x.complete]
+            expected=[u for u in units if u['confirmed_raw_count']<=count];self.assertEqual(len(xs),len(expected));sizes.add(len(xs));shapes=[];proof=0
+            for x,u in zip(xs,expected):
+                shape=(x.direction,str(x.start_dt),str(x.end_dt),round(x.start_value*1000),round(x.end_value*1000),round(x.low*1000),round(x.high*1000),x.mode)
+                self.assertEqual(shape,tuple(u[k] for k in ('direction','start_dt','end_dt','start_ticks','end_ticks','low_ticks','high_ticks','mode')))
+                proof=max(proof,u['proof_bi']);self.assertEqual((x.evidence_end_index,x.evidence_dt),(bis[proof].end_index,bis[proof].end_dt));shapes.append(shape)
+            self.assertEqual(shapes[:len(previous)],previous);previous=shapes;first.extend([count]*(len(xs)-len(first)))
+            done=[m for m in chan.same_level_decompose(xs) if m.complete];f1=[m3_xd_shape(m) for m in done]
+            self.assertEqual(f1,[m3_xd_expected(units,s) for s in a['f1'] if count>=a['f1_first'][0]])
+            self.assertEqual(f1[:len(previous_f1)],previous_f1);previous_f1=f1
+            if done and saved is None:
+                seen.append(count);saved=m3_xd_type('T-source0',done[0],expected,rows[count-1]['available_dt'])
+            self.assertEqual(chan.confirm_level_up([saved] if saved else [],rows[count-1]['available_dt'],'F2'),[])
+        self.assertEqual(first,[u['confirmed_raw_count'] for u in units]);self.assertEqual(tuple(seen),a['f1_first'])
+        self.assertEqual(len(saved.evidence_ids),a['f1_evidence'][0]);self.assertEqual(set(range(7))-sizes,set(a['missing_actual_sizes']))
+        self.assertEqual(m3_xd_shape(chan.same_level_decompose(xs)[-1]),m3_xd_expected(units,a['tail']))
+        self.assertEqual((len(xs),len(rows)),(6,679));self.assertEqual(M3_EXPANDED_SUFFIX_AUDIT['T']['f1'],())
+
+    def test_active_proof_versions_and_late_BI59_origin_keep_cumulative_publication_causal(self):
+        _,units,a,rows,_,_=t_source_bridge_input()
+        for count,ticks,endpoint in a['head_proof_first']:
+            _,_,bis=chan.chan_fx_bi(rows[:count],standard='106');proof=16 if count==166 else 24
+            self.assertEqual((round(bis[proof].end_value*1000),str(bis[proof].end_dt)),(ticks,endpoint))
+            self.assertNotEqual(str(bis[proof].end_dt),a['head_units'][0 if proof==16 else 2]['evidence_dt'])
+        for count in sorted(set(a['boundaries'])|{585,586}):
+            _,_,bis=chan.chan_fx_bi(rows[:count],standard='106');premise=dict(basis='given_recent',anchor=(0,'down',1.557),available_bi=59)
+            xs=[x for x in chan.find_xds(bis,origin_premise=premise) if x.complete]
+            self.assertEqual(len(xs),6 if count>=586 else 0)
+            if xs:
+                self.assertEqual([(x.direction,str(x.start_dt),str(x.end_dt)) for x in xs],[(u['direction'],u['start_dt'],u['end_dt']) for u in units])
+                self.assertTrue(all((x.evidence_end_index,x.evidence_dt)==(bis[59].end_index,bis[59].end_dt) for x in xs))
+                done=[m for m in chan.same_level_decompose(xs) if m.complete];self.assertEqual(len(done),1)
+                late=m3_xd_type('T-source0-late',done[0],units,rows[585]['available_dt'])
+                self.assertEqual((len(late.evidence_ids),late.confirmed_dt),(6,rows[585]['available_dt']))
+            self.assertEqual([x for x in chan.find_xds(bis,origin_premise=dict(basis='unknown',anchor=(0,'down',1.557),available_bi=None)) if x.complete],[])
+        self.assertFalse(a['automatic_origin_proven']);self.assertFalse(a['global_unique_origin_proven'])
+
+    def test_visible_batches_keep_one_formed_center_two_extensions_and_no_confirmed_points(self):
+        _,units,a,rows,moves,context=t_source_bridge_input();history=();snapshots={};completed=None
+        def forbidden(x,y):raise AssertionError('单中枢开放盘整不评估严格趋势力度')
+        for count in a['boundaries']:
+            now=rows[count-1]['available_dt'];visible=[m for m in moves if m.confirmed_dt<=now]
+            lineage=chan.track_center_lineage(moves,now,'source0-center','source0-upper')
+            expected=[s for s in a['auto_versions'] if units[s[0]]['confirmed_raw_count']<=count]
+            self.assertEqual((len(lineage.events),len(lineage.centers)),(len(expected),len(expected)))
+            for event,(end,version,dd,gg) in zip(lineage.events,expected):
+                snap=lineage.snapshot(event.center_id,version)
+                self.assertEqual((event.kind,event.version,event.relation),('formed' if version==0 else 'extended',version,None))
+                self.assertEqual(snap.unit_ids,tuple(m.move_id for m in moves[:end+1]))
+                self.assertEqual((round(snap.zd*1000),round(snap.zg*1000),round(snap.dd*1000),round(snap.gg*1000)),(1385,1557,dd,gg))
+                self.assertEqual(snap.confirmed_dt,moves[end].confirmed_dt)
+            self.assertEqual(lineage.events[:len(history)],history)
+            for identity,snap in snapshots.items():self.assertEqual(lineage.snapshot(*identity),snap)
+            history=lineage.events;snapshots={(s.center_id,s.version):s for s in lineage.centers}
+            if count==a['f1_first'][0]:
+                self.assertEqual((len(visible),len(lineage.events)),(4,2))
+                self.assertEqual(lineage.events[0].confirmed_dt,lineage.events[1].confirmed_dt)
+            types=chan.confirm_level_up(moves,now,'auto-source0-F1');self.assertEqual(types,[])
+            scan=chan.scan_strict_divergence(moves,now,'auto-source0-F1',forbidden,'guard')
+            self.assertEqual((scan.completed_types,scan.results),(0,()))
+            self.assertEqual(tuple(r for _,r in scan.skipped),('not_two_separated_centers',) if visible else ())
+            self.assertEqual(chan.find_third_points(moves,[context],now),[])
+            self.assertEqual(chan.scan_first_points(moves,rows,now,'auto-source0-F1').points,[])
+            self.assertFalse(any(chan.analyze_point_chain(moves,rows,now,'auto-source0-F1')))
+            done=[m for m in chan.same_level_decompose(m3_xd_parts(dict(units=units),count)) if m.complete]
+            if done and completed is None:completed=m3_xd_type('T-source0',done[0],units[:len(visible)],now)
+            f1_lineage,_,points=m3_xd_lineage_third([completed] if completed else [],now)
+            self.assertEqual((f1_lineage.events,points),((),[]))
+        self.assertEqual([m3_xd_shape(m) for m in chan.level_up(moves)],[m3_xd_expected(units,a['auto'])])
+        self.assertEqual(len(history),3);self.assertEqual(len(completed.evidence_ids),4)
+
+    def test_geometric_sell3_cannot_backfill_late_center_or_consume_future_payloads(self):
+        case,units,a,rows,moves,context=t_source_bridge_input();now=rows[-1]['available_dt']
+        self.assertEqual((len(case['raw_rows']),len(rows)),(726,679));self.assertEqual(len(case['raw_rows'])-len(rows),47)
+        self.assertGreater(context.center.confirmed_dt,moves[4].start_dt);self.assertEqual(round((context.center.zd-moves[5].high)*1000),155)
+        self.assertEqual(chan.find_third_points(moves,[context],now),[])
+        for delta in (-1,0,1):
+            changed=context._replace(center=context.center._replace(confirmed_dt=moves[4].start_dt+timedelta(microseconds=delta)))
+            points=chan.find_third_points(moves,[changed],now);self.assertEqual(len(points),int(delta<=0))
+            if points:self.assertEqual((points[0].kind,points[0].leave_move_id,points[0].pull_move_id,round(points[0].price*1000)),('sell3',moves[4].move_id,moves[5].move_id,1230))
+        future=moves[-1]._replace(move_id=None,level=None,high=float('nan'),confirmed_dt=now+timedelta(days=1))
+        future_context=context._replace(context_id=None,center=context.center._replace(center_id=None,zg=float('nan'),confirmed_dt=now+timedelta(days=1)))
+        self.assertEqual(chan.find_third_points(moves+[future],[context,future_context],now),[])
+        self.assertEqual(chan.track_center_lineage(moves+[future],now,'source0-center','source0-upper'),chan.track_center_lineage(moves,now,'source0-center','source0-upper'))
+        poisoned=rows+[dict(dt=now+timedelta(days=1),closed_dt=now+timedelta(days=1),available_dt=now+timedelta(days=2),high=float('nan'))]
+        self.assertEqual(chan.scan_first_points(moves+[future],poisoned,now,'auto-source0-F1'),chan.scan_first_points(moves,rows,now,'auto-source0-F1'))
+        late=rows[585]['available_dt'];delayed=[m._replace(confirmed_dt=max(m.confirmed_dt,late)) for m in moves]
+        self.assertEqual(chan.track_center_lineage(delayed,late-timedelta(microseconds=1),'source0-center').events,())
+        lineage=chan.track_center_lineage(delayed,late,'source0-center')
+        self.assertEqual([(e.kind,e.version) for e in lineage.events],[('formed',0),('extended',1)])
+        self.assertEqual(lineage.centers[-1].unit_ids,tuple(m.move_id for m in moves[:5]))
+        self.assertEqual(chan.find_third_points(delayed,[context],late),[])
+
+
 if __name__ == '__main__':
     unittest.main()

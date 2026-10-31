@@ -4519,5 +4519,68 @@ class TestRealXdF1Assets(unittest.TestCase):
         self.assertFalse(a['automatic_origin_proven']);self.assertFalse(a['platform_verified'])
 
 
+    def _t_source_bridge(self):
+        old,case,parts,suffix=self._expanded_suffix_source('T');tool=compiler()
+        a=embedded_table('test_real_xd_f1.py','M3_T_SOURCE_BRIDGE_AUDIT')
+        self.assertEqual((a['source_sha256'],a['suffix_certificate_sha256']),(old['fixture_sha256'],old['certificate_sha256']))
+        record={k:v for k,v in a.items() if k!='reference_sha256'}
+        blob=json.dumps(record,sort_keys=True,ensure_ascii=False,indent=2)+'\n'
+        self.assertEqual(hashlib.sha256(blob.encode()).hexdigest(),a['reference_sha256'])
+        units=tool.xd_records(parts,a['head_events']+old['events']);self.assertEqual(units[:4],list(a['head_units']))
+        self.assertEqual(units[4:],suffix)
+        return a,old,case,parts,units
+
+    def test_t_source_four_head_certificates_wait_for_two_gap_proofs_and_cancel_internal_turns(self):
+        a,_,_,original,_=self._t_source_bridge()
+        for mirror in (False,True):
+            parts=original if not mirror else [dict(u,direction='up' if u['direction']=='down' else 'down',start_ticks=5000-u['start_ticks'],end_ticks=5000-u['end_ticks'],low_ticks=5000-u['high_ticks'],high_ticks=5000-u['low_ticks']) for u in original]
+            for event in a['head_events']:self.assertTrue(manual_xd_certificate_ready(parts,event))
+            for owner,first,gap,proof in a['positive_gaps']:
+                before=manual_gap_lifecycle(parts,owner,first,proof-1);after=manual_gap_lifecycle(parts,owner,first,proof)
+                self.assertEqual((before['original_gap_ticks'],before['state']),(gap,'waiting'))
+                self.assertEqual((after['original_gap_ticks'],after['state'],after['second_fractal_proof_bi']),(gap,'confirmed',proof))
+            for owner,first,gap,cancel in a['rejected']:
+                up=parts[owner]['direction']=='up';left=manual_feature_nodes(parts,range(owner+1,first,2),up)[-1];turn=parts[first]
+                self.assertEqual(turn['low_ticks']-left[1] if up else left[0]-turn['high_ticks'],gap)
+                broken=next(i for i in range(first+1,len(parts),2) if parts[i]['end_ticks']>turn['start_ticks'] if up) if up else next(i for i in range(first+1,len(parts),2) if parts[i]['end_ticks']<turn['start_ticks'])
+                self.assertEqual(broken,cancel)
+                self.assertFalse(manual_xd_certificate_ready(parts,(owner,first-1,1,cancel)))
+        self.assertFalse(a['automatic_origin_proven']);self.assertFalse(a['global_unique_origin_proven'])
+
+    def test_t_source_original679_raw_clocks_rebuild_both_head_batches_without_fixed_or_future_rows(self):
+        a,old,case,_,_=self._t_source_bridge();tool=compiler();clock=a['head_counts']+old['clocks']['current']['published'];first=[];sizes=set();observations=[]
+        for count in range(1,a['limit']+1):
+            rows=case['raw_rows'][:count];_,_,bis=tool.foundation(rows,'106');self.assertEqual(tool.records(bis[:-1]),case['foundation']['bis'][:len(bis[:-1])])
+            parts=tool.components(rows,bis,None);ready=[manual_xd_certificate_ready(parts,e) for e in a['head_events']]+self._expanded_suffix_ready(parts,old,'T')
+            size=next((i for i,ok in enumerate(ready) if not ok),len(ready));sizes.add(size);first.extend([count]*(size-len(first)))
+            self.assertEqual(size,sum(at<=count for at in clock))
+            if count in a['head_counts']:
+                proof=16 if count==166 else 24;b=parts[proof];observations.append((count,b['end_ticks'],b['end_dt']))
+                self.assertEqual(size,2 if count==166 else 4)
+        self.assertEqual(tuple(first),clock);self.assertEqual(tuple(observations),(a['head_proof_first'][0],a['head_proof_first'][2]))
+        self.assertEqual(set(range(7))-sizes,set(a['missing_actual_sizes']))
+        self.assertEqual((a['contract'],a['limit'],len(case['raw_rows'])-a['limit']),('current',679,47))
+        self.assertEqual(old['impact_contracts'],((8,'all_current',679),));self.assertNotIn('fixed',old['bounds'])
+        self.assertNotEqual(a['head_proof_first'][0][2],a['head_units'][0]['evidence_dt'])
+        self.assertNotEqual(a['head_proof_first'][2][2],a['head_units'][2]['evidence_dt'])
+
+    def test_t_source_integer_F1_and_lineage_do_not_backfill_late_center_sell3(self):
+        a,old,case,_,units=self._t_source_bridge();tool=compiler();time_tool=compiler(ROOT/'validation/tools/gen_real_third_point.py')
+        for spec in a['f1']+(a['tail'],a['auto']):tool.move_record(units,spec)
+        self.assertEqual((a['f1_first'],a['f1_evidence']),((236,),(4,)));self.assertEqual(old['f1'],())
+        self.assertEqual(max(u['low_ticks'] for u in units[3:6])-min(u['high_ticks'] for u in units[3:6]),155)
+        self.assertTrue(all(u['low_ticks']<=1557 and u['high_ticks']>=1385 for u in units[3:5]));self.assertLess(units[5]['high_ticks'],1385)
+        for end,version,dd,gg in a['auto_versions']:
+            z=[u for u in units[:end+1] if u['direction']==units[0]['direction']]
+            self.assertEqual((min(u['low_ticks'] for u in z),max(u['high_ticks'] for u in z)),(dd,gg));self.assertEqual(version,end-2)
+        known=time_tool.arrival_dt(case['raw_rows'][a['known_raw']-1]['dt'],'day')
+        self.assertGreater(known,units[4]['start_dt'])
+        active,suppressed,pending=self._m2_causal_attempts(units,a['context'],known)
+        self.assertEqual(active,list(a['attempts']));self.assertEqual(suppressed,[]);self.assertIsNone(pending)
+        self.assertEqual(active[0],('sell3',4,5,155,1230,'before_center_known'))
+        self.assertIsNone(a['point_raw']);self.assertEqual((a['conditional_points'],a['complete_F2'],a['automatic_completed_types']),(0,0,0))
+        self.assertEqual((a['known_raw'],a['geometric_point_raw']),(236,586));self.assertFalse(a['platform_verified'])
+
+
 if __name__ == '__main__':
     unittest.main()
