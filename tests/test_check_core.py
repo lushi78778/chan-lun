@@ -155,10 +155,20 @@ class TestCoreEntry(unittest.TestCase):
 
     def test_docker_rejects_ambiguous_scope_or_existing_receipts_before_starting(self):
         tool = entry()
+        self.assertEqual(tool.docker_matrix('all', 'validation'),
+                         (('3.10', 'validation'), ('3.13', 'validation')))
+        self.assertEqual(tool.docker_matrix('all', 'all'),
+                         (('3.10', 'all'), ('3.13', 'all'), ('3.6', 'package')))
+        with self.assertRaises(ValueError):
+            tool.docker_matrix('3.6', 'validation')
         with tempfile.TemporaryDirectory() as folder, mock.patch.object(tool.subprocess, 'call') as docker:
             args = type('Args', (), dict(docker_output=folder, docker='3.6', scope='package', profile='full', pattern='test_*.py'))()
             with self.assertRaises(OSError):
                 tool.docker_check(args)
+            docker.assert_not_called()
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(tool, 'ROOT', folder), mock.patch.object(tool, 'docker_check') as docker:
+            with self.assertRaises(SystemExit):
+                tool.main(['--docker', 'all', '--scope', 'all', '--docker-output', os.path.join(folder, 'new-results')])
             docker.assert_not_called()
         for flags in (['--docker', '3.6', '--scope', 'validation'], ['--docker-output', 'unused'],
                       ['--ci-plan', '--docker', '3.10']):

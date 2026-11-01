@@ -151,12 +151,21 @@ class TimedResult(unittest.TextTestResult):
         super(TimedResult, self).stopTest(test)
 
 
+def docker_matrix(version, scope):
+    """资产专验只选现代环境；all矩阵中的旧环境仅承担包层。"""
+    versions = ('3.10', '3.13', '3.6') if version == 'all' else (version,)
+    matrix = tuple((v, 'package' if v == '3.6' else scope) for v in versions
+                   if v != '3.6' or scope != 'validation')
+    if not matrix:
+        raise ValueError('3.6仅验包测试，资产专验选择现代环境')
+    return matrix
+
+
 def docker_check(args):
     """本地隔离源码验收；Dockerfile临时生成，宿主源码只读，报告独立留存。"""
     output = os.path.abspath(args.docker_output)
     os.makedirs(output)  # 拒绝覆盖、续写或复用旧收据。
-    versions = ('3.10', '3.13', '3.6') if args.docker == 'all' else (args.docker,)
-    for version in versions:
+    for version, scope in docker_matrix(args.docker, args.scope):
         folder = os.path.join(output, version)
         os.mkdir(folder)
         with open(os.path.join(ROOT, 'requirements-dev.txt'), encoding='utf-8') as stream:
@@ -180,7 +189,6 @@ def docker_check(args):
                                input=dockerfile, universal_newlines=True, check=True)
         image_id = subprocess.check_output(['docker', 'image', 'inspect', '--format', '{{.Id}}', image],
                                            universal_newlines=True).strip()
-        scope = 'package' if legacy else args.scope
         print('Docker {} / {} / {}; image {}'.format(version, scope, args.profile, image_id), flush=True)
         # 只传已解析的参数列表，不拼接宿主路径、模式或测试名为shell代码。
         script = '''import hashlib, json, os, platform, shutil, subprocess, sys
@@ -248,8 +256,14 @@ def main(argv=None):
         print('Applicable CI checks succeeded', flush=True)
         return 0
     if args.docker:
-        if not args.docker_output or args.timings or (args.docker == '3.6' and args.scope == 'validation'):
+        if not args.docker_output or args.timings:
             parser.error('Docker须指定全新--docker-output；不混用--timings；3.6仅验包测试')
+        try:
+            matrix = docker_matrix(args.docker, args.scope)
+        except ValueError as error:
+            parser.error(str(error))
+        if any(scope in ('all', 'validation') for _, scope in matrix) and not os.path.isdir(os.path.join(ROOT, 'validation/tests')):
+            parser.error('Docker资产验收须有完整仓库validation/tests，不在缺失资产后先跑长包测试')
         return docker_check(args)
     if args.docker_output:
         parser.error('--docker-output须与--docker一起使用')

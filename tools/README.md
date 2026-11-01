@@ -9,7 +9,7 @@
 |---|---|---|
 | `check_core.py` | 检查源码归属/版本，选择完整或快速层，记录耗时，运行本地Docker验收 | `python tools/check_core.py`；`--scope all`；`--profile fast`；`--timings /新收据.json`；`--docker all --scope all --docker-output /全新目录` |
 | `release_artifacts.py` | 核验版本、产物描述与摘要；封存同一候选 | `python tools/release_artifacts.py check-source`；`check-description`；`seal --commit <SHA>`；`verify --commit <SHA>` |
-| `diagnose_chan.py` | 诊断目标解释器实际导入的包及安装元数据 | `python tools/diagnose_chan.py --expect 1.1.0 --json` |
+| `diagnose_chan.py` | 诊断目标解释器实际导入的包及安装元数据 | `python tools/diagnose_chan.py --expect 1.2.0 --json` |
 | `verify_installed.py` | 在隔离模式核验已安装 wheel 的导入路径、版本与公开入口 | `python -I tools/verify_installed.py` |
 | `benchmark.py` | 对显式输入测量批量与回放耗时、内存、结构规模 | `python tools/benchmark.py --help` |
 
