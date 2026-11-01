@@ -75,6 +75,9 @@ python tools/check_core.py                              # 自包含包测试
 python tools/check_core.py --pattern test_contracts.py   # 定向包测试
 python tools/check_core.py --scope validation            # 完整仓库资产验收
 python tools/check_core.py --scope all                   # 两层验收
+python tools/check_core.py --profile fast                # 日常快速包测试，明确列出延后数量
+python tools/check_core.py --scope validation --profile fast
+python tools/check_core.py --timings /绝对路径/新计时收据.json
 ```
 
 入口自动定位本仓库源码并传递给子进程，可从任意 cwd 通过绝对路径启动。
@@ -85,13 +88,45 @@ python tools/check_core.py --scope all                   # 两层验收
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
+默认`full`与标准unittest仍执行全部测试。显式`fast`只延后现有入口
+`DEFERRED`清单中的重型真实行情回放/重编译模块，不删除或改写用例；
+新模块默认进入快速层。计时收据记录所选用例、逐项耗时与延后项，
+拒绝覆盖；快速通过不等同完整回放、全量覆盖率或理论验收。
+
+本地完整环境验收可使用已有入口和Docker，不维护额外Dockerfile：
+
+```bash
+python tools/check_core.py --docker all --scope all --docker-output /绝对路径/全新结果目录
+```
+
+宿主需要Python与可用的Docker服务。入口按现有依赖构建缓存镜像，
+依次运行3.10、3.13和3.6；现代环境验包/资产两层，旧环境只验包层。
+3.6使用linux/amd64保留旧依赖wheel，在ARM宿主仿真运行，耗时单列。
+3.10完整包测试另执行94%覆盖率门禁。也可用`--docker 3.10`、
+`--docker 3.13`或`--docker 3.6 --scope package`单独验收。
+源码只读挂载并复制到容器临时目录，测试阶段禁用网络；镜像准备需
+下载依赖。结果目录保留实际镜像ID、依赖、源码摘要、日志和逐用例
+计时，不覆盖旧结果。该入口验收源码；发行包隔离导入与同一候选
+的发版门禁仍由下面的产物流程独立验证，不代替聚宽平台验收。
+
 工程契约检查双处版本、公开导出、Python 3.6 语法，以及 README、使用指南与
 迁移指南示例；可运行示例和需要调用方输入的模板分别标明。语法检查、
 现代运行时、旧依赖实跑、原文核验、真实行情、平台和发布产物分别记录，任一项通过不代替其他项。
 
-CI 集中构建一次 wheel/sdist 并冻结提交、版本和摘要。现代与 Python 3.6
-job 从解包 sdist 执行包测试，wheel 另行隔离导入；资产 job 在完整仓库
-执行验收。Release/PyPI 仅消费同一候选，上传前复核标签、元数据和摘要。
+日常CI按上次成功main CI以来的差异或PR基底差异分流，不能只比较
+本次push的before而漏掉已取消运行的代码修改。成功基准只读查询
+GitHub，API不可用则保守跑所有快速层。说明文档只验基础契约，资产/数据工具
+变化增加轻量资产契约；源码、测试、依赖或工程入口变化执行快速算法
+回归、3.13及3.6兼容检查。未知路径/diff缺失保守执行所有快速层。
+这些检查不采集全量覆盖率；过时日常运行由concurrency取消，tag及
+手动完整运行不被后续日常推送取消。稳定`ci`门禁要求应执行的job
+成功，失败、取消和必要job被跳过均不能过门禁。
+
+`v*` tag及手动`full=true`执行完整验收，覆盖率仅在3.10统计，94门槛
+保持。CI集中构建一次wheel/sdist并冻结提交、版本和摘要；现代与3.6
+从同一解包sdist执行完整包测试，wheel另行隔离导入；资产job在完整
+仓库双环境验收。Release/PyPI只在tag且完整门禁通过后消费同一候选，
+上传前复核标签、元数据和摘要。手动完整验收不发布。
 具体工具见 [tools/README.md](tools/README.md)。
 
 现代环境额外执行名称错误检查和包算法覆盖率，配置统一在 pyproject：

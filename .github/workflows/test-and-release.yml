@@ -5,9 +5,20 @@ on:
     branches: [main]
     tags: ["v*"]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Run complete acceptance without publishing"
+        type: boolean
+        default: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && format('manual-{0}', github.run_id) || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && github.event_name != 'workflow_dispatch' }}
 
 permissions:
   contents: read
+  actions: read
 
 env:
   RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
@@ -16,41 +27,88 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      full: ${{ steps.route.outputs.full }}
+      runtime: ${{ steps.route.outputs.runtime }}
+      assets: ${{ steps.route.outputs.assets }}
+      artifacts: ${{ steps.route.outputs.artifacts }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+      - name: Select checks since successful CI or the PR base
+        id: route
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/check_core.py --ci-plan
       - uses: astral-sh/setup-uv@v5
       - name: Install the pinned development baseline
         run: |
           uv pip install --system -r requirements-dev.txt
           uv pip freeze
+      - name: Check all tracked Python entry points
+        run: python -m ruff check --no-cache src/chan tools tests validation/tools validation/tests
+      - name: Run daily package checks without heavy replay or coverage
+        if: steps.route.outputs.full != 'true'
+        env:
+          RUNTIME_CHANGED: ${{ steps.route.outputs.runtime }}
+        run: |
+          if [ "$RUNTIME_CHANGED" = true ]; then
+            python tools/check_core.py --profile fast --timings "$RUNNER_TEMP/daily-package.json" -v
+          else
+            python tools/check_core.py --pattern test_contracts.py --timings "$RUNNER_TEMP/daily-package.json" -v
+          fi
+      - name: Run daily lightweight asset contracts
+        if: steps.route.outputs.full != 'true' && steps.route.outputs.assets == 'true'
+        run: python tools/check_core.py --scope validation --profile fast --timings "$RUNNER_TEMP/daily-assets.json" -v
       - name: Check tag and source version before building
         run: python tools/release_artifacts.py check-source --tag "$RELEASE_TAG"
       - name: Build candidate once
+        if: steps.route.outputs.artifacts == 'true'
         run: python -m build --no-isolation
       - name: Check package description before sealing
+        if: steps.route.outputs.artifacts == 'true'
         run: |
           python -m twine check --strict dist/*.whl dist/*.tar.gz
           python tools/release_artifacts.py check-description
       - name: Seal candidate metadata and digests
+        if: steps.route.outputs.artifacts == 'true'
         run: python tools/release_artifacts.py seal --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
+      - name: Verify the daily wheel in isolation
+        if: steps.route.outputs.artifacts == 'true' && steps.route.outputs.full != 'true'
+        run: |
+          uv pip install --system --force-reinstall --no-deps dist/*.whl
+          python -I tools/verify_installed.py
       - uses: actions/upload-artifact@v4
+        if: steps.route.outputs.artifacts == 'true'
         with:
           name: release-candidate
           path: |
             dist/*.whl
             dist/*.tar.gz
             dist/release-manifest.json
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.route.outputs.full != 'true'
+        with:
+          name: daily-check-timings
+          path: ${{ runner.temp }}/daily-*.json
+          if-no-files-found: ignore
 
   test:
     needs: build
+    if: needs.build.outputs.full == 'true' || needs.build.outputs.runtime == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: ${{ needs.build.outputs.full == 'true' && 120 || 10 }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.13"]
+        python-version: ${{ fromJSON(needs.build.outputs.full == 'true' && '["3.10","3.13"]' || '["3.13"]') }}
+    env:
+      CHECK_PROFILE: ${{ needs.build.outputs.full == 'true' && 'full' || 'fast' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -69,23 +127,38 @@ jobs:
           uv pip install --system --force-reinstall --no-deps dist/*.whl
       - name: Verify installed wheel in isolation
         run: python -I tools/verify_installed.py
-      - name: Run static checks and package coverage from sdist
+      - name: Run selected package checks from sdist
+        env:
+          FULL_COVERAGE: ${{ needs.build.outputs.full == 'true' && matrix.python-version == '3.10' }}
         run: |
           mkdir -p "$RUNNER_TEMP/chan-sdist"
           tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/chan-sdist"
           cd "$RUNNER_TEMP/chan-sdist"/chan_lun_core-*
           python -m ruff check --no-cache src/chan tools tests
-          python -m coverage run --data-file "$RUNNER_TEMP/chan-core.coverage" tools/check_core.py -v
-          python -m coverage report --data-file "$RUNNER_TEMP/chan-core.coverage"
-          python -m coverage json --data-file "$RUNNER_TEMP/chan-core.coverage" -o "$RUNNER_TEMP/chan-core-coverage.json"
+          if [ "$FULL_COVERAGE" = true ]; then
+            python -m coverage run --data-file "$RUNNER_TEMP/chan-core.coverage" tools/check_core.py --timings "$RUNNER_TEMP/package-timings.json" -v
+            python -m coverage report --data-file "$RUNNER_TEMP/chan-core.coverage"
+            python -m coverage json --data-file "$RUNNER_TEMP/chan-core.coverage" -o "$RUNNER_TEMP/chan-core-coverage.json"
+          else
+            python tools/check_core.py --profile "$CHECK_PROFILE" --timings "$RUNNER_TEMP/package-timings.json" -v
+          fi
       - uses: actions/upload-artifact@v4
+        if: needs.build.outputs.full == 'true' && matrix.python-version == '3.10'
         with:
           name: coverage-${{ matrix.python-version }}
           path: ${{ runner.temp }}/chan-core-coverage.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: package-timings-${{ matrix.python-version }}
+          path: ${{ runner.temp }}/package-timings.json
+          if-no-files-found: ignore
 
   validation:
     needs: build
+    if: needs.build.outputs.full == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -108,12 +181,22 @@ jobs:
       - name: Check repository validation tools
         run: python -m ruff check --no-cache validation/tools validation/tests
       - name: Run independent repository asset validation
-        run: python tools/check_core.py --scope validation -v
+        run: python tools/check_core.py --scope validation --timings "$RUNNER_TEMP/asset-timings.json" -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: asset-timings-${{ matrix.python-version }}
+          path: ${{ runner.temp }}/asset-timings.json
+          if-no-files-found: ignore
 
   legacy:
     needs: build
+    if: needs.build.outputs.full == 'true' || needs.build.outputs.runtime == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: ${{ needs.build.outputs.full == 'true' && 120 || 10 }}
     container: python:3.6.15-buster
+    env:
+      CHECK_PROFILE: ${{ needs.build.outputs.full == 'true' && 'full' || 'fast' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -123,8 +206,11 @@ jobs:
       - name: Verify candidate and install old runtime dependencies
         run: |
           python tools/release_artifacts.py verify --commit "$SOURCE_COMMIT" --tag "$RELEASE_TAG"
-          python -m pip install 'pip==21.3.1'
-          python -m pip install 'numpy==1.14.6' 'pandas==0.23.4' 'python-dateutil==2.8.2' 'six==1.16.0' 'pytz==2025.2'
+          python - <<'PY'
+          import runpy, subprocess, sys
+          requirements = runpy.run_path('tools/check_core.py')['LEGACY_REQUIREMENTS']
+          subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + list(requirements))
+          PY
           python -m pip install --no-deps dist/*.whl
       - name: Verify installed wheel and sdist package tests on Python 3.6
         run: |
@@ -132,12 +218,31 @@ jobs:
           mkdir -p /tmp/chan-sdist
           tar -xzf dist/*.tar.gz -C /tmp/chan-sdist
           cd /tmp/chan-sdist/chan_lun_core-*
-          python tools/check_core.py -v
+          python tools/check_core.py --profile "$CHECK_PROFILE" --timings /tmp/legacy-timings.json -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: legacy-timings
+          path: /tmp/legacy-timings.json
+          if-no-files-found: ignore
+
+  ci:
+    if: always()
+    needs: [build, test, validation, legacy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require every applicable check to succeed
+        env:
+          CHECKS: ${{ toJSON(needs) }}
+        run: python tools/check_core.py --ci-gate
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [test, validation, legacy]
+    needs: ci
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
@@ -178,8 +283,9 @@ jobs:
 
   publish-pypi:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [test, validation, legacy]
+    needs: ci
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

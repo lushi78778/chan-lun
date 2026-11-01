@@ -7,7 +7,7 @@
 
 | 工具 | 用途 | 命令 |
 |---|---|---|
-| `check_core.py` | 检查源码归属与版本，运行包测试或显式选择资产层 | `python tools/check_core.py`；`--scope validation`；`--scope all`；`--pattern test_模块.py` |
+| `check_core.py` | 检查源码归属/版本，选择完整或快速层，记录耗时，运行本地Docker验收 | `python tools/check_core.py`；`--scope all`；`--profile fast`；`--timings /新收据.json`；`--docker all --scope all --docker-output /全新目录` |
 | `release_artifacts.py` | 核验版本、产物描述与摘要；封存同一候选 | `python tools/release_artifacts.py check-source`；`check-description`；`seal --commit <SHA>`；`verify --commit <SHA>` |
 | `diagnose_chan.py` | 诊断目标解释器实际导入的包及安装元数据 | `python tools/diagnose_chan.py --expect 1.1.0 --json` |
 | `verify_installed.py` | 在隔离模式核验已安装 wheel 的导入路径、版本与公开入口 | `python -I tools/verify_installed.py` |
@@ -16,6 +16,15 @@
 `check_core.py` 支持从其他 cwd 通过绝对路径启动，并将本仓库源码路径
 传给测试子进程。选择资产层时，完整仓库必须存在 `validation/tests/`；
 缺目录或空测试集明确失败。安装诊断不注入源码、不自动安装。
+
+`full`为默认，保留完整回放；`fast`只延后入口内显式列出的重型模块，
+不将其登记为跳过后通过，也不改变默认发现范围。收据列出实际选中
+用例及延后项，逐用例计时不替代理论覆盖率。`--ci-plan`和`--ci-gate`
+由现有工作流调用，分别按事件分流和核对必要检查，不用于伪造本地
+验收结论。日常不跑双份覆盖率；完整tag/手动验收保留所有用例。
+
+Docker用法与环境边界统一见[CONTRIBUTING](../CONTRIBUTING.md#两层验收)。
+镜像准备与容器源码验收复用此入口、现有依赖和测试，不新增管理文件。
 
 `release_artifacts.py` 只核验和封存，不构建、不发布。标签参数仅在对应
 版本发布时填写；日常治理不使用已有发布标签创建新产物。

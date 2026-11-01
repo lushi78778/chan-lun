@@ -9,11 +9,19 @@
 ```bash
 python tools/check_core.py
 python tools/check_core.py --pattern test_contracts.py
+python tools/check_core.py --profile fast --timings /绝对路径/新计时收据.json
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
 工程入口显式选择当前源码并传给测试子进程；标准 unittest 入口由各测试
 定位源码。安装后的包另用 `python -I tools/verify_installed.py` 验收。
+
+默认入口和标准unittest均保留完整测试。日常CI显式选择`fast`，只
+延后`tools/check_core.py`中`DEFERRED`列出的重型真实行情回放模块；
+原图几何、算法边界、时钟/未来隔离、API与工程契约继续执行。新模块
+默认加入快速层。快速收据明确标识延后项及逐用例耗时，不把部分
+执行称为完整验收，不改变完整模式或降低覆盖率门槛。完整回放在
+本地Docker、阶段手动验收和发布tag执行，流程见[开发规范](../CONTRIBUTING.md#两层验收)。
 
 `test_contracts.py` 执行 README 的完整入门、空输入和回放示例，核对展示摘要，
 并读取 `docs/usage.md` 的分步基础链与独立辅助示例。迁移指纹仍从

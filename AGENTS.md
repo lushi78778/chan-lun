@@ -46,9 +46,15 @@ python tools/check_core.py
 python tools/check_core.py --pattern test_模块.py
 python tools/check_core.py --scope validation
 python tools/check_core.py --scope all
+python tools/check_core.py --profile fast  # 日常快速层，不能替代完整验收
+python tools/check_core.py --docker all --scope all --docker-output /绝对路径/新结果目录
 ```
 
 - 默认只运行包测试；资产测试在完整仓库显式执行，不静默跳过缺失资产。
+- 默认full保留所有测试；日常CI显式fast延后重型回放，选中/延后项和
+  耗时须留痕。完整回放可本地Docker验收；tag/手动完整CI仍保留双
+  现代环境、3.6旧依赖、资产与同一发行候选门禁，覆盖率只在3.10
+  全量统计，94门槛不降。不把快速或本地通过写成完整CI/平台通过。
 - 标准 `python -m unittest discover -s tests -p 'test_*.py'` 仍可使用。
   源码入口、Python 3.6 语法、旧环境实跑、原文、真实行情、安装包和平台
   验收分别记录。空测试集或导入失败不能视为成功。
