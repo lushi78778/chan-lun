@@ -491,6 +491,66 @@ class TestDiscoveryPartitionIntegrity(unittest.TestCase):
                     self.call_loader(tool, root, [], '30m')
                 self.assertEqual(read.call_count, 0)
 
+    def test_main_binds_receipt_to_the_exact_manifest_snapshot_used_for_loading(self):
+        """清单摘要取解析的原字节，分区加载使用同一快照而非结束时重读。"""
+        import contextlib
+        import io
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        frame = TestDiscoveryInputGuards.frame()
+        for tool in TestDiscoveryInputGuards.scanners():
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp); path = root/'bars.parquet'; path.write_bytes(b'partition')
+                self.manifest(root, dict(path=path.name, partition='all', sha256=tool.digest(path)))
+                # 同一JSON值可有不同字节；收据须绑定实际解析的版本。
+                manifest = root/'manifest.json'
+                manifest.write_text(' \n'+manifest.read_text()+'\n')
+                raw = manifest.read_bytes()
+                snapshot, expected = tool.read_discovery_manifest(root)
+                self.assertEqual(snapshot, json.loads(raw.decode('utf-8')))
+                self.assertEqual(expected, tool.digest(manifest))
+                output = root/'result.json'
+                argv = [tool.__file__, '--dataset', str(root), '--output', str(output),
+                        '--codes', '510300.SH', '--periods', '1d']
+                fake, _ = self.parser(frame)
+                with patch.dict(sys.modules, fake), patch.object(sys, 'argv', argv), \
+                        patch.object(tool, 'import_chan', return_value=SimpleNamespace(__version__='test')), \
+                        patch.object(tool, 'load_frames', wraps=tool.load_frames) as load, \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    tool.main()
+                self.assertEqual(load.call_args[1]['manifest'], snapshot)
+                result = json.loads(output.read_text())
+                self.assertEqual(result['manifest_sha256'], expected)
+                self.assertEqual(len(result['input_files']), 1)
+                self.assertEqual(manifest.read_bytes(), raw)
+
+    def test_main_rejects_manifest_replacement_after_partition_read_without_success_receipt(self):
+        """加载后移除清单分区，不得给旧读取结果登记新清单摘要。"""
+        import contextlib
+        import io
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        frame = TestDiscoveryInputGuards.frame()
+        for tool in TestDiscoveryInputGuards.scanners():
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp); path = root/'bars.parquet'; path.write_bytes(b'partition')
+                self.manifest(root, dict(path=path.name, partition='all', sha256=tool.digest(path)))
+                original = tool.load_frames
+                def replace_manifest(*args, **kwargs):
+                    result = original(*args, **kwargs)
+                    (root/'manifest.json').write_text(json.dumps({'datasets': {'1d': {'files': []}}}))
+                    return result
+                output = root/'result.json'
+                argv = [tool.__file__, '--dataset', str(root), '--output', str(output),
+                        '--codes', '510300.SH', '--periods', '1d']
+                fake, _ = self.parser(frame)
+                with patch.dict(sys.modules, fake), patch.object(sys, 'argv', argv), \
+                        patch.object(tool, 'import_chan', return_value=SimpleNamespace(__version__='test')), \
+                        patch.object(tool, 'load_frames', side_effect=replace_manifest), \
+                        contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'manifest'):
+                    tool.main()
+                self.assertFalse(output.exists())
+
 
 if __name__=='__main__':
     unittest.main()

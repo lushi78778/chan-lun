@@ -95,9 +95,17 @@ def read_discovery_partition(dataset, item, columns, codes, receipt=None):
     return table
 
 
-def load_frames(dataset, period, codes, receipt=None):
+def read_discovery_manifest(dataset):
+    """解析与摘要绑定同一份字节；一次发现沿用同一份分区清单。"""
+    import hashlib
+    raw = (Path(dataset) / 'manifest.json').read_bytes()
+    return json.loads(raw.decode('utf-8')), hashlib.sha256(raw).hexdigest()
+
+
+def load_frames(dataset, period, codes, receipt=None, manifest=None):
     import pandas as pd
-    manifest = json.loads((dataset / 'manifest.json').read_text())
+    if manifest is None:
+        manifest, _ = read_discovery_manifest(dataset)
     files = manifest['datasets'][period]['files']
     if period not in ('1d', '60m'):
         files = [i for i in files if i.get('partition') == '2026']
@@ -422,7 +430,7 @@ def main():
             parser.error('未知周期: ' + period)
     chan = import_chan()
     dataset = args.dataset.resolve()
-    manifest = json.loads((dataset / 'manifest.json').read_text())
+    manifest, manifest_sha256 = read_discovery_manifest(dataset)
     missing = [p for p in args.periods if p not in manifest['datasets']]
     if missing:
         parser.error('请求周期缺少数据，不能写成零候选: '+str(missing))
@@ -431,7 +439,7 @@ def main():
     out = dict((p, []) for p in periods)
     file_receipts = []
     for period in periods:
-        frames, time_key = load_frames(dataset, period, args.codes, file_receipts)
+        frames, time_key = load_frames(dataset, period, args.codes, file_receipts, manifest=manifest)
         for code in args.codes:
             group = clean_rows(frames[code])
             starts_fn = yearly_starts if period in ('1d', '60m') \
@@ -464,7 +472,7 @@ def main():
         invalid_rows_dropped=0,
         generated_at=datetime.now(timezone(timedelta(hours=8))).isoformat(),
         dataset=str(dataset),
-        manifest_sha256=digest(dataset / 'manifest.json'),
+        manifest_sha256=manifest_sha256,
         input_files=file_receipts,
         pipeline='原始bar→chan_fx_bi106→bis[:-1]固定笔→find_xds(fixed)仅complete→'
                  'zn_run/triple_overlap/scan_strict修正口径(0.9.3最后中枢离开冻结)',
@@ -521,6 +529,8 @@ def main():
         '修正完成口径下所扫范围(各周期、bi/xd两路径、涨跌两方向)'
         '完成严格趋势计数=%d; 对该口径稳健(核心离开已是最宽读法, 更严读法c.low<B.DD只会更少), '
         '完成正例缺口如实登记, 不调宽门槛、不移动起点或复制镜像补齐。' % completed)
+    if digest(dataset / 'manifest.json') != manifest_sha256:
+        raise ValueError('发现期间manifest改变，拒绝写入成功收据')
     write_discovery_result(args.output, result)
     print(args.output.resolve())
     print(result['conclusion'])

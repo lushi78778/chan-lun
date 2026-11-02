@@ -32,14 +32,14 @@ validation/chan-real-first-point-theory-0.9.9.md）。
 # 输入完整性与收据写入采用当前工程规则，分类/发现口径仍为上述冻结版本。
 
 import argparse
-import json
 import math
 import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from scan_real_strict_trend import clean_rows, discovery_before, read_discovery_partition, write_discovery_result
+from scan_real_strict_trend import (clean_rows, discovery_before, read_discovery_manifest,
+                                    read_discovery_partition, write_discovery_result)
 
 ROOT = Path(__file__).resolve().parents[2]
 CORE_SRC = ROOT / 'src'
@@ -68,9 +68,10 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def load_frames(dataset, period, codes, partitions, receipt=None):
+def load_frames(dataset, period, codes, partitions, receipt=None, manifest=None):
     import pandas as pd
-    manifest = json.loads((dataset / 'manifest.json').read_text())
+    if manifest is None:
+        manifest, _ = read_discovery_manifest(dataset)
     files = manifest['datasets'][period]['files']
     if period != '1d' and partitions is not None:
         files = [i for i in files if i.get('partition') in partitions]
@@ -392,12 +393,13 @@ def main():
             parser.error('未知周期(本轮扫描计划外): ' + period)
     chan = import_chan()
     dataset = args.dataset.resolve()
+    manifest, manifest_sha256 = read_discovery_manifest(dataset)
     all_completed, all_hits = [], []
     summary = {}
     file_receipts = []
     for period in args.periods:
         frames, _ = load_frames(dataset, period, args.codes,
-                                PARTITION_PLAN[period], file_receipts)
+                                PARTITION_PLAN[period], file_receipts, manifest=manifest)
         records = []
         for code in args.codes:
             recs = scan_code_period(code, frames, period, chan,
@@ -425,7 +427,7 @@ def main():
         invalid_rows_dropped=0,
         generated_at=datetime.now(timezone(timedelta(hours=8))).isoformat(),
         dataset=str(dataset),
-        manifest_sha256=digest(dataset / 'manifest.json'),
+        manifest_sha256=manifest_sha256,
         input_files=file_receipts,
         pipeline='原始bar→chan_fx_bi106→bis[:-1]固定笔→find_xds(fixed)仅complete→'
                  'zn_run_v3/scan_strict_v3完成严格趋势(0.9.3最后中枢离开冻结)→'
@@ -453,6 +455,8 @@ def main():
         '与测试验收, 不调宽门槛、不移动起点或复制镜像补齐。' % (
             len(all_completed), len(all_hits), len(total_unique),
             result['unique_key']))
+    if digest(dataset / 'manifest.json') != manifest_sha256:
+        raise ValueError('发现期间manifest改变，拒绝写入成功收据')
     write_discovery_result(args.output, result)
     print(args.output.resolve())
     print(result['conclusion'])
