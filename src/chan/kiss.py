@@ -41,9 +41,10 @@
 resumed 字段给出(同体位新极值 = 中继; 体位转化 = 转折)。
 """
 
+import math
 from typing import Any, Dict, List, Optional
 
-from chan._series import _diff_series
+from chan._series import _diff_series, _mean_finite
 
 __all__ = [
     "KISS_FLY",
@@ -104,7 +105,8 @@ class KissEvent(object):
         pre_gain: 吻前腿短均线的趋势方向相对涨幅(除以长均线值;
             None=长均线值为 0 不可归一), 课 12 "有力"判定的原料;
         vol_leg / vol_kiss / vol_prior: 吻前腿 / 回撤段 / 更前段均量
-            (volumes 未提供时为 None; 区间内无有效量亦为 None)。
+            (volumes 未提供时为 None; 区间内无有效量亦为 None)。有限量
+            按float十进制表示精确求均值后转float，不按手/股取整。
     """
 
     __slots__ = ["kind", "direction", "start_idx", "end_idx",
@@ -200,6 +202,8 @@ def _mean(values: List[Any]) -> Optional[float]:
         acc.append(f)
     if not acc:
         return None
+    if all(math.isfinite(v) for v in acc):
+        return _mean_finite(acc)
     return sum(acc) / float(len(acc))
 
 

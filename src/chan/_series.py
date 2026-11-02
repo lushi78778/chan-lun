@@ -6,8 +6,19 @@ None/NaN 及不能参与数值运算的对象置 None。保持原有处理语义
 """
 
 import math
+from fractions import Fraction
 from numbers import Real
 from typing import Any, List, Optional
+
+
+def _mean_finite(values: List[float]) -> float:
+    """非空有限量序列的均值：float十进制表示精确求和/除数后转float。
+
+    调用方先处理空值/非有限值；不按手或股取整，不增加阈值容差。
+    避免sum随解释器版本改变，亦避免有限均值的中间求和溢出。
+    """
+    total = sum((Fraction(str(float(value))) for value in values), Fraction(0))
+    return float(total / len(values))
 
 
 def _finite_number(value: Any) -> Optional[float]:

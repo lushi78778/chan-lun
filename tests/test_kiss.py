@@ -326,6 +326,22 @@ class TestFindKisses(unittest.TestCase):
         self.assertIsNone(e.vol_kiss)
         self.assertIsNone(e.vol_prior)
 
+    def test_fractional_volume_mean_and_finite_large_values(self):
+        """课12量能原料保留小量项；有限均值不因中间求和溢出。"""
+        short, long = _series([1., 2., 3., 1., 4.])
+        event = find_kisses(short, long, [1e16, 1., 1., 1e308, 1e308])[0]
+        # 前腿精确和10000000000000002，除3后一次转float。
+        self.assertEqual(event.vol_leg, 3333333333333334.)
+        self.assertEqual(event.vol_kiss, 1e308)
+
+    def test_volume_mean_keeps_missing_and_nonfinite_adaptation(self):
+        """纯吻入口沿用None/NaN过滤；不把无穷量改写成有限量。"""
+        short, long = _series([1., 2., 3., 1., 4.])
+        event = find_kisses(short, long, [None, float('nan'), 3., 4., 5.])[0]
+        self.assertEqual((event.vol_leg, event.vol_kiss), (3., 4.5))
+        event = find_kisses(short, long, [float('inf')]*5)[0]
+        self.assertEqual((event.vol_leg, event.vol_kiss), (float('inf'), float('inf')))
+
     def test_pre_gain_none_on_zero_base(self):
         # 长均线值为 0: 不可归一, pre_gain=None
         short = [1.0, 0.4, 1.5]

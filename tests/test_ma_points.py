@@ -767,6 +767,33 @@ class TestMaPoints(unittest.TestCase):
         self.assertEqual(points(rows,min_pre_gain=0),[])
         self.assertEqual(len(points(rows,min_pre_gain=0,max_volume_ratio=None)),1)
 
+    def test_volume_gate_keeps_small_terms_across_runtime_versions(self):
+        """课12前三根均量精确保留小量项；量比边界不随sum实现改变。"""
+        rows = bars(SECOND)
+        closes = [100., 90., 80., 100., 110., 105., 135.]
+        volumes = [1e16, 1., 1., 1e16, 1e16, 1., 1.]
+        for row, close, volume in zip(rows, closes, volumes):
+            row.update(open=close, high=close+1, low=close-1, close=close, volume=volume)
+        # 差值-10→10转化，峰40/3→0→55/3中继。
+        # 前腿均量1e16，基准均量float(10000000000000002/3)。
+        kwargs = dict(short_period=1, long_period=3, min_pre_gain=0)
+        events = find_ma_points(rows, rows[-1]['available_dt'],
+                                max_volume_ratio=2.9999999999999996, **kwargs)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].volume_ratio, 2.9999999999999996)
+        self.assertEqual(find_ma_points(rows, rows[-1]['available_dt'],
+                                       max_volume_ratio=2.999999999999999, **kwargs), [])
+
+    def test_finite_large_volume_does_not_emit_nan_ratio(self):
+        """有限常量量能比为1，不因两次中间溢出产生NaN并绕过筛选。"""
+        rows = bars(SECOND)
+        for row in rows:
+            row['volume'] = 1e308
+        events = points(rows, min_pre_gain=0)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].volume_ratio, 1.)
+        self.assertEqual(points(rows, min_pre_gain=0, max_volume_ratio=.9), [])
+
     def test_unknown_volume_baseline_does_not_pass_volume_gate(self):
         """零可比均量不做除零或将缺证据补为正常。"""
         rows = bars(SECOND)

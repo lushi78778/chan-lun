@@ -27,7 +27,7 @@ from chan.availability import _available_bars
 from chan.bars import _bar_time, validate_bars
 from chan.kiss import find_kisses
 from chan.strength import avg_strength_state, find_ma_bc, ma_areas, sma_series
-from chan._series import _finite_number
+from chan._series import _finite_number, _mean_finite
 
 __all__ = ['MaPoint', 'MaPointState', 'find_ma_points', 'ma_point_state']
 
@@ -233,6 +233,8 @@ def find_ma_points(bars, as_of, short_period=5, long_period=10, proximity=0.5,
     明确表示不筛量, 不把未知量当正常量。use_avg须bool, 选择面积
     或平均面积, 两者不混用。first类仅用完整同向面积, 前置吻不
     限种类(飞吻/唇吻/湿吻), 不使用当前未封闭面积猜测结束。
+    前腿/基准均量按float十进制表示精确求均值后转float，再计算量比；
+    不按手/股取整或添加量比阈值容差。
     只作识别, 不持仓、下单或计算收益。
     """
     _parameters(short_period, long_period, proximity, min_depth, flip_confirm,
@@ -256,7 +258,7 @@ def find_ma_points(bars, as_of, short_period=5, long_period=10, proximity=0.5,
         volume_ratio = None
         if max_volume_ratio is not None:
             baseline = rows[max(0, kiss.leg_start_idx - long_period):kiss.leg_start_idx]
-            mean = sum(row['volume'] for row in baseline) / len(baseline) if baseline else 0
+            mean = _mean_finite([row['volume'] for row in baseline]) if baseline else 0
             if mean <= 0 or kiss.vol_leg is None:
                 continue  # 没有可比量能不冒充通过量能过滤。
             volume_ratio = kiss.vol_leg / mean
