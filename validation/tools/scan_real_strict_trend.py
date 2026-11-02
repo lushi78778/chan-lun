@@ -35,11 +35,15 @@ R2 读法（课33"a和c并不是必然存在的"）为待判边界，本工具�
 R2 下 completed 计数不增（c 离开+证明仍为必要），缺口如实登记。
 """
 
+# 输入完整性与收据写入采用当前工程规则，分类/发现口径仍为上述冻结版本。
+
 import argparse
 import json
+import math
+from numbers import Real
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -62,36 +66,113 @@ def import_chan():
 
 
 def digest(path):
+    """分块计算分区摘要，不把完整大文件读入内存。"""
     import hashlib
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    result = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            result.update(chunk)
+    return result.hexdigest()
 
 
-def load_frames(dataset, period, codes):
+def read_discovery_partition(dataset, item, columns, codes, receipt=None):
+    """所选Parquet解析前后均核manifest摘要，记录实际读入的分区。"""
+    expected = item.get('sha256')
+    if (not isinstance(expected, str) or len(expected) != 64 or
+            any(c not in '0123456789abcdef' for c in expected.lower())):
+        raise ValueError('发现分区缺少有效SHA-256: '+str(item.get('path')))
+    path = Path(dataset) / item['path']
+    actual = digest(path)
+    if actual != expected.lower():
+        raise ValueError('发现分区SHA-256不匹配，禁止解析: '+str(path))
     import pyarrow.parquet as pq
+    table = pq.read_table(path, columns=columns, filters=[('ts_code', 'in', codes)])
+    if digest(path) != actual:
+        raise ValueError('发现分区在读取期间改变: '+str(path))
+    if receipt is not None:
+        receipt.append(dict(path=item['path'], partition=item.get('partition'), sha256=actual,
+                            columns=list(columns), codes=list(codes), rows_read=table.num_rows))
+    return table
+
+
+def load_frames(dataset, period, codes, receipt=None):
     import pandas as pd
     manifest = json.loads((dataset / 'manifest.json').read_text())
     files = manifest['datasets'][period]['files']
     if period not in ('1d', '60m'):
         files = [i for i in files if i.get('partition') == '2026']
+    if not files:
+        raise ValueError('请求发现周期无所选分区，不能写成零候选: '+period)
     time_key = 'trade_date' if period == '1d' else 'trade_time'
     frames = []
     for item in files:
-        table = pq.read_table(dataset / item['path'],
-                              columns=['ts_code', time_key, 'open', 'high',
-                                       'low', 'close', 'vol', 'adj_factor'],
-                              filters=[('ts_code', 'in', codes)])
+        columns = ['ts_code', time_key, 'open', 'high', 'low', 'close', 'vol', 'adj_factor']
+        table = read_discovery_partition(dataset, item, columns, codes, receipt)
         frames.append(table.to_pandas())
     frame = pd.concat(frames, ignore_index=True)
     return {code: group.sort_values(time_key).reset_index(drop=True)
             for code, group in frame.groupby('ts_code')}, time_key
 
 
+
+def _discovery_clock(group):
+    """只读标的与时间元数据，不读取观察截止之后的OHLC/因子/量。"""
+    import pandas as pd
+    required = ('ts_code', 'open', 'high', 'low', 'close', 'vol', 'adj_factor')
+    missing = [key for key in required if key not in group.columns]
+    times = [key for key in ('trade_date', 'trade_time') if key in group.columns]
+    if missing or len(times) != 1 or group.empty:
+        raise ValueError('发现输入须为非空单标的行情，含一个时间列及完整字段: '+str(missing))
+    codes = list(group['ts_code'])
+    if any(not isinstance(v, str) or not v or v != v.strip() for v in codes) or len(set(codes)) != 1:
+        raise ValueError('发现输入须为单一非空代码，不混标的')
+    values = list(group[times[0]])
+    if any(not isinstance(v, (str, date, datetime)) for v in values):
+        raise ValueError('发现输入时间须为日期或时间，不接受数值标签')
+    try:
+        clock = pd.to_datetime(group[times[0]], errors='raise')
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError('发现输入时间无效: '+str(error))
+    if clock.isna().any() or clock.duplicated().any() or not clock.is_monotonic_increasing:
+        raise ValueError('发现输入时间须完整、唯一且严格递增，不排序或去重')
+    return clock
+
+
+def discovery_before(group, time_key, before):
+    """先验完整时序，再按声明的日期上界取前缀；不按行情好坏删行。"""
+    clock = _discovery_clock(group)
+    if time_key not in group.columns:
+        raise ValueError('发现周期与时间字段不符')
+    import pandas as pd
+    cutoff = pd.Timestamp(before)
+    if pd.isna(cutoff):
+        raise ValueError('发现截止日期无效')
+    return group.loc[clock < cutoff].copy().reset_index(drop=True)
+
+
 def clean_rows(group):
-    bad = ((group['open'] <= 0) | (group['high'] <= 0) |
-           (group['low'] <= 0) | (group['close'] <= 0) |
-           group[['open', 'high', 'low', 'close']].isna().any(axis=1) |
-           group['adj_factor'].isna() | (group['adj_factor'] <= 0))
-    return group[~bad].reset_index(drop=True)
+    """验证观察窗原行，保留函数名但不删坏行拼接；零量和原因子保留。"""
+    _discovery_clock(group)
+    required = ('ts_code', 'open', 'high', 'low', 'close', 'vol', 'adj_factor')
+    for key in required[1:]:
+        for i, value in enumerate(group[key]):
+            if (isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value)
+                    or (value < 0 if key == 'vol' else value <= 0)):
+                raise ValueError('发现输入无效，禁止删行拼接: '+key+' row '+str(i))
+    for i, row in enumerate(group[['open', 'high', 'low', 'close']].itertuples(index=False, name=None)):
+        opening, high, low, close = row
+        if not low <= min(opening, close) <= max(opening, close) <= high:
+            raise ValueError('发现输入OHLC包络无效，禁止修价: row '+str(i))
+    return group.copy().reset_index(drop=True)
+
+
+def write_discovery_result(path, result):
+    """先完成严格序列化，再排他创建收据；不覆盖已有文件或链接。"""
+    payload = json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False)+'\n'
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open('x', encoding='utf-8') as stream:
+        stream.write(payload)
 
 
 def factor_spans(group, time_key, min_rows=40):
@@ -334,7 +415,7 @@ def main():
     parser.add_argument('--codes', nargs='+', default=CODES)
     parser.add_argument('--periods', nargs='+', default=['1d', '30m'])
     args = parser.parse_args()
-    if args.output.exists():
+    if args.output.exists() or args.output.is_symlink():
         parser.error('拒绝覆盖已归档发现输出；请使用新文件名')
     for period in args.periods:
         if period not in known_periods:
@@ -342,11 +423,15 @@ def main():
     chan = import_chan()
     dataset = args.dataset.resolve()
     manifest = json.loads((dataset / 'manifest.json').read_text())
+    missing = [p for p in args.periods if p not in manifest['datasets']]
+    if missing:
+        parser.error('请求周期缺少数据，不能写成零候选: '+str(missing))
     periods = [p for p in known_periods
                if p in args.periods and p in manifest['datasets']]
     out = dict((p, []) for p in periods)
+    file_receipts = []
     for period in periods:
-        frames, time_key = load_frames(dataset, period, args.codes)
+        frames, time_key = load_frames(dataset, period, args.codes, file_receipts)
         for code in args.codes:
             group = clean_rows(frames[code])
             starts_fn = yearly_starts if period in ('1d', '60m') \
@@ -375,9 +460,12 @@ def main():
         annotation='post_departure_freeze_scan_minute_extension',
         independent_labels_frozen=False, theoretical_acceptance=False,
         core_version=chan.__version__,
+        input_quality='selected observation rows; no invalid-row deletion, repair or deduplication',
+        invalid_rows_dropped=0,
         generated_at=datetime.now(timezone(timedelta(hours=8))).isoformat(),
         dataset=str(dataset),
         manifest_sha256=digest(dataset / 'manifest.json'),
+        input_files=file_receipts,
         pipeline='原始bar→chan_fx_bi106→bis[:-1]固定笔→find_xds(fixed)仅complete→'
                  'zn_run/triple_overlap/scan_strict修正口径(0.9.3最后中枢离开冻结)',
         completion_criteria=[
@@ -433,9 +521,7 @@ def main():
         '修正完成口径下所扫范围(各周期、bi/xd两路径、涨跌两方向)'
         '完成严格趋势计数=%d; 对该口径稳健(核心离开已是最宽读法, 更严读法c.low<B.DD只会更少), '
         '完成正例缺口如实登记, 不调宽门槛、不移动起点或复制镜像补齐。' % completed)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2,
-                                      allow_nan=False) + '\n')
+    write_discovery_result(args.output, result)
     print(args.output.resolve())
     print(result['conclusion'])
     for period in periods:

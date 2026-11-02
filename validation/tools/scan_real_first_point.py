@@ -29,6 +29,8 @@ MACD 指标是辅助证据定位，候选不等于一类点成立；成立/不�
 validation/chan-real-first-point-theory-0.9.9.md）。
 """
 
+# 输入完整性与收据写入采用当前工程规则，分类/发现口径仍为上述冻结版本。
+
 import argparse
 import json
 import math
@@ -36,6 +38,8 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+from scan_real_strict_trend import clean_rows, discovery_before, read_discovery_partition, write_discovery_result
 
 ROOT = Path(__file__).resolve().parents[2]
 CORE_SRC = ROOT / 'src'
@@ -64,32 +68,23 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def load_frames(dataset, period, codes, partitions):
-    import pyarrow.parquet as pq
+def load_frames(dataset, period, codes, partitions, receipt=None):
     import pandas as pd
     manifest = json.loads((dataset / 'manifest.json').read_text())
     files = manifest['datasets'][period]['files']
     if period != '1d' and partitions is not None:
         files = [i for i in files if i.get('partition') in partitions]
+    if not files:
+        raise ValueError('请求发现周期无所选分区，不能写成零候选: '+period)
     time_key = 'trade_date' if period == '1d' else 'trade_time'
     frames = []
     for item in files:
-        table = pq.read_table(dataset / item['path'],
-                              columns=['ts_code', time_key, 'open', 'high',
-                                       'low', 'close', 'vol', 'adj_factor'],
-                              filters=[('ts_code', 'in', codes)])
+        columns = ['ts_code', time_key, 'open', 'high', 'low', 'close', 'vol', 'adj_factor']
+        table = read_discovery_partition(dataset, item, columns, codes, receipt)
         frames.append(table.to_pandas())
     frame = pd.concat(frames, ignore_index=True)
     return {code: group.sort_values(time_key).reset_index(drop=True)
             for code, group in frame.groupby('ts_code')}, time_key
-
-
-def clean_rows(group):
-    bad = ((group['open'] <= 0) | (group['high'] <= 0) |
-           (group['low'] <= 0) | (group['close'] <= 0) |
-           group[['open', 'high', 'low', 'close']].isna().any(axis=1) |
-           group['adj_factor'].isna() | (group['adj_factor'] <= 0))
-    return group[~bad].reset_index(drop=True)
 
 
 def factor_spans_list(group, time_key, min_rows=60):
@@ -312,9 +307,14 @@ def analyze(bars, units, closes, dif, dea, hist, path):
 
 def scan_code_period(code, frames, period, chan, minute_cap, max_months):
     if code not in frames:
-        return []
+        raise ValueError('请求发现缺少标的输入，不能写成零候选: '+str(code))
     time_key = 'trade_date' if period == '1d' else 'trade_time'
-    group = clean_rows(frames[code])
+    supplied = frames[code]
+    if period != '1d':
+        supplied = discovery_before(supplied, time_key, minute_cap[:10])
+    if supplied.empty:
+        raise ValueError('声明截止之前无标的行情，不能写成零候选: '+str(code))
+    group = clean_rows(supplied)
     keys_all = [str(v)[:16] for v in group[time_key]]
     results = []
     for s, e in factor_spans_list(group, time_key):
@@ -385,7 +385,7 @@ def main():
     parser.add_argument('--max-months', type=int, default=18)
     parser.add_argument('--minute-cap', default='2026-07-27')
     args = parser.parse_args()
-    if args.output.exists():
+    if args.output.exists() or args.output.is_symlink():
         parser.error('拒绝覆盖已归档发现输出；请使用新文件名')
     for period in args.periods:
         if period not in PARTITION_PLAN:
@@ -394,9 +394,10 @@ def main():
     dataset = args.dataset.resolve()
     all_completed, all_hits = [], []
     summary = {}
+    file_receipts = []
     for period in args.periods:
         frames, _ = load_frames(dataset, period, args.codes,
-                                PARTITION_PLAN[period])
+                                PARTITION_PLAN[period], file_receipts)
         records = []
         for code in args.codes:
             recs = scan_code_period(code, frames, period, chan,
@@ -420,9 +421,12 @@ def main():
         annotation='first_point_completed_strict_trend_scan',
         independent_labels_frozen=False, theoretical_acceptance=False,
         core_version=chan.__version__,
+        input_quality='selected observation rows; no invalid-row deletion, repair or deduplication',
+        invalid_rows_dropped=0,
         generated_at=datetime.now(timezone(timedelta(hours=8))).isoformat(),
         dataset=str(dataset),
         manifest_sha256=digest(dataset / 'manifest.json'),
+        input_files=file_receipts,
         pipeline='原始bar→chan_fx_bi106→bis[:-1]固定笔→find_xds(fixed)仅complete→'
                  'zn_run_v3/scan_strict_v3完成严格趋势(0.9.3最后中枢离开冻结)→'
                  'MACD(12,26,9)面积/新极值/零轴回拉',
@@ -449,9 +453,7 @@ def main():
         '与测试验收, 不调宽门槛、不移动起点或复制镜像补齐。' % (
             len(all_completed), len(all_hits), len(total_unique),
             result['unique_key']))
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2,
-                                      allow_nan=False) + '\n')
+    write_discovery_result(args.output, result)
     print(args.output.resolve())
     print(result['conclusion'])
     for period in args.periods:

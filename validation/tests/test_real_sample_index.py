@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""R2样本提取的日期和缺测契约; 独立于核心识别器。"""
+"""样本提取与发现输入的日期、质量和来源契约；独立于核心识别器。"""
 import importlib.util
 import hashlib
 import json
@@ -11,7 +11,8 @@ import unittest
 
 import pandas as pd
 
-_PATH = Path(__file__).resolve().parents[2]/'validation/tools/index_core_samples.py'
+ROOT = Path(__file__).resolve().parents[2]
+_PATH = ROOT/'validation/tools/index_core_samples.py'
 _SPEC = importlib.util.spec_from_file_location('real_sample_index',str(_PATH))
 _TOOL = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_TOOL)
@@ -252,6 +253,243 @@ class TestCsvStockIntake(unittest.TestCase):
         self.assertIn('拒绝覆盖', result.stderr)
         self.assertEqual(output.read_bytes(), before)
         self.assertNotIn('import chan', _PATH.read_text())
+
+
+class TestDiscoveryInputGuards(unittest.TestCase):
+    """发现输入不得删坏行拼接；不重跑网格或生成独立市场标签。"""
+
+    @staticmethod
+    def scanners():
+        previous = list(sys.path)
+        try:
+            sys.path.insert(0, str(ROOT / 'validation/tools'))
+            modules = []
+            for name in ('scan_real_strict_trend', 'scan_real_first_point'):
+                spec = importlib.util.spec_from_file_location(
+                    name+'_guard_assets', ROOT / 'validation/tools' / (name+'.py'))
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                modules.append(module)
+            return modules
+        finally:
+            sys.path[:] = previous
+
+    @staticmethod
+    def frame():
+        import pandas as pd
+        return pd.DataFrame([
+            dict(ts_code='510300.SH', trade_date='2026-01-0'+str(i+1),
+                 open=10., high=11., low=9., close=10., vol=0., adj_factor=1.)
+            for i in range(3)])
+
+    def test_complete_input_keeps_all_rows_zero_volume_and_factor_boundaries(self):
+        import pandas as pd
+        source = self.frame()
+        source.loc[2, 'adj_factor'] = 2.
+        source.index = [3, 5, 7]
+        before = source.copy(deep=True)
+        for tool in self.scanners():
+            result = tool.clean_rows(source)
+            pd.testing.assert_frame_equal(result, before.reset_index(drop=True))
+            result.loc[0, 'close'] = 99.
+            pd.testing.assert_frame_equal(source, before)
+
+    def test_bad_middle_row_is_rejected_instead_of_joining_its_neighbors(self):
+        import pandas as pd
+        changes = [('close', float('nan')), ('high', float('inf')), ('open', -1.),
+                   ('adj_factor', 0.), ('adj_factor', float('nan')), ('vol', -1.),
+                   ('vol', float('nan')), ('low', 12.), ('close', 20.)]
+        for tool in self.scanners():
+            for field, value in changes:
+                with self.subTest(tool=tool.__name__, field=field, value=str(value)):
+                    source = self.frame()
+                    source.loc[1, field] = value
+                    before = source.copy(deep=True)
+                    with self.assertRaises(ValueError):
+                        tool.clean_rows(source)
+                    pd.testing.assert_frame_equal(source, before)
+            for value in (True, '10'):
+                source = self.frame().astype(object)
+                source.loc[1, 'close'] = value
+                with self.assertRaises(ValueError):
+                    tool.clean_rows(source)
+
+    def test_duplicate_unsorted_missing_or_mixed_grain_cannot_be_silently_repaired(self):
+        source = self.frame()
+        duplicate = source.copy(); duplicate.loc[1, 'trade_date'] = duplicate.loc[0, 'trade_date']
+        mixed = source.copy(); mixed.loc[1, 'ts_code'] = '510500.SH'
+        invalid = source.copy(); invalid.loc[1, 'trade_date'] = 'not-a-date'
+        numeric = source.copy(); numeric['trade_date'] = [1, 2, 3]
+        variants = (source.iloc[::-1], duplicate, mixed, invalid, numeric,
+                    source.iloc[:0], source.drop(columns=['close']), source.drop(columns=['trade_date']))
+        for tool in self.scanners():
+            for frame in variants:
+                with self.assertRaises(ValueError):
+                    tool.clean_rows(frame)
+
+    def test_declared_minute_cutoff_excludes_future_prices_but_not_bad_time_metadata(self):
+        tool = self.scanners()[1]
+        source = self.frame().rename(columns={'trade_date': 'trade_time'})
+        source['trade_time'] = ['2026-07-24 15:00:00', '2026-07-27 09:30:00', '2026-07-28 09:30:00']
+        source.loc[1:, 'close'] = float('nan')
+        self.assertEqual(tool.scan_code_period('510300.SH', {'510300.SH': source}, '30m',
+                                              None, '2026-07-27', 18), [])
+        bad_visible = source.copy(); bad_visible.loc[0, 'close'] = float('nan')
+        with self.assertRaises(ValueError):
+            tool.scan_code_period('510300.SH', {'510300.SH': bad_visible}, '30m', None, '2026-07-27', 18)
+        bad_clock = source.copy(); bad_clock.loc[2, 'trade_time'] = 'invalid'
+        with self.assertRaises(ValueError):
+            tool.scan_code_period('510300.SH', {'510300.SH': bad_clock}, '30m', None, '2026-07-27', 18)
+
+    def test_receipt_writer_rejects_existing_and_symlink_paths_without_truncation(self):
+        for tool in self.scanners():
+            with tempfile.TemporaryDirectory() as temp:
+                output = Path(temp)/'receipt.json'
+                tool.write_discovery_result(output, {'ok': True})
+                before = output.read_bytes()
+                with self.assertRaises(FileExistsError):
+                    tool.write_discovery_result(output, {'ok': False})
+                self.assertEqual(output.read_bytes(), before)
+                target = Path(temp)/'absent.json'
+                link = Path(temp)/'link.json'; link.symlink_to(target)
+                with self.assertRaises(FileExistsError):
+                    tool.write_discovery_result(link, {'ok': True})
+                self.assertFalse(target.exists())
+                self.assertTrue(link.is_symlink())
+                malformed = Path(temp)/'nan.json'
+                with self.assertRaises(ValueError):
+                    tool.write_discovery_result(malformed, {'bad': float('nan')})
+                self.assertFalse(malformed.exists())
+
+    def test_cli_existing_or_dangling_receipt_is_rejected_before_loading_dataset(self):
+        for tool in self.scanners():
+            with tempfile.TemporaryDirectory() as temp:
+                output = Path(temp)/'receipt.json'; output.write_bytes(b'frozen evidence')
+                link = Path(temp)/'dangling.json'; target = Path(temp)/'target.json'; link.symlink_to(target)
+                for path in (output, link):
+                    run = subprocess.run([sys.executable, tool.__file__, '--dataset', str(Path(temp)/'missing'),
+                                          '--output', str(path)], cwd=temp, stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE, universal_newlines=True)
+                    self.assertNotEqual(run.returncode, 0)
+                    self.assertIn('拒绝覆盖', run.stderr)
+                self.assertEqual(output.read_bytes(), b'frozen evidence')
+                self.assertFalse(target.exists())
+
+    def test_missing_requested_period_does_not_become_zero_candidate_result(self):
+        tool = self.scanners()[0]
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); (root/'manifest.json').write_text(json.dumps({'datasets': {}}))
+            output = root/'result.json'
+            run = subprocess.run([sys.executable, tool.__file__, '--dataset', str(root),
+                                  '--output', str(output), '--periods', '1d'], cwd=temp,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertNotEqual(run.returncode, 0)
+            self.assertIn('不能写成零候选', run.stderr)
+            self.assertFalse(output.exists())
+        with self.assertRaisesRegex(ValueError, '不能写成零候选'):
+            self.scanners()[1].scan_code_period('510300.SH', {}, '1d', None, '2026-07-27', 18)
+
+
+class TestDiscoveryPartitionIntegrity(unittest.TestCase):
+    """分区摘要绑定读取字节；解析替身只验加载合同，不冒充真实Parquet。"""
+
+    @staticmethod
+    def call_loader(tool, root, receipt, period='1d'):
+        args = [root, period, ['510300.SH']]
+        if 'scan_real_first_point' in tool.__name__:
+            args.append(None if period == '1d' else ('2026',))
+        return tool.load_frames(*args, receipt=receipt)
+
+    @staticmethod
+    def parser(frame, during_read=None):
+        from types import ModuleType, SimpleNamespace
+        from unittest.mock import Mock
+        parent, parquet = ModuleType('pyarrow'), ModuleType('pyarrow.parquet')
+        parent.__path__ = []
+        parent.parquet = parquet
+        table = SimpleNamespace(num_rows=len(frame), to_pandas=lambda: frame.copy(deep=True))
+        def read(*args, **kwargs):
+            if during_read is not None:
+                during_read()
+            return table
+        parquet.read_table = Mock(side_effect=read)
+        return {'pyarrow': parent, 'pyarrow.parquet': parquet}, parquet.read_table
+
+    @staticmethod
+    def manifest(root, item, period='1d'):
+        (root/'manifest.json').write_text(json.dumps({'datasets': {period: {'files': [item]}}}))
+
+    def test_verified_partition_preserves_loader_result_and_records_actual_read_scope(self):
+        import pandas as pd
+        from unittest.mock import patch
+        frame = TestDiscoveryInputGuards.frame()
+        for tool in TestDiscoveryInputGuards.scanners():
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp); path = root/'bars.parquet'; path.write_bytes(b'frozen partition')
+                item = dict(path=path.name, partition='all', sha256=tool.digest(path))
+                self.manifest(root, item)
+                fake, read = self.parser(frame)
+                receipt = []
+                with patch.dict(sys.modules, fake):
+                    frames, key = self.call_loader(tool, root, receipt)
+                pd.testing.assert_frame_equal(frames['510300.SH'], frame)
+                self.assertEqual(key, 'trade_date')
+                self.assertEqual(receipt, [dict(item, columns=list(frame.columns),
+                                               codes=['510300.SH'], rows_read=3)])
+                self.assertEqual(read.call_count, 1)
+                self.assertEqual(read.call_args[1]['filters'], [('ts_code', 'in', ['510300.SH'])])
+
+    def test_absent_invalid_or_changed_hash_rejects_before_parquet_parser(self):
+        from unittest.mock import patch
+        frame = TestDiscoveryInputGuards.frame()
+        for tool in TestDiscoveryInputGuards.scanners():
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp); path = root/'bars.parquet'; path.write_bytes(b'actual partition')
+                for expected in (None, 'bad', '0'*64):
+                    item = dict(path=path.name, partition='all')
+                    if expected is not None:
+                        item['sha256'] = expected
+                    self.manifest(root, item)
+                    fake, read = self.parser(frame); receipt = []
+                    with patch.dict(sys.modules, fake), self.assertRaisesRegex(ValueError, 'SHA-256'):
+                        self.call_loader(tool, root, receipt)
+                    self.assertEqual(read.call_count, 0)
+                    self.assertEqual(receipt, [])
+
+    def test_partition_changed_during_parser_is_not_registered_as_verified(self):
+        from unittest.mock import patch
+        frame = TestDiscoveryInputGuards.frame()
+        for tool in TestDiscoveryInputGuards.scanners():
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp); path = root/'bars.parquet'; path.write_bytes(b'before')
+                self.manifest(root, dict(path=path.name, partition='all', sha256=tool.digest(path)))
+                fake, read = self.parser(frame, lambda: path.write_bytes(b'after'))
+                receipt = []
+                with patch.dict(sys.modules, fake), self.assertRaisesRegex(ValueError, '读取期间改变'):
+                    self.call_loader(tool, root, receipt)
+                self.assertEqual(read.call_count, 1)
+                self.assertEqual(receipt, [])
+
+    def test_partition_selection_never_reads_unselected_file_and_empty_selection_fails(self):
+        import pandas as pd
+        from unittest.mock import patch
+        frame = TestDiscoveryInputGuards.frame().rename(columns={'trade_date': 'trade_time'})
+        for tool in TestDiscoveryInputGuards.scanners():
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp); path = root/'selected.parquet'; path.write_bytes(b'selected')
+                selected = dict(path=path.name, partition='2026', sha256=tool.digest(path))
+                unselected = dict(path='absent.parquet', partition='2025', sha256='0'*64)
+                (root/'manifest.json').write_text(json.dumps({'datasets': {'30m': {'files': [unselected, selected]}}}))
+                fake, read = self.parser(frame); receipt = []
+                with patch.dict(sys.modules, fake):
+                    frames, key = self.call_loader(tool, root, receipt, '30m')
+                pd.testing.assert_frame_equal(frames['510300.SH'], frame)
+                self.assertEqual((key, read.call_count, len(receipt)), ('trade_time', 1, 1))
+                self.manifest(root, unselected, '30m')
+                fake, read = self.parser(frame)
+                with patch.dict(sys.modules, fake), self.assertRaisesRegex(ValueError, '无所选分区'):
+                    self.call_loader(tool, root, [], '30m')
+                self.assertEqual(read.call_count, 0)
 
 
 if __name__=='__main__':
