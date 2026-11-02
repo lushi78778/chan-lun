@@ -173,6 +173,13 @@ if len(fixed_bis) >= 3:
 日期标签、收盘时间和到达时间须满足 `dt <= closed_dt <= available_dt`。
 缺字段报错，不会退回日期标签；本库不推断交易日历或供应历史版本。
 
+周线/月线同样按实际周期结束和数据到达时间门控，不能从`dt`的周一、
+周五或月末标签推断整周期已知。例如周五中午观察时，当周完整OHLCV
+尚不可用；即使已经收盘，版本延迟交付仍须等到`available_dt`。历史
+已关闭但尚未到达的版本也不能提前进入计算。周边界、节假日和真实
+交付时间由输入方证明，库不会自动把非周五的原文锚点挪到周五，或把
+后期截图当作历史可见版本。相关回归使用合成周线，不代替真实行情验收。
+
 ```python
 from datetime import datetime
 from chan import analyze_available, replay_available

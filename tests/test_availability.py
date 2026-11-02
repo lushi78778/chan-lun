@@ -31,6 +31,61 @@ class TestAvailability(unittest.TestCase):
             self.assertEqual(analyze_available(data,cutoff).as_of,data[0]['dt'])
         self.assertEqual(analyze_available(data,data[1]['available_dt']).as_of,data[1]['dt'])
 
+    def test_weekly_start_or_end_label_does_not_publish_before_close_and_arrival(self):
+        """课12周线应用的工程门控：周一/周五标签都不等于周五中午已知。
+
+        人工三周价格只验时间合同，不是000958行情、交易日历或原图标签。
+        """
+        cutoff = datetime(2006, 12, 1, 12, 26, 27)
+        for label_at_start in (True, False):
+            with self.subTest(start_label=label_at_start):
+                data = []
+                for day, price in ((17, 10), (24, 12)):
+                    closed = datetime(2006, 11, day, 15)
+                    label = closed.replace(hour=0)
+                    if label_at_start:
+                        label -= timedelta(days=4)
+                    data.append(dict(dt=label, closed_dt=closed,
+                                     available_dt=closed+timedelta(minutes=5),
+                                     open=price, close=price, high=price+1, low=price-1, volume=100))
+                closed = datetime(2006, 12, 1, 15)
+                label = closed.replace(hour=0)
+                if label_at_start:
+                    label -= timedelta(days=4)
+                data.append(dict(dt=label, closed_dt=closed,
+                                 available_dt=closed+timedelta(minutes=5),
+                                 open=14, close=14, high=15, low=13, volume=100))
+                original = deepcopy(data)
+                expected = analyze_bars(data[:2]).to_dict()
+                for observed in (cutoff, closed, closed+timedelta(minutes=5)-timedelta(microseconds=1)):
+                    self.assertEqual(analyze_available(data, observed).to_dict(), expected)
+                self.assertEqual(analyze_available(data, data[-1]['available_dt']).to_dict(),
+                                 analyze_bars(data).to_dict())
+                self.assertEqual(data, original)
+
+    def test_late_weekly_history_and_future_image_payload_cannot_enter_past_observation(self):
+        """历史已收盘但未到达仍排除，未来配图行情负载不得读取。"""
+        first = dict(dt=datetime(2006, 11, 17), closed_dt=datetime(2006, 11, 17, 15),
+                     available_dt=datetime(2006, 11, 17, 15, 5),
+                     open=10, close=10, high=11, low=9, volume=100)
+        late = dict(dt=datetime(2006, 11, 24), closed_dt=datetime(2006, 11, 24, 15),
+                    available_dt=datetime(2006, 12, 4, 9),
+                    open=12, close=12, high=13, low=11, volume=100)
+        # 仅声明未来时间，故意不给完整行情；不是配图原始数值或版本证明。
+        future = dict(dt=datetime(2011, 8, 12), closed_dt=datetime(2011, 8, 12, 15),
+                      available_dt=datetime(2011, 8, 12, 15, 5), high=float('nan'))
+        data = [first, late, future]
+        cutoff = datetime(2006, 12, 1, 12, 26, 27)
+        self.assertEqual(analyze_available(data, cutoff).to_dict(), analyze_bars([first]).to_dict())
+        self.assertEqual(analyze_available(data, late['available_dt']-timedelta(microseconds=1)).to_dict(),
+                         analyze_bars([first]).to_dict())
+        self.assertEqual(analyze_available(data, late['available_dt']).to_dict(),
+                         analyze_bars([first, late]).to_dict())
+        snapshots = list(replay_available(data, [cutoff, late['available_dt']]))
+        self.assertEqual([s.result.to_dict() for s in snapshots],
+                         [analyze_bars([first]).to_dict(), analyze_bars([first, late]).to_dict()])
+        self.assertEqual([s.observed_dt for s in snapshots], [cutoff, late['available_dt']])
+
     def test_future_price_poison_is_not_read(self):
         """未来或尚未到达的OHLCV不能影响结果。"""
         data=bars(80);cut=data[50]['available_dt']
