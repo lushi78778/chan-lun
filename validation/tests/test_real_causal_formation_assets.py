@@ -5,6 +5,7 @@ import copy
 from datetime import datetime, timedelta
 from fractions import Fraction
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -718,6 +719,207 @@ class TestPointPacketAdmissionAssets(unittest.TestCase):
                     self.assertEqual(batch['f2'], [])
                     self.assertEqual(batch['auxiliary']['points'], [])
                     self.assertEqual(batch['chain']['first_points'], [])
+
+    @staticmethod
+    def remaining_xd_inputs():
+        """只读已冻结源证书，固定合同不沿用活动末笔的确认时钟。"""
+        names = ('M3_M1_SOURCE_BRIDGE_AUDIT', 'M3_M1_FULL_SUFFIX_AUDIT',
+                 'M3_S3_SOURCE_BRIDGE_AUDIT', 'M3_EXPANDED_SUFFIX_AUDIT',
+                 'M3_C_SHORT_SOURCE_AUDIT')
+        tree = ast.parse((ROOT / 'tests/test_real_xd_f1.py').read_text())
+        tables = {n.targets[0].id: ast.literal_eval(n.value) for n in tree.body
+                  if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)
+                  and n.targets[0].id in names}
+        for key, audit, source in (
+                ('M1', tables[names[0]], tables[names[1]]),
+                ('S3', tables[names[2]], tables[names[3]]['S3']),
+                ('C', tables[names[4]], tables[names[4]])):
+            path = ROOT / 'tests/fixtures' / source['fixture']
+            expected_hash = source.get('fixture_sha256', source.get('source_sha256'))
+            if hashlib.sha256(path.read_bytes()).hexdigest() != expected_hash:
+                raise AssertionError('源证书fixture摘要不一致')
+            case = next(c for c in json.loads(path.read_text())['cases'] if c['id'] == source['id'])
+            packet_path = ROOT / 'validation' / case['source']['packet']
+            packet = json.loads(packet_path.read_text())
+            limit = audit['limit'] if key == 'C' else audit['limits']['fixed']
+            if packet['rows'] != case['raw_rows'] or len(packet['rows']) != limit:
+                raise AssertionError('固定合同须绑定原包完整窗口，不截取或扩展')
+            a, direction, tick = audit['anchor']
+            premise = dict(basis='given_recent', anchor=[a, direction, tick/1000.],
+                           available_bi=audit['available_bi'])
+            yield key, packet_path, packet, case, audit, source, premise
+
+    def assert_remaining_xd_source(self, key):
+        _, _, packet, _, audit, source, premise = next(
+            item for item in self.remaining_xd_inputs() if item[0] == key)
+        # 与包算法无关的整数构造：固定BI表、既有头部/后缀证明、完整F1证书。
+        tool = compiler(ROOT / 'validation/tools/gen_real_f1_originals.py')
+        _, _, bis = tool.foundation(packet['rows'], '106')
+        units = tool.components(packet['rows'], bis[:-1], dt_slice=None)
+        events = (audit['events'] if key == 'M1' else audit['head_events']) + source['events']
+        xds = compiler(ROOT / 'validation/tools/gen_real_xd_f1.py').xd_records(units, events)
+        records = [tool.move_record(xds, spec) for spec in audit['f1']]
+        result = self.checker().check_packet(packet, 'xd', '106', premise)
+        self.assertFalse(result['theoretical_acceptance'])
+        self.assertEqual([r['raw_count'] for r in result['f1']], list(audit['f1_first']['fixed']))
+        self.assertEqual([len(r['snapshot']['evidence_ids']) for r in result['f1']],
+                         list(audit['f1_evidence']['fixed']))
+        for actual, expected in zip(result['f1'], records):
+            snapshot = actual['snapshot']
+            self.assertEqual(actual['part_span'], [expected['seg_start'], expected['seg_end']])
+            for field in ('kind', 'direction', 'start_dt', 'end_dt'):
+                self.assertEqual(snapshot[field], expected[field])
+            self.assertEqual([round(snapshot[f]*1000) for f in
+                              ('start_price', 'end_price', 'low', 'high')],
+                             [expected[f] for f in ('start_ticks', 'end_ticks', 'low_ticks', 'high_ticks')])
+            self.assertEqual([[round(v*1000) for v in c] for c in snapshot['centers']],
+                             [list(c) for c in expected['centers_ticks']])
+        completed = [(b['raw_count'], b['f2']) for b in result['batches'] if b['f2']]
+        if key == 'M1':
+            expected = tool.move_record(records, audit['f2'][0])
+            self.assertEqual(completed[0][0], audit['f2_first']['fixed'])
+            self.assertEqual(len(completed[0][1]), 1)
+            actual = completed[0][1][0]
+            self.assertEqual([round(actual[f]*1000) for f in ('low', 'high')],
+                             [expected['low_ticks'], expected['high_ticks']])
+            self.assertEqual(len(actual['evidence_ids']), audit['f2_evidence'])
+        else:
+            self.assertEqual(completed, [])
+        for batch in result['batches']:
+            self.assertEqual(batch['auxiliary']['points'], [])
+            self.assertEqual(batch['chain']['first_points'], [])
+
+    def test_M1_explicit_fixed_source_packet_preserves_complete_F1_and_F2_clock(self):
+        self.assert_remaining_xd_source('M1')
+
+    def test_S3_explicit_fixed_source_packet_preserves_three_F1_and_open_F2(self):
+        self.assert_remaining_xd_source('S3')
+
+    def test_C_short_fixed_packet_does_not_borrow_current_BI12_proof(self):
+        _, _, packet, _, audit, _, premise = next(
+            item for item in self.remaining_xd_inputs() if item[0] == 'C')
+        tool = compiler(ROOT / 'validation/tools/gen_real_f1_originals.py')
+        for count in range(audit['BI12_first'][0], audit['limit']+1):
+            _, _, bis = tool.foundation(packet['rows'][:count], '106')
+            self.assertEqual(len(bis[:-1]), 12)  # current有BI12，fixed尚不可见。
+        result = self.checker().check_packet(packet, 'xd', '106', premise)
+        self.assertEqual(result['f1'], [])
+        self.assertEqual(result['consumer_batches'], 1)
+        self.assertEqual(result['batches'][0]['f2'], [])
+        self.assertFalse(result['theoretical_acceptance'])
+
+    @staticmethod
+    def m2_fixed_source_input():
+        """读取既有头部、保留链、后缀证书，不调用包算法生成预期。"""
+        names = ('M3_M2_SOURCE_BRIDGE_AUDIT', 'M3_M2_JOINED_ROLE_AUDIT',
+                 'M3_M2_SUFFIX_ROLE_AUDIT')
+        tree = ast.parse((ROOT / 'tests/test_real_xd_f1.py').read_text())
+        tables = {n.targets[0].id: ast.literal_eval(n.value) for n in tree.body
+                  if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)
+                  and n.targets[0].id in names}
+        audit, head, suffix = (tables[n] for n in names)
+        path = ROOT / 'tests/fixtures' / head['fixture']
+        if hashlib.sha256(path.read_bytes()).hexdigest() != head['fixture_sha256']:
+            raise AssertionError('M2原始fixture摘要冲突')
+        if suffix['head_certificate_sha256'] != head['certificate_sha256']:
+            raise AssertionError('M2后缀未绑定同一保留链')
+        case = next(c for c in json.loads(path.read_text())['cases'] if c['id'] == head['id'])
+        packet_path = ROOT / 'validation' / case['source']['packet']
+        packet = json.loads(packet_path.read_text())
+        if packet['rows'] != case['raw_rows'] or len(packet['rows']) != audit['limits']['fixed']:
+            raise AssertionError('M2须保留原5586行固定合同，不扩窗或截取')
+        shift = audit['retained_shift']
+        def shifted(spec):
+            a, z, kind, direction, triples, centers, proof = spec
+            return (a+shift, z+shift, kind, direction,
+                    tuple(i+shift for i in triples), centers, proof+shift)
+        specs = audit['first_f1'] + tuple(shifted(v) for v in head['f1'][2:]+suffix['f1'])
+        published = (audit['head_counts']['fixed'] + tuple(u[-1] for u in head['units'])
+                     + suffix['published_counts']['fixed'])
+        events = audit['events'] + head['events'] + suffix['events']
+        anchor, direction, tick = audit['anchor']
+        premise = dict(basis=audit['basis'], anchor=[anchor, direction, tick/1000.], available_bi=anchor)
+        return packet_path, packet, audit, specs, events, published, premise
+
+    def test_M2_explicit_fixed_source_packet_preserves_full_F1_F2_and_strict_admission(self):
+        _, packet, audit, specs, events, published, premise = self.m2_fixed_source_input()
+        tool = compiler(ROOT / 'validation/tools/gen_real_f1_originals.py')
+        _, _, bis = tool.foundation(packet['rows'], '106')
+        fixed = tool.components(packet['rows'], bis[:-1], dt_slice=None)
+        xds = compiler(ROOT / 'validation/tools/gen_real_xd_f1.py').xd_records(fixed, events)
+        self.assertEqual(len(xds), len(published))
+        records = [tool.move_record(xds, spec) for spec in specs]
+        self.assertEqual(len(records), 10)
+        first = [published[spec[-1]] for spec in specs]
+        self.assertEqual(tuple(first[:2]), audit['first_f1_counts']['fixed'])
+        waves = tuple((min(u['low_ticks'] for u in xds[j:j+3]),
+                       max(u['high_ticks'] for u in xds[j:j+3])) for j in specs[0][4])
+        self.assertEqual(waves, audit['first_f1_waves'])
+        self.assertEqual(min(v[1] for v in waves)-max(v[0] for v in waves),
+                         audit['wave_overlap_ticks'])
+        # 核心下移而波动重叠27格，不由工程down类型推出严格趋势正例。
+        result = self.checker().check_packet(packet, 'xd', '106', premise)
+        self.assertFalse(result['theoretical_acceptance'])
+        self.assertEqual([r['raw_count'] for r in result['f1']], first)
+        for actual, expected, known in zip(result['f1'], records, first):
+            item = actual['snapshot']
+            self.assertEqual(actual['part_span'], [expected['seg_start'], expected['seg_end']])
+            for field in ('kind', 'direction', 'start_dt', 'end_dt'):
+                self.assertEqual(item[field], expected[field])
+            self.assertEqual([round(item[k]*1000) for k in ('start_price', 'end_price', 'low', 'high')],
+                             [expected[k] for k in ('start_ticks', 'end_ticks', 'low_ticks', 'high_ticks')])
+            self.assertEqual([[round(v*1000) for v in c] for c in item['centers']], expected['centers_ticks'])
+            self.assertEqual(len(item['evidence_ids']), sum(n <= known for n in published))
+        completed = [b for b in result['batches'] if b['f2']]
+        self.assertEqual(completed[0]['raw_count'], audit['f2_first']['fixed'])
+        expected = tool.move_record(records, audit['f2'])
+        actual = completed[0]['f2'][0]
+        for field in ('kind', 'direction', 'start_dt', 'end_dt'):
+            self.assertEqual(actual[field], expected[field])
+        self.assertEqual([round(actual[k]*1000) for k in ('start_price', 'end_price', 'low', 'high')],
+                         [expected[k] for k in ('start_ticks', 'end_ticks', 'low_ticks', 'high_ticks')])
+        self.assertEqual([[round(v*1000) for v in c] for c in actual['centers']], expected['centers_ticks'])
+        self.assertEqual(len(actual['unit_ids']), audit['f2'][1]+1)
+        self.assertEqual(len(actual['evidence_ids']), audit['f2_evidence'])
+        for batch in result['batches']:
+            self.assertEqual(batch['auxiliary']['points'], [])
+            self.assertEqual(batch['chain']['first_points'], [])
+            self.assertEqual(batch['strict']['results'], [])
+            self.assertEqual(len(batch['f2']), int(batch['raw_count'] >= audit['f2_first']['fixed']))
+
+    def test_xd_start_bi_is_explicit_and_cli_rejects_ambiguous_scope(self):
+        checker = self.checker()
+        _, packet = self.packet()
+        tiny = dict(packet, rows=packet['rows'][:1])
+        premise = dict(basis='given_recent', anchor=[0, 'up', 1.141], available_bi=0)
+        for value in (-1, True, 1.5, '1'):
+            with self.assertRaises(ValueError):
+                checker.check_packet(tiny, 'xd', '106', premise, xd_start_bi=value)
+        with self.assertRaisesRegex(ValueError, '显式'):
+            checker.check_packet(tiny, 'xd', '106', xd_start_bi=1)
+        with self.assertRaises(ValueError):
+            checker.check_packet(tiny, 'bi', '106', premise, xd_start_bi=1)
+        default = checker.check_packet(tiny, 'xd', '106', premise)
+        self.assertEqual(default, checker.check_packet(tiny, 'xd', '106', premise, xd_start_bi=0))
+        self.assertNotIn('xd_start_bi', default)
+        script = ROOT / 'validation/tools/verify_points_history.py'
+        with tempfile.TemporaryDirectory() as temp:
+            source, output = Path(temp)/'prefix.json', Path(temp)/'report.json'
+            source.write_text(json.dumps(tiny))
+            base = [sys.executable, str(script), '--packet', str(source), '--parts', 'xd',
+                    '--output', str(output)]
+            explicit = ['--xd-origin', json.dumps(premise)]
+            run = subprocess.run(base+explicit+['--xd-start-bi', '1'], cwd=temp,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            report = json.loads(output.read_text())
+            self.assertEqual((report['xd_start_bi'], report['xd_origin'], report['f1']), (1, premise, []))
+            output.unlink()
+            for extra in (['--xd-start-bi', '1'], explicit+['--xd-start-bi', '-1']):
+                run = subprocess.run(base+extra, cwd=temp, stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE, universal_newlines=True)
+                self.assertNotEqual(run.returncode, 0)
+                self.assertFalse(output.exists())
 
     def test_explicit_XD_unknown_and_late_premises_do_not_become_early_evidence(self):
         checker = self.checker()

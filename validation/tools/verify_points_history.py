@@ -8,7 +8,10 @@
 --packet消费既有chan-real-sample-v1原始包，不读取其dataset路径。
 全原始前缀冻结F1，消费者只在实际F1到达批及末观察验收；报告仍为
 运行时发现，不生成独立理论标签。--xd-origin可传显式起点前提，
-只用于单包xd固定笔路径，不推定自然起点。两种模式均拒绝覆盖已有收据。
+只用于单包xd固定笔路径，不推定自然起点。--xd-start-bi显式截去指定数量
+的前部固定笔，anchor及available_bi相对截取后输入；不改变原始行情窗。
+--xd-bi-visibility current显式纳入当时活动末笔，仍检查完成F1稳定，
+修订或撤销直接失败；缺省fixed及两种模式拒绝覆盖的合同保持。
 """
 import argparse
 from collections import Counter
@@ -155,10 +158,18 @@ def _packet_bars(packet):
                       availability='daily 15:05 / minute label +1m; test convention only')
 
 
-def check_packet(packet, parts='bi', standard='106', xd_origin=None):
+def check_packet(packet, parts='bi', standard='106', xd_origin=None, xd_start_bi=0, xd_bi_visibility='fixed'):
     """全原始前缀确认F1，按实际F1到达批验收消费者；输出仍是运行时发现。"""
     if parts not in ('bi', 'xd') or standard not in ('81', '106'):
         raise ValueError('不支持的配件或笔标准')
+    if xd_bi_visibility not in ('fixed', 'current'):
+        raise ValueError('XD笔可见性须为fixed或current')
+    if xd_bi_visibility == 'current' and (parts != 'xd' or xd_origin is None):
+        raise ValueError('活动笔仅用于带显式起点前提的单包xd')
+    if type(xd_start_bi) is not int or xd_start_bi < 0:
+        raise ValueError('XD起始BI下标须为非负整数')
+    if xd_start_bi and (parts != 'xd' or xd_origin is None):
+        raise ValueError('截取XD笔输入须同时显式声明单包xd与起点前提')
     if xd_origin is not None:
         if parts != 'xd':
             raise ValueError('显式XD起点仅用于单包xd路径')
@@ -169,8 +180,9 @@ def check_packet(packet, parts='bi', standard='106', xd_origin=None):
     bases, bodies, first_seen, batches, centers = {}, {}, [], [], {}
     previous_points, previous_types = [set(), set(), set()], set()
     for stop in range(1, len(rows)+1):
-        fixed = chan.chan_fx_bi(rows[:stop], standard=standard)[2][:-1]
-        units = fixed if parts == 'bi' else [x for x in chan.find_xds(fixed, origin_premise=xd_origin) if x.complete]
+        bis = chan.chan_fx_bi(rows[:stop], standard=standard)[2]
+        supplied = bis if xd_bi_visibility == 'current' else bis[:-1]
+        units = supplied if parts == 'bi' else [x for x in chan.find_xds(supplied[xd_start_bi:], origin_premise=xd_origin) if x.complete]
         current, added = {}, False
         now = rows[stop-1]['available_dt']
         for move in chan.same_level_decompose(units):
@@ -228,13 +240,18 @@ def check_packet(packet, parts='bi', standard='106', xd_origin=None):
             raise ValueError('单包确认前读取到达批')
         batches.append(dict(raw_count=stop, f1_count=len(typed), f2=[x.to_dict() for x in higher],
                             strict=strict.to_dict(), auxiliary=auxiliary.to_dict(), chain=chain.to_dict()))
-    return dict(schema_version='chan-complete-f1-packet-check-v1', annotation='runtime_discovery_not_independent_labels',
+    report = dict(schema_version='chan-complete-f1-packet-check-v1', annotation='runtime_discovery_not_independent_labels',
                 version=chan.__version__, input=metadata, base_parts=parts, standard=standard,
                 xd_origin=(dict(xd_origin, anchor=list(xd_origin['anchor'])) if xd_origin is not None
                            else 'legacy_default' if parts == 'xd' else None), theoretical_acceptance=False,
                 raw_prefixes=len(rows), consumer_batches=len(batches), f1=first_seen, batches=batches,
                 checks=dict(base_revisions=0, point_revisions=0, center_revisions=0,
                             future_poison_checks=len(batches), before_arrival_checks=len(batches)), ok=True)
+    if xd_bi_visibility != 'fixed':
+        report['xd_bi_visibility'] = xd_bi_visibility
+    if xd_start_bi:
+        report['xd_start_bi'] = xd_start_bi
+    return report
 
 
 def main():
@@ -244,7 +261,9 @@ def main():
     parser.add_argument('--standard',choices=['81','106'],help='仅单包模式；默认106，全窗和前缀相同标准')
     parser.add_argument('--output',required=True,type=Path)
     parser.add_argument('--parts',choices=['bi','xd'],default='bi')
-    parser.add_argument('--xd-origin',help='仅单包xd；JSON对象含basis/anchor/available_bi，BI下标相对完整固定笔输入')
+    parser.add_argument('--xd-bi-visibility', choices=['fixed', 'current'], help='仅带显式起点的单包xd；current包括当时活动末笔，缺省fixed')
+    parser.add_argument('--xd-start-bi', type=int, help='仅单包xd；先截取固定笔前缀，起点anchor和available_bi相对截取后的所选笔输入，须显式--xd-origin')
+    parser.add_argument('--xd-origin',help='仅单包xd；JSON对象含basis/anchor/available_bi，BI下标相对选定笔输入（默认完整固定笔）')
     args=parser.parse_args()
     if (args.dataset is None) == (args.packet is None):
         parser.error('数据集与--packet须恰选一种')
@@ -261,6 +280,12 @@ def main():
             chan.find_xds([], origin_premise=origin)
         except (TypeError, ValueError) as error:
             parser.error(str(error))
+    if args.xd_bi_visibility is not None:
+        if args.packet is None or args.parts != 'xd' or origin is None:
+            parser.error('--xd-bi-visibility仅用于带显式起点的单包xd')
+    if args.xd_start_bi is not None:
+        if args.packet is None or args.parts != 'xd' or origin is None or args.xd_start_bi < 0:
+            parser.error('--xd-start-bi须为非负整数，仅用于带显式--xd-origin的单包xd')
     if args.output.exists() or args.output.is_symlink():
         parser.error('拒绝覆盖已有验收收据，使用新输出路径')
     output=args.output.resolve()
@@ -271,7 +296,8 @@ def main():
         package=Path(chan.__file__).resolve().parent
         source_hashes={p.name:digest(p) for p in sorted(package.glob('*.py'))}
         try:
-            report=check_packet(json.loads(raw.decode('utf-8')),args.parts,args.standard or '106',origin)
+            report=check_packet(json.loads(raw.decode('utf-8')),args.parts,args.standard or '106',origin,
+                                args.xd_start_bi or 0, args.xd_bi_visibility or 'fixed')
         except ValueError as error:
             parser.error(str(error))
         report.update(packet=str(source),packet_sha256=packet_sha,

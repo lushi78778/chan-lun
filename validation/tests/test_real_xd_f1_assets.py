@@ -4742,5 +4742,252 @@ class TestRealXdF1Assets(unittest.TestCase):
         self.assertNotEqual(proof[1:],a['active_last']);self.assertEqual((len(bis),len(bis[:-1])),(13,12))
 
 
+# 先由固定BI整数证书逐raw推导，再与公开库比较；旧活动合同保持。
+G1_FIXED_PACKET_CLOCKS = {
+    0: {'xd_first': (627, 757, 757, 787, 935, 1146, 1553, 1553, 1583),
+        'f1_first': (787, 1553), 'f1_evidence': (4, 8)},
+    1: {'xd_first': (148, 627, 757, 757, 787, 935, 1146, 1553, 1553, 1583),
+        'f1_first': (787, 1553), 'f1_evidence': (5, 9)},
+}
+
+
+class TestG1FixedPacketAdmissionAssets(unittest.TestCase):
+    """原1623行合同的固定证据版本；不选择自然起点或继承旧BI35标签。"""
+
+    @staticmethod
+    def inputs():
+        source = embedded_table('test_real_xd_f1.py', 'M3_G1_SOURCE_BRIDGE_AUDIT')
+        old = embedded_table('test_real_xd_f1.py', 'M3_G1_CONSUMERS_AUDIT')
+        path = ROOT / 'tests/fixtures' / old['fixture']
+        if hashlib.sha256(path.read_bytes()).hexdigest() != old['fixture_sha256']:
+            raise AssertionError('G1须绑定原fixture')
+        case = next(c for c in json.loads(path.read_text())['cases'] if c['id'] == old['id'])
+        packet_path = ROOT / 'validation' / case['source']['packet']
+        blob = packet_path.read_bytes()
+        if hashlib.sha256(blob).hexdigest() != case['source']['sha256']:
+            raise AssertionError('G1原包摘要冲突')
+        packet = json.loads(blob)
+        if packet['rows'] != case['raw_rows'] or old['limit'] != 1623 or len(packet['rows']) != 1638:
+            raise AssertionError('G1须从原1638行包读取既有1623行合同')
+        return dict(packet, rows=packet['rows'][:old['limit']]), source, old
+
+    @staticmethod
+    def checker():
+        return compiler(ROOT / 'validation/tools/verify_points_history.py')
+
+    def test_fixed_integer_certificates_freeze_distinct_publication_batches_before_library(self):
+        packet, source, old = self.inputs()
+        tool = compiler()
+        first = {seed: [] for seed in source['heads']}
+        previous = {seed: [] for seed in first}
+        for count in range(1, len(packet['rows'])+1):
+            rows = packet['rows'][:count]
+            _, _, bis = tool.foundation(rows, '106')
+            parts = tool.components(rows, bis[:-1], dt_slice=None)
+            for seed, head in source['heads'].items():
+                events = head['events'] + old['events']
+                ready = [manual_xd_certificate_ready(parts, e) for e in events]
+                size = next((i for i, ok in enumerate(ready) if not ok), len(ready))
+                self.assertGreaterEqual(size, len(first[seed]))
+                units = tool.xd_records(parts, events[:size])
+                shapes = [tuple(u[k] for k in ('direction', 'start_dt', 'end_dt',
+                          'start_ticks', 'end_ticks', 'low_ticks', 'high_ticks', 'mode')) for u in units]
+                self.assertEqual(shapes[:len(previous[seed])], previous[seed])
+                previous[seed] = shapes
+                first[seed].extend([count]*(size-len(first[seed])))
+                for spec in head['f1']:
+                    if spec[-1] < size:
+                        tool.move_record(units, spec)
+        for seed, counts in first.items():
+            self.assertEqual(tuple(counts), G1_FIXED_PACKET_CLOCKS[seed]['xd_first'])
+            f1_first = tuple(counts[spec[-1]] for spec in source['heads'][seed]['f1'])
+            self.assertEqual(f1_first, G1_FIXED_PACKET_CLOCKS[seed]['f1_first'])
+            self.assertEqual(tuple(sum(n <= at for n in counts) for at in f1_first),
+                             G1_FIXED_PACKET_CLOCKS[seed]['f1_evidence'])
+
+    def test_both_explicit_fixed_origins_preserve_complete_F1_without_borrowing_current_clock(self):
+        packet, source, old = self.inputs()
+        tool = compiler()
+        _, _, bis = tool.foundation(packet['rows'], '106')
+        parts = tool.components(packet['rows'], bis[:-1], dt_slice=None)
+        checker = self.checker()
+        for seed, head in source['heads'].items():
+            premise = dict(basis='given_recent', anchor=[0, head['anchor'][0], head['anchor'][1]/1000.],
+                           available_bi=0)
+            units = tool.xd_records(parts, head['events']+old['events'])
+            expected = [tool.move_record(units, spec) for spec in head['f1']]
+            result = checker.check_packet(packet, 'xd', '106', premise, xd_start_bi=seed)
+            self.assertEqual(result.get('xd_start_bi', 0), seed)
+            self.assertEqual(tuple(r['raw_count'] for r in result['f1']), G1_FIXED_PACKET_CLOCKS[seed]['f1_first'])
+            self.assertEqual(tuple(len(r['snapshot']['evidence_ids']) for r in result['f1']),
+                             G1_FIXED_PACKET_CLOCKS[seed]['f1_evidence'])
+            self.assertNotEqual(tuple(r['raw_count'] for r in result['f1']), head['f1_first'])
+            for actual, ref in zip(result['f1'], expected):
+                item = actual['snapshot']
+                self.assertEqual(actual['part_span'], [ref['seg_start'], ref['seg_end']])
+                for field in ('kind', 'direction', 'start_dt', 'end_dt'):
+                    self.assertEqual(item[field], ref[field])
+                self.assertEqual([round(item[k]*1000) for k in ('start_price', 'end_price', 'low', 'high')],
+                                 [ref[k] for k in ('start_ticks', 'end_ticks', 'low_ticks', 'high_ticks')])
+                self.assertEqual([[round(v*1000) for v in c] for c in item['centers']], ref['centers_ticks'])
+            self.assertFalse(result['theoretical_acceptance'])
+            for batch in result['batches']:
+                self.assertEqual(batch['f2'], [])
+                self.assertEqual(batch['auxiliary']['points'], [])
+                self.assertEqual(batch['chain']['first_points'], [])
+                self.assertEqual(batch['strict']['results'], [])
+
+
+class TestTCurrentPacketAdmissionAssets(unittest.TestCase):
+    """T原活动合同接完整F1，固定与活动证据版本不混用。"""
+
+    @staticmethod
+    def inputs(include_extension=False):
+        audit = embedded_table('test_real_xd_f1.py', 'M3_T_SOURCE_BRIDGE_AUDIT')
+        old = embedded_table('test_real_xd_f1.py', 'M3_EXPANDED_SUFFIX_AUDIT')['T']
+        path = ROOT / 'tests/fixtures' / old['fixture']
+        if hashlib.sha256(path.read_bytes()).hexdigest() != audit['source_sha256']:
+            raise AssertionError('T原fixture摘要冲突')
+        if old['certificate_sha256'] != audit['suffix_certificate_sha256']:
+            raise AssertionError('T源头与BI22后缀须为同一证书')
+        case = next(c for c in json.loads(path.read_text())['cases'] if c['id'] == old['id'])
+        packet_path = ROOT / 'validation' / case['source']['packet']
+        blob = packet_path.read_bytes()
+        if hashlib.sha256(blob).hexdigest() != case['source']['sha256']:
+            raise AssertionError('T原包摘要冲突')
+        packet = json.loads(blob)
+        if packet['rows'] != case['raw_rows'] or len(packet['rows']) != audit['source_rows']:
+            raise AssertionError('T须保留原726行包')
+        if audit['limit'] != 679 or audit['contract'] != 'current':
+            raise AssertionError('T只接既有679行活动合同')
+        premise = dict(basis='given_recent', anchor=[0, 'down', 1.557], available_bi=0)
+        observed = packet if include_extension else dict(packet, rows=packet['rows'][:audit['limit']])
+        return observed, audit, old, premise
+
+    @staticmethod
+    def checker():
+        return compiler(ROOT / 'validation/tools/verify_points_history.py')
+
+    def test_original_current_packet_confirms_one_F1_at_236_without_F2_or_points(self):
+        packet, audit, old, premise = self.inputs()
+        tool = compiler()
+        _, _, bis = tool.foundation(packet['rows'], '106')
+        parts = tool.components(packet['rows'], bis, dt_slice=None)
+        units = tool.xd_records(parts, audit['head_events']+old['events'])
+        self.assertEqual(len(units), 6)
+        expected = tool.move_record(units, audit['f1'][0])
+        result = self.checker().check_packet(packet, 'xd', '106', premise, xd_bi_visibility='current')
+        self.assertEqual(result['xd_bi_visibility'], 'current')
+        self.assertEqual((result['raw_prefixes'], result['consumer_batches']), (679, 2))
+        self.assertEqual(tuple(r['raw_count'] for r in result['f1']), audit['f1_first'])
+        actual = result['f1'][0]['snapshot']
+        self.assertEqual(result['f1'][0]['part_span'], [0, 2])
+        for field in ('kind', 'direction', 'start_dt', 'end_dt'):
+            self.assertEqual(actual[field], expected[field])
+        self.assertEqual([round(actual[k]*1000) for k in ('start_price', 'end_price', 'low', 'high')],
+                         [expected[k] for k in ('start_ticks', 'end_ticks', 'low_ticks', 'high_ticks')])
+        self.assertEqual([[round(v*1000) for v in c] for c in actual['centers']], expected['centers_ticks'])
+        self.assertEqual(len(actual['evidence_ids']), audit['f1_evidence'][0])
+        self.assertEqual(actual['confirmed_dt'], packet['rows'][235]['dt'][:10]+' 15:05:00')
+        # 原几何sell3对应XD4/5，不能迁移成仅一项完整F1的点位证据。
+        self.assertEqual(audit['point'][1:3], (4, 5))
+        self.assertEqual(audit['geometric_point_raw'], 586)
+        self.assertFalse(result['theoretical_acceptance'])
+        for batch in result['batches']:
+            self.assertEqual(batch['f2'], [])
+            self.assertEqual(batch['strict']['results'], [])
+            self.assertEqual(batch['auxiliary']['points'], [])
+            self.assertEqual(batch['chain']['first_points'], [])
+            self.assertEqual(batch['chain']['third_points'], [])
+
+    def test_late_BI59_and_unknown_history_preserve_geometry_without_backdating(self):
+        packet, _, _, premise = self.inputs()
+        checker = self.checker()
+        normal = checker.check_packet(packet, 'xd', '106', premise, xd_bi_visibility='current')
+        late = checker.check_packet(packet, 'xd', '106', dict(premise, available_bi=59),
+                                    xd_bi_visibility='current')
+        self.assertEqual([r['raw_count'] for r in late['f1']], [586])
+        self.assertEqual(len(late['f1'][0]['snapshot']['evidence_ids']), 6)
+        for field in ('unit_ids', 'start_dt', 'end_dt', 'start_price', 'end_price', 'low', 'high', 'centers'):
+            self.assertEqual(normal['f1'][0]['snapshot'][field], late['f1'][0]['snapshot'][field])
+        self.assertEqual(late['f1'][0]['snapshot']['confirmed_dt'], packet['rows'][585]['dt'][:10]+' 15:05:00')
+        unknown = checker.check_packet(packet, 'xd', '106', dict(premise, basis='unknown', available_bi=None),
+                                       xd_bi_visibility='current')
+        self.assertEqual((unknown['f1'], unknown['consumer_batches']), ([], 1))
+        for report in (late, unknown):
+            for batch in report['batches']:
+                self.assertEqual(batch['f2'], [])
+                self.assertEqual(batch['chain']['third_points'], [])
+
+    def test_remaining_47_rows_do_not_supply_given_owner40_integer_XD_certificate(self):
+        packet, _, old, _ = self.inputs(include_extension=True)
+        self.assertEqual((len(packet['rows']), old['pending_owner']), (726, 40))
+        self.assertEqual(packet['rows'][-1]['dt'][:10], '2023-12-29')
+        tool = compiler()
+        trials = 0
+        for count in range(679, 727):
+            rows = packet['rows'][:count]
+            _, _, bis = tool.foundation(rows, '106')
+            parts = tool.components(rows, bis, dt_slice=None)
+            found = []
+            for end in range(42, len(parts)-1, 2):
+                for proof in range(end+1, len(parts)):
+                    for mode in (1, 2):
+                        trials += 1
+                        if manual_xd_certificate_ready(parts, (40, end, mode, proof)):
+                            found.append((40, end, mode, proof))
+            self.assertEqual(found, [], count)
+        self.assertEqual((trials, len(parts)), (19152, 71))
+
+    def test_extended_726_current_contract_retains_original_F1_and_open_consumers(self):
+        packet, _, _, premise = self.inputs(include_extension=True)
+        result = self.checker().check_packet(packet, 'xd', '106', premise, xd_bi_visibility='current')
+        self.assertEqual((result['raw_prefixes'], result['consumer_batches']), (726, 2))
+        self.assertEqual([r['raw_count'] for r in result['f1']], [236])
+        actual = result['f1'][0]['snapshot']
+        self.assertEqual(len(actual['evidence_ids']), 4)
+        self.assertEqual(actual['confirmed_dt'], packet['rows'][235]['dt'][:10]+' 15:05:00')
+        self.assertFalse(result['theoretical_acceptance'])
+        for batch in result['batches']:
+            self.assertEqual(batch['f2'], [])
+            self.assertEqual(batch['strict']['results'], [])
+            self.assertEqual(batch['auxiliary']['points'], [])
+            self.assertEqual(batch['chain']['first_points'], [])
+            self.assertEqual(batch['chain']['third_points'], [])
+
+    def test_current_mode_requires_explicit_XD_scope_and_default_fixed_contract_remains(self):
+        packet, _, _, premise = self.inputs()
+        tiny = dict(packet, rows=packet['rows'][:1])
+        checker = self.checker()
+        for mode in ('auto', None, True):
+            with self.assertRaises(ValueError):
+                checker.check_packet(tiny, 'xd', '106', premise, xd_bi_visibility=mode)
+        with self.assertRaisesRegex(ValueError, '显式'):
+            checker.check_packet(tiny, 'xd', '106', xd_bi_visibility='current')
+        with self.assertRaises(ValueError):
+            checker.check_packet(tiny, 'bi', '106', premise, xd_bi_visibility='current')
+        default = checker.check_packet(packet, 'xd', '106', premise)
+        explicit = checker.check_packet(packet, 'xd', '106', premise, xd_bi_visibility='fixed')
+        self.assertEqual(default, explicit)
+        self.assertNotIn('xd_bi_visibility', default)
+        script = ROOT / 'validation/tools/verify_points_history.py'
+        with tempfile.TemporaryDirectory() as temp:
+            source, output = Path(temp)/'prefix.json', Path(temp)/'report.json'
+            source.write_text(json.dumps(tiny))
+            base = [sys.executable, str(script), '--packet', str(source), '--parts', 'xd',
+                    '--output', str(output), '--xd-bi-visibility', 'current']
+            run = subprocess.run(base+['--xd-origin', json.dumps(premise)], cwd=temp,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertEqual(json.loads(output.read_text())['xd_bi_visibility'], 'current')
+            output.unlink()
+            for command in (base, [sys.executable, str(script), str(Path(temp)/'dataset'),
+                                   '--parts', 'xd', '--xd-bi-visibility', 'current', '--output', str(output)]):
+                run = subprocess.run(command, cwd=temp, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                     universal_newlines=True)
+                self.assertNotEqual(run.returncode, 0)
+                self.assertFalse(output.exists())
+
+
 if __name__ == '__main__':
     unittest.main()
