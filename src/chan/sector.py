@@ -16,11 +16,10 @@
 """
 
 from collections import namedtuple
-import math
 from numbers import Integral
 from typing import Any, Mapping, Sequence
 
-from chan._series import _finite_number
+from chan._series import _decimal_prefix, _finite_number
 
 __all__ = [
     "MA_PERIODS",
@@ -159,25 +158,23 @@ def ma_strength_class(closes: Sequence[Any], start_index: int,
 
     每周期使用当前及之前的完整窗口; 前n-1位与含缺测窗口为None,
     不填充。start_index只裁定本轮攻克统计起点, 前置收盘仍参与SMA。
+    有限收盘按float十进制表示精确求均值后一次转float，与sma_series
+    的有限输入一致；等于均线不算攻克，不按报价档位取整或添加容差。
     必须在相同周期、复权基准和明确反弹起点下比较成员类别。
     """
     periods = _periods(periods)
     prices = _prices(closes)
     _parameters(len(prices), start_index, confirm)
+    totals, invalid = _decimal_prefix(prices)
     lines = {}
     for n in periods:
         line = []
         for i in range(len(prices)):
-            window = prices[i - n + 1:i + 1] if i >= n - 1 else []
-            if len(window) != n or any(v is None for v in window):
+            start = i - n + 1
+            if start < 0 or invalid[i + 1] != invalid[start]:
                 line.append(None)
-            elif all(v == window[0] for v in window):
-                line.append(window[0])  # 常价均线保持相等, 不产生舍入假突破。
             else:
-                try:
-                    line.append(math.fsum(window) / n)
-                except OverflowError:
-                    line.append(math.fsum(v / n for v in window))
+                line.append(float((totals[i + 1] - totals[start]) / n))
         lines[n] = line
     return classify_ma_strength(prices, lines, start_index, confirm)
 

@@ -15,6 +15,31 @@ def rank(number):
 
 
 class TestMaClass(unittest.TestCase):
+    def test_decimal_sma_equality_never_publishes_or_latches_conquest(self):
+        """课106严格高于：十进制均值7/100等于收盘，后续回落不保留假攻克。"""
+        prices = [.06, .06, .06, .10, .07, .06]
+        for length in (5, 6):
+            actual = ma_strength_class(prices[:length], 4, periods=(5,))
+            self.assertEqual((actual.class_no, actual.states, actual.conquered_at),
+                             (1, (False,), (None,)))
+
+    def test_decimal_sma_adjacent_float_does_not_add_a_tolerance(self):
+        """同一均值边界的上下相邻float仍区别；不把有效微小攻克钳成相等。"""
+        cases = [('0x1.1eb851eb851ebp-4', False),
+                 ('0x1.1eb851eb851ecp-4', False),
+                 ('0x1.1eb851eb851edp-4', True)]
+        for value, conquered in cases:
+            actual = ma_strength_class([.06, .06, .06, .10, float.fromhex(value)], 4, periods=(5,))
+            self.assertEqual(actual.states, (conquered,))
+            self.assertEqual(actual.conquered_at, (4 if conquered else None,))
+
+    def test_large_finite_sma_mean_does_not_overflow_to_unknown(self):
+        """有限价格均值仍有限，中间总和溢出不改成未知或丢失攻克证据。"""
+        for prices, expected in [([1e308]*5, False),
+                                 ([1e308, 1.2e308, 1.4e308, 1.6e308, 1.4e308], True)]:
+            actual = ma_strength_class(prices, 4, periods=(5,))
+            self.assertEqual(actual.states, (expected,))
+
     def test_all_nine_classes(self):
         for cls in range(1, 10):
             result = rank(cls)

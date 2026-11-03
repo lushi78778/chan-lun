@@ -29,11 +29,9 @@
 """
 
 import math
-from fractions import Fraction
-from numbers import Number
 from typing import Any, Dict, List, Optional
 
-from chan._series import _diff_series
+from chan._series import _decimal_prefix, _diff_series
 
 __all__ = [
     "sma_series",
@@ -67,14 +65,7 @@ def sma_series(values: Any, n: int) -> List[Optional[float]]:
     vals = list(values)
     # 前缀只累计可解析的数值; 缺口计数保证其离开窗口后可恢复。
     # Fraction不受调用方Decimal上下文精度影响, 不推断标的或固定报价档位。
-    totals, invalid = [Fraction(0)], [0]
-    for value in vals:
-        try:
-            exact = Fraction(str(value)) if isinstance(value, Number) else None
-        except (TypeError, ValueError, OverflowError, ZeroDivisionError):
-            exact = None
-        totals.append(totals[-1] + (exact if exact is not None else 0))
-        invalid.append(invalid[-1] + (exact is None))
+    totals, invalid = _decimal_prefix(vals)
     for i in range(len(vals)):
         if i < n - 1:
             out.append(None)

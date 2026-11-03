@@ -7,7 +7,7 @@
 | 项目 | 约定 |
 |---|---|
 | 发行名 / 导入名 | `chan-lun-core` / `chan` |
-| 当前源码版本 | `1.2.1`（已发布）；发行可用性以 PyPI / GitHub Release 为准，安装环境核对 `chan.__version__` 与实际导入路径 |
+| 当前源码版本 | `1.2.2`（开发中，未发布）；当前已发布版为1.2.1，核对 `chan.__version__` 与实际导入路径 |
 | 运行兼容目标 | Python 3.6、numpy 1.14、pandas 0.23 及以上；验证范围见下文 |
 | 开发与构建 | Python 3.10+，使用本仓库 `requirements-dev.txt` |
 | 仓库 / 许可证 | [lushi78778/chan-lun](https://github.com/lushi78778/chan-lun) / [MIT](https://github.com/lushi78778/chan-lun/blob/main/LICENSE) |
@@ -37,12 +37,15 @@
 
 ## 安装
 
-安装示例固定版本 `1.2.1`，发行状态与升级差异见
+安装示例固定本版版本号 `1.2.2`；该版尚未发布，开发期按
+[源码安装](https://github.com/lushi78778/chan-lun/blob/main/docs/installation.md)操作，
+下列发行安装命令在本版发布后使用。
+当前已发布版为1.2.1，发行状态与升级差异见
 [版本记录](https://github.com/lushi78778/chan-lun/blob/main/CHANGELOG.md)。
 使用将要运行程序的解释器安装，固定版本便于复现：
 
 ```bash
-python -m pip install 'chan-lun-core==1.2.1'
+python -m pip install 'chan-lun-core==1.2.2'
 python -c "import chan; print(chan.__version__); print(chan.__file__)"
 ```
 

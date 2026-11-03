@@ -7,8 +7,21 @@ None/NaN 及不能参与数值运算的对象置 None。保持原有处理语义
 
 import math
 from fractions import Fraction
-from numbers import Real
+from numbers import Number, Real
 from typing import Any, List, Optional
+
+
+def _decimal_prefix(values):
+    """既有SMA十进制前缀和与缺值计数；不填补无法解析的数值。"""
+    totals, invalid = [Fraction(0)], [0]
+    for value in values:
+        try:
+            exact = Fraction(str(value)) if isinstance(value, Number) else None
+        except (TypeError, ValueError, OverflowError, ZeroDivisionError):
+            exact = None
+        totals.append(totals[-1] + (exact if exact is not None else 0))
+        invalid.append(invalid[-1] + (exact is None))
+    return totals, invalid
 
 
 def _mean_finite(values: List[float]) -> float:
