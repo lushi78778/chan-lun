@@ -1012,5 +1012,187 @@ class TestZ1FineMinimumF1(unittest.TestCase):
         self.assertEqual(directions, {'81': ('down', 'up'), '106': ('down', 'down')})
 
 
+# 声明F1到F2的Z1上游结构审计；旧笔级first标签不继承。
+# f1=(组成首/末/证明笔,kind/进入方向,起止标签,起止/全段千分价,核心,首确认行/时刻)。
+M3_Z1_UPSTREAM_AUDIT = {
+    'input_sha256': '7617ad92d365a1c5154f8ad89465888b448380029730119971083d4eda725b0c',
+    'independent_sha256': '2eee44d4bcfc49d8d570046ec9fe61194cb324f57101b26153d2618cf4ecbe7a',
+    'manual_sha256': '50592acb244a24abfab8928a06819bc6167be809e4eaf2b8c7d1bafda6e09275',
+    'anchor': ('2022-08-11 15:00:00', 1230),
+    'old_center_ticks': (1203, 1217),
+    'standards': {
+        '81': {
+            'f1': (
+                ((0, 2, 3), ('consolidation', None), ('2022-08-01 09:40:00', '2022-08-02 10:05:00'),
+                 (1118, 1159, 1118, 1159), ((1140, 1146),), (83, '2022-08-02 13:46:00')),
+                ((3, 5, 6), ('consolidation', None), ('2022-08-02 10:05:00', '2022-08-03 10:00:00'),
+                 (1159, 1141, 1130, 1159), ((1141, 1158),), (121, '2022-08-03 11:21:00')),
+                ((6, 8, 9), ('consolidation', None), ('2022-08-03 10:00:00', '2022-08-03 13:40:00'),
+                 (1141, 1180, 1141, 1180), ((1143, 1151),), (162, '2022-08-04 10:41:00')),
+                ((9, 11, 12), ('consolidation', None), ('2022-08-03 13:40:00', '2022-08-04 13:25:00'),
+                 (1180, 1150, 1150, 1180), ((1150, 1171),), (211, '2022-08-05 10:41:00')),
+                ((12, 17, 18), ('up', 'up'), ('2022-08-04 13:25:00', '2022-08-08 10:15:00'),
+                 (1150, 1198, 1150, 1217), ((1182, 1191), (1198, 1214)), (268, '2022-08-08 11:21:00')),
+                ((18, 20, 21), ('consolidation', None), ('2022-08-08 10:15:00', '2022-08-08 14:45:00'),
+                 (1198, 1208, 1198, 1208), ((1199, 1208),), (315, '2022-08-09 11:11:00')),
+                ((21, 23, 24), ('consolidation', None), ('2022-08-08 14:45:00', '2022-08-09 14:00:00'),
+                 (1208, 1201, 1193, 1211), ((1201, 1208),), (355, '2022-08-10 10:26:00')),
+                ((24, 26, 27), ('consolidation', None), ('2022-08-09 14:00:00', '2022-08-10 11:00:00'),
+                 (1201, 1219, 1201, 1223), ((1210, 1219),), (392, '2022-08-10 15:01:00')),
+                ((27, 29, 30), ('consolidation', None), ('2022-08-10 11:00:00', '2022-08-11 10:15:00'),
+                 (1219, 1203, 1203, 1219), ((1206, 1219),), (428, '2022-08-11 13:56:00')),
+                ((30, 32, 33), ('consolidation', None), ('2022-08-11 10:15:00', '2022-08-11 15:00:00'),
+                 (1203, 1230, 1203, 1230), ((1222, 1230),), (498, '2022-08-15 10:06:00')),
+                ((33, 35, 36), ('consolidation', None), ('2022-08-11 15:00:00', '2022-08-15 13:25:00'),
+                 (1230, 1196, 1191, 1230), ((1196, 1209),), (542, '2022-08-16 09:41:00')),
+                ((36, 38, 39), ('consolidation', None), ('2022-08-15 13:25:00', '2022-08-16 10:15:00'),
+                 (1196, 1207, 1186, 1207), ((1196, 1200),), (582, '2022-08-16 14:31:00')),
+                ((39, 41, 42), ('consolidation', None), ('2022-08-16 10:15:00', '2022-08-17 10:20:00'),
+                 (1207, 1180, 1180, 1207), ((1188, 1192),), (623, '2022-08-17 13:51:00')),
+                ((42, 46, 47), ('consolidation', None), ('2022-08-17 10:20:00', '2022-08-19 09:40:00'),
+                 (1180, 1209, 1180, 1209), ((1181, 1189),), (713, '2022-08-19 13:11:00')),
+                ((47, 52, 53), ('down', 'down'), ('2022-08-19 09:40:00', '2022-08-22 13:05:00'),
+                 (1209, 1157, 1149, 1209), ((1175, 1180), (1152, 1157)), (780, '2022-08-22 14:41:00')),
+                ((53, 58, 59), ('down', 'down'), ('2022-08-22 13:05:00', '2022-08-26 10:10:00'),
+                 (1157, 1118, 1094, 1169), ((1153, 1157), (1096, 1107)), (989, '2022-08-29 10:11:00')),
+                ((59, 61, 62), ('consolidation', None), ('2022-08-26 10:10:00', '2022-08-29 10:45:00'),
+                 (1118, 1096, 1076, 1118), ((1096, 1107),), (1014, '2022-08-29 13:46:00')),
+                ((62, 64, 65), ('consolidation', None), ('2022-08-29 10:45:00', '2022-08-30 09:50:00'),
+                 (1096, 1114, 1096, 1114), ((1099, 1107),), (1064, '2022-08-30 13:51:00')),
+            ),
+            'f2_specs': [(0, 14, 'up', 'up', ((1141, 1159), (1201, 1208)), 17, 1064, '2022-08-30 13:51:00', ((0, 2, 4), (5, 7, 14)))],
+            'tail': (15, 17, 'consolidation', None, ((1096, 1114),)),
+            'observations': (441, 542, 582, 748, 1127),
+        },
+        '106': {
+            'f1': (
+                ((0, 2, 3), ('consolidation', None), ('2022-08-01 09:40:00', '2022-08-01 14:00:00'),
+                 (1118, 1151, 1118, 1151), ((1140, 1146),), (58, '2022-08-02 10:11:00')),
+                ((3, 5, 6), ('consolidation', None), ('2022-08-01 14:00:00', '2022-08-02 13:05:00'),
+                 (1151, 1130, 1125, 1159), ((1130, 1151),), (98, '2022-08-02 15:01:00')),
+                ((6, 8, 9), ('consolidation', None), ('2022-08-02 13:05:00', '2022-08-03 10:20:00'),
+                 (1130, 1153, 1130, 1158), ((1141, 1153),), (132, '2022-08-03 13:46:00')),
+                ((9, 11, 12), ('consolidation', None), ('2022-08-03 10:20:00', '2022-08-03 15:00:00'),
+                 (1153, 1150, 1142, 1180), ((1150, 1153),), (178, '2022-08-04 13:31:00')),
+                ((12, 18, 19), ('up', 'up'), ('2022-08-03 15:00:00', '2022-08-08 09:30:00'),
+                 (1150, 1217, 1150, 1217), ((1150, 1171), (1198, 1214)), (263, '2022-08-08 10:56:00')),
+                ((19, 21, 22), ('consolidation', None), ('2022-08-08 09:30:00', '2022-08-08 11:15:00'),
+                 (1217, 1200, 1198, 1217), ((1200, 1208),), (280, '2022-08-08 13:51:00')),
+                ((22, 24, 25), ('consolidation', None), ('2022-08-08 11:15:00', '2022-08-08 14:45:00'),
+                 (1200, 1208, 1199, 1208), ((1200, 1205),), (308, '2022-08-09 10:36:00')),
+                ((25, 27, 28), ('consolidation', None), ('2022-08-08 14:45:00', '2022-08-09 11:10:00'),
+                 (1208, 1204, 1193, 1209), ((1204, 1208),), (332, '2022-08-09 14:06:00')),
+                ((28, 30, 31), ('consolidation', None), ('2022-08-09 11:10:00', '2022-08-10 09:50:00'),
+                 (1204, 1223, 1201, 1223), ((1204, 1211),), (363, '2022-08-10 11:06:00')),
+                ((31, 33, 34), ('consolidation', None), ('2022-08-10 09:50:00', '2022-08-10 14:15:00'),
+                 (1223, 1206, 1206, 1223), ((1210, 1219),), (403, '2022-08-11 10:21:00')),
+                ((34, 38, 39), ('consolidation', None), ('2022-08-10 14:15:00', '2022-08-11 15:00:00'),
+                 (1206, 1230, 1203, 1230), ((1206, 1219),), (461, '2022-08-12 11:06:00')),
+                ((39, 44, 45), ('down', 'down'), ('2022-08-11 15:00:00', '2022-08-15 10:40:00'),
+                 (1230, 1207, 1191, 1230), ((1212, 1218), (1200, 1207)), (532, '2022-08-15 14:26:00')),
+                ((45, 47, 48), ('consolidation', None), ('2022-08-15 10:40:00', '2022-08-16 09:35:00'),
+                 (1207, 1186, 1186, 1207), ((1196, 1200),), (571, '2022-08-16 13:36:00')),
+                ((48, 50, 51), ('consolidation', None), ('2022-08-16 09:35:00', '2022-08-16 14:00:00'),
+                 (1186, 1193, 1186, 1207), ((1188, 1193),), (608, '2022-08-17 11:06:00')),
+                ((51, 53, 54), ('consolidation', None), ('2022-08-16 14:00:00', '2022-08-17 13:35:00'),
+                 (1193, 1181, 1180, 1193), ((1181, 1188),), (637, '2022-08-17 15:01:00')),
+                ((54, 59, 60), ('up', 'up'), ('2022-08-17 13:35:00', '2022-08-18 14:40:00'),
+                 (1181, 1195, 1181, 1201), ((1183, 1188), (1195, 1198)), (705, '2022-08-19 11:01:00')),
+                ((60, 63, 66), ('consolidation', 'up'), ('2022-08-18 14:40:00', '2022-08-22 09:35:00'),
+                 (1195, 1149, 1149, 1209), ((1175, 1180),), (771, '2022-08-22 13:56:00')),
+                ((64, 66, 67), ('consolidation', None), ('2022-08-22 09:35:00', '2022-08-22 13:05:00'),
+                 (1149, 1157, 1149, 1162), ((1152, 1157),), (780, '2022-08-22 14:41:00')),
+                ((67, 70, 71), ('consolidation', 'down'), ('2022-08-22 13:05:00', '2022-08-23 13:05:00'),
+                 (1157, 1163, 1153, 1169), ((1158, 1163),), (868, '2022-08-24 13:51:00')),
+                ((71, 76, 77), ('down', 'down'), ('2022-08-23 13:05:00', '2022-08-26 10:10:00'),
+                 (1163, 1118, 1094, 1163), ((1121, 1131), (1096, 1107)), (989, '2022-08-29 10:11:00')),
+                ((77, 79, 80), ('consolidation', None), ('2022-08-26 10:10:00', '2022-08-29 10:45:00'),
+                 (1118, 1096, 1076, 1118), ((1096, 1107),), (1014, '2022-08-29 13:46:00')),
+                ((80, 82, 83), ('consolidation', None), ('2022-08-29 10:45:00', '2022-08-30 09:50:00'),
+                 (1096, 1114, 1096, 1114), ((1099, 1107),), (1044, '2022-08-30 10:41:00')),
+                ((83, 85, 86), ('consolidation', None), ('2022-08-30 09:50:00', '2022-08-30 10:50:00'),
+                 (1114, 1098, 1098, 1114), ((1100, 1107),), (1066, '2022-08-30 14:01:00')),
+            ),
+            'f2_specs': [(0, 14, 'up', 'up', ((1130, 1151), (1199, 1208)), 15, 705, '2022-08-19 11:01:00', ((0, 2, 4), (5, 7, 13))), (15, 19, 'consolidation', 'up', ((1153, 1162),), 22, 1066, '2022-08-30 14:01:00', ((16, 18, 19),))],
+            'tail': (20, 22, 'consolidation', None, ((1098, 1114),)),
+            'observations': (441, 532, 571, 748, 1127),
+        },
+    },
+}
+
+def z1_upstream_types(standard):
+    """组装独立冻结的完整F1；保留盘整/进入方向，不用净涨跌代替。"""
+    out = []
+    for span, category, dates, prices, cores, seen in M3_Z1_UPSTREAM_AUDIT['standards'][standard]['f1']:
+        a, z, proof = span
+        kind, direction = category
+        start, end, low, high = prices
+        out.append(chan.ConfirmedMoveType(
+            'Z1-'+standard+'-F1:'+str(a), 'declared-F1', kind, direction,
+            m3_stamp(dates[0]), m3_stamp(dates[1]), start/1000., end/1000., low/1000., high/1000.,
+            m3_stamp(seen[1]), tuple('bi:'+str(i) for i in range(a, z+1)),
+            tuple('bi:'+str(i) for i in range(proof+1)), tuple((lo/1000., hi/1000.) for lo, hi in cores)))
+    return out
+
+
+class TestZ1UpstreamAdmission(unittest.TestCase):
+    """同窗递归的结构准入，不把工程F2或旧first声明当理论证明。"""
+
+    def test_three_f2_confirmations_and_open_tails_match_independent_table(self):
+        """41个F1到达批只产生三份完成F2，端点和后继确认分别核对。"""
+        totals = []
+        for standard, audit in M3_Z1_UPSTREAM_AUDIT['standards'].items():
+            types = z1_upstream_types(standard)
+            clocks = {t.confirmed_dt for t in types}
+            clocks.update(m3_stamp(spec[7])-timedelta(microseconds=1) for spec in audit['f2_specs'])
+            for now in sorted(clocks):
+                with self.subTest(standard=standard, as_of=now):
+                    actual = chan.confirm_level_up(types, now, 'declared-F2')
+                    expected = [s for s in audit['f2_specs'] if m3_stamp(s[7]) <= now]
+                    self.assertEqual(len(actual), len(expected))
+                    for move, spec in zip(actual, expected):
+                        a, z, kind, direction, cores, proof, count, known, spans = spec
+                        self.assertEqual((move.kind, move.direction, move.start_dt, move.end_dt),
+                                         (kind, direction, types[a].start_dt, types[z].end_dt))
+                        self.assertEqual((move.start_price, move.end_price, move.low, move.high),
+                                         (types[a].start_price, types[z].end_price,
+                                          min(t.low for t in types[a:z+1]), max(t.high for t in types[a:z+1])))
+                        self.assertEqual(tuple((round(lo*1000), round(hi*1000)) for lo, hi in move.centers), cores)
+                        self.assertEqual(move.confirmed_dt, m3_stamp(known))
+                        self.assertGreater(move.confirmed_dt, types[z].confirmed_dt)
+                        self.assertEqual(move.unit_ids, tuple(t.move_id for t in types[a:z+1]))
+                        self.assertEqual(move.evidence_ids,
+                                         tuple(t.move_id for t in types if t.confirmed_dt <= m3_stamp(known)))
+            tail = chan.level_up(types)[-1]
+            self.assertFalse(tail.complete)
+            self.assertEqual((tail.seg_start, tail.seg_end, tail.kind, tail.direction,
+                              tuple((round(lo*1000), round(hi*1000)) for lo, hi in tail.centers)), audit['tail'])
+            totals.append((len(types), len(audit['f2_specs'])))
+        self.assertEqual(totals, [(18, 1), (23, 2)])
+
+    def test_original_anchor_is_not_a_completed_f2_endpoint_or_old_center(self):
+        """原高点是盘整F1端点/方向F2内部高，不授予一类或小转大上下文。"""
+        anchor_label, anchor_ticks = M3_Z1_UPSTREAM_AUDIT['anchor']
+        for standard, audit in M3_Z1_UPSTREAM_AUDIT['standards'].items():
+            types = z1_upstream_types(standard)
+            predecessor, = [t for t in types if t.end_dt == m3_stamp(anchor_label)]
+            self.assertEqual((predecessor.kind, predecessor.direction, round(predecessor.end_price*1000)),
+                             ('consolidation', None, anchor_ticks))
+            self.assertEqual(predecessor.to_confirmed_move().direction, 'up')
+            self.assertEqual(chan.confirm_level_up(types, m3_stamp('2022-08-11 15:01:00'), 'declared-F2'), [])
+            for now in [t.confirmed_dt for t in types]:
+                completed = chan.confirm_level_up(types, now, 'declared-F2')
+                self.assertFalse(any(m.end_dt == m3_stamp(anchor_label) and
+                                     round(m.end_price*1000) == anchor_ticks for m in completed))
+            trend = chan.confirm_level_up(types, types[-1].confirmed_dt, 'declared-F2')[0]
+            self.assertEqual(trend.kind, 'up')
+            self.assertLess(trend.start_dt, m3_stamp(anchor_label))
+            self.assertGreater(trend.end_dt, m3_stamp(anchor_label))
+            self.assertEqual(round(trend.high*1000), anchor_ticks)
+            self.assertNotEqual(round(trend.end_price*1000), anchor_ticks)
+            self.assertNotEqual(tuple(round(v*1000) for v in trend.centers[-1]),
+                                M3_Z1_UPSTREAM_AUDIT['old_center_ticks'])
+
+
 if __name__ == '__main__':
     unittest.main()

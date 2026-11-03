@@ -40,6 +40,51 @@ def packet_of(case):
 
 
 class TestRealSecondPointAssets(unittest.TestCase):
+    def test_z1_upstream_f2_integer_centers_extensions_and_closure(self):
+        """独立核41项声明F1上的三次F2完成；原锚/原中枢不被迁移。"""
+        source = ast.parse((ROOT/'tests/test_real_second_point.py').read_text())
+        tables = {t.id: ast.literal_eval(n.value) for n in source.body if isinstance(n, ast.Assign)
+                  for t in n.targets if isinstance(t, ast.Name) and
+                  t.id in ('M3_Z1_UPSTREAM_AUDIT', 'M3_Z1_FINE_F1_AUDIT')}
+        audit, fine = tables['M3_Z1_UPSTREAM_AUDIT'], tables['M3_Z1_FINE_F1_AUDIT']
+        self.assertEqual(audit['input_sha256'], fine['fine_packet_sha256'])
+        totals = []
+        for standard, table in audit['standards'].items():
+            f1 = table['f1']
+            self.assertTrue(all(a[0][1]+1 == b[0][0] and a[2][1] == b[2][0] and a[3][1] == b[3][0]
+                                for a, b in zip(f1, f1[1:])))
+            self.assertTrue(all(a[5][0] <= b[5][0] and a[5][1] <= b[5][1]
+                                for a, b in zip(f1, f1[1:])))
+            # 先前已裁定四个完整类型逐字段保持，既有细格表不改写。
+            for a, z, kind, direction, cores, proof, count, label in fine['standards'][standard]['targets']:
+                record, = [r for r in f1 if r[0][0] == a]
+                self.assertEqual((record[0], record[1], record[4], record[5][0]),
+                                 ((a, z, proof), (kind, direction), cores, count))
+            for a, z, kind, direction, cores, proof, count, known, spans in table['f2_specs']:
+                self.assertEqual(f1[proof][5], (count, known))
+                for (start, formed, extended), expected in zip(spans, cores):
+                    self.assertEqual(formed, start+2)
+                    triple = f1[start:formed+1]
+                    self.assertEqual((max(u[3][2] for u in triple), min(u[3][3] for u in triple)), expected)
+                    self.assertTrue(all(u[3][2] <= expected[1] and u[3][3] >= expected[0]
+                                        for u in f1[formed+1:extended+1]))
+                last = cores[-1]
+                witness = f1[proof]
+                if witness[3][2] <= last[1] and witness[3][3] >= last[0]:
+                    self.assertEqual(z, proof-1)  # 离开后的后继回入，完成于证明前。
+                    self.assertLess(f1[z][3][3], last[0])
+                else:
+                    lower = (max(u[3][2] for u in f1[proof-2:proof+1]),
+                             min(u[3][3] for u in f1[proof-2:proof+1]))
+                    self.assertLessEqual(lower[0], lower[1])
+                    self.assertLess(lower[1], last[0])
+                    self.assertEqual(direction, 'up')  # 向下新核心逆进入方向，不能吸收。
+                    self.assertEqual(z, spans[-1][2])
+                self.assertNotEqual(cores[-1], audit['old_center_ticks'])
+                self.assertNotEqual(f1[z][2][1], audit['anchor'][0])
+            totals.append((len(f1), len(table['f2_specs'])))
+        self.assertEqual(totals, [(18, 1), (23, 2)])
+
     def test_z1_fine_complete_type_table_and_scope(self):
         """同窗细格独立区间/后继核对；原R2标签及真实级别不被继承。"""
         source = ROOT / 'tests/test_real_second_point.py'
