@@ -3,6 +3,7 @@
 import ast
 import copy
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -39,6 +40,46 @@ def packet_of(case):
 
 
 class TestRealSecondPointAssets(unittest.TestCase):
+    def test_z1_fine_complete_type_table_and_scope(self):
+        """同窗细格独立区间/后继核对；原R2标签及真实级别不被继承。"""
+        source = ROOT / 'tests/test_real_second_point.py'
+        table = next(ast.literal_eval(n.value) for n in ast.parse(source.read_text()).body
+                     if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and
+                         t.id == 'M3_Z1_FINE_F1_AUDIT' for t in n.targets))
+        coarse = ROOT / 'validation/chan-real-588000-30m-20220801-20220901-input.json'
+        self.assertEqual(hashlib.sha256(coarse.read_bytes()).hexdigest(), table['coarse_packet_sha256'])
+        self.assertEqual((table['fine_rows'], table['coarse_rows'], table['price_mismatch_buckets']),
+                         (1127, 207, 0))
+        self.assertEqual(table['window'], ('2022-08-01', '2022-08-31'))
+        total = 0
+        for standard, audit in table['standards'].items():
+            parts = audit['parts']
+            self.assertTrue(all(left[2] == right[1] and left[4] == right[3]
+                                for left, right in zip(parts, parts[1:])))
+            self.assertTrue(all(left[5] <= right[5] for left, right in zip(parts, parts[1:])))
+            for a, z, kind, direction, cores, proof, count, label in audit['targets']:
+                self.assertEqual(proof, z+1)
+                self.assertEqual(parts[proof][5], count)
+                self.assertGreater(label, parts[z][2])
+                triples = (a,) if len(cores) == 1 else (a, a+3)
+                for start, expected in zip(triples, cores):
+                    triple = parts[start:start+3]
+                    actual = (max(min(u[3], u[4]) for u in triple),
+                              min(max(u[3], u[4]) for u in triple))
+                    self.assertEqual(actual, expected)
+                last_core = cores[-1]
+                witness = parts[proof]
+                self.assertLessEqual(min(witness[3], witness[4]), last_core[1])
+                self.assertGreaterEqual(max(witness[3], witness[4]), last_core[0])
+                total += 1
+            first, pull = audit['targets']
+            self.assertEqual(parts[first[0]][3], 1230)
+            self.assertEqual(first[1]+1, pull[0])
+            high = max(max(u[3], u[4]) for u in parts[pull[0]:pull[1]+1])
+            self.assertEqual(high, 1207)
+            self.assertGreater(high, table['old_core_zd_ticks'])
+        self.assertEqual(total, 4)
+
     def test_minimum_f1_boundary_table_is_independent_of_old_second_labels(self):
         """静态F1表核首三段/无提前回入/后继证明; 不改原R2腿或源数据。"""
         source = ROOT / 'tests/test_real_second_point.py'
