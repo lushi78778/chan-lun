@@ -13,6 +13,51 @@
 保留，历史行情验收、标注、扫描、图册与样本工具现位于 `validation/tools/`；
 `tools/verify_installed.py` 仍属工程层。冻结收据内的旧路径和摘要不回写。
 
+## M6/M2：1.2.1双渠道发行闭环与入口准入表修正（2026-11-03）
+
+[完整CI 41622251479](https://github.com/lushi78778/chan-lun/actions/runs/41622251479)
+九个作业全部completed/success：构建、两现代包层、3.6旧依赖、
+两现代资产层、汇总门禁、Release及PyPI。v1.2.1绑定不可变提交
+`724598fea4ff4a3b7f5143dcad796a7f6391aa22`，不是后续文档main。
+
+实际读取[Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.1)
+和[PyPI](https://pypi.org/project/chan-lun-core/1.2.1/)并下载各自发行
+文件，两渠道逐字节相同。Release的release-manifest.json摘要为
+`95777eb68fdf47b42aef20e8bea0538b303ea8a376db1d00c37cd41bdf431e41`，
+绑定上述提交、1.2.1及v1.2.1；文件大小/摘要与实际下载逐项一致：
+
+| 两渠道同一产物 | 字节数 | SHA-256 |
+|---|---:|---|
+| chan_lun_core-1.2.1-py3-none-any.whl | 191309 | `38bbc0f2d19457bd81a48e520073b826bc36cd7bd729a8033c73e0f0d8d0cb43` |
+| chan_lun_core-1.2.1.tar.gz | 1556160 | `b099905aba79abfe280da416fd8017660896f9a1235b09350f5c4038f4c40ae0` |
+
+这是线上tag集中构建并验收的产物，未套用此前本地候选摘要。
+两产物41个包文件、sdist的59份Python测试及17份fixture JSON与
+tag逐字节一致，validation均排除。严格元数据、清单verify及实际
+Markdown描述渲染通过；PyPI/wheel长描述与tag README相同，
+Release正文以tag CHANGELOG摘要开头，开发期记录保留。
+
+从PyPI实下的同一wheel分别在Docker3.10.22/3.13.18/3.6.15旧依赖
+内离线安装到临时venv，-I模式通过既有安装冒烟；各自41个已安装
+文件及187项导出再次与tag核对，实际导入均来自venv/site-packages。
+源码/输入只读，研究环境未升级；未重跑已完成的完整本地矩阵，
+也不将发行验收扩大为聚宽算法平台或七项理论缺口完成。
+
+同轮复核准入表与first/second/third/point_chain源码、既有回归：
+二类与二三合一需要反转锚点/一类或小转大上下文，普通三类只要求
+已知中枢及完整首离开/首回试，自动一类由完成趋势/行情/力度输入
+产生候选。已拆清前置条件，普通三类/自动一类不因缺外部first点位
+而被循环阻断；真实级别和完整类型证明仍保留，不改算法或阈值。
+既有first_chain/second/third的56项定向回归及8项工程契约通过，
+核对的是入口职责与发布表述，不记为新增独立真实正例。
+
+原始在线响应、双渠道文件、tag字节核对、三环境安装与日志在
+`/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/build/core-1.2.1-remote-closeout-20261103/`。
+发行核验收据摘要：
+`a13dad2c06735fe2b5bcef63ad2f5d7df2868298b6820c84e9cfd6dcad155170`。
+后续版本沿用独立提交、阶段tag及同一候选门禁；本轮只更新既有
+发行/计划/验收表述，§6及原始标签/数据保持。
+
 ## M3：三份原生长窗的同侧轮次输入准入结论（2026-11-03）
 
 本包回答一个有界问题：聚宽v02中未按本合同检验的三份长窗，
