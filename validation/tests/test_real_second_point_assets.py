@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'validation/tools/gen_real_second_point.py'
@@ -205,6 +206,20 @@ class TestRealSecondPointAssets(unittest.TestCase):
             self.assertEqual(
                 data['manifest_sha256'],
                 case['source']['dataset_manifest_sha256'])
+            given = next(c for c in manual['cases'] if c['window_key'] == case['window_key'])
+            _, _, hist = tool.macd_tables(case['raw_rows'])
+            seen = [unit['confirmed_raw_count'] for unit in case['units']]
+            actual = tool.derive_second_point(given, case['units'],
+                tool.validate_roles(given, case['units']), case['raw_rows'],
+                case.get('granularity', 'day'), hist, seen, case['first_point'])
+            self.assertEqual(actual, case['second_point'])
+        given = manual['cases'][0]
+        path, data = packet_of(given)
+        with mock.patch.object(tool, 'replay_confirmations',
+                side_effect=RuntimeError('合法表仍须逐前缀重放')) as replay:
+            with self.assertRaisesRegex(RuntimeError, '合法表仍须逐前缀重放'):
+                tool.compile_case(given, data, path)
+            replay.assert_called_once()
         for path in (TOOL, ROOT / 'validation/tools/gen_real_first_point.py',
                      ROOT / 'validation/tools/gen_real_strict_trend.py',
                      ROOT / 'validation/tools/gen_real_f1_originals.py'):
@@ -318,8 +333,11 @@ class TestRealSecondPointAssets(unittest.TestCase):
             with self.subTest(name=name):
                 broken = copy.deepcopy(case)
                 mutate(broken)
-                with self.assertRaises(ValueError):
-                    tool.compile_case(broken, data, path)
+                with mock.patch.object(tool, 'replay_confirmations',
+                        side_effect=AssertionError('坏标注不得进入逐前缀重放')) as replay:
+                    with self.assertRaises(ValueError):
+                        tool.compile_case(broken, data, path)
+                    replay.assert_not_called()
 
     def test_reject_corrupt_frozen_window_second_point_tables(self):
         """C1/D1/X1/Y1/Z1二类裁定表被篡改时直接拒绝。"""
@@ -391,8 +409,11 @@ class TestRealSecondPointAssets(unittest.TestCase):
                 with self.subTest(window=case['window_key'], name=name):
                     broken = copy.deepcopy(case)
                     mutate(broken)
-                    with self.assertRaises(ValueError):
-                        tool.compile_case(broken, data, path)
+                    with mock.patch.object(tool, 'replay_confirmations',
+                            side_effect=AssertionError('坏标注不得进入逐前缀重放')) as replay:
+                        with self.assertRaises(ValueError):
+                            tool.compile_case(broken, data, path)
+                        replay.assert_not_called()
 
 
 if __name__ == '__main__':

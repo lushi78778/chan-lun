@@ -57,9 +57,8 @@ def raw_index(rows, unit_dt, granularity, last=False):
     return hits[-1] if last else hits[0]
 
 
-def derive_first_point(case, units, centers, rows, granularity, unit_seen,
-                       dif, dea, hist):
-    """一类裁定算术复算; 与人工声明全精度一致否则拒绝。"""
+def _first_point_geometry(case, units, centers, rows, granularity, dif, dea, hist):
+    """先核一类几何/力度声明；不读取或构造确认时钟。"""
     roles = case['roles']
     trend = case['trend']
     declared = case['first_point']
@@ -108,15 +107,29 @@ def derive_first_point(case, units, centers, rows, granularity, unit_seen,
         if declared[name] != value:
             raise ValueError('声明' + name + '与复算不一致: ' +
                              str(declared[name]) + ' != ' + str(value))
-    count = unit_seen[proof_unit]
     return dict(side=side, verdict=verdict, reason=reason,
                 b_unit=b_unit, c_unit=c_unit, proof_unit=proof_unit,
                 trend_first_unit=trend_first,
                 prior_extreme_ticks=prior_ext, c_extreme_ticks=c_ext,
                 new_extreme=new_extreme, area_b=area_b, area_c=area_c,
                 zero_axis=zero, b_span_raw=[b0, b1], c_span_raw=[c0, c1],
-                zero_span_raw=[z0, z1], first_raw_count=count,
-                first_dt=arrival_dt(rows[count - 1]['dt'], granularity))
+                zero_span_raw=[z0, z1])
+
+
+def _confirm_first_point(point, rows, granularity, unit_seen):
+    """仅按实际逐前缀重放的证明段首确认附时钟，不修改已核数值。"""
+    count = unit_seen[point['proof_unit']]
+    result = dict(point)
+    result['first_raw_count'] = count
+    result['first_dt'] = arrival_dt(rows[count - 1]['dt'], granularity)
+    return result
+
+
+def derive_first_point(case, units, centers, rows, granularity, unit_seen,
+                       dif, dea, hist):
+    """一类裁定算术及给定真实首确认时钟；既有调用签名和字段保持。"""
+    point = _first_point_geometry(case, units, centers, rows, granularity, dif, dea, hist)
+    return _confirm_first_point(point, rows, granularity, unit_seen)
 
 
 def compile_case(case, packet, packet_path):
@@ -149,6 +162,8 @@ def compile_case(case, packet, packet_path):
     centers = validate_roles(case, units)
     if derive_ledger(case['roles'], centers) != case['ledger']:
         raise ValueError('台账事件序列与角色推导不一致')
+    dif, dea, hist = macd_tables(rows)
+    point = _first_point_geometry(case, units, centers, rows, granularity, dif, dea, hist)
     bi_seen, xd_seen = replay_confirmations(rows, case, events)
     unit_seen = xd_seen if case['level'] == 'xd' else bi_seen
     for unit, count in zip(units, unit_seen):
@@ -160,9 +175,7 @@ def compile_case(case, packet, packet_path):
         ledger.append(dict(event=name, unit=unit, first_raw_count=count,
                            first_dt=arrival_dt(rows[count - 1]['dt'],
                                                granularity)))
-    dif, dea, hist = macd_tables(rows)
-    first_point = derive_first_point(case, units, centers, rows, granularity,
-                                     unit_seen, dif, dea, hist)
+    first_point = _confirm_first_point(point, rows, granularity, unit_seen)
     foundation_out = dict(bis=records(bis), bis_confirmed_raw_count=bi_seen)
     if events:
         foundation_out['xd_events'] = events

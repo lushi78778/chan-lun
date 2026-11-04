@@ -30,12 +30,12 @@ from gen_real_strict_trend import (arrival_dt, check_adjacency, derive_ledger,
                                    replay_confirmations, validate_roles,
                                    validate_xd_audit, validate_xd_events,
                                    xd_units)
-from gen_real_first_point import derive_first_point, macd_tables, raw_index
+from gen_real_first_point import (_confirm_first_point, _first_point_geometry,
+                                  macd_tables, raw_index)
 
 
-def derive_second_point(case, units, centers, rows, granularity, hist,
-                        unit_seen, first_point):
-    """二类裁定算术复算; 与人工声明全精度一致否则拒绝。"""
+def _second_point_geometry(case, units, centers, rows, granularity, hist):
+    """先核二类几何/力度声明；不读取或构造确认时钟。"""
     roles = case['roles']
     trend = case['trend']
     declared = case['second_point']
@@ -104,10 +104,6 @@ def derive_second_point(case, units, centers, rows, granularity, hist,
     interior_gap = (None if boundary
                     else (anchor_val - l1['start_ticks'] if up
                           else l1['start_ticks'] - anchor_val))
-    if first_point['verdict'] == 'established':
-        category = 'standard'
-    else:
-        category = 'minor_to_major'
     checks = (('anchor_unit', k), ('anchor_kind', anchor_kind),
               ('anchor_ticks', anchor_val),
               ('interior_gap_ticks', interior_gap),
@@ -122,11 +118,7 @@ def derive_second_point(case, units, centers, rows, granularity, hist,
         if declared.get(name) != value:
             raise ValueError('声明' + name + '与复算不一致: ' +
                              str(declared.get(name)) + ' != ' + str(value))
-    count = unit_seen[leg2]
     return dict(side=side,
-                premise=dict(first_verdict=first_point['verdict'],
-                             first_reason=first_point['reason'],
-                             category=category),
                 anchor_unit=k, anchor_kind=anchor_kind,
                 anchor_ticks=anchor_val,
                 anchor_span=[anchor_unit['start_dt'],
@@ -141,11 +133,28 @@ def derive_second_point(case, units, centers, rows, granularity, hist,
                 consolidation_divergence=consolidation_divergence,
                 anchor_span_raw=list(anchor_span_raw),
                 leg2_span_raw=list(leg2_span_raw),
-                later_break=later_break,
-                leg2_confirmed_raw_count=count,
-                leg2_confirmed_dt=arrival_dt(rows[count - 1]['dt'],
-                                             granularity),
-                leg2_visible_in_window=count <= len(rows))
+                later_break=later_break)
+
+
+def _confirm_second_point(point, rows, granularity, unit_seen, first_point):
+    """按实际首确认补前提/时钟，保持冻结字段次序及可见性口径。"""
+    category = 'standard' if first_point['verdict'] == 'established' else 'minor_to_major'
+    count = unit_seen[point['leg2']]
+    result = dict(side=point['side'],
+                  premise=dict(first_verdict=first_point['verdict'],
+                               first_reason=first_point['reason'], category=category))
+    result.update((key, value) for key, value in point.items() if key != 'side')
+    result['leg2_confirmed_raw_count'] = count
+    result['leg2_confirmed_dt'] = arrival_dt(rows[count - 1]['dt'], granularity)
+    result['leg2_visible_in_window'] = count <= len(rows)
+    return result
+
+
+def derive_second_point(case, units, centers, rows, granularity, hist,
+                        unit_seen, first_point):
+    """二类裁定算术及给定真实首确认时钟；既有调用签名和字段保持。"""
+    point = _second_point_geometry(case, units, centers, rows, granularity, hist)
+    return _confirm_second_point(point, rows, granularity, unit_seen, first_point)
 
 
 def compile_case(case, packet, packet_path):
@@ -178,6 +187,10 @@ def compile_case(case, packet, packet_path):
     centers = validate_roles(case, units)
     if derive_ledger(case['roles'], centers) != case['ledger']:
         raise ValueError('台账事件序列与角色推导不一致')
+    dif, dea, hist = macd_tables(rows)
+    first_geometry = _first_point_geometry(case, units, centers, rows, granularity,
+                                            dif, dea, hist)
+    second_geometry = _second_point_geometry(case, units, centers, rows, granularity, hist)
     bi_seen, xd_seen = replay_confirmations(rows, case, events)
     unit_seen = xd_seen if case['level'] == 'xd' else bi_seen
     for unit, count in zip(units, unit_seen):
@@ -189,12 +202,9 @@ def compile_case(case, packet, packet_path):
         ledger.append(dict(event=name, unit=unit, first_raw_count=count,
                            first_dt=arrival_dt(rows[count - 1]['dt'],
                                                granularity)))
-    dif, dea, hist = macd_tables(rows)
-    first_point = derive_first_point(case, units, centers, rows, granularity,
-                                     unit_seen, dif, dea, hist)
-    second_point = derive_second_point(case, units, centers, rows,
-                                       granularity, hist, unit_seen,
-                                       first_point)
+    first_point = _confirm_first_point(first_geometry, rows, granularity, unit_seen)
+    second_point = _confirm_second_point(second_geometry, rows, granularity,
+                                         unit_seen, first_point)
     foundation_out = dict(bis=records(bis), bis_confirmed_raw_count=bi_seen)
     if events:
         foundation_out['xd_events'] = events
