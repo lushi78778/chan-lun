@@ -15,7 +15,13 @@
 - 2026-10-11 曾为 25 个历史小版本补齐本地中文附注 tag，均指向当时
   双处版本一致的概念提交，暂不推送或发布。
 
-## 1.2.2（2026-11-04）
+## 1.2.2（已发布，2026-11-04）
+
+发行核验：`v1.2.2`绑定`c2f0a97`，
+[完整CI](https://github.com/lushi78778/chan-lun/actions/runs/41744936868)公开状态Success；
+[GitHub Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.2)与
+[PyPI](https://pypi.org/project/chan-lun-core/1.2.2/)双产物实际下载摘要、
+源码内容与隔离导入通过，证据见validation/README.md。
 
 - **行为变化：板块SMA严格攻克边界修正**。`ma_strength_class`改用既有
   十进制前缀算术求均值后一次转float；修复均线精确等于收盘时被旧

@@ -13,6 +13,39 @@
 保留，历史行情验收、标注、扫描、图册与样本工具现位于 `validation/tools/`；
 `tools/verify_installed.py` 仍属工程层。冻结收据内的旧路径和摘要不回写。
 
+## M6：1.2.2双渠道发行闭环（2026-11-04）
+
+`v1.2.2`绑定`c2f0a97620ff0d10ccdf5b5febc2fdfdba2facf5`。
+[标签完整CI](https://github.com/lushi78778/chan-lun/actions/runs/41744936868)
+公开运行页状态Success，总耗时1h 7m 38s。GitHub API本次403，
+最终状态由公开运行页核实，不以PyPI上架推断逐作业状态；未补写
+未取得的远端覆盖率或各作业计时。该tag沿用前置工具，后续main的
+坏标注拒绝前移不回写此次CI。日常快速与tag完整层继续分别执行。
+
+实际读取[Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.2)
+的公开release-manifest.json及[PyPI](https://pypi.org/project/chan-lun-core/1.2.2/)
+元数据，版本、tag、提交与双产物名称/大小/SHA一致；随后从两个
+渠道各下载wheel/sdist，四份实际文件全部符合该清单：
+
+| 发行产物（两渠道相同） | 字节 | SHA-256 |
+|---|---:|---|
+| chan_lun_core-1.2.2-py3-none-any.whl | 191507 | `f800b573015720d4897b7e4831a65ed2286a6ff4716a656892aaa67411850a86` |
+| chan_lun_core-1.2.2.tar.gz | 1571297 | `154a90652b2cd5a817e4983824b1efd891ef56ee19e4acb925d938d45b23d377` |
+
+wheel完整性与成员唯一性通过，两种产物均排除validation。41个包
+源码在发行wheel、sdist与当前真源逐字节相同，sdist的77份包测试/
+fixtures/索引文件也与当前真源相同。实际PyPI wheel经3.10解释器
+`-I`隔离导入及全部公开导出冒烟通过；未升级外层研究环境。
+本次只复核发行产物，未重复已完成的完整矩阵或将本地95.02%写成
+新取得的线上覆盖率，也不扩大理论分支或聚宽平台算法验收结论。
+
+真实发行产物、公开清单和隔离日志保存在
+`/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/build/core-1.2.2-stage-20261104/remote-verified/`。
+`verification.json` SHA-256：
+`d2bcc34775587017a7178e298a8e43fda2679543f4f2d2ee2c4eaef4f58379b6`。
+这些是tag CI的已发布候选，不与本地762fc86候选的摘要混用。
+原始证据、既有标签、包源码/版本和§6状态保持。
+
 ## M1：一/二类标注数值拒绝前置与完整验收耗时（2026-11-04）
 
 既有一/二类编译器先逐原始前缀重放，之后才检查MACD/极值/点位
