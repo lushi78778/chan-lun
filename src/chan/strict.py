@@ -100,10 +100,11 @@ import json
 
 from chan._intervals import _range3
 from chan._series import _finite_number
+from chan.bars import _bar_time
 from chan.completion import _visible_units, confirm_level_up
 from chan.first import _net, _tail
 from chan.recurse import _level_up_traced
-from chan.second import _price
+from chan.second import _price, _time
 
 # 四类返回语义(R3规格§11.6): 候选/成立/证据不足/否决。
 STRICT_CANDIDATE = 'candidate'
@@ -558,6 +559,17 @@ def _evaluate_chain_level(units, direction, force_fn):
     return 'bc', None, reference, leave, center_range, ref_force, leave_force
 
 
+def _visible_parent_leave(divergence, units, as_of):
+    cutoff, kind = _bar_time(as_of)
+    if _time(divergence.confirmed_dt, kind) > cutoff:
+        raise ValueError('divergence.confirmed_dt须不晚于as_of')
+    visible, _ = _visible_units(units, as_of, divergence.level)
+    by_id = {unit.move_id: unit for unit in visible}
+    if any(name not in by_id for name in divergence.leave_ids):
+        raise ValueError('divergence.leave_ids须在as_of可见父级单元中')
+    return [by_id[name] for name in divergence.leave_ids]
+
+
 def strict_nested_chain(divergence, units, layers, as_of,
                         force_fn=None, force_method=None):
     """严格趋势背驰的区间套次级确认链(课27定理/课61图解, R3)。
@@ -569,7 +581,8 @@ def strict_nested_chain(divergence, units, layers, as_of,
     一个次级中枢, 围绕它比较对照段与背驰段力度(课61/课53推广,
     不要求重2起内部两个分离中枢)。
 
-    输入: units为产生divergence的父级单元(同一次扫描输入);
+    输入: divergence.confirmed_dt须不晚于as_of, 否则报ValueError;
+    units为产生divergence的父级单元(同一次扫描输入);
     layers为逐重显式供给的(级别名, 单元表)序列, 级别邻接由调用
     方明示, 不按K线周期名猜级别; 第k重单元须与第k-1重背驰段
     区间时间首尾相等(否则not_covered)且端点价格对齐(否则报错,
@@ -599,11 +612,7 @@ def strict_nested_chain(divergence, units, layers, as_of,
     for layer in layers:
         if not isinstance(layer, (list, tuple)) or len(layer) != 2:
             raise ValueError('layers项须为(级别名, 单元表)二元组')
-    parent_visible = _visible_units(units, as_of, divergence.level)[0]
-    parent_ids = dict((u.move_id, u) for u in parent_visible)
-    if any(name not in parent_ids for name in divergence.leave_ids):
-        raise ValueError('divergence.leave_ids须在as_of可见父级单元中')
-    parent_leave = [parent_ids[name] for name in divergence.leave_ids]
+    parent_leave = _visible_parent_leave(divergence, units, as_of)
     direction = 'down' if divergence.kind == 'buy1' else 'up'
     levels = []
     break_depth = break_reason = None
@@ -754,7 +763,8 @@ def strict_completion_cascade(divergence, units, layers, as_of):
     首个未通过层即止; 起点价格不对齐报价格坐标契约错误。
 
     divergence为scan_strict_divergence结果(任意语义: 端点单元的
-    完成复核与父级裁定正交); units为产生divergence的父级单元;
+    完成复核与父级裁定正交), confirmed_dt须不晚于as_of,
+    否则报ValueError; units为产生divergence的父级单元;
     layers为逐层(级别名, 细级单元表)序列, 级别邻接由调用方明示,
     不按K线周期名猜级别, 细级单元契约同scan_strict_divergence
     (as_of前已确认连续前缀)。返回StrictCompletion: 全部已评估层
@@ -770,11 +780,7 @@ def strict_completion_cascade(divergence, units, layers, as_of):
             raise ValueError('layers项须为(级别名, 单元表)二元组')
     if not divergence.leave_ids:
         raise ValueError('divergence.leave_ids不能为空')
-    parent_visible = _visible_units(units, as_of, divergence.level)[0]
-    parent_ids = dict((u.move_id, u) for u in parent_visible)
-    if any(name not in parent_ids for name in divergence.leave_ids):
-        raise ValueError('divergence.leave_ids须在as_of可见父级单元中')
-    obj = parent_ids[divergence.leave_ids[-1]]
+    obj = _visible_parent_leave(divergence, units, as_of)[-1]
     levels = []
     for depth, (layer_level, layer_units) in enumerate(layers, 1):
         verified_id = obj.move_id

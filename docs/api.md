@@ -213,6 +213,12 @@ docstring 与模块测试。
 
 调用方不得依赖异常消息文本（非冻结），只依赖异常类型与抛出条件。
 
+`strict_nested_chain` 和 `strict_completion_cascade` 的父级
+`StrictDivergence.confirmed_dt` 须不晚于 `as_of`。自 1.2.3 起，
+即使父级离开段单元已可见，较晚观察才获得的父级结果仍会触发
+`ValueError`，细级计算和力度函数均不会执行。回放应重新扫描
+该观察时刻的父级结果，已可见的开放候选可正常传入。
+
 `find_ma_points` / `ma_point_state` 的可见行情须为输入的连续前缀；首行或
 内部行未到而后续行已到时抛 `ValueError`（1.1.0 修复既有到达非降序校验
 被过滤绕过的缺陷）。正常不可见尾部允许；乱序交付/修订须显式重建输入版本。

@@ -112,7 +112,7 @@ from chan.lineage import (CenterEvent, CenterLineage, CenterVersion,
 from chan.causal_graph import causal_graph_dot
 from chan.rounds import Round, RoundChain, track_rounds
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 
 __all__ = [
     "FirstPoint", "FirstPointScan", "find_first_points", "scan_first_points", "PointContext", "PointChain",

@@ -680,6 +680,37 @@ class TestStrictNestedChain(unittest.TestCase):
         with self.assertRaises(ValueError):
             strict_nested_chain(r, units[:10], [], now)
 
+    def test_future_parent_result_is_rejected_before_child_evaluation(self):
+        """c已可见时，父级仍可能等待后继证明。"""
+        units, now = sample()
+        result = scan_strict_divergence(units, now, 'main').results[0]
+        before = result.confirmed_dt - timedelta(microseconds=1)
+        self.assertLessEqual(units[14].confirmed_dt, before)
+        calls = []
+
+        def force(reference, leave):
+            calls.append((reference, leave))
+            return 10.0, 5.0
+
+        for parent in (result, result._replace(status=STRICT_REJECTED)):
+            with self.subTest(status=parent.status, entry='nested'):
+                with self.assertRaisesRegex(ValueError, 'divergence.confirmed_dt'):
+                    strict_nested_chain(parent, units, [('sub', self.sub_units())],
+                                        before, force_fn=force, force_method='clock_probe')
+            with self.subTest(status=parent.status, entry='cascade'):
+                with self.assertRaisesRegex(ValueError, 'divergence.confirmed_dt'):
+                    strict_completion_cascade(parent, units, [], before)
+        self.assertEqual(calls, [])
+
+        known = result.confirmed_dt
+        chain = strict_nested_chain(result, units, [('sub', self.sub_units())],
+                                    known, force_fn=force, force_method='clock_probe')
+        self.assertTrue(chain.complete)
+        self.assertEqual(chain.confirmed_dt, known)
+        self.assertEqual(len(calls), 1)
+        cascade = strict_completion_cascade(result, units, [], known)
+        self.assertEqual(cascade.confirmed_dt, known)
+
     def test_chain_requires_divergence_result(self):
         """divergence须为scan_strict_divergence结果, layers须为序列。"""
         units, now = sample()
@@ -882,11 +913,12 @@ class TestStrictCompletionCascade(unittest.TestCase):
 
     def test_future_layer_unit_not_read(self):
         """观察时刻之后的细级身份/价格毒值不影响复核。"""
-        units, now = sample()
-        r = scan_strict_divergence(units, now, 'main').results[0]
+        units, _ = sample()
         sub = self.sub_units()
         extra = self._make([(67, 68, 4)], 'sub', sub[5].end_dt)
         cut = sub[5].confirmed_dt
+        r = scan_strict_divergence(units, cut, 'main').results[0]
+        self.assertEqual(r.status, STRICT_CANDIDATE)
         base = strict_completion_cascade(r, units, [('sub', sub + extra)], cut)
         self.assertEqual(base.levels[0].status, 'confirmed')
         poison = extra[0]._replace(move_id=None, level=None,
