@@ -98,7 +98,8 @@ def first_point_contexts(units, first_points, as_of, level):
     """自动关联原趋势末中枢、反转锚点与锚点后首次形成中枢。
 
     只接受FirstPoint及确认次级类型。锚点须与反转首走势起点价格/
-    时间一致; 每轮身份取point_id, 不使用数组下标。形成时间为三段
+    时间一致; 可见末段已跨过锚点时拒绝混用输入版本。每轮身份取
+    point_id, 不使用数组下标。形成时间为三段
     证据最晚确认时间, 不使用第三段端点; 未来点位/价格不读取。
     """
     visible, kind = _visible_units(units, as_of, level)
@@ -130,6 +131,8 @@ def first_point_contexts(units, first_points, as_of, level):
         if not _price(previous.zd) < _price(previous.zg) or _time(previous.confirmed_dt, kind) > known:
             raise ValueError('原趋势中枢须已形成且ZD<ZG')
         post = [u for u in visible if _time(u.start_dt, kind) >= anchor]
+        if not post and visible and _time(visible[-1].end_dt, kind) > anchor:
+            raise ValueError('反转锚点不能位于已确认走势内部')
         causal = None
         if post:
             if post[0].start_dt != point.dt or post[0].start_price != price:

@@ -50,6 +50,8 @@ def find_third_points(moves, contexts, as_of):
     结束于ZG上/ ZD下; 紧邻首个相反方向走势的整个区间守沿才成立。
     首回试破沿后本次离开失败, 不跳过首回试挑选第二次; 重新进中枢
     后发生新的离开可以重新检查。已成立后不重复发同一中枢事件。
+    从中枢可见起到首个成立点, 已覆盖的相邻走势须时间与端点价连续;
+    排除更早尝试所用的走势也计入新离开成立的确认时间。
     不使用未来扩展后的中枢边界; 缺级别邻接/完成证据不能自动补齐。
     """
     cutoff, kind=_bar_time(as_of)
@@ -72,23 +74,25 @@ def find_third_points(moves, contexts, as_of):
         if not _price(center.zd)<_price(center.zg):
             raise ValueError('中枢须ZD<ZG')
         group=groups.get(context.sub_level,[])
+        confirmed = center.confirmed_dt
         for leave,pull in zip(group,group[1:]):
+            if _time(leave.end_dt, kind) >= known and (
+                    leave.end_dt != pull.start_dt or leave.end_price != pull.start_price):
+                raise ValueError('中枢已知后的相邻走势时间和价格须连续')
             if _time(leave.start_dt,kind)<known:
                 continue
+            confirmed = max((confirmed, leave.confirmed_dt, pull.confirmed_dt),
+                            key=lambda dt: _time(dt, kind))
             if leave.low>center.zg or leave.high<center.zd:
                 continue  # 完全在中枢外的继续走势不是从此中枢的新离开。
             up=leave.direction=='up'
             if not (leave.end_price>center.zg if up else leave.end_price<center.zd):
                 continue
-            if leave.end_dt!=pull.start_dt or leave.end_price!=pull.start_price:
-                raise ValueError('离开与首次回试时间和价格须连续')
             if leave.direction==pull.direction:
                 continue  # 尚无首个反向回试, 不跳到后续单元凑相邻配对。
             holds=pull.low>=center.zg if up else pull.high<=center.zd
             if not holds:
                 continue  # 首回试失败; 不能跳过它使用第二次回抽。
-            confirmed=max([center.confirmed_dt,leave.confirmed_dt,pull.confirmed_dt],
-                          key=lambda dt:_time(dt,kind))
             out.append(ThirdPoint('buy3' if up else 'sell3',context.context_id,center.center_id,
                                   context.level,pull.end_dt,pull.end_price,confirmed,
                                   leave.move_id,pull.move_id))

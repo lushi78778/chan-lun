@@ -59,6 +59,44 @@ class TestThird(unittest.TestCase):
         out=find_third_points(moves,[context()],'2026-01-11')
         self.assertEqual(out[0].leave_move_id,'c')
 
+    def test_late_failed_return_delays_new_departure_confirmation(self):
+        """排除前次离开所需的破沿回试迟到, 新三类点不能回填。"""
+        moves = [move('a', 2, 4, 11, 14),
+                 move('b', 4, 6, 14, 11, confirmed=12),
+                 move('c', 6, 8, 11, 15),
+                 move('d', 8, 10, 15, 12.5)]
+        with self.assertRaises(ValueError):
+            find_third_points(moves, [context()], '2026-01-11')
+        point, = find_third_points(moves, [context()], '2026-01-12')
+        self.assertEqual((point.leave_move_id, point.pull_move_id), ('c', 'd'))
+        self.assertEqual(point.dt, '2026-01-10')
+        self.assertEqual(point.confirmed_dt, '2026-01-12')
+
+    def test_gap_after_non_departure_cannot_replace_first_return(self):
+        """较早合格配对迟到时, 后续配对不能越过可见缺口先出点。"""
+        moves = [move('a', 2, 3, 10.5, 11),
+                 move('b', 3, 4, 11, 14, confirmed=14),
+                 move('c', 4, 5, 14, 12.5, confirmed=14),
+                 move('d', 5, 6, 12.5, 11),
+                 move('e', 6, 8, 11, 15),
+                 move('f', 8, 10, 15, 12.5)]
+        with self.assertRaises(ValueError):
+            find_third_points(moves, [context()], '2026-01-11')
+        point, = find_third_points(moves, [context()], '2026-01-14')
+        self.assertEqual((point.leave_move_id, point.pull_move_id), ('b', 'c'))
+        self.assertEqual(point.confirmed_dt, '2026-01-14')
+
+    def test_unrelated_gap_between_two_center_histories_is_allowed(self):
+        """首个点已成立或中枢尚不可见时, 不审不相干的缺口。"""
+        moves = [move('a', 2, 4, 11, 14), move('b', 4, 6, 14, 12),
+                 move('c', 12, 14, 21, 24), move('d', 14, 16, 24, 22)]
+        other = ThirdPointContext('other', 'main', 'sub',
+                                  ConfirmedCenter('other-center', 'main', 20, 22,
+                                                  '2026-01-11'))
+        points = find_third_points(moves, [context(), other], '2026-01-17')
+        self.assertEqual([(p.context_id, p.pull_move_id) for p in points],
+                         [('cycle', 'b'), ('other', 'd')])
+
     def test_repeated_pulls_are_not_repeated_signals(self):
         """同一中枢只输出第一个成立事件, 不再将趋势中回抽当三买。"""
         moves=[move('a',2,4,11,14),move('b',4,6,14,12),

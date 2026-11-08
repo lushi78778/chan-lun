@@ -126,6 +126,22 @@ class TestAutomaticFirstChain(unittest.TestCase):
         for points in ([p,p],[p._replace(sub_level='other')],[p._replace(price=64)]):
             with self.assertRaises(ValueError):first_point_contexts(u,points,now,'main')
 
+    def test_anchor_inside_visible_move_cannot_open_a_context(self):
+        """末段跨过旧锚点时，两份输入版本的走势边界不匹配。"""
+        units, bars, now = sample()
+        point, = find_first_points(units, bars, now, 'main')
+        last, following = units[14:16]
+        self.assertEqual(last.end_dt, point.dt)
+        waiting, = first_point_contexts(units[:15], [point], now, 'main')
+        self.assertIsNone(waiting.causal_center)
+        crossing = last._replace(end_dt=following.end_dt,
+                                 confirmed_dt=following.confirmed_dt,
+                                 end_price=last.start_price - 1, low=last.start_price - 1)
+        self.assertLess(crossing.start_dt, point.dt)
+        self.assertLess(point.dt, crossing.end_dt)
+        with self.assertRaises(ValueError):
+            first_point_contexts(units[:14] + [crossing], [point], now, 'main')
+
     def test_nonprefix_price_arrival_rejected(self):
         """迟到历史缺口可能重算EMA, 必须声明新版本, 不能跳过缺口。"""
         u,b,now=sample();b[20]['available_dt']=now+timedelta(days=1)
