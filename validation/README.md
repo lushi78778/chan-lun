@@ -13,6 +13,31 @@
 保留，历史行情验收、标注、扫描、图册与样本工具现位于 `validation/tools/`；
 `tools/verify_installed.py` 仍属工程层。冻结收据内的旧路径和摘要不回写。
 
+## M6：1.2.3双渠道发行闭环（2026-11-09）
+
+`v1.2.3` 指向 `808e692dcd1684de1f8d3627c6faee9333735dab`。
+[标签完整CI](https://github.com/lushi78778/chan-lun/actions/runs/42496163898)
+九个作业均成功，按作业结束时刻核算总耗时56分01秒。
+[GitHub Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.3)
+与 [PyPI](https://pypi.org/project/chan-lun-core/1.2.3/) 均于北京时间
+2026-11-09 00:38发布。两渠道各实下载wheel与sdist，字节数和
+SHA-256均与线上清单及PyPI元数据一致。
+
+| 发行产物 | 字节数 | SHA-256 |
+|---|---:|---|
+| wheel | 191819 | `8c427caed68967bf4fbf91797002ca0e07d106fc1ff7ce464ce750f38155974a` |
+| sdist | 1576802 | `b0ae74d928769031e3d9cd2b5145c2bdc7f9fc040bc571df401128b879905a24` |
+
+线上封存清单SHA-256为
+`caf0453e928907c043db15e938d947beb8341581bc8f49efc3913578699d964d`。
+41份包源码、sdist的77份包测试和夹具与冻结提交逐字节相符；
+两种发行产物均排除validation，实际PyPI wheel隔离导入与冒烟
+通过。线上发行候选和本地完整候选分别保存，各自摘要绑定同一
+提交的不同构建。聚宽平台验收另列。
+
+本地核验 `build/core-1.2.3-stage-808e692/remote/verification.json`
+SHA-256为 `dcde669854818ba086b3bae3744e8850b138ce92d436d088d0373d26bdcce385`。
+
 ## M6：1.2.3同一候选本地完整阶段验收（2026-11-08）
 
 冻结源码提交 `808e692dcd1684de1f8d3627c6faee9333735dab`，复用该

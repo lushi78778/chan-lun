@@ -15,7 +15,12 @@
 - 2026-10-11 曾为 25 个历史小版本补齐本地中文附注 tag，均指向当时
   双处版本一致的概念提交，暂不推送或发布。
 
-## 1.2.3（开发中）
+## 1.2.3（已发布，2026-11-09）
+
+`v1.2.3` 绑定 `808e692`。标签完整CI的九个作业均通过；
+GitHub Release 与 PyPI 的 wheel/sdist 下载文件逐字节相同，
+与线上封存清单一致，实际 PyPI wheel 隔离导入通过。
+发行证据见 validation/README.md。
 
 - **行为变化：严格背驰组合入口检查父级结果的确认时间**。
   `strict_nested_chain` 和 `strict_completion_cascade` 对确认晚于
