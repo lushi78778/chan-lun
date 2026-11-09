@@ -552,5 +552,102 @@ class TestDiscoveryPartitionIntegrity(unittest.TestCase):
                 self.assertFalse(output.exists())
 
 
+class TestRoundReplayPartitionIntegrity(unittest.TestCase):
+    """轮次回放与共享历史加载器的来源绑定。"""
+
+    @staticmethod
+    def load_tool(name):
+        from importlib import import_module
+        previous = list(sys.path)
+        try:
+            sys.path.insert(0, str(ROOT/'validation/tools'))
+            return import_module(name)
+        finally:
+            sys.path[:] = previous
+
+    def test_history_partition_change_during_read_rejected_without_receipt(self):
+        from unittest.mock import patch
+        tool = self.load_tool('verify_core_history')
+        code = '510300.SH'
+        frame = TestDiscoveryInputGuards.frame()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            path = root/'bars.parquet'
+            path.write_bytes(b'frozen partition')
+            item = dict(path=path.name, sha256=tool.digest(path))
+            TestDiscoveryPartitionIntegrity.manifest(root, item)
+            receipt = []
+            fake, read = TestDiscoveryPartitionIntegrity.parser(frame)
+            with patch.dict(sys.modules, fake):
+                frames = tool.load_frames(root, '1d', [code], receipt)
+            pd.testing.assert_frame_equal(frames[code], frame)
+            self.assertEqual(receipt, [item])
+            self.assertEqual(read.call_args[1]['filters'], [('ts_code', 'in', [code])])
+            fake, _ = TestDiscoveryPartitionIntegrity.parser(
+                frame, during_read=lambda: path.write_bytes(b'replaced partition'))
+            receipt = []
+            with patch.dict(sys.modules, fake), self.assertRaisesRegex(ValueError, '在读取期间改变'):
+                tool.load_frames(root, '1d', [code], receipt)
+            self.assertEqual(receipt, [])
+
+    def test_round_replay_uses_one_manifest_and_rejects_mid_run_replacement(self):
+        import contextlib
+        import io
+        from unittest.mock import patch
+        tool = self.load_tool('verify_rounds_lineage')
+        code = '510300.SH'
+        for changed in (False, True):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                manifest = root/'manifest.json'
+                manifest.write_text(' { "datasets": {} }\n')
+                snapshot = json.loads(manifest.read_text())
+                expected_sha = tool.digest(manifest)
+                output = root/'receipt.json'
+
+                def load(dataset, period, codes, receipt, manifest=None):
+                    self.assertEqual(manifest, snapshot)
+                    if changed and period == '1d':
+                        (dataset/'manifest.json').write_text('{"datasets":{}}')
+                    return {code: period}
+
+                argv = [tool.__file__, str(root), '--output', str(output)]
+                with patch.object(sys, 'argv', argv), patch.object(tool, 'CODES', [code]), \
+                        patch.object(tool, 'load_frames', side_effect=load) as loader, \
+                        patch.object(tool, 'check', return_value={}), \
+                        patch.object(tool, 'check_minute1', return_value={}), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    if changed:
+                        with self.assertRaisesRegex(ValueError, 'manifest'):
+                            tool.main()
+                        self.assertFalse(output.exists())
+                    else:
+                        with self.assertRaises(SystemExit) as result:
+                            tool.main()
+                        self.assertEqual(result.exception.code, 0)
+                        self.assertEqual(json.loads(output.read_text())['manifest_sha256'], expected_sha)
+                    calls = loader.call_args_list
+                    self.assertEqual([call[0][1] for call in calls], ['1d', '30m', '1m'])
+                    self.assertIs(calls[0][1]['manifest'], calls[1][1]['manifest'])
+                    self.assertIs(calls[1][1]['manifest'], calls[2][1]['manifest'])
+
+    def test_round_replay_preserves_frozen_output_and_dangling_link(self):
+        tool = ROOT/'validation/tools/verify_rounds_lineage.py'
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = root/'receipt.json'
+            output.write_bytes(b'frozen receipt')
+            link, target = root/'link.json', root/'target.json'
+            link.symlink_to(target)
+            for path in (output, link):
+                run = subprocess.run([sys.executable, str(tool), str(root/'missing'),
+                                      '--output', str(path)], cwd=temp, stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE, universal_newlines=True)
+                self.assertNotEqual(run.returncode, 0)
+                self.assertIn('拒绝覆盖', run.stderr)
+            self.assertEqual(output.read_bytes(), b'frozen receipt')
+            self.assertFalse(target.exists())
+
+
 if __name__=='__main__':
     unittest.main()

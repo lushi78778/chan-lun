@@ -11,6 +11,8 @@ import math
 from pathlib import Path
 import sys
 
+from scan_real_strict_trend import read_discovery_manifest, read_discovery_partition
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'src'))
 import chan
@@ -27,23 +29,21 @@ def digest(path):
     return h.hexdigest()
 
 
-def load_frames(dataset, period, codes, receipt):
-    import pyarrow.parquet as pq
+def load_frames(dataset, period, codes, receipt, manifest=None):
+    """读取校验通过的分区，保留既有验收收据字段。"""
     import pandas as pd
-    manifest = json.loads((dataset / 'manifest.json').read_text())
+    if manifest is None:
+        manifest, _ = read_discovery_manifest(dataset)
     files = manifest['datasets'][period]['files']
     if period != '1d':
         files = [item for item in files if item.get('partition') == '2026']
     time_key = 'trade_date' if period == '1d' else 'trade_time'
     frames = []
     for item in files:
-        path = dataset / item['path']
-        actual = digest(path)
-        assert actual == item['sha256'], str(path)
-        receipt.append({'path': item['path'], 'sha256': actual})
-        table = pq.read_table(path, columns=['ts_code', time_key, 'open', 'high',
-                                           'low', 'close', 'vol', 'adj_factor'],
-                              filters=[('ts_code', 'in', codes)])
+        columns = ['ts_code', time_key, 'open', 'high', 'low', 'close', 'vol', 'adj_factor']
+        verified = []
+        table = read_discovery_partition(dataset, item, columns, codes, verified)
+        receipt.append({key: verified[0][key] for key in ('path', 'sha256')})
         frames.append(table.to_pandas())
     frame = pd.concat(frames, ignore_index=True)
     assert not frame.duplicated(['ts_code', time_key]).any()

@@ -12,12 +12,12 @@
 import argparse
 from collections import Counter
 from datetime import timedelta
-import json
 import math
 from pathlib import Path
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
+from scan_real_strict_trend import read_discovery_manifest,write_discovery_result
 from verify_core_history import CODES,bars_from,digest,load_frames
 from verify_core_available import prepare_prices
 from verify_ma_history import timed
@@ -196,10 +196,13 @@ def main():
     parser.add_argument('dataset',type=Path)
     parser.add_argument('--output',required=True,type=Path)
     args=parser.parse_args();root=args.dataset.resolve();files=[]
-    daily=load_frames(root,'1d',CODES,files)
-    minutes=load_frames(root,'30m',CODES,files)
-    minute1=load_frames(root,'1m',CODES,files)
-    report=dict(version=chan.__version__,dataset=str(root),manifest_sha256=digest(root/'manifest.json'),
+    if args.output.exists() or args.output.is_symlink():
+        parser.error('拒绝覆盖已有验收收据，使用新输出路径')
+    manifest,manifest_sha256=read_discovery_manifest(root)
+    daily=load_frames(root,'1d',CODES,files,manifest=manifest)
+    minutes=load_frames(root,'30m',CODES,files,manifest=manifest)
+    minute1=load_frames(root,'1m',CODES,files,manifest=manifest)
+    report=dict(version=chan.__version__,dataset=str(root),manifest_sha256=manifest_sha256,
                 files=files,scope=__doc__,assets=[],errors=[],
                 source_sha256={p.name:digest(p) for p in sorted((Path(__file__).resolve().parents[2]/'src/chan').glob('*.py'))})
     for code in CODES:
@@ -211,8 +214,9 @@ def main():
         except Exception as e:
             report['errors'].append(dict(code=code,error=repr(e)));print(code,repr(e),flush=True)
     report['ok']=len(report['assets'])==len(CODES) and not report['errors']
-    args.output.parent.mkdir(parents=True,exist_ok=True)
-    args.output.write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+    if digest(root/'manifest.json')!=manifest_sha256:
+        raise ValueError('回放期间manifest.json改变，拒绝写入验收收据')
+    write_discovery_result(args.output,report)
     sys.exit(0 if report['ok'] else 1)
 
 
