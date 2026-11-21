@@ -25,6 +25,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from fractions import Fraction
+import hashlib
 import json
 import math
 from numbers import Real
@@ -37,6 +38,7 @@ from gen_real_strict_trend import arrival_dt, replay_confirmations
 from gen_real_third_point import enumerate_attempts
 from gen_real_causal_formation import run_causal_zn
 from scan_real_first_point import scan_strict_v3
+from scan_real_strict_trend import write_discovery_result
 
 
 def digest(path):
@@ -297,28 +299,31 @@ def main():
     parser.add_argument('--coordinate', choices=('raw', 'factor-product'), default='raw',
                         help='默认恒因子原价;显式日线乘积坐标须先核验因子来源/算术')
     args = parser.parse_args()
-    if args.output.exists():
+    if args.output.exists() or args.output.is_symlink():
         parser.error('拒绝覆盖已有扫描报告, 使用新输出路径')
-    packet = json.loads(args.packet.read_text())
+    snapshot = args.packet.read_bytes()
+    packet_sha256 = hashlib.sha256(snapshot).hexdigest()
+    packet = json.loads(snapshot.decode('utf-8'))
     period = packet['sampling_rule']['periods'][0]
     granularity = 'day' if period == '1d' else period
     if granularity not in ('day', '60m', '30m', '5m'):
         parser.error('不支持的原始包粒度: ' + str(period))
     rows, coordinate = price_coordinate(packet, args.coordinate)
     result = _scan_rows(rows, granularity, args.standard)
+    if digest(args.packet) != packet_sha256:
+        raise ValueError('扫描期间原始包改变，拒绝写入成功收据')
     report = dict(schema_version='chan-real-rounds-scan-v1',
                   annotation='rounds_discovery_scan_not_labels',
                   standard=args.standard,
                   factor_coordinate=coordinate,
                   generated_at=datetime.now(
                       timezone(timedelta(hours=8))).isoformat(),
-                  packet=args.packet.name, packet_sha256=digest(args.packet),
+                  packet=args.packet.name, packet_sha256=packet_sha256,
                   window=packet['sampling_rule']['window'],
                   the_warning='扫描结果仅作候选发现, 不是独立标注; 独立'
                               '标注由人工表冻结后经编译器与测试验收。',
                   **result)
-    args.output.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + '\n')
+    write_discovery_result(args.output, report)
     print(args.output.resolve())
     return 0
 

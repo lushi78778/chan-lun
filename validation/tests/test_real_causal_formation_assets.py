@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / 'validation/tools/gen_real_causal_formation.py'
@@ -1304,7 +1305,71 @@ class TestRealRoundsDiscovery(unittest.TestCase):
             self.assertEqual(report['factor_coordinate']['kind'], 'factor-product')
             self.assertEqual(report['factor_coordinate']['ticks_per_price_factor'], 1000000000)
             self.assertIn('observation_n_price', report['factor_coordinate']['rule'])
+            self.assertEqual(report['packet_sha256'], hashlib.sha256(untouched).hexdigest())
             self.assertEqual(source.read_bytes(), untouched)
+
+    def test_cli_rejects_packet_changed_during_scan_without_creating_receipt(self):
+        """计算采用的原始字节变化后，禁止把新摘要绑定到旧计算结果。"""
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / 'packet.json'
+            source.write_text(json.dumps(self.factor_packet()))
+            original = source.read_bytes()
+            output = Path(temp) / 'scan.json'
+            scanner = tool._scan_rows
+
+            def replace_after_scan(*args):
+                result = scanner(*args)
+                source.write_bytes(original + b'\n')
+                return result
+
+            command = ['scan_real_rounds.py', '--packet', str(source),
+                       '--output', str(output), '--coordinate', 'factor-product']
+            with patch.object(sys, 'argv', command), patch.object(
+                    tool, '_scan_rows', side_effect=replace_after_scan):
+                with self.assertRaisesRegex(ValueError, '原始包改变'):
+                    tool.main()
+            self.assertEqual(source.read_bytes(), original + b'\n')
+            self.assertFalse(output.exists())
+
+    def test_cli_preserves_receipt_created_by_another_scan(self):
+        """输出在计算期间被其他任务占用时，保留其完整内容。"""
+        tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / 'packet.json'
+            source.write_text(json.dumps(self.factor_packet()))
+            output = Path(temp) / 'scan.json'
+            scanner = tool._scan_rows
+            frozen = b'other completed receipt\n'
+
+            def publish_other_receipt(*args):
+                result = scanner(*args)
+                output.write_bytes(frozen)
+                return result
+
+            command = ['scan_real_rounds.py', '--packet', str(source),
+                       '--output', str(output), '--coordinate', 'factor-product']
+            with patch.object(sys, 'argv', command), patch.object(
+                    tool, '_scan_rows', side_effect=publish_other_receipt):
+                with self.assertRaises(FileExistsError):
+                    tool.main()
+            self.assertEqual(output.read_bytes(), frozen)
+
+    def test_cli_rejects_dangling_output_before_reading_packet(self):
+        """悬空链接也占据输出位置，在读入原始包前拒绝。"""
+        tool = ROOT / 'validation/tools/scan_real_rounds.py'
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp) / 'absent.json'
+            output = Path(temp) / 'scan.json'
+            output.symlink_to(target)
+            command = [sys.executable, str(tool), '--packet',
+                       str(Path(temp) / 'missing.json'), '--output', str(output)]
+            result = subprocess.run(command, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('拒绝覆盖', result.stderr)
+            self.assertTrue(output.is_symlink())
+            self.assertFalse(target.exists())
 
     def test_both_standards_match_frozen_structure_and_confirmation(self):
         tool = compiler(ROOT / 'validation/tools/scan_real_rounds.py')
