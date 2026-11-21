@@ -36,6 +36,7 @@ import math
 import os
 import sys
 from datetime import datetime, timedelta, timezone
+from numbers import Integral
 from pathlib import Path
 
 from scan_real_strict_trend import (clean_rows, discovery_before, read_discovery_manifest,
@@ -306,7 +307,15 @@ def analyze(bars, units, closes, dif, dea, hist, path):
     return out
 
 
+def _validate_max_months(max_months):
+    """验证正整数并转为Python int，避免定宽加法溢出改变发现窗口。"""
+    if isinstance(max_months, bool) or not isinstance(max_months, Integral) or max_months <= 0:
+        raise ValueError('--max-months须为正整数')
+    return int(max_months)
+
+
 def scan_code_period(code, frames, period, chan, minute_cap, max_months):
+    max_months = _validate_max_months(max_months)
     if code not in frames:
         raise ValueError('请求发现缺少标的输入，不能写成零候选: '+str(code))
     time_key = 'trade_date' if period == '1d' else 'trade_time'
@@ -386,6 +395,10 @@ def main():
     parser.add_argument('--max-months', type=int, default=18)
     parser.add_argument('--minute-cap', default='2026-07-27')
     args = parser.parse_args()
+    try:
+        args.max_months = _validate_max_months(args.max_months)
+    except ValueError as error:
+        parser.error(str(error))
     if args.output.exists() or args.output.is_symlink():
         parser.error('拒绝覆盖已归档发现输出；请使用新文件名')
     for period in args.periods:

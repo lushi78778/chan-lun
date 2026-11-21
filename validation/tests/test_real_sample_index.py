@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 import unittest
 
+import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -340,6 +341,82 @@ class TestDiscoveryInputGuards(unittest.TestCase):
         bad_clock = source.copy(); bad_clock.loc[2, 'trade_time'] = 'invalid'
         with self.assertRaises(ValueError):
             tool.scan_code_period('510300.SH', {'510300.SH': bad_clock}, '30m', None, '2026-07-27', 18)
+
+    def test_first_discovery_rejects_invalid_month_bounds_before_reading_rows(self):
+        """零、负数及非整数不能成为空扫描或Python负切片扩窗。"""
+        tool = self.scanners()[1]
+        for limit in (0, -1, -2, True, False, 1.0, 1.5, '1', None):
+            with self.subTest(max_months=repr(limit)):
+                with self.assertRaisesRegex(ValueError, 'max-months.*正整数'):
+                    tool.scan_code_period('510300.SH', None, '1d', None,
+                                          '2026-07-27', limit)
+
+    def test_first_discovery_cli_rejects_nonpositive_months_before_loading_dataset(self):
+        """非法范围在取数前失败，不创建零候选收据或输出目录。"""
+        tool = self.scanners()[1]
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for limit in (0, -1, -2):
+                with self.subTest(max_months=limit):
+                    output = root / 'output' / ('result-'+str(limit)+'.json')
+                    run = subprocess.run([
+                        sys.executable, tool.__file__, '--dataset', str(root/'missing'),
+                        '--output', str(output), '--max-months', str(limit)], cwd=temp,
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                    self.assertEqual(run.returncode, 2)
+                    self.assertIn('max-months须为正整数', run.stderr)
+                    self.assertNotIn('Traceback', run.stderr)
+                    self.assertFalse(output.parent.exists())
+
+    def test_first_discovery_keeps_one_and_default_eighteen_month_windows(self):
+        """固定月网格核对正值上界；分类替身只记录窗口，不制造候选。"""
+        from datetime import datetime
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        tool = self.scanners()[1]
+        times = pd.date_range('2024-01-01', '2025-10-01', freq='8h')
+        source = pd.DataFrame(dict(
+            ts_code='510300.SH', trade_time=[str(t) for t in times], open=10.,
+            high=11., low=9., close=10., vol=100., adj_factor=1.))
+
+        class WindowUnits:
+            @staticmethod
+            def chan_fx_bi(bars, standard):
+                return [], [], [SimpleNamespace(end_dt=bar['dt']) for bar in bars[:7]]
+
+            @staticmethod
+            def find_xds(fixed):
+                return []
+
+        observed = {}
+        limits = [('one', 1), ('default', 18),
+                  ('python32', int(np.iinfo(np.int32).max)),
+                  ('numpy32', np.int32(np.iinfo(np.int32).max)),
+                  ('python64', int(np.iinfo(np.int64).max)),
+                  ('numpy64', np.int64(np.iinfo(np.int64).max))]
+        for label, limit in limits:
+            windows = []
+
+            def record(bars, units, closes, dif, dea, hist, path):
+                windows.append((bars[0]['dt'], bars[-1]['dt']))
+                return []
+
+            with patch.object(tool, 'analyze', side_effect=record):
+                self.assertEqual(tool.scan_code_period(
+                    '510300.SH', {'510300.SH': source}, '30m', WindowUnits,
+                    '2026-07-27', limit), [])
+            observed[label] = windows
+        self.assertEqual(len(observed['one']), 21)
+        self.assertEqual(observed['one'][0], (datetime(2024, 1, 1), datetime(2024, 1, 31, 16)))
+        self.assertEqual(observed['one'][-1], (datetime(2025, 9, 1), datetime(2025, 9, 30, 16)))
+        self.assertEqual(len(observed['default']), 225)
+        self.assertIn((datetime(2024, 1, 1), datetime(2025, 6, 30, 16)), observed['default'])
+        self.assertNotIn((datetime(2024, 1, 1), datetime(2025, 7, 31, 16)), observed['default'])
+        # 大正上界覆盖有限月网格；定宽整数不能溢出成负切片而漏扫。
+        self.assertEqual(len(observed['python32']), 231)
+        self.assertEqual(observed['numpy32'], observed['python32'])
+        self.assertEqual(observed['python64'], observed['python32'])
+        self.assertEqual(observed['numpy64'], observed['python64'])
 
     def test_receipt_writer_rejects_existing_and_symlink_paths_without_truncation(self):
         for tool in self.scanners():

@@ -163,6 +163,10 @@ python validation/tools/verify_points_history.py --packet /E原始包绝对路�
 前两个扫描器导入核心库；`scan_real_rounds.py` 复用冻结独立算术，不导入核心库。
 它们都只发现候选，不替代人工独立标注。
 
+一类发现CLI的`--max-months`须为正整数，默认18；非法范围在读取
+输入前失败，不生成零窗口收据。直接调用`scan_code_period`采用
+同样约束，拒绝布尔值及非整数，整数上界按Python整数计算。
+
 轮次CLI将解析和摘要绑定同一份原始包字节，扫描结束复核来源。
 来源发生变化时失败；输出排他创建，已有文件或链接占用时拒绝写入。
 
