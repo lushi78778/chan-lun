@@ -605,6 +605,31 @@ class TestMaPointState(unittest.TestCase):
 
 
 class TestMaPoints(unittest.TestCase):
+    def test_initial_equal_means_do_not_admit_first_continuation(self):
+        """课12首次中继须有已见转化; 初始零后单侧走势没有该前提。"""
+        for mirror in (False, True):
+            rows = bars([0, 20, 30, 10, 40], mirror)
+            for stop in range(1, len(rows) + 1):
+                with self.subTest(mirror=mirror, stop=stop):
+                    observed = rows[stop-1]['available_dt']
+                    self.assertEqual(points(rows[:stop]), [])
+                    future = [dict(row) for row in rows]
+                    for row in future[stop:]:
+                        del row['close']
+                        del row['high']
+                    self.assertEqual(find_ma_points(future, observed, 1, 2), [])
+
+    def test_real_host_flip_after_zero_prefix_still_admits_second_candidate(self):
+        """体位在零后先建立, 后续真实反向转化及首次中继照常确认。"""
+        for mirror, kind in ((False, 'ma_buy2_candidate'), (True, 'ma_sell2_candidate')):
+            rows = bars([0, -20, -10, 20, 30, 10, 40], mirror)
+            self.assertEqual(points(rows[:-1]), [])
+            event, = points(rows)
+            self.assertEqual((event.kind, event.kiss_index), (kind, 1))
+            self.assertEqual(event.confirmed_dt, rows[-1]['available_dt'])
+            self.assertEqual(event.kiss_start_dt, rows[5]['dt'])
+            self.assertEqual(event.dt, rows[6]['dt'])
+
     def test_nonprefix_arrival_cannot_remove_closed_candidate(self):
         """已了结候选的历史坐标不能因中间行情未到而被静默压缩。"""
         for mirror in (False, True):

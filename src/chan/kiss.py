@@ -247,7 +247,9 @@ def find_kisses(short: Any, long: Any, volumes: Any = None,
         List[KissEvent], 按时间序。吻 = 差值自峰值回撤至同体位新
         极值(中继, resumed=True)或体位转化确认(转折, resumed=
         False)的完整过程; 数据耗尽时未了结的吻 open=True。差值
-        单调不回撤或数据不足时返回 []。
+        单调不回撤或数据不足时返回 []。前导相等位尚无宿主体位,
+        首个非零差值才建立体位和吻前腿; 首次有效值之后遇缺值即终止,
+        不跨缺口寻找后面的体位。
     """
     diffs = _diff_series(short, long)
     first = -1
@@ -256,6 +258,11 @@ def find_kisses(short: Any, long: Any, volumes: Any = None,
             first = i
             break
     if first < 0 or first >= len(diffs) - 1:
+        return []
+    # 课11/12: 初始两均线相等时未见男/女上位, 离零不能证明体位转化。
+    while first < len(diffs) and diffs[first] == 0:
+        first += 1
+    if first >= len(diffs) - 1 or diffs[first] is None:
         return []
 
     events: List[KissEvent] = []

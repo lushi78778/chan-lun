@@ -92,6 +92,45 @@ class TestAlignment(unittest.TestCase):
 class TestFindKisses(unittest.TestCase):
     """find_kisses 吻事件序列(课 11 完全分类 + 课 12 判定原料)"""
 
+    def test_leading_zero_waits_for_a_nonzero_host_on_both_sides(self):
+        """课11/12体位: 初始相等没有旧体位, 第一次离零不是体位转化。"""
+        for sign, direction in ((1, ALIGN_UP), (-1, ALIGN_DOWN)):
+            with self.subTest(sign=sign):
+                short, long = _series([0, 0, 2 * sign, 3 * sign, sign, 4 * sign])
+                events = find_kisses(short, long, [10., 20., 30., 40., 50., 60.])
+                self.assertEqual(len(events), 1)
+                event = events[0]
+                self.assertEqual((event.kind, event.direction, event.resumed, event.open),
+                                 (KISS_LIP, direction, True, False))
+                self.assertEqual((event.leg_start_idx, event.start_idx, event.end_idx),
+                                 (2, 3, 5))
+                self.assertEqual((event.kiss_index, event.crossings), (1, 0))
+                self.assertEqual((event.peak_gap, event.min_gap, event.depth), (3., 1., 2.))
+                self.assertEqual((event.vol_leg, event.vol_kiss, event.vol_prior),
+                                 (35., 55., None))
+                self.assertAlmostEqual(event.pre_gain, .1)
+
+    def test_zero_only_prefix_and_gap_do_not_establish_a_host(self):
+        """暖机可略过; 首次有效零后缺测仍终止观测, 不跳接后面的体位。"""
+        for values in ([0, 0, 0], [None, None, 0, 0],
+                       [0, None, 2, 3, 1, 4], [None, 0, 0, None, -2, -3, -1, -4]):
+            with self.subTest(values=values):
+                self.assertEqual(find_kisses(*_series(values)), [])
+        short, long = _series([None, None, 0, 0, -2, -3, -1, -4])
+        event, = find_kisses(short, long)
+        self.assertEqual((event.direction, event.leg_start_idx, event.start_idx, event.end_idx),
+                         (ALIGN_DOWN, 4, 5, 7))
+
+    def test_zero_touch_after_a_nonzero_host_remains_a_wet_kiss(self):
+        """初始无体位和已有体位触零有各自证据; 触零后的同向恢复仍计湿吻。"""
+        for sign, direction in ((1, ALIGN_UP), (-1, ALIGN_DOWN)):
+            short, long = _series([0, 2 * sign, 0, 3 * sign])
+            event, = find_kisses(short, long)
+            self.assertEqual((event.kind, event.direction, event.resumed, event.open),
+                             (KISS_WET, direction, True, False))
+            self.assertEqual((event.start_idx, event.end_idx, event.kiss_index, event.crossings),
+                             (1, 3, 1, 2))
+
     def test_fly_resume(self):
         # 飞吻: 回撤 0.25(>min_depth=0.2) 但最近距离 0.75 > 0.5x1.0
         short, long = _series([1.0, 0.75, 1.2])
