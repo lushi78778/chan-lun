@@ -13,7 +13,60 @@
 保留，历史行情验收、标注、扫描、图册与样本工具现位于 `validation/tools/`；
 `tools/verify_installed.py` 仍属工程层。冻结收据内的旧路径和摘要不回写。
 
-## M6：1.2.4最终候选准备（待标签确认，2026-11-21）
+## M6：1.2.4完整CI与发行产物核验（2026-11-21）
+
+附注标签`v1.2.4`精确绑定
+`37d5da4d8f7c31bc0e445d811119afd6e8af4b6f`，远端剥离目标相同。
+[标签完整CI](https://github.com/lushi78778/chan-lun/actions/runs/44897982652)
+的build、双现代包测试、双现代资产验收、legacy、ci、release和
+publish-pypi共九个作业全部成功；运行耗时55分42秒。
+本次是标签完整矩阵，日常分流规则保持。
+
+三包层、双资产层计时及3.10覆盖率共六份附件逐一匹配GitHub
+官方ZIP摘要后独立复核。三环境各1023项包测试、两现代环境各
+249项资产测试均为full，零失败、错误、跳过及延后；测试ID清单
+与已验收本地基线一致。包算法覆盖率为语句96.29%、分支92.36%、
+合并95.04%，41份包文件零排除，通过94%的合并门槛。
+
+线上`release-candidate`附件的ZIP与GitHub API官方SHA-256
+`9119549abcba869c389c4713a0b395d7afb70f4b257e22bc8656b77189f91134`
+完全一致，校验后再检查安全成员并解包。其41份包源码及77份包测试/
+fixture与批准提交逐字节相同，内部清单、大小及摘要通过既有工具核验。
+
+[GitHub Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.4)
+于北京时间20:07:58发布；PyPI的wheel和sdist分别于20:07:57及
+20:07:58上传。两个渠道实际下载的同名产物逐字节相同，与线上
+封存候选相同，发行包均排除validation。实际发行摘要如下，
+与先前本地构建分别保留，不混用归档摘要。
+
+| 产物 | 字节数 | SHA-256 |
+|---|---:|---|
+| wheel | 191993 | `5ebdd3c91339d1c2a18900aba5f8c8fedde055aba6e02574bdcee362118812c6` |
+| sdist | 1581674 | `701b4ea88b24c7fef4ff6504df9b6730c621fab182e2c555ab08387f21972283` |
+
+实际PyPI wheel在Python3.10.22、3.13.18及3.6.15旧依赖环境
+各通过41项安装后回归及8项解包sdist契约检查。三套容器禁网、
+发行文件只读，导入路径均来自临时venv；另核187项公开导出。
+发布正文与批准候选的提取正文一致。平台时效核验继续保持跳过，
+冻结研究脚本及外层安装依赖不自动升级。
+
+实际下载、API响应、容器环境及日志在本地
+`build/core-1.2.4-release-prep-20261121/remote/`。
+收据SHA-256如下：
+
+- `ci-candidate-audit/audit.json`：
+  `96571ec7f98cfd1a0feeec9e6b9a4c452029aa84aa65ced69086a4d3c446284c`。
+- `verification.json`：
+  `dddd5e68acca24c5203408c8979e7ba83d256b9d39a76bdca93774ab65f98159`。
+- `downloaded-wheel-verification.json`：
+  `f3fb12dea0369f3cd0a1fbf8e200332d5e43ed3e91abd497a86f137fb9be9c96`。
+- `ci-full-evidence-audit/audit.json`：
+  `a825b187f44bf1096a693da912c0a124417072ec61b1f1ca315bed69a778ac6a`。
+
+附件采集首次TLS失败记录保留；仅补下载未完成的一份附件，
+没有重复运行测试或官方列表查询。
+
+## M6：1.2.4最终候选准备（准备时待标签确认，2026-11-21）
 
 最终候选提交为 `37d5da4d8f7c31bc0e445d811119afd6e8af4b6f`。
 README版本说明改用中性文本，CHANGELOG保留候选标题，发布正文
@@ -23,7 +76,7 @@ README版本说明改用中性文本，CHANGELOG保留候选标题，发布正�
 
 重新构建一次wheel/sdist后，严格元数据、实际描述渲染、包内容及
 validation排除检查通过。三个本地禁网环境各通过41项wheel隔离
-安装回归及8项解包sdist的文档/版本契约。完整矩阵仍绑定上一节
+安装回归及8项解包sdist的文档/版本契约。完整矩阵仍绑定下节
 的772fd35，新标签工作流将对最终提交独立执行完整门禁。
 
 新wheel SHA-256为

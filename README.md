@@ -37,11 +37,11 @@
 
 ## 安装
 
-安装示例固定版本 `1.2.4`，用于该版本发行可用后。先核对
-[PyPI](https://pypi.org/project/chan-lun-core/)或
-[GitHub Release](https://github.com/lushi78778/chan-lun/releases)的版本可用性；
-未上架时可按[源码安装](https://github.com/lushi78778/chan-lun/blob/main/docs/installation.md)操作。
-发行状态与升级差异见
+安装示例固定为已发布版本 `1.2.4`。发行产物见
+[PyPI](https://pypi.org/project/chan-lun-core/1.2.4/)和
+[GitHub Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.4)；
+源码安装见[安装指南](https://github.com/lushi78778/chan-lun/blob/main/docs/installation.md)。
+发行记录与升级差异见
 [版本记录](https://github.com/lushi78778/chan-lun/blob/main/CHANGELOG.md)。
 使用将要运行程序的解释器安装，固定版本便于复现：
 
