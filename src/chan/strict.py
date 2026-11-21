@@ -563,6 +563,8 @@ def _visible_parent_leave(divergence, units, as_of):
     cutoff, kind = _bar_time(as_of)
     if _time(divergence.confirmed_dt, kind) > cutoff:
         raise ValueError('divergence.confirmed_dt须不晚于as_of')
+    if not divergence.leave_ids:
+        raise ValueError('divergence.leave_ids不能为空')
     visible, _ = _visible_units(units, as_of, divergence.level)
     by_id = {unit.move_id: unit for unit in visible}
     if any(name not in by_id for name in divergence.leave_ids):
@@ -778,8 +780,6 @@ def strict_completion_cascade(divergence, units, layers, as_of):
     for layer in layers:
         if not isinstance(layer, (list, tuple)) or len(layer) != 2:
             raise ValueError('layers项须为(级别名, 单元表)二元组')
-    if not divergence.leave_ids:
-        raise ValueError('divergence.leave_ids不能为空')
     obj = _visible_parent_leave(divergence, units, as_of)[-1]
     levels = []
     for depth, (layer_level, layer_units) in enumerate(layers, 1):

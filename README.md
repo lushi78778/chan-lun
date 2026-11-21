@@ -7,7 +7,8 @@
 | 项目 | 约定 |
 |---|---|
 | 发行名 / 导入名 | `chan-lun-core` / `chan` |
-| 当前源码版本 | `1.2.4`；发行可用性以 PyPI / GitHub Release 为准，核对 `chan.__version__` 与实际导入路径 |
+| 当前源码版本 | `1.2.5`（开发中）；发行可用性以 PyPI / GitHub Release 为准，核对 `chan.__version__` 与实际导入路径 |
+| 安装示例基线 | `1.2.4`；已验收发行版，源码开发修订见 CHANGELOG |
 | 运行兼容目标 | Python 3.6、numpy 1.14、pandas 0.23 及以上；验证范围见下文 |
 | 开发与构建 | Python 3.10+，使用本仓库 `requirements-dev.txt` |
 | 仓库 / 许可证 | [lushi78778/chan-lun](https://github.com/lushi78778/chan-lun) / [MIT](https://github.com/lushi78778/chan-lun/blob/main/LICENSE) |
@@ -37,7 +38,7 @@
 
 ## 安装
 
-安装示例固定为已发布版本 `1.2.4`。发行产物见
+安装示例固定为已发布版本 `1.2.4`，与当前开发源码分别登记。发行产物见
 [PyPI](https://pypi.org/project/chan-lun-core/1.2.4/)和
 [GitHub Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.4)；
 源码安装见[安装指南](https://github.com/lushi78778/chan-lun/blob/main/docs/installation.md)。

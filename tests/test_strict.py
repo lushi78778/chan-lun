@@ -680,6 +680,16 @@ class TestStrictNestedChain(unittest.TestCase):
         with self.assertRaises(ValueError):
             strict_nested_chain(r, units[:10], [], now)
 
+    def test_empty_parent_leave_is_rejected_by_both_entries(self):
+        """空离开段须报输入错误，不能索引越界或被父级否决绕过。"""
+        units, now = sample()
+        result = scan_strict_divergence(units, now, 'main').results[0]
+        for parent in (result, result._replace(status=STRICT_REJECTED)):
+            for entry in (strict_nested_chain, strict_completion_cascade):
+                with self.subTest(status=parent.status, entry=entry.__name__):
+                    with self.assertRaises(ValueError):
+                        entry(parent._replace(leave_ids=()), units, [], now)
+
     def test_future_parent_result_is_rejected_before_child_evaluation(self):
         """c已可见时，父级仍可能等待后继证明。"""
         units, now = sample()

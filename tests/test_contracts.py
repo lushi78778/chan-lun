@@ -30,7 +30,7 @@ class TestPackageContracts(unittest.TestCase):
     """未来概念迭代也必须保持的工程契约。"""
 
     def test_version_matches_metadata(self):
-        """元数据、运行时与发行README版本一致，拦截长描述的旧版安装指引。"""
+        """源码双处版本一致；安装示例绑定README声明且已发布的基线。"""
         with open(os.path.join(_ROOT, "pyproject.toml"), encoding="utf-8") as f:
             metadata = f.read().split("[project]\n", 1)[1].split("\n[", 1)[0]
         match = re.search(r'^version\s*=\s*"([^"]+)"', metadata, re.M)
@@ -42,7 +42,12 @@ class TestPackageContracts(unittest.TestCase):
         self.assertIsNotNone(source_version)
         self.assertEqual(source_version.group(1), chan.__version__)
         install_versions = re.findall(r"python -m pip install 'chan-lun-core==([^']+)'", readme)
-        self.assertEqual(install_versions, [chan.__version__])
+        install_baselines = re.findall(r'^\| 安装示例基线 \| `([^`]+)`', readme, re.M)
+        self.assertEqual(len(install_baselines), 1)
+        self.assertEqual(install_versions, install_baselines)
+        with open(os.path.join(_ROOT, "CHANGELOG.md"), encoding="utf-8") as f:
+            published = re.findall(r'^## ([0-9]+\.[0-9]+\.[0-9]+)（已发布，', f.read(), re.M)
+        self.assertIn(install_baselines[0], published)
 
     def test_public_exports_resolve_once(self):
         """全部公开导出唯一且可取到; 检查清单随新增入口自动增长。"""
