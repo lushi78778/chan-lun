@@ -342,6 +342,59 @@ class TestDiscoveryInputGuards(unittest.TestCase):
         with self.assertRaises(ValueError):
             tool.scan_code_period('510300.SH', {'510300.SH': bad_clock}, '30m', None, '2026-07-27', 18)
 
+    def test_first_discovery_rejects_invalid_minute_cutoffs_before_reading_rows(self):
+        """截止须为完整规范日期，不截掉错误后缀或时区后登记成功。"""
+        from datetime import datetime
+        tool = self.scanners()[1]
+        invalid = (None, 0, True, datetime(2026, 7, 27), b'2026-07-27', '',
+                   '2026-7-27', '2026-02-29', '2026-07-27broken',
+                   '2026-07-27 ', '2026-07-27 09:30:00',
+                   '2026-07-27T00:00:00+14:00')
+        for cutoff in invalid:
+            with self.subTest(minute_cap=repr(cutoff)):
+                with self.assertRaisesRegex(ValueError, 'minute-cap.*YYYY-MM-DD'):
+                    tool.scan_code_period('510300.SH', None, '30m', None, cutoff, 18)
+
+    def test_first_discovery_cli_rejects_invalid_cutoffs_before_loading_dataset(self):
+        """错误日期在取数前退出，不把截断后的控制写成原字符串收据。"""
+        tool = self.scanners()[1]
+        cutoffs = ('', '2026-7-27', '2026-02-29', '2026-07-27broken',
+                   '2026-07-27 09:30:00', '2026-07-27T00:00:00+14:00')
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for i, cutoff in enumerate(cutoffs):
+                with self.subTest(minute_cap=cutoff):
+                    output = root / 'output' / ('cutoff-'+str(i)+'.json')
+                    run = subprocess.run([
+                        sys.executable, tool.__file__, '--dataset', str(root/'missing'),
+                        '--output', str(output), '--periods', '30m', '--minute-cap', cutoff],
+                        cwd=temp, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                        universal_newlines=True)
+                    self.assertEqual(run.returncode, 2)
+                    self.assertIn('minute-cap', run.stderr)
+                    self.assertIn('YYYY-MM-DD', run.stderr)
+                    self.assertNotIn('Traceback', run.stderr)
+                    self.assertFalse(output.parent.exists())
+
+    def test_first_discovery_preserves_date_only_midnight_boundary(self):
+        """默认日期及合法闰日排除整日负载，前一日末根保持可见。"""
+        from datetime import datetime, timedelta
+        from unittest.mock import patch
+        tool = self.scanners()[1]
+        for cutoff in ('2026-07-27', '2024-02-29'):
+            source = self.frame().rename(columns={'trade_date': 'trade_time'})
+            day = datetime.strptime(cutoff, '%Y-%m-%d')
+            times = [day-timedelta(seconds=1), day, day+timedelta(hours=15)]
+            source['trade_time'] = [str(dt) for dt in times]
+            source.loc[1:, 'close'] = float('nan')
+            before = source.copy(deep=True)
+            with patch.object(tool, 'clean_rows', wraps=tool.clean_rows) as clean:
+                self.assertEqual(tool.scan_code_period(
+                    '510300.SH', {'510300.SH': source}, '30m', None, cutoff, 18), [])
+                selected = clean.call_args[0][0]
+                self.assertEqual(list(selected['trade_time']), [str(times[0])])
+            pd.testing.assert_frame_equal(source, before)
+
     def test_first_discovery_rejects_invalid_month_bounds_before_reading_rows(self):
         """零、负数及非整数不能成为空扫描或Python负切片扩窗。"""
         tool = self.scanners()[1]

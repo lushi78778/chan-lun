@@ -314,14 +314,29 @@ def _validate_max_months(max_months):
     return int(max_months)
 
 
+def _validate_minute_cap(minute_cap):
+    """冻结自然日截止须为有效规范日期，不截掉盘中时刻或时区。"""
+    message = '--minute-cap须为有效规范YYYY-MM-DD日期'
+    if not isinstance(minute_cap, str):
+        raise ValueError(message)
+    try:
+        cutoff = datetime.strptime(minute_cap, '%Y-%m-%d').date().isoformat()
+    except ValueError as error:
+        raise ValueError(message) from error
+    if minute_cap != cutoff:
+        raise ValueError(message)
+    return cutoff
+
+
 def scan_code_period(code, frames, period, chan, minute_cap, max_months):
     max_months = _validate_max_months(max_months)
+    minute_cap = _validate_minute_cap(minute_cap)
     if code not in frames:
         raise ValueError('请求发现缺少标的输入，不能写成零候选: '+str(code))
     time_key = 'trade_date' if period == '1d' else 'trade_time'
     supplied = frames[code]
     if period != '1d':
-        supplied = discovery_before(supplied, time_key, minute_cap[:10])
+        supplied = discovery_before(supplied, time_key, minute_cap)
     if supplied.empty:
         raise ValueError('声明截止之前无标的行情，不能写成零候选: '+str(code))
     group = clean_rows(supplied)
@@ -330,7 +345,7 @@ def scan_code_period(code, frames, period, chan, minute_cap, max_months):
     for s, e in factor_spans_list(group, time_key):
         if period != '1d':
             cap = next((i for i in range(s, e + 1)
-                        if keys_all[i][:10] >= minute_cap[:10]), None)
+                        if keys_all[i][:10] >= minute_cap), None)
             if cap is not None:
                 e = cap - 1
         first_key, last_key = keys_all[s][:10], keys_all[e][:10]
@@ -397,6 +412,7 @@ def main():
     args = parser.parse_args()
     try:
         args.max_months = _validate_max_months(args.max_months)
+        args.minute_cap = _validate_minute_cap(args.minute_cap)
     except ValueError as error:
         parser.error(str(error))
     if args.output.exists() or args.output.is_symlink():
