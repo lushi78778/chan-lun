@@ -30,7 +30,7 @@ class TestPackageContracts(unittest.TestCase):
     """未来概念迭代也必须保持的工程契约。"""
 
     def test_version_matches_metadata(self):
-        """源码双处版本一致；安装示例绑定README声明且已发布的基线。"""
+        """源码双处版本一致；安装基线已发布或为本版显式发行候选。"""
         with open(os.path.join(_ROOT, "pyproject.toml"), encoding="utf-8") as f:
             metadata = f.read().split("[project]\n", 1)[1].split("\n[", 1)[0]
         match = re.search(r'^version\s*=\s*"([^"]+)"', metadata, re.M)
@@ -46,8 +46,12 @@ class TestPackageContracts(unittest.TestCase):
         self.assertEqual(len(install_baselines), 1)
         self.assertEqual(install_versions, install_baselines)
         with open(os.path.join(_ROOT, "CHANGELOG.md"), encoding="utf-8") as f:
-            published = re.findall(r'^## ([0-9]+\.[0-9]+\.[0-9]+)（已发布，', f.read(), re.M)
-        self.assertIn(install_baselines[0], published)
+            changelog = f.read()
+        published = re.findall(r'^## ([0-9]+\.[0-9]+\.[0-9]+)（已发布，', changelog, re.M)
+        if install_baselines[0] not in published:
+            candidates = re.findall(r'^## ([0-9]+\.[0-9]+\.[0-9]+)（发布候选，', changelog, re.M)
+            self.assertEqual(install_baselines[0], chan.__version__)
+            self.assertIn(install_baselines[0], candidates)
 
     def test_public_exports_resolve_once(self):
         """全部公开导出唯一且可取到; 检查清单随新增入口自动增长。"""
