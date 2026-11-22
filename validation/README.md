@@ -13,6 +13,62 @@
 保留，历史行情验收、标注、扫描、图册与样本工具现位于 `validation/tools/`；
 `tools/verify_installed.py` 仍属工程层。冻结收据内的旧路径和摘要不回写。
 
+## M6：1.2.5完整CI与实际发行核验（2026-11-22）
+
+附注标签`v1.2.5`的对象为
+`288810ed055ee3cdc1f8cf6445eda40add1b54ca`，精确解引用到
+`1b234dc3bce303510c89797ca6c78207b2040349`，推送后的远端核对一致。
+创建前的89个本地标签原名与对象保持；本次只推送该新增标签。
+
+[标签完整CI](https://github.com/lushi78778/chan-lun/actions/runs/44990679618)
+共九个作业全部成功，耗时69分35秒：build、双现代包测试、双现代
+资产验收、legacy、ci、release及publish-pypi。日常分流规则保持。
+三包层、双资产层及3.10覆盖率的六份附件均先匹配GitHub官方ZIP
+摘要与大小，再检查安全成员。三环境包层各1032项、两现代资产层
+各255项均为full，零失败、错误、跳过及延后，完整测试ID与本地
+同一候选验收清单一致。覆盖率为语句96.33%、分支92.47%、总体
+95.11%，41份源码零排除，通过94%总体门槛。
+
+线上`release-candidate`附件ZIP匹配GitHub官方SHA-256
+`c4e432e87a050fabfbc78a588af2dfeca1e8ed66c21dd0a923202b26f694e019`。
+内部清单绑定上述提交和`v1.2.5`，wheel的41份源码、sdist的143份
+受管文件与批准提交逐字节相同；sdist共150份原始文件，另7份为
+构建元数据，包含的77份包测试/fixture已核对。发行包均排除validation。
+
+[GitHub Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.5)
+于北京时间14:53:45公开发布；PyPI wheel和sdist分别于14:53:41、
+14:53:42上传。两个渠道实际下载的同名产物逐字节相同，与线上
+封存候选一致。名称、版本、Python下限、README长描述和LICENSE
+内容已核对；Release正文以前述候选提取的冻结正文开头。
+下表为线上实际发行产物，本地候选保留其独立清单与摘要。
+
+| 产物 | 字节数 | SHA-256 |
+|---|---:|---|
+| wheel | 192641 | `ff7eab7d4d9b4a31373fb19556bae60266e524bcbf834989396b87e66ceed0f2` |
+| sdist | 1589181 | `ad3edf3bdcc56d383ae4b1c72dde9a5ac5f4a712f22a6675ec1f3a67aeadf5d7` |
+
+实际PyPI wheel在Python3.10.22、3.13.18及3.6.15旧依赖环境
+各通过80项安装后回归及8项解包sdist契约。容器禁网，发行文件
+只读；实际导入均来自临时venv，41份安装源码及150份sdist输入
+在测试前后保持，80项回归ID与本地验收清单一致。
+
+原始API响应、官方摘要匹配的附件、实际下载、环境与安装日志在
+`/Volumes/MacData/lushi/Documents/code/pythonCode/Chan/build/core-1.2.5-stage-1b234dc-20261122/remote/`。
+主要收据SHA-256如下：
+
+- `ci-candidate-audit/audit.json`：
+  `2c05ad2bb186832e4302b44ee37256d21dc6172fa1c8fd2ebecff2f618fa1fe0`。
+- `ci-full-evidence-audit/audit.json`：
+  `a7c4d8fc2e7789b20b5085e0b56f448a9749d4dc857d2ece61dde61b48ceac95`。
+- `verification.json`：
+  `2d3e4a05c062b66dd69f168ea7884308573bee90eebe83b7c03959dfcc39b306`。
+- `downloaded-wheel-verification.json`：
+  `1d40bbd8a603d3454a6393fc7a22815cf1ceab7802d3d0e8ac9ab2919eb56107`。
+
+网页监控在完成作业名称附带耗时后解析中止，原日志及快照保留，
+最终状态由官方run/jobs API补齐，未重跑CI。平台时效核验继续
+保持跳过，理论§6状态及冻结研究脚本不因本次发行改变。
+
 ## M6：1.2.5候选的本地完整验收（2026-11-22）
 
 候选固定为`1b234dc3bce303510c89797ca6c78207b2040349`，源码双处版本、
@@ -73,8 +129,8 @@ Release及PyPI本版查询均为404；`v1.2.3`、`v1.2.4`的本地与远端
 `05def837abc303b2c4839ec2747044ef5e445e606da8c6f56afea3ca03451e62`。
 拟议`v1.2.5`绑定上述候选提交，按PATCH交付六项既有行为/边界修复；
 推送将触发9个作业，完整ci门禁通过后分别发布GitHub Release和PyPI。
-本轮本地完整验收通过；新增标签的创建和推送仍须逐项批准，线上
-标签完整CI及实际发行尚待另验。
+该次本地完整验收通过时，新增标签的创建和推送待逐项批准，线上
+标签完整CI及实际发行待另验。
 §6状态、平台时效跳过边界及冻结研究脚本保持。
 
 ## M1/M4：迟到行情身份、组合图与截止/安装边界（1.2.5开发，2026-11-22）

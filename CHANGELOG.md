@@ -15,7 +15,7 @@
 - 2026-10-11 曾为 25 个历史小版本补齐本地中文附注 tag，均指向当时
   双处版本一致的概念提交，暂不推送或发布。
 
-## 1.2.5（发布候选，2026-11-22）
+## 1.2.5（已发布，2026-11-22）
 
 - **行为变化：迟到行情的账本身份按完整固定输入行号锚定**。
   `replay_available`修正可见行压缩后不同事件混用身份和首次可见
@@ -40,6 +40,15 @@
 
 定向、兼容环境及旧/新差异证据见
 [验收索引](https://github.com/lushi78778/chan-lun/blob/main/validation/README.md)。
+
+`v1.2.5` 绑定 `1b234dc`，
+[完整CI](https://github.com/lushi78778/chan-lun/actions/runs/44990679618)
+九个作业全部成功。三环境各1032项完整包测试、双现代环境各255项
+完整资产验收通过，零失败、错误、跳过及延后；总体覆盖率95.11%。
+[GitHub Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.5)
+与[PyPI](https://pypi.org/project/chan-lun-core/1.2.5/)实际下载的双产物
+逐字节相同，且与线上封存候选一致。实际PyPI wheel在三环境各通过
+80项隔离安装回归及8项解包sdist契约检查，发行证据见上述验收索引。
 
 ## 1.2.4（已发布，2026-11-21）
 
