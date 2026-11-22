@@ -22,6 +22,8 @@ DOT 源文本, 库不引入渲染依赖: 同输入同输出, 逐节点逐边按�
 
 from __future__ import print_function
 
+import json
+
 from chan.lineage import (CenterLineage, _EXPANDED_UP, _EXTENDED, _FORMED,
                           _REORGANIZED)
 from chan.rounds import RoundChain
@@ -32,13 +34,20 @@ def _esc(value):
     return text.replace('\\', '\\\\').replace('"', '\\"')
 
 
-def _center_node(event, lineage):
+def _graph_id(identity, domain):
+    """发生跨域碰撞时对全部图身份做可逆编码，数据对象身份保持原值。"""
+    if domain is not None:
+        identity = json.dumps([domain, identity], ensure_ascii=False, separators=(',', ':'))
+    return _esc(identity)
+
+
+def _center_node(event, lineage, domain=None):
     snap = lineage.snapshot(event.center_id, 0)
     return '  "%s" [label="%s %s~%s"];' % (
-        _esc(event.center_id), _esc(snap.level), _esc(snap.zd), _esc(snap.zg))
+        _graph_id(event.center_id, domain), _esc(snap.level), _esc(snap.zd), _esc(snap.zg))
 
 
-def _lineage_lines(lineage):
+def _lineage_lines(lineage, domain=None):
     """谱系投影: 中枢节点、定理二新生边、延伸自环与升级/重组来源边。"""
     extended_counts = {}
     for event in lineage.events:
@@ -50,30 +59,30 @@ def _lineage_lines(lineage):
     edges = []
     for event in lineage.events:
         if event.kind == _FORMED:
-            line = _center_node(event, lineage)
+            line = _center_node(event, lineage, domain)
             if event.center_id not in seen:
                 seen.add(event.center_id)
                 nodes.append(line)
             if event.prev_center_id is not None:
                 edges.append('  "%s" -> "%s" [label="%s"];' % (
-                    _esc(event.prev_center_id), _esc(event.center_id),
+                    _graph_id(event.prev_center_id, domain), _graph_id(event.center_id, domain),
                     _esc(event.relation)))
         elif event.kind == _EXPANDED_UP:
-            line = _center_node(event, lineage)
+            line = _center_node(event, lineage, domain)
             if event.center_id not in seen:
                 seen.add(event.center_id)
                 nodes.append(line)
             for source in event.source_center_ids:
                 edges.append('  "%s" -> "%s" [label="%s"];' % (
-                    _esc(source), _esc(event.center_id), _esc(event.kind)))
+                    _graph_id(source, domain), _graph_id(event.center_id, domain), _esc(event.kind)))
         elif event.kind == _REORGANIZED:
-            line = _center_node(event, lineage)
+            line = _center_node(event, lineage, domain)
             if event.center_id not in seen:
                 seen.add(event.center_id)
                 nodes.append(line)
             for source in event.source_center_ids:
                 edges.append('  "%s" -> "%s" [label="%s: %s"];' % (
-                    _esc(source), _esc(event.center_id),
+                    _graph_id(source, domain), _graph_id(event.center_id, domain),
                     _esc(event.kind), _esc(event.basis)))
     lines = list(nodes)
     ordered = []
@@ -86,16 +95,16 @@ def _lineage_lines(lineage):
             ordered.append(key)
     for cid, count in ordered:
         lines.append('  "%s" -> "%s" [label="extended x%d"];' % (
-            _esc(cid), _esc(cid), count))
+            _graph_id(cid, domain), _graph_id(cid, domain), count))
     lines.extend(edges)
     return lines
 
 
-def _round_lines(round_chain):
+def _round_lines(round_chain, domain=None):
     """轮次投影: 锚点节点(课108构造状态)与移交边(课101同侧接管)。"""
     rounds = round_chain.rounds
     lines = ['  "%s" [label="%s %s"];' % (
-        _esc(item.round_id), _esc(item.side), _esc(item.formation.phase))
+        _graph_id(item.round_id, domain), _esc(item.side), _esc(item.formation.phase))
         for item in rounds]
     for i, item in enumerate(rounds):
         if item.handed_over_dt is None:
@@ -103,7 +112,7 @@ def _round_lines(round_chain):
         for later in rounds[i + 1:]:
             if later.side == item.side:
                 lines.append('  "%s" -> "%s" [label="handover %s"];' % (
-                    _esc(item.round_id), _esc(later.round_id),
+                    _graph_id(item.round_id, domain), _graph_id(later.round_id, domain),
                     _esc(item.handed_over_dt)))
                 break
     return lines
@@ -116,7 +125,9 @@ def causal_graph_dot(lineage=None, round_chain=None,
     lineage/round_chain 可只给其一, 两者皆缺或类型不符报错, 不猜测。
     返回 UTF-8 DOT 文本(含末尾换行), 同输入同输出; 节点与边含义见
     模块 docstring。图只做投影: 数据对象中的身份、关系与时刻原样
-    进入图, 不在图里推导新结论。
+    进入图, 不在图里推导新结论。两域身份相交时，全部图节点及边
+    分别采用JSON["lineage", 原身份]/["round", 原身份]编码；无交集
+    及单域输出保持原文本，数据对象本身不变。
     """
     if lineage is None and round_chain is None:
         raise ValueError('lineage与round_chain至少提供其一')
@@ -124,12 +135,21 @@ def causal_graph_dot(lineage=None, round_chain=None,
         raise ValueError('lineage须为CenterLineage')
     if round_chain is not None and not isinstance(round_chain, RoundChain):
         raise ValueError('round_chain须为RoundChain')
+    separate = False
+    if lineage is not None and round_chain is not None:
+        identities = set(event.center_id for event in lineage.events)
+        for event in lineage.events:
+            if event.kind == _FORMED and event.prev_center_id is not None:
+                identities.add(event.prev_center_id)
+            elif event.kind in (_EXPANDED_UP, _REORGANIZED):
+                identities.update(event.source_center_ids)
+        separate = bool(identities.intersection(item.round_id for item in round_chain.rounds))
     out = ['digraph "%s" {' % _esc(title),
            '  rankdir=LR;',
            '  node [shape=box];']
     if lineage is not None:
-        out.extend(_lineage_lines(lineage))
+        out.extend(_lineage_lines(lineage, 'lineage' if separate else None))
     if round_chain is not None:
-        out.extend(_round_lines(round_chain))
+        out.extend(_round_lines(round_chain, 'round' if separate else None))
     out.append('}')
     return '\n'.join(out) + '\n'

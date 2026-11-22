@@ -4,7 +4,10 @@
 图是 CenterLineage/RoundChain 的确定性投影: 同输入同输出, 身份中
 双引号转义, 节点先于边, 不在图中推导新结论。
 """
+import json
+import re
 import unittest
+from copy import deepcopy
 from datetime import datetime, timedelta
 
 from chan import (ConfirmedMove, causal_graph_dot, track_center_lineage,
@@ -49,6 +52,42 @@ def bars_of(prices, n=20):
 
 def now_of(prices, n=20):
     return T + timedelta(hours=(len(prices) - 1) * n) + timedelta(days=1)
+
+
+def colliding_components(preencoded_alias=False):
+    """公开对象的分域身份可同名；这里只构造图投影输入，不标注理论真值。"""
+    rounds = track_rounds(moves(DOUBLE), bars_of(DOUBLE), now_of(DOUBLE), 'main')
+    level, trend_id, suffix = json.loads(rounds.rounds[0].round_id)
+    prices = NINE + PRICES[5:]
+    units = moves(prices)
+    next_level = 'round' if preencoded_alias else 'middle'
+    original = track_center_lineage(units, now_of(prices), next_level, level)
+    expanded = next(e for e in original.events if e.kind == 'expanded_up')
+    sources = [original.snapshot(cid, 0).unit_ids[0] for cid in expanded.source_center_ids]
+    replacements = dict(zip(sources, (trend_id, suffix)))
+    if preencoded_alias:
+        # 此原始中枢ID将等于拟编码的轮次ID，只编码直接冲突节点仍会混同。
+        extra = next(e for e in original.events
+                     if e.kind == 'formed' and e.center_id not in expanded.source_center_ids)
+        replacements[original.snapshot(extra.center_id, 0).unit_ids[0]] = rounds.rounds[0].round_id
+    units = [u._replace(move_id=replacements.get(u.move_id, u.move_id)) for u in units]
+    lineage = track_center_lineage(units, now_of(prices), next_level, level)
+    return lineage, rounds
+
+
+def dot_objects(dot):
+    """读取本模块生成的引号节点及边，检查分域后的身份和引用。"""
+    quoted = r'("(?:\\.|[^"\\])*")'
+    nodes, edges = [], []
+    for line in dot.splitlines():
+        edge = re.match(r'^  ' + quoted + r' -> ' + quoted + r' \[label=' + quoted, line)
+        if edge:
+            edges.append(tuple(json.loads(value) for value in edge.groups()))
+            continue
+        node = re.match(r'^  ' + quoted + r' \[label=', line)
+        if node:
+            nodes.append(json.loads(node.group(1)))
+    return nodes, edges
 
 
 class TestLineageGraph(unittest.TestCase):
@@ -159,6 +198,47 @@ class TestValidationAndCombination(unittest.TestCase):
         # 谱系节点先于轮次节点输出
         self.assertLess(dot.index('main 110~115'),
                         dot.index('handover'))
+        # 无跨域身份交集时，组合保持原来两部分的逐字节拼接。
+        left = causal_graph_dot(lineage=lineage, title='回放 "2026"').splitlines()
+        right = causal_graph_dot(round_chain=rounds, title='回放 "2026"').splitlines()
+        self.assertEqual(dot, '\n'.join(left[:-1] + right[3:]) + '\n')
+
+    def assert_separate_domains(self, lineage, rounds):
+        center_ids = set(c.center_id for c in lineage.centers)
+        round_ids = set(r.round_id for r in rounds.rounds)
+        self.assertTrue(center_ids.intersection(round_ids))
+        before = deepcopy((lineage.to_dict(), rounds.to_dict()))
+        dot = causal_graph_dot(lineage=lineage, round_chain=rounds)
+        nodes, edges = dot_objects(dot)
+        expected = set(('lineage', cid) for cid in center_ids)
+        expected.update(('round', rid) for rid in round_ids)
+        self.assertEqual(len(nodes), len(expected))
+        self.assertEqual(len(set(nodes)), len(expected))
+        self.assertEqual(set(tuple(json.loads(node)) for node in nodes), expected)
+        for start, end, label in edges:
+            domain = 'round' if label.startswith('handover ') else 'lineage'
+            for identity in (start, end):
+                decoded = tuple(json.loads(identity))
+                self.assertIn(decoded, expected)
+                self.assertEqual(decoded[0], domain)
+        self.assertEqual(dot, causal_graph_dot(lineage=lineage, round_chain=rounds))
+        self.assertEqual((lineage.to_dict(), rounds.to_dict()), before)
+
+    def test_colliding_component_ids_keep_distinct_nodes_and_edges(self):
+        """两套合法身份同名时，形成/延伸/升级/重组及移交都保持分域。"""
+        lineage, rounds = colliding_components()
+        self.assertEqual(set(e.kind for e in lineage.events),
+                         {'formed', 'extended', 'expanded_up', 'reorganized'})
+        self.assertIsNotNone(rounds.rounds[0].handed_over_dt)
+        self.assert_separate_domains(lineage, rounds)
+
+    def test_original_id_equal_to_encoded_other_domain_cannot_alias(self):
+        """任一域的原ID等于另一域编码值时，仍须完整编码两域全部节点。"""
+        lineage, rounds = colliding_components(preencoded_alias=True)
+        alias = json.dumps(['round', rounds.rounds[0].round_id],
+                           ensure_ascii=False, separators=(',', ':'))
+        self.assertIn(alias, set(c.center_id for c in lineage.centers))
+        self.assert_separate_domains(lineage, rounds)
 
 
 if __name__ == '__main__':
