@@ -8,6 +8,15 @@
 import os
 import re
 import sys
+
+if len(sys.argv) > 1:
+    requested = os.path.abspath(sys.argv[1])
+    if not (os.path.isdir(requested) or os.path.isfile(requested) and requested.endswith(".whl")):
+        raise ValueError("参数须为wheel路径或安装目标目录")
+    artifact = os.path.realpath(requested)
+    sys.path.insert(0, artifact)
+
+# 先选择目标再读取元数据，旧pkg_resources的工作集才能包含显式安装目录。
 try:
     from importlib.metadata import version
 except ImportError:
@@ -18,19 +27,13 @@ except ImportError:
         return get_distribution(name).version
 
 
-if len(sys.argv) > 1:
-    artifact = os.path.abspath(sys.argv[1])
-    if not (os.path.isdir(artifact) or os.path.isfile(artifact) and artifact.endswith(".whl")):
-        raise ValueError("参数须为wheel路径或安装目标目录")
-    sys.path.insert(0, artifact)
-
 import chan
 
-package_path = os.path.abspath(chan.__file__)
-source_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
-assert not package_path.startswith(source_path + os.sep), package_path
+package_path = os.path.realpath(chan.__file__)
+source_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "src")
+assert not package_path.startswith(source_path + os.sep), "实际导入来自工作区源码: " + package_path
 if len(sys.argv) > 1:
-    assert package_path.startswith(artifact + os.sep), package_path
+    assert package_path.startswith(artifact + os.sep), "实际导入不在指定产物内: " + package_path
 assert chan.__version__ == version("chan-lun-core")
 with open(os.path.join(os.path.dirname(source_path), "pyproject.toml"), encoding="utf-8") as f:
     metadata = f.read().split("[project]\n", 1)[1].split("\n[", 1)[0]

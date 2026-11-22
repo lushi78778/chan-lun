@@ -3,6 +3,8 @@
 import importlib.util
 import io
 import json
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 import tarfile
@@ -127,6 +129,60 @@ class TestReleaseArtifacts(unittest.TestCase):
             next(dist.glob("*.tar.gz")).unlink()
             with self.assertRaisesRegex(ValueError, "一份"):
                 TOOL.seal(root, dist)
+
+
+class TestInstalledOrigin(unittest.TestCase):
+    """显式安装目标须实际拥有导入代码，不能用源码软链接冒充。"""
+
+    def target(self, folder):
+        target = Path(folder) / "target"
+        version = TOOL.source_version(ROOT)
+        metadata = target / ("chan_lun_core-" + version + ".dist-info")
+        metadata.mkdir(parents=True)
+        (metadata / "METADATA").write_text(
+            "Name: chan-lun-core\nVersion: " + version + "\n", encoding="utf-8")
+        return target
+
+    def verify(self, target):
+        return subprocess.run(
+            [sys.executable, "-I", str(ROOT / "tools/verify_installed.py"), str(target)],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True, timeout=30)
+
+    def test_source_symlink_cannot_pass_as_installed_code(self):
+        """版本和元数据相同，真实代码仍来自工作区源码时必须失败。"""
+        with tempfile.TemporaryDirectory() as folder:
+            target = self.target(folder)
+            (target / "chan").symlink_to(ROOT / "src/chan", target_is_directory=True)
+            run = self.verify(target)
+            self.assertNotEqual(run.returncode, 0, run.stdout)
+            self.assertIn("工作区源码", run.stdout)
+
+    def test_package_link_outside_target_cannot_pass(self):
+        """另一个独立副本也不能通过软链接冒充指定目录内的包。"""
+        with tempfile.TemporaryDirectory() as folder:
+            target = self.target(folder)
+            outside = Path(folder) / "outside"
+            shutil.copytree(str(ROOT / "src/chan"), str(outside),
+                            ignore=shutil.ignore_patterns("__pycache__"))
+            (target / "chan").symlink_to(outside, target_is_directory=True)
+            run = self.verify(target)
+            self.assertNotEqual(run.returncode, 0, run.stdout)
+            self.assertIn("指定产物", run.stdout)
+
+    def test_install_directory_and_its_alias_are_valid(self):
+        """真实安装副本及指向该安装目录的别名都须可正常验收。"""
+        with tempfile.TemporaryDirectory() as folder:
+            target = self.target(folder)
+            shutil.copytree(str(ROOT / "src/chan"), str(target / "chan"),
+                            ignore=shutil.ignore_patterns("__pycache__"))
+            alias = Path(folder) / "alias"
+            alias.symlink_to(target, target_is_directory=True)
+            for path in (target, alias):
+                with self.subTest(target=str(path)):
+                    run = self.verify(path)
+                    self.assertEqual(run.returncode, 0, run.stdout)
+                    self.assertIn("installed wheel OK:", run.stdout)
 
 
 if __name__ == "__main__":
