@@ -45,8 +45,8 @@ class AvailableSnapshot(namedtuple('AvailableSnapshotBase',
                 'changes': [item.to_dict() for item in self.changes]}
 
 
-def _available_bars(bars, as_of):
-    """全量时间元数据用于选择; 未来OHLCV不读取。"""
+def _available_bars(bars, as_of, source_indices=None):
+    """全量时间元数据用于选择; 可选收集完整输入行号，未来OHLCV不读取。"""
     if not isinstance(bars, (list, tuple)):
         raise TypeError('bars须为list或tuple')
     cutoff, kind = _bar_time(as_of)
@@ -64,6 +64,8 @@ def _available_bars(bars, as_of):
             previous = dt
             if available <= cutoff:
                 out.append(bar)
+                if source_indices is not None:
+                    source_indices.append(i)
         except (KeyError, TypeError, ValueError) as error:
             raise ValueError('bars[{}]时间元数据无效: {}'.format(i, error)) from error
     return out
@@ -96,6 +98,16 @@ def _structure_records(result):
     return records
 
 
+def _source_records(records, source_indices):
+    """账本行号锚定固定完整输入；结果内的几何索引继续相对可见行情。"""
+    out = {}
+    for key, record in records.items():
+        if key[0] in ('fx', 'bi', 'confirmed_bi', 'confirmed_xd'):
+            key = key[:2] + (source_indices[key[2]],)
+        out[key] = record
+    return out
+
+
 def replay_available(bars, observations=None, min_k_gap=None, bi_standard='81'):
     """逐实际观察时点重算并记录保守确认结构, yield AvailableSnapshot。
 
@@ -105,7 +117,9 @@ def replay_available(bars, observations=None, min_k_gap=None, bi_standard='81'):
     不把若干天没变化当确认。先有后继笔才固定前笔, 再确认线段,
     三个已确认线段才进入中枢形成记录; 确认延迟比候选识别更长。
     此入口不生成自动一类点上下文或真实分钟级别次级走势; 不应把
-    结构确认记录直接转换为ConfirmedMove。无全局缓存, 快照互不污染。
+    结构确认记录直接转换为ConfirmedMove。账本行号身份锚定完整固定
+    输入，历史行迟到不重新编号；结果内的几何索引仍相对可见行情。
+    无全局缓存, 快照互不污染。
     """
     if not isinstance(bars, (list, tuple)):
         raise TypeError('bars须为list或tuple')
@@ -124,9 +138,11 @@ def replay_available(bars, observations=None, min_k_gap=None, bi_standard='81'):
         if previous_time is not None and (kind != previous_kind or time <= previous_time):
             raise ValueError('观察时间须同口径且严格递增')
         previous_time, previous_kind = time, kind
-        result = analyze_available(bars, as_of, min_k_gap, bi_standard)
-        structural = _structure_records(result)
-        current = _records(result)
+        source_indices = []
+        visible = _available_bars(bars, as_of, source_indices)
+        result = analyze_bars(visible, min_k_gap, bi_standard)
+        structural = _source_records(_structure_records(result), source_indices)
+        current = _source_records(_records(result), source_indices)
         current.update(structural)
         changes = []
         for key, record in current.items():

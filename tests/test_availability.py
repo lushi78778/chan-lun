@@ -167,3 +167,83 @@ class TestAvailability(unittest.TestCase):
         snapshots=list(replay_available(data))
         self.assertEqual(len(snapshots),1)
         self.assertEqual(len(snapshots[0].result.hist),3)
+
+    def test_late_prefix_does_not_backdate_a_new_fractal(self):
+        """迟到两行引入的新分型不得复用另一端点的身份和首见时刻。"""
+        for string_times in (False, True):
+            with self.subTest(string_times=string_times):
+                data = bars(7)
+                for row, price in zip(data, (1, 3, 1, 3, 1, 3, 1)):
+                    row.update(open=price, high=price+.2, low=price-.2, close=price)
+                late = data[-1]['available_dt']+timedelta(days=1)
+                for row in data[:2]:
+                    row['available_dt'] = late
+                observations = [data[4]['available_dt'], data[6]['available_dt'], late]
+                if string_times:
+                    for row in data:
+                        for key in ('dt', 'closed_dt', 'available_dt'):
+                            row[key] = str(row[key])
+                    observations = [str(value) for value in observations]
+                original = deepcopy(data)
+                snapshots = list(replay_available(data, observations))
+                new_top = next(change for change in snapshots[-1].changes
+                               if change.field == 'fx' and change.after is not None
+                               and change.after['dt'] == str(data[1]['dt']))
+                self.assertEqual(new_top.kind, 'appeared')
+                self.assertEqual(new_top.identity, ('top', 1))
+                self.assertEqual(new_top.first_seen, late if not string_times else str(late))
+                previous_top = next(change for change in snapshots[-1].changes
+                                    if change.field == 'fx' and change.after is not None
+                                    and change.after['dt'] == str(data[3]['dt']))
+                self.assertEqual(previous_top.identity, ('top', 3))
+                self.assertEqual(previous_top.first_seen, observations[0])
+                self.assertEqual(previous_top.before['dt'], previous_top.after['dt'])
+                self.assertEqual(data, original)
+
+    def test_late_earlier_bar_keeps_the_same_fractal_first_seen(self):
+        """无关的更早行补到后，已见分型沿用原身份；结果几何索引仍局部化。"""
+        data = bars(4)
+        for row, price in zip(data, (9, 10, 13, 11)):
+            row.update(open=price, high=price+1, low=price-1, close=price)
+        late = data[-1]['available_dt']+timedelta(days=1)
+        data[0]['available_dt'] = late
+        observations = [data[-1]['available_dt'], late]
+        snapshots = list(replay_available(data, observations))
+        changes = [change for snap in snapshots for change in snap.changes
+                   if change.field == 'fx']
+        self.assertEqual([change.kind for change in changes], ['appeared', 'revised'])
+        self.assertEqual([change.identity for change in changes], [('top', 2)]*2)
+        self.assertEqual([change.first_seen for change in changes], [observations[0]]*2)
+        self.assertEqual([snap.result.fxs[0].bar_index for snap in snapshots], [1, 2])
+
+    def test_delayed_prefix_anchors_all_indexed_records_to_original_rows(self):
+        """固定小型波段只观察一次，覆盖分型/笔/确认笔/确认线段四种行号身份。"""
+        data = bars(170)
+        points = [20, 25, 22, 32, 25, 29, 21, 26, 22, 30, 23, 27,
+                  20, 25, 21, 29, 24, 28, 22, 26, 20, 25, 22]
+        for i, row in enumerate(data):
+            j, remainder = divmod(i, 8)
+            price = points[j]+(points[j+1]-points[j])*remainder/8.0
+            row.update(open=price, close=price, high=price+.1, low=price-.1)
+        late = data[-1]['available_dt']+timedelta(days=1)
+        for row in data[:2]:
+            row['available_dt'] = late
+            row.pop('open')  # 未到达的历史OHLC也不得读取。
+        snapshot = next(replay_available(data, [data[-1]['available_dt']]))
+        self.assertTrue(all(len(row.elements) == 1 for row in snapshot.result.new_bars))
+        positions = {str(row['dt']): i for i, row in enumerate(data)}
+        indexed_fields = {'fx', 'bi', 'confirmed_bi', 'confirmed_xd'}
+        self.assertTrue(indexed_fields.issubset(set(c.field for c in snapshot.changes)))
+        for change in snapshot.changes:
+            if change.field not in indexed_fields:
+                continue
+            record = change.after
+            stamp = (record['dt'] if change.field == 'fx' else
+                     record['start'][0] if change.field == 'confirmed_xd' else record['start_dt'])
+            self.assertEqual(change.identity[-1], positions[stamp])
+        for item in snapshot.structures:
+            if item.kind == 'xd_center':
+                self.assertIsInstance(item.identity[-1], str)
+            else:
+                stamp = item.record['start'][0] if item.kind == 'xd' else item.record['start_dt']
+                self.assertEqual(item.identity[-1], positions[stamp])
