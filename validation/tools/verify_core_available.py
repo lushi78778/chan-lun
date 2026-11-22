@@ -7,11 +7,12 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from verify_core_history import load_frames, bars_from, CODES, digest, check_asset, check_second_conditions
+from verify_core_history import (load_frames, bars_from, CODES, check_asset,
+                                 check_second_conditions, read_discovery_manifest,
+                                 write_history_report)
 import chan
 from collections import Counter
 from datetime import timedelta
-import json
 import argparse
 
 def prepare_prices(frame):
@@ -33,11 +34,14 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--modules-only', action='store_true', help='只跑全模块计算冒烟与二类点条件接线, 不重跑逐日前缀')
     args = parser.parse_args()
+    if args.output.exists() or args.output.is_symlink():
+        parser.error('拒绝覆盖已有验收收据，使用新输出路径')
     root = args.dataset.resolve()
     receipt = []
-    daily = load_frames(root, '1d', CODES, receipt)
-    minutes = load_frames(root, '30m', CODES, receipt)
-    report = {'version': chan.__version__, 'dataset': str(root), 'manifest_sha256': digest(root / 'manifest.json'), 'files': receipt, 'availability_scope': '测试约定日线15:00收盘并15:05可用; 30m按存储trade_time视为周期结束并延迟1分钟。源文件无发布到达版本，此约定不证明真实盘中到达或供应数据从未修订。', 'adjustment': '每个价格前缀OHLC*factor[t]/factor[as_of];账本另用固定锚比较形态修订', 'scope': '10只ETF全部日线冒烟、2026逐日观察及30m末20交易日前缀;非全池、非收益验证', 'assets': [], 'errors': []}
+    manifest, manifest_sha256 = read_discovery_manifest(root)
+    daily = load_frames(root, '1d', CODES, receipt, manifest=manifest)
+    minutes = load_frames(root, '30m', CODES, receipt, manifest=manifest)
+    report = {'version': chan.__version__, 'dataset': str(root), 'manifest_sha256': manifest_sha256, 'files': receipt, 'availability_scope': '测试约定日线15:00收盘并15:05可用; 30m按存储trade_time视为周期结束并延迟1分钟。源文件无发布到达版本，此约定不证明真实盘中到达或供应数据从未修订。', 'adjustment': '每个价格前缀OHLC*factor[t]/factor[as_of];账本另用固定锚比较形态修订', 'scope': '10只ETF全部日线冒烟、2026逐日观察及30m末20交易日前缀;非全池、非收益验证', 'assets': [], 'errors': []}
     if args.modules_only:
         report['scope'] = '十ETF全模块计算冒烟;二类点仅条件接线,旧cross30仅候选接线;不证明理论自动识别或历史端点可见'
     for code in CODES:
@@ -116,8 +120,7 @@ def main():
             report['errors'].append({'code': code, 'error': repr(e)})
             print(code, repr(e), flush=True)
     report['ok'] = len(report['assets']) == len(CODES) and (not report['errors'])
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + '\n')
+    write_history_report(root, manifest_sha256, args.output, report)
     sys.exit(0 if report['ok'] else 1)
 if __name__ == '__main__':
     main()

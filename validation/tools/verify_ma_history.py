@@ -8,13 +8,13 @@
 import argparse
 from collections import Counter
 from datetime import timedelta
-import json
 import math
 from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from verify_core_history import CODES, bars_from, digest, load_frames
+from verify_core_history import (CODES, bars_from, load_frames, read_discovery_manifest,
+                                 write_history_report)
 from verify_core_available import prepare_prices
 import chan
 
@@ -113,10 +113,13 @@ def main():
     parser.add_argument('dataset', type=Path)
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
+    if args.output.exists() or args.output.is_symlink():
+        parser.error('拒绝覆盖已有验收收据，使用新输出路径')
     root, receipt = args.dataset.resolve(), []
-    daily = load_frames(root, '1d', CODES, receipt)
-    minutes = load_frames(root, '30m', CODES, receipt)
-    report = dict(version=chan.__version__, dataset=str(root), manifest_sha256=digest(root/'manifest.json'),
+    manifest, manifest_sha256 = read_discovery_manifest(root)
+    daily = load_frames(root, '1d', CODES, receipt, manifest=manifest)
+    minutes = load_frames(root, '30m', CODES, receipt, manifest=manifest)
+    report = dict(version=chan.__version__, dataset=str(root), manifest_sha256=manifest_sha256,
                   files=receipt, scope=__doc__, parameters=dict(short_period=5,long_period=10,
                   min_pre_gain=.02,max_volume_ratio=2,proximity=.5,min_depth=.2,flip_confirm=.5),
                   assets=[],errors=[])
@@ -129,8 +132,7 @@ def main():
             report['errors'].append(dict(code=code,error=repr(error)))
             print(code,repr(error),flush=True)
     report['ok'] = len(report['assets']) == len(CODES) and not report['errors']
-    args.output.parent.mkdir(parents=True,exist_ok=True)
-    args.output.write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+    write_history_report(root, manifest_sha256, args.output, report)
     sys.exit(0 if report['ok'] else 1)
 
 

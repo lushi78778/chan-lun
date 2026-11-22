@@ -6,12 +6,12 @@
 import argparse
 from collections import Counter
 import hashlib
-import json
 import math
 from pathlib import Path
 import sys
 
-from scan_real_strict_trend import read_discovery_manifest, read_discovery_partition
+from scan_real_strict_trend import (read_discovery_manifest, read_discovery_partition,
+                                    write_discovery_result)
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'src'))
@@ -27,6 +27,13 @@ def digest(path):
         for block in iter(lambda: stream.read(1024 * 1024), b''):
             h.update(block)
     return h.hexdigest()
+
+
+def write_history_report(dataset, manifest_sha256, output, report):
+    """复核加载时的清单版本，再严格序列化并排他写入验收收据。"""
+    if digest(Path(dataset) / 'manifest.json') != manifest_sha256:
+        raise ValueError('回放期间manifest.json改变，拒绝写入验收收据')
+    write_discovery_result(output, report)
 
 
 def load_frames(dataset, period, codes, receipt, manifest=None):
@@ -257,12 +264,15 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--replay', action='store_true', help='加跑2026逐日防未来与新二类点条件验收')
     args = p.parse_args()
+    if args.output.exists() or args.output.is_symlink():
+        p.error('拒绝覆盖已有验收收据，使用新输出路径')
     dataset = args.dataset.resolve()
     receipt = []
-    frames = load_frames(dataset, '1d', CODES, receipt)
-    minutes = load_frames(dataset, '30m', CODES, receipt)
+    manifest, manifest_sha256 = read_discovery_manifest(dataset)
+    frames = load_frames(dataset, '1d', CODES, receipt, manifest=manifest)
+    minutes = load_frames(dataset, '30m', CODES, receipt, manifest=manifest)
     report = {'version': chan.__version__, 'dataset': str(dataset),
-              'manifest_sha256': digest(dataset/'manifest.json'), 'files': receipt,
+              'manifest_sha256': manifest_sha256, 'files': receipt,
               'adjustment': 'OHLC * adj_factor[t] / adj_factor[as_of]; 每前缀独立锚定',
               'scope': '10只ETF日线全历史及2026年30m，计算契约与明确列出的前缀；非全池、非交易有效性验证',
               'formation_scope': '真实价格派生的旧bs候选输入契约，不验证因果中枢或理论确认',
@@ -285,8 +295,7 @@ def main():
         sector = chan.sector_strength(members)
         report['sector'] = sector.to_dict()
     report['ok'] = not report['errors'] and len(report['assets']) == len(CODES)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + '\n')
+    write_history_report(dataset, manifest_sha256, args.output, report)
     return 0 if report['ok'] else 1
 
 

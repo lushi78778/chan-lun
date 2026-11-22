@@ -9,12 +9,12 @@
 import argparse
 from collections import Counter
 from datetime import timedelta
-import json
 from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from verify_core_history import CODES, bars_from, digest, load_frames
+from verify_core_history import (CODES, bars_from, load_frames, read_discovery_manifest,
+                                 write_history_report)
 import chan
 
 
@@ -102,10 +102,13 @@ def main():
     parser.add_argument('dataset', type=Path)
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
+    if args.output.exists() or args.output.is_symlink():
+        parser.error('拒绝覆盖已有验收收据，使用新输出路径')
     root, receipt = args.dataset.resolve(), []
-    frames = load_frames(root, '1d', CODES, receipt)
+    manifest, manifest_sha256 = read_discovery_manifest(root)
+    frames = load_frames(root, '1d', CODES, receipt, manifest=manifest)
     report = dict(version=chan.__version__, dataset=str(root),
-                  manifest_sha256=digest(root / 'manifest.json'), files=receipt,
+                  manifest_sha256=manifest_sha256, files=receipt,
                   scope=__doc__, confirm=2, assets=[], errors=[])
     for code in CODES:
         try:
@@ -116,8 +119,7 @@ def main():
             report['errors'].append(dict(code=code, error=repr(error)))
             print(code, repr(error), flush=True)
     report['ok'] = len(report['assets']) == len(CODES) and not report['errors']
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + '\n')
+    write_history_report(root, manifest_sha256, args.output, report)
     sys.exit(0 if report['ok'] else 1)
 
 

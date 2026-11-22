@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 """样本提取与发现输入的日期、质量和来源契约；独立于核心识别器。"""
 import importlib.util
+import contextlib
 import hashlib
+import io
 import json
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -694,6 +698,211 @@ class TestRoundReplayPartitionIntegrity(unittest.TestCase):
             return import_module(name)
         finally:
             sys.path[:] = previous
+
+    @classmethod
+    def history_tools(cls):
+        """只覆盖既有六个Parquet CLI协议，不把mock结果当作理论验收。"""
+        return [cls.load_tool(name) for name in (
+            'verify_core_history', 'verify_core_available',
+            'verify_completion_history', 'verify_ma_history',
+            'verify_fractal_history', 'verify_points_history')]
+
+    @contextlib.contextmanager
+    def history_cli(self, tool, root, output, on_load=None, on_check=None,
+                    algorithm_error=False, nonfinite=False):
+        code = '510300.SH'
+        argv = [tool.__file__, str(root), '--output', str(output)]
+        if tool.__name__ == 'verify_core_history':
+            argv.append('--replay')
+        if tool.__name__ == 'verify_core_available':
+            argv.append('--modules-only')
+
+        def load(dataset, period, codes, receipt, manifest=None):
+            receipt.append(dict(path=period+'.parquet', sha256='a'*64))
+            if on_load is not None:
+                on_load(period)
+            return {code: period}
+
+        def result():
+            if on_check is not None:
+                on_check()
+            if algorithm_error:
+                raise ValueError('synthetic history CLI calculation failure')
+            return dict(total_base_count=1, unique_candidates={},
+                        frozen_fractal_ranges=0, prefix_checks=1,
+                        marker=float('nan') if nonfinite else 'synthetic CLI protocol')
+
+        def check_asset(symbol, daily, minute):
+            asset = result()
+            asset.update(code=symbol, bars=1)
+            return asset, 'synthetic classification'
+
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(patch.object(sys, 'argv', argv))
+            stack.enter_context(patch.object(tool, 'CODES', [code]))
+            loader = stack.enter_context(patch.object(tool, 'load_frames', side_effect=load))
+            reader = None
+            if hasattr(tool, 'read_discovery_manifest'):
+                reader = stack.enter_context(patch.object(
+                    tool, 'read_discovery_manifest', wraps=tool.read_discovery_manifest))
+            for name in ('check_asset', 'check', 'check_replay', 'check_second_conditions'):
+                if hasattr(tool, name):
+                    callback = check_asset if name == 'check_asset' else lambda *args: result()
+                    stack.enter_context(patch.object(tool, name, side_effect=callback))
+            if hasattr(tool, 'prepare_prices'):
+                stack.enter_context(patch.object(
+                    tool, 'prepare_prices', side_effect=lambda frame: (frame, {})))
+            stack.enter_context(patch.object(tool.chan, 'sector_strength', return_value=
+                                             SimpleNamespace(to_dict=lambda: {'members': 1})))
+            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+            yield SimpleNamespace(loader=loader, reader=reader)
+
+    @staticmethod
+    def history_exit(tool):
+        try:
+            return tool.main()
+        except SystemExit as error:
+            return error.code
+
+    def test_history_mains_share_one_manifest_snapshot_and_preserve_report_contract(self):
+        """六入口沿用原字节及同一个清单对象，合法旧字段和退出码不变。"""
+        for tool in self.history_tools():
+            with self.subTest(tool=tool.__name__), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                raw = b' \n{ "datasets": {} }\n'
+                (root/'manifest.json').write_bytes(raw)
+                output = root/'receipt.json'
+                with self.history_cli(tool, root, output) as calls:
+                    self.assertEqual(self.history_exit(tool), 0)
+                report = json.loads(output.read_text())
+                self.assertTrue(report['ok'])
+                self.assertEqual(report['errors'], [])
+                self.assertEqual(report['dataset'], str(root.resolve()))
+                self.assertEqual(report['version'], tool.chan.__version__)
+                self.assertEqual(report['manifest_sha256'], hashlib.sha256(raw).hexdigest())
+                periods = ['1d'] if tool.__name__ == 'verify_fractal_history' else ['1d', '30m']
+                self.assertEqual([c[0][1] for c in calls.loader.call_args_list], periods)
+                self.assertEqual(report['files'], [dict(path=p+'.parquet', sha256='a'*64)
+                                                   for p in periods])
+                self.assertEqual(len(report['assets']), 1)
+                self.assertIsNotNone(calls.reader)
+                self.assertEqual(calls.reader.call_count, 1)
+                snapshots = [c[1].get('manifest') for c in calls.loader.call_args_list]
+                self.assertIsNotNone(snapshots[0])
+                self.assertEqual(snapshots[0], json.loads(raw.decode('utf-8')))
+                self.assertTrue(all(s is snapshots[0] for s in snapshots))
+                if tool.__name__ in ('verify_completion_history', 'verify_points_history'):
+                    self.assertEqual(report['base_parts'],
+                                     'xd' if tool.__name__ == 'verify_completion_history' else 'bi')
+                if tool.__name__ == 'verify_core_history':
+                    self.assertIn('replay', report['assets'][0])
+                    self.assertIn('second_conditions', report['assets'][0])
+                self.assertEqual((root/'manifest.json').read_bytes(), raw)
+
+    def test_history_mains_reject_manifest_replacement_during_load_or_calculation(self):
+        """同值不同字节的清单变化，含算法失败路径，也不能写成验收收据。"""
+        for tool in self.history_tools():
+            for stage in ('load', 'calculation', 'algorithm_error'):
+                with self.subTest(tool=tool.__name__, stage=stage), tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    manifest = root/'manifest.json'
+                    manifest.write_bytes(b' { "datasets": {} }\n')
+                    output = root/'receipt.json'
+
+                    def replace():
+                        manifest.write_bytes(b'{"datasets":{}}')
+
+                    def loaded(period):
+                        if stage == 'load' and period == '1d':
+                            replace()
+
+                    with self.history_cli(
+                            tool, root, output, on_load=loaded,
+                            on_check=replace if stage != 'load' else None,
+                            algorithm_error=stage == 'algorithm_error'):
+                        with self.assertRaisesRegex(ValueError, 'manifest'):
+                            self.history_exit(tool)
+                    self.assertFalse(output.exists())
+
+    def test_history_mains_reject_existing_file_and_dangling_link_before_loading(self):
+        """缺失数据集也须先保护原收据和悬空链接，不先读清单或行情。"""
+        for tool in self.history_tools():
+            for kind in ('file', 'dangling_link'):
+                with self.subTest(tool=tool.__name__, kind=kind), tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    output, target = root/'receipt.json', root/'target.json'
+                    if kind == 'file':
+                        output.write_bytes(b'frozen history receipt')
+                    else:
+                        output.symlink_to(target)
+                    with self.history_cli(tool, root/'missing-dataset', output) as calls, \
+                            contextlib.redirect_stderr(io.StringIO()):
+                        self.assertEqual(self.history_exit(tool), 2)
+                        calls.loader.assert_not_called()
+                        if calls.reader is not None:
+                            calls.reader.assert_not_called()
+                    if kind == 'file':
+                        self.assertEqual(output.read_bytes(), b'frozen history receipt')
+                    else:
+                        self.assertTrue(output.is_symlink())
+                        self.assertFalse(target.exists())
+
+    def test_history_mains_exclusively_create_output_after_the_early_check(self):
+        """计算期间才出现的文件或悬空链接，最终写入仍不得覆盖或跟随。"""
+        for tool in self.history_tools():
+            for kind in ('file', 'dangling_link'):
+                with self.subTest(tool=tool.__name__, kind=kind), tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    (root/'manifest.json').write_bytes(b'{"datasets":{}}')
+                    output, target = root/'receipt.json', root/'target.json'
+                    occupied = []
+
+                    def occupy():
+                        if not occupied:
+                            if kind == 'file':
+                                output.write_bytes(b'concurrent history receipt')
+                            else:
+                                output.symlink_to(target)
+                            occupied.append(True)
+
+                    with self.history_cli(tool, root, output, on_check=occupy):
+                        with self.assertRaises(FileExistsError):
+                            self.history_exit(tool)
+                    if kind == 'file':
+                        self.assertEqual(output.read_bytes(), b'concurrent history receipt')
+                    else:
+                        self.assertTrue(output.is_symlink())
+                        self.assertFalse(target.exists())
+
+    def test_history_mains_reject_nonfinite_report_without_partial_output(self):
+        """严格JSON序列化先于排他创建，失败不能留下空或半份收据。"""
+        for tool in self.history_tools():
+            with self.subTest(tool=tool.__name__), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                (root/'manifest.json').write_bytes(b'{"datasets":{}}')
+                output = root/'receipt.json'
+                with self.history_cli(tool, root, output, nonfinite=True):
+                    with self.assertRaises(ValueError):
+                        self.history_exit(tool)
+                self.assertFalse(output.exists())
+
+    def test_history_mains_preserve_algorithm_error_receipt_and_exit_code(self):
+        """清单未变时算法错误继续留原errors收据和退出1，不冒充理论通过。"""
+        for tool in self.history_tools():
+            with self.subTest(tool=tool.__name__), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                raw = b' { "datasets": {} }\n'
+                (root/'manifest.json').write_bytes(raw)
+                output = root/'receipt.json'
+                with self.history_cli(tool, root, output, algorithm_error=True):
+                    self.assertEqual(self.history_exit(tool), 1)
+                report = json.loads(output.read_text())
+                self.assertFalse(report['ok'])
+                self.assertEqual(report['assets'], [])
+                self.assertEqual(len(report['errors']), 1)
+                self.assertEqual(report['errors'][0]['code'], '510300.SH')
+                self.assertIn('synthetic history CLI calculation failure', report['errors'][0]['error'])
+                self.assertEqual(report['manifest_sha256'], hashlib.sha256(raw).hexdigest())
 
     def test_history_partition_change_during_read_rejected_without_receipt(self):
         from unittest.mock import patch
