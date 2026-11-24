@@ -3,6 +3,7 @@
 import json
 import unittest
 from datetime import datetime,timedelta
+from unittest import mock
 from chan import (ConfirmedMove, ConfirmedMoveType, ConfirmedCenter, find_first_points, scan_first_points,
                   first_point_contexts, analyze_point_chain)
 
@@ -32,6 +33,83 @@ class TestAutomaticFirstChain(unittest.TestCase):
             self.assertGreater(point.reference_area,point.leave_area)
             self.assertGreater(point.confirmed_dt,point.dt)
             self.assertEqual(point.method,'macd_area')
+
+    def test_small_area_bars_can_decide_decline_at_large_magnitude(self):
+        """同向面积的两根小柱仍须计入，不能把真实减弱误判为等强。"""
+        for mirror in (False, True):
+            with self.subTest(mirror=mirror):
+                units, bars, now = sample([200-p for p in PRICES] if mirror else PRICES,
+                                          n=20)
+                sign = 1.0 if mirror else -1.0
+                hist = [0.0] * len(bars)
+                # reference=u8, leave=u12..u14; both use (start, end].
+                hist[8*20+1:8*20+4] = [sign*1e16, sign, sign]
+                hist[12*20+1] = sign*1e16
+                zeros = [0.0] * len(bars)
+                with mock.patch('chan.first.macd_series', return_value=(zeros, zeros, hist)):
+                    points = find_first_points(units, bars, now, 'main')
+                self.assertEqual(len(points), 1)
+                point = points[0]
+                self.assertEqual(point.kind, 'sell1' if mirror else 'buy1')
+                self.assertEqual(point.reference_ids, ('u8',))
+                self.assertEqual(point.leave_ids, ('u12', 'u13', 'u14'))
+                self.assertEqual(point.reference_area, 10000000000000002)
+                self.assertEqual(point.leave_area, 10000000000000000)
+                self.assertGreater(point.reference_area, point.leave_area)
+
+    def test_area_windows_exclude_start_and_include_end(self):
+        """比较段共用边界不重复计柱，结束端点的同向柱仍属于该段。"""
+        for mirror in (False, True):
+            with self.subTest(mirror=mirror):
+                units, bars, now = sample([200-p for p in PRICES] if mirror else PRICES,
+                                          n=20)
+                sign = 1.0 if mirror else -1.0
+                hist = [0.0] * len(bars)
+                hist[8*20] = sign*1e16
+                hist[9*20] = sign*3.0
+                hist[12*20] = sign*1e16
+                hist[15*20] = sign*2.0
+                zeros = [0.0] * len(bars)
+                with mock.patch('chan.first.macd_series', return_value=(zeros, zeros, hist)):
+                    points = find_first_points(units, bars, now, 'main')
+                self.assertEqual(len(points), 1)
+                self.assertEqual(points[0].kind, 'sell1' if mirror else 'buy1')
+                self.assertEqual(points[0].reference_area, 3.0)
+                self.assertEqual(points[0].leave_area, 2.0)
+
+    def test_nonfinite_derived_area_keeps_comparison_semantics(self):
+        """派生面积溢出不新增异常；NaN与等强无穷仍按原比较规则排除。"""
+        cases = (
+            ('reference_overflow', [1e308, 1e308], [1.0], True),
+            ('reference_overflow_then_nan', [1e308, 1e308, float('nan')], [1.0], False),
+            ('reference_nan_before_overflow', [float('nan'), 1e308, 1e308], [1.0], False),
+            ('leave_overflow', [2.0], [1e308, 1e308], False),
+            ('leave_overflow_then_nan', [2.0], [1e308, 1e308, float('nan')], False),
+            ('both_overflow', [1e308, 1e308], [1e308, 1e308], False),
+            ('explicit_reference_infinity', [float('inf')], [1.0], True),
+        )
+        for mirror in (False, True):
+            for label, reference, leave, expected_point in cases:
+                with self.subTest(mirror=mirror, case=label):
+                    units, bars, now = sample([200-p for p in PRICES] if mirror else PRICES,
+                                              n=20)
+                    sign = 1.0 if mirror else -1.0
+                    hist = [0.0] * len(bars)
+                    hist[8*20+1:8*20+1+len(reference)] = [sign*v for v in reference]
+                    hist[12*20+1:12*20+1+len(leave)] = [sign*v for v in leave]
+                    zeros = [0.0] * len(bars)
+                    with mock.patch('chan.first.macd_series', return_value=(zeros, zeros, hist)):
+                        scan = scan_first_points(units, bars, now, 'main')
+                    self.assertGreater(scan.completed_types, 0)
+                    if expected_point:
+                        self.assertEqual(len(scan.points), 1)
+                        self.assertEqual(scan.points[0].kind, 'sell1' if mirror else 'buy1')
+                        self.assertEqual(scan.points[0].reference_area, float('inf'))
+                        self.assertEqual(scan.points[0].leave_area, 1.0)
+                    else:
+                        self.assertEqual(scan.points, [])
+                        self.assertIn('area_not_positive_and_weaker',
+                                      [reason for identity, reason in scan.exclusions])
 
     def test_no_future_endpoint_confirmation(self):
         """C已到达但趋势完成证据未到达, 不将候选回填C端点。"""

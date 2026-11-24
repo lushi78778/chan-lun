@@ -10,6 +10,7 @@ confirm_level_up生成完成趋势; 不能把单笔、末段或历史端点当�
 """
 from collections import namedtuple
 import json
+import math
 
 from chan.availability import _available_bars
 from chan.bars import _bar_time, validate_bars
@@ -84,6 +85,16 @@ def _tail(units, span, direction):
     return None
 
 
+def _positive_area(values, sign):
+    """同向浮点柱准确求和；正项溢出时保留原有inf/NaN比较语义。"""
+    terms = [max(sign * float(value), 0.0) for value in values]
+    try:
+        return math.fsum(terms)
+    except OverflowError:
+        # 使用完整序列保留溢出后的NaN，不对已消耗的迭代器回退求和。
+        return float(sum(terms))
+
+
 def scan_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
     """从已确认次级类型自动构造MACD辅助一类候选, 买卖镜像。
 
@@ -92,7 +103,8 @@ def scan_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
     连续前缀; 固定EMA从所给历史首根起算, 不猜供应历史版本。
     零轴“附近”量化为同一B行情上max(abs(DIF),abs(DEA))/close
     <=zero_axis_ratio(默认0.5%, 可配置, 原文没有数值)。A/C面积用
-    同方向柱的正幅值求和, 区间(start,end], 共用端点不重复计数。
+    同方向柱的正幅值用math.fsum求和, 区间(start,end], 共用端点不重复计数。
+    对已计算浮点柱保留小项贡献，不随内置sum的解释器版本改变。
     无完成趋势、严格分离中枢、同向比较段、新极值、零轴回拉或正
     面积减弱则不输出。端点不在行情显式报错。走势极值不要求等于
     对应行情close; 同标的/复权坐标由调用方保证。
@@ -163,8 +175,8 @@ def scan_first_points(units, bars, as_of, level, zero_axis_ratio=0.005):
             raise ValueError('比较段与中枢端点须有精确行情, 不近似匹配')
         a, b, z0, z1, c0, c1 = [dt_map[dt] for dt in boundaries]
         sign = 1 if up else -1
-        area_a = float(sum(max(sign*float(v), 0.) for v in hist[a+1:b+1]))
-        area_c = float(sum(max(sign*float(v), 0.) for v in hist[c0+1:c1+1]))
+        area_a = _positive_area(hist[a+1:b+1], sign)
+        area_c = _positive_area(hist[c0+1:c1+1], sign)
         zero = min(max(abs(float(dif[i])), abs(float(dea[i])))/rows[i]['close']
                    for i in range(z0, z1+1))
         if not 0 < area_c < area_a:
