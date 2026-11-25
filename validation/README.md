@@ -13,6 +13,51 @@
 保留，历史行情验收、标注、扫描、图册与样本工具现位于 `validation/tools/`；
 `tools/verify_installed.py` 仍属工程层。冻结收据内的旧路径和摘要不回写。
 
+## M6：1.2.6完整CI与双渠道实际发行核验（2026-11-25）
+
+附注标签v1.2.6仍指向已测候选
+`e7492dae75b69e2a6b0a97c039d1d8da51229129`，标签对象
+`aea6469a6cd196df4a6ca9344734464c2d4d1c94`保持。
+[标签完整CI](https://github.com/lushi78778/chan-lun/actions/runs/45518414237)
+九个作业全部成功，08:28:58开始、09:23:47结束，耗时3289秒。
+三环境完整包各1035项、双现代完整资产各261项，零失败/错误/
+跳过/延后，ID集合与本地完整矩阵逐项相同。3.10覆盖率语句
+4160/4316、分支1856/2006、总体95.16%，41份源码零排除，94门槛保持。
+六份官方测试/覆盖率附件下载均核GitHub官方摘要和大小，包层
+总用例不由日志尾行或job成功推测；本轮只读核回执，未重复全量测试。
+
+[GitHub Release](https://github.com/lushi78778/chan-lun/releases/tag/v1.2.6)
+于北京时间09:23:41发布，
+[PyPI](https://pypi.org/project/chan-lun-core/1.2.6/)的wheel/sdist
+于09:23:43/44上传。两渠道实际各下载wheel和sdist，与官方CI候选
+及封存清单逐字节一致，元数据、README、许可证、41份源码、
+77份测试/fixture、143份跟踪文件与候选对应，validation排除。
+Release正文与候选CHANGELOG提取正文一致。发行摘要为：
+
+- wheel：`b07d14e835d90e097e9a934a640455ff9d9d0a61e629877e0c9de0d4ccb6ce46`
+- sdist：`a74ed1edd2758989e0d3ef1f6dd376e67ab6d1ae4e51fb29dfb4c6a6081d5409`
+- 发布清单：`42af0e206abdcdaa072ca8d3434776bfc90939fccb874431e7c68d698607a603`
+
+实际下载PyPI文件在Python3.10.22、3.13.18和3.6.15的禁网只读
+Docker中各通过83项wheel隔离回归和8项sdist契约；导入均来自
+临时venv，源码摘要、发行输入及150份解包原始文件前后保持。
+三个环境的新精度回归实际执行，ID集合与本地安装回归一致。
+本地完整验收、官方完整CI、渠道实际文件及下载后安装四层分别闭环；
+不由上述结果补足严格力度、真实理论级别或平台时效证据。
+
+完整回执、渠道元数据、四份实际下载文件及安装日志保存在下节
+阶段目录的remote/；SHA-256分别为：
+
+- `ci-full-evidence-audit/audit.json`：`252069814fa5761bf190f621a4fd330284e7e08858b770845b95246feda643a2`
+- `verification.json`：`2a3881a2eed08fff1563516cd90359cb0c941dfef145414684ddb0f2efa76021`
+- `downloaded-wheel-verification.json`：`83ab1df55743b5a1049623ee741207df43abe288b118c93f5a03e4b3f18d9e2d`
+
+原HTML观察器未取得终态，后续等待进程超时，原快照和失败回执保留。
+本次续接直接读取同一run最终API与官方附件，没有重新运行CI。
+README源码/安装状态与CHANGELOG标题更新为已发布；已发布文件
+仍保留候选时封存的README状态字样，主干说明已纠正，既有产物不覆盖。
+§6、平台到达验证跳过边界、冻结研究脚本及外层暂存保持。
+
 ## M6：1.2.6标签推送与官方CI候选核对（2026-11-25）
 
 附注标签`v1.2.6`已创建并精确推送；本地/远端标签对象均为
