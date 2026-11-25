@@ -13,6 +13,37 @@
 保留，历史行情验收、标注、扫描、图册与样本工具现位于 `validation/tools/`；
 `tools/verify_installed.py` 仍属工程层。冻结收据内的旧路径和摘要不回写。
 
+## M6：1.2.6标签推送与官方CI候选核对（2026-11-25）
+
+附注标签`v1.2.6`已创建并精确推送；本地/远端标签对象均为
+`aea6469a6cd196df4a6ca9344734464c2d4d1c94`，解引用目标均为已完整
+本地验收的`e7492dae75b69e2a6b0a97c039d1d8da51229129`。
+其余旧标签保持，外层暂存保持。
+[标签完整CI](https://github.com/lushi78778/chan-lun/actions/runs/45518414237)
+已启动，构建通过；本条登记时五套完整测试仍在运行，不能登记为
+完整CI、Release或PyPI已发布。
+
+官方release-candidate附件共1,780,130字节，下载SHA-256与GitHub
+官方摘要一致：
+`6be646308bb1a3ad0c1a513f62bf43bd95ae9a85b02b641a278ce73f68981117`。
+内层清单绑定上述提交和v1.2.6，wheel的41份源码、sdist的77份
+测试/fixture及143份跟踪文件与候选逐字节一致。sdist共150份原始
+文件，另7份为构建元数据；两类发行文件均排除validation。
+CI再次独立构建的归档摘要与本地构建不同，文件级源码/跟踪内容
+分别对账，不将两次构建写成同一二进制产物。
+CI wheel SHA-256为
+`b07d14e835d90e097e9a934a640455ff9d9d0a61e629877e0c9de0d4ccb6ce46`；
+CI sdist SHA-256为
+`a74ed1edd2758989e0d3ef1f6dd376e67ab6d1ae4e51fb29dfb4c6a6081d5409`。
+官方候选核对收据在下节本地阶段目录的
+`remote/ci-candidate-audit/audit.json`，SHA-256为
+`e1ec1e58e3882e796d9f0e6f1769eacfdf5c67d179f25ff98a48ae711d852a65`。
+
+匿名API首次403限流及其响应保留，恢复后重试只读下载，未重触发CI。
+后续验收入口已准备为`remote/finish_release.py`：等待九作业全成功，
+再核官方逐项测试/覆盖率回执、双渠道实际文件与同一CI候选，以及
+下载wheel的三环境隔离回归。脚本完成前保持发行结果待核。
+
 ## M6：1.2.6候选的本地完整验收（2026-11-25）
 
 候选固定为`e7492dae75b69e2a6b0a97c039d1d8da51229129`，源码双处版本、
