@@ -221,7 +221,7 @@ for observed in replay_bars(bars, observations=[cutoff]):
 当前使用边界包括：同侧多轮独立真实样本缺口、课 77 历史 OHLC 缺失和课 106
 图文歧义、辅助模块的工程阈值，以及调用方对最低类型、级别和供应历史版本的
 证明责任。接口实现、真实样本覆盖、平台可运行和策略有效性是不同结论。
-当前理论能力与剩余缺口只在[正式计划 §6](https://github.com/lushi78778/chan-lun/blob/main/docs/%E7%BC%A0%E8%AE%BA%E7%90%86%E8%AE%BA%E9%80%90%E4%B8%80%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92.md#6-%E5%AE%9E%E7%8E%B0%E6%B8%85%E5%8D%95%E8%BF%9B%E5%BA%A6%E8%A1%A8%E5%94%AF%E4%B8%80%E8%BF%9B%E5%BA%A6%E7%BB%B4%E6%8A%A4%E5%A4%84)
+当前工程范围与证据/适用边界只在[正式计划 §6](https://github.com/lushi78778/chan-lun/blob/main/docs/%E7%BC%A0%E8%AE%BA%E7%90%86%E8%AE%BA%E9%80%90%E4%B8%80%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92.md#6-%E5%AE%9E%E7%8E%B0%E6%B8%85%E5%8D%95%E8%BF%9B%E5%BA%A6%E8%A1%A8%E5%94%AF%E4%B8%80%E8%BF%9B%E5%BA%A6%E7%BB%B4%E6%8A%A4%E5%A4%84)
 维护；分支证据和随版声明见[验收记录](https://github.com/lushi78778/chan-lun/blob/main/validation/README.md)。
 
 ## 项目结构与维护
